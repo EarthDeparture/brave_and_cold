@@ -1,0 +1,180 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/Hud.cs" id="1_hud"]
+
+[node name="Hud" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="ClockLabel" type="Label" parent="."]
+unique_name_in_owner = true
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 320.0
+offset_bottom = 40.0
+theme_override_font_sizes/font_size = 20
+text = "Day 1   08:00"
+
+[node name="EnvLabel" type="Label" parent="."]
+unique_name_in_owner = true
+offset_left = 16.0
+offset_top = 40.0
+offset_right = 420.0
+offset_bottom = 62.0
+text = "Outdoors   feels like -- C"
+
+[node name="StatsBox" type="VBoxContainer" parent="."]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -226.0
+offset_right = 356.0
+offset_bottom = -16.0
+theme_override_constants/separation = 6
+
+[node name="ConditionRow" type="HBoxContainer" parent="StatsBox"]
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="StatsBox/ConditionRow"]
+custom_minimum_size = Vector2(84, 0)
+text = "Condition"
+vertical_alignment = 1
+
+[node name="ConditionBar" type="ProgressBar" parent="StatsBox/ConditionRow"]
+unique_name_in_owner = true
+modulate = Color(0.85, 0.25, 0.25, 1)
+custom_minimum_size = Vector2(0, 18)
+size_flags_horizontal = 3
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="WarmthRow" type="HBoxContainer" parent="StatsBox"]
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="StatsBox/WarmthRow"]
+custom_minimum_size = Vector2(84, 0)
+text = "Warmth"
+vertical_alignment = 1
+
+[node name="WarmthBar" type="ProgressBar" parent="StatsBox/WarmthRow"]
+unique_name_in_owner = true
+modulate = Color(0.95, 0.55, 0.2, 1)
+custom_minimum_size = Vector2(0, 18)
+size_flags_horizontal = 3
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="HungerRow" type="HBoxContainer" parent="StatsBox"]
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="StatsBox/HungerRow"]
+custom_minimum_size = Vector2(84, 0)
+text = "Hunger"
+vertical_alignment = 1
+
+[node name="HungerBar" type="ProgressBar" parent="StatsBox/HungerRow"]
+unique_name_in_owner = true
+modulate = Color(0.75, 0.5, 0.25, 1)
+custom_minimum_size = Vector2(0, 18)
+size_flags_horizontal = 3
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="ThirstRow" type="HBoxContainer" parent="StatsBox"]
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="StatsBox/ThirstRow"]
+custom_minimum_size = Vector2(84, 0)
+text = "Thirst"
+vertical_alignment = 1
+
+[node name="ThirstBar" type="ProgressBar" parent="StatsBox/ThirstRow"]
+unique_name_in_owner = true
+modulate = Color(0.3, 0.6, 0.95, 1)
+custom_minimum_size = Vector2(0, 18)
+size_flags_horizontal = 3
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="FatigueRow" type="HBoxContainer" parent="StatsBox"]
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="StatsBox/FatigueRow"]
+custom_minimum_size = Vector2(84, 0)
+text = "Fatigue"
+vertical_alignment = 1
+
+[node name="FatigueBar" type="ProgressBar" parent="StatsBox/FatigueRow"]
+unique_name_in_owner = true
+modulate = Color(0.65, 0.45, 0.85, 1)
+custom_minimum_size = Vector2(0, 18)
+size_flags_horizontal = 3
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="StaminaRow" type="HBoxContainer" parent="StatsBox"]
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="StatsBox/StaminaRow"]
+custom_minimum_size = Vector2(84, 0)
+text = "Stamina"
+vertical_alignment = 1
+
+[node name="StaminaBar" type="ProgressBar" parent="StatsBox/StaminaRow"]
+unique_name_in_owner = true
+modulate = Color(0.35, 0.85, 0.45, 1)
+custom_minimum_size = Vector2(0, 18)
+size_flags_horizontal = 3
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="PausedLabel" type="Label" parent="."]
+unique_name_in_owner = true
+anchor_left = 0.5
+anchor_top = 0.3
+anchor_right = 0.5
+anchor_bottom = 0.3
+offset_left = -160.0
+offset_top = -30.0
+offset_right = 160.0
+offset_bottom = 30.0
+theme_override_font_sizes/font_size = 48
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="DeathPanel" type="CenterContainer" parent="."]
+unique_name_in_owner = true
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="PanelContainer" parent="DeathPanel"]
+custom_minimum_size = Vector2(420, 220)
+
+[node name="Margin" type="MarginContainer" parent="DeathPanel/Panel"]
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="DeathPanel/Panel/Margin"]
+theme_override_constants/separation = 18
+
+[node name="TitleLabel" type="Label" parent="DeathPanel/Panel/Margin/VBox"]
+theme_override_font_sizes/font_size = 36
+text = "YOU DIED"
+horizontal_alignment = 1
+
+[node name="DeathInfoLabel" type="Label" parent="DeathPanel/Panel/Margin/VBox"]
+unique_name_in_owner = true
+theme_override_font_sizes/font_size = 18
+text = "You survived 1 day."
+horizontal_alignment = 1
+
+[node name="RestartLabel" type="Label" parent="DeathPanel/Panel/Margin/VBox"]
+text = "Press R to restart"
+horizontal_alignment = 1

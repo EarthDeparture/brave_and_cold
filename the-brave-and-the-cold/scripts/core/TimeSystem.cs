@@ -33,6 +33,9 @@ public partial class TimeSystem : Node
 
     public string TimeText => $"{Hour:00}:{Minute:00}";
 
+    /// <summary>Current time as fractional hours (08:30 = 8.5) for curve math.</summary>
+    public float HourFloat => Hour + Minute / 60f;
+
     public override void _Ready()
     {
         Instance = this;

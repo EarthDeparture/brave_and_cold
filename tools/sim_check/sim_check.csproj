@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AssemblyName>sim_check</AssemblyName>
+  </PropertyGroup>
+
+  <!--
+    Compiles the game's pure simulation POCOs directly (no Godot dependency).
+    This only works while scripts/systems POCOs stay engine-free — keep it that way.
+  -->
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="..\..\the-brave-and-the-cold\scripts\systems\SurvivalStats.cs" />
+    <Compile Include="..\..\the-brave-and-the-cold\scripts\systems\TemperatureModel.cs" />
+  </ItemGroup>
+
+</Project>

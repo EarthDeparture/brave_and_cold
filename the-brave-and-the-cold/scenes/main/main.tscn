@@ -1,6 +1,10 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="PackedScene" path="res://assets/art/models/props/crate.glb" id="1_crate"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/world/cabin.tscn" id="3_cabin"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="4_hud"]
+[ext_resource type="Script" path="res://scripts/systems/DayNightCycle.cs" id="5_dnc"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.35, 0.5, 0.7, 1)
@@ -26,10 +30,10 @@ roughness = 0.9
 
 [sub_resource type="BoxMesh" id="GroundMesh"]
 material = SubResource("SnowMat")
-size = Vector3(40, 1, 40)
+size = Vector3(100, 1, 100)
 
 [sub_resource type="BoxShape3D" id="GroundShape"]
-size = Vector3(40, 1, 40)
+size = Vector3(100, 1, 100)
 
 [node name="Main" type="Node3D"]
 
@@ -39,6 +43,11 @@ environment = SubResource("Env")
 [node name="Sun" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.8192, 0, 0.5736, 0.4394, 0.6428, -0.6275, -0.3687, 0.766, 0.5266, 0, 10, 0)
 shadow_enabled = true
+
+[node name="DayNightCycle" type="Node" parent="."]
+script = ExtResource("5_dnc")
+Sun = NodePath("../Sun")
+WorldEnv = NodePath("../WorldEnvironment")
 
 [node name="Ground" type="StaticBody3D" parent="."]
 
@@ -51,8 +60,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 shape = SubResource("GroundShape")
 
 [node name="Crate" parent="." instance=ExtResource("1_crate")]
-transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 1.2, 0, -1.5)
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 2.5, 0, -2)
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(0.857, 0, -0.514, -0.1275, 0.9636, -0.2125, 0.496, 0.248, 0.827, 3, 2, 5)
-current = true
+[node name="Cabin" parent="." instance=ExtResource("3_cabin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -6)
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 8)
+
+[node name="Hud" parent="." instance=ExtResource("4_hud")]
