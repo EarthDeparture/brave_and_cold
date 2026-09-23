@@ -44,7 +44,7 @@ environment = SubResource("Env")
 transform = Transform3D(0.8192, 0, 0.5736, 0.4394, 0.6428, -0.6275, -0.3687, 0.766, 0.5266, 0, 10, 0)
 shadow_enabled = true
 
-[node name="DayNightCycle" type="Node" parent="."]
+[node name="DayNightCycle" type="Node3D" parent="."]
 script = ExtResource("5_dnc")
 Sun = NodePath("../Sun")
 WorldEnv = NodePath("../WorldEnvironment")
