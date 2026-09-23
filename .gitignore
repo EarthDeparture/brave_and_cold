@@ -1,0 +1,15 @@
+# Godot 4+ editor/import artifacts
+.godot/
+the-brave-and-the-cold/android/
+
+# .NET / C# build output
+bin/
+obj/
+.vs/
+*.user
+
+# Blender backup files
+*.blend1
+
+# OS noise
+Thumbs.db

@@ -1,0 +1,58 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/art/models/props/crate.glb" id="1_crate"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
+sky_top_color = Color(0.35, 0.5, 0.7, 1)
+sky_horizon_color = Color(0.75, 0.78, 0.82, 1)
+ground_bottom_color = Color(0.7, 0.72, 0.75, 1)
+ground_horizon_color = Color(0.8, 0.82, 0.85, 1)
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMat")
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 2
+tonemap_mode = 3
+fog_enabled = true
+fog_light_color = Color(0.78, 0.81, 0.86, 1)
+fog_density = 0.015
+
+[sub_resource type="StandardMaterial3D" id="SnowMat"]
+albedo_color = Color(0.9, 0.92, 0.95, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="GroundMesh"]
+material = SubResource("SnowMat")
+size = Vector3(40, 1, 40)
+
+[sub_resource type="BoxShape3D" id="GroundShape"]
+size = Vector3(40, 1, 40)
+
+[node name="Main" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8192, 0, 0.5736, 0.4394, 0.6428, -0.6275, -0.3687, 0.766, 0.5266, 0, 10, 0)
+shadow_enabled = true
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="Mesh" type="MeshInstance3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+mesh = SubResource("GroundMesh")
+
+[node name="Collision" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+shape = SubResource("GroundShape")
+
+[node name="Crate" parent="." instance=ExtResource("1_crate")]
+transform = Transform3D(0.9397, 0, -0.342, 0, 1, 0, 0.342, 0, 0.9397, 1.2, 0, -1.5)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.857, 0, -0.514, -0.1275, 0.9636, -0.2125, 0.496, 0.248, 0.827, 3, 2, 5)
+current = true
