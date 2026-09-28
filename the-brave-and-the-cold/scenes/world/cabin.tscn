@@ -1,37 +1,29 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
-[ext_resource type="Script" path="res://scripts/systems/IndoorZone.cs" id="1_zone"]
-
-[sub_resource type="StandardMaterial3D" id="WoodGrey"]
-albedo_color = Color(0.28, 0.22, 0.18, 1)
-roughness = 0.95
+[ext_resource type="PackedScene" path="res://assets/art/models/buildings/cabin.glb" id="1_cabin"]
+[ext_resource type="Script" path="res://scripts/systems/IndoorZone.cs" id="2_zone"]
+[ext_resource type="Script" path="res://scripts/systems/TrimeshCollision.cs" id="3_col"]
+[ext_resource type="Script" path="res://scripts/systems/LanternFlicker.cs" id="4_flicker"]
 
 [sub_resource type="BoxShape3D" id="InteriorShape"]
-size = Vector3(5.6, 2.6, 4.6)
+size = Vector3(5.4, 2.5, 4.4)
 
 [node name="Cabin" type="Node3D"]
+script = ExtResource("3_col")
 
-[node name="Body" type="CSGCombiner3D" parent="."]
-use_collision = true
-
-[node name="Shell" type="CSGBox3D" parent="Body"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-size = Vector3(6, 3, 5)
-material = SubResource("WoodGrey")
-
-[node name="Hollow" type="CSGBox3D" parent="Body"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0)
-operation = 2
-size = Vector3(5.7, 2.7, 4.7)
-
-[node name="DoorGap" type="CSGBox3D" parent="Body"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 2.5)
-operation = 2
-size = Vector3(1.1, 2.2, 1)
+[node name="Model" parent="." instance=ExtResource("1_cabin")]
 
 [node name="InteriorZone" type="Area3D" parent="."]
-script = ExtResource("1_zone")
+script = ExtResource("2_zone")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="InteriorZone"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
 shape = SubResource("InteriorShape")
+
+[node name="Lantern" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 2.1, -0.8)
+script = ExtResource("4_flicker")
+light_color = Color(1, 0.58, 0.28, 1)
+light_energy = 2.6
+omni_range = 9.0
+shadow_enabled = true

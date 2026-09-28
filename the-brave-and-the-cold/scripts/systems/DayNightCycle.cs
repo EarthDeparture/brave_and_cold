@@ -10,70 +10,75 @@ namespace TheBraveAndTheCold.Systems;
 /// </summary>
 public partial class DayNightCycle : Node3D
 {
-    [Export] public DirectionalLight3D Sun { get; set; } = null!;
-    [Export] public WorldEnvironment WorldEnv { get; set; } = null!;
-    [Export] public float SunriseHour { get; set; } = 8f;
-    [Export] public float SunsetHour { get; set; } = 17f;
-    [Export] public float MaxSunElevationDeg { get; set; } = 28f;
+	[Export] public DirectionalLight3D Sun { get; set; } = null!;
+	[Export] public WorldEnvironment WorldEnv { get; set; } = null!;
+	[Export] public float SunriseHour { get; set; } = 8f;
+	[Export] public float SunsetHour { get; set; } = 17f;
+	[Export] public float MaxSunElevationDeg { get; set; } = 28f;
 
-    private static readonly Color NoonColor = new(1.0f, 0.96f, 0.90f);
-    private static readonly Color DuskColor = new(1.0f, 0.62f, 0.35f);
-    private static readonly Color MoonColor = new(0.55f, 0.68f, 1.0f);
+	private static readonly Color NoonColor = new(1.0f, 0.96f, 0.90f);
+	private static readonly Color DuskColor = new(1.0f, 0.62f, 0.35f);
+	private static readonly Color MoonColor = new(0.55f, 0.68f, 1.0f);
 
-    private Environment? _env;
-    private int _lastMinuteKey = -1;
+	private Environment? _env;
+	private int _lastMinuteKey = -1;
 
-    public override void _Ready()
-    {
-        _env = WorldEnv?.Environment;
-        UpdateLighting();
-    }
+	public override void _Ready()
+	{
+		_env = WorldEnv?.Environment;
+		UpdateLighting();
+	}
 
-    public override void _Process(double delta)
-    {
-        var clock = TimeSystem.Instance;
-        if (clock is null)
-            return;
+	public override void _Process(double delta)
+	{
+		var clock = TimeSystem.Instance;
+		if (clock is null)
+			return;
 
-        int minuteKey = clock.Day * 1440 + clock.Hour * 60 + clock.Minute;
-        if (minuteKey != _lastMinuteKey)
-        {
-            _lastMinuteKey = minuteKey;
-            UpdateLighting();
-        }
-    }
+		int minuteKey = clock.Day * 1440 + clock.Hour * 60 + clock.Minute;
+		if (minuteKey != _lastMinuteKey)
+		{
+			_lastMinuteKey = minuteKey;
+			UpdateLighting();
+		}
+	}
 
-    private void UpdateLighting()
-    {
-        var clock = TimeSystem.Instance;
-        if (clock is null || Sun is null)
-            return;
+	private void UpdateLighting()
+	{
+		var clock = TimeSystem.Instance;
+		if (clock is null || Sun is null)
+			return;
 
-        float h = clock.HourFloat;
-        bool isDay = h >= SunriseHour && h <= SunsetHour;
-        float dayT = Mathf.Clamp((h - SunriseHour) / (SunsetHour - SunriseHour), 0f, 1f);
-        float sunUp = Mathf.Sin(Mathf.Pi * dayT); // 0 at dawn/dusk, 1 at solar noon
+		float h = clock.HourFloat;
+		bool isDay = h >= SunriseHour && h <= SunsetHour;
+		float dayT = Mathf.Clamp((h - SunriseHour) / (SunsetHour - SunriseHour), 0f, 1f);
+		float sunUp = Mathf.Sin(Mathf.Pi * dayT); // 0 at dawn/dusk, 1 at solar noon
 
         if (isDay)
         {
-            float elevation = Mathf.DegToRad(MaxSunElevationDeg) * sunUp + Mathf.DegToRad(6f);
+            float elevation = Mathf.DegToRad(MaxSunElevationDeg) * sunUp + Mathf.DegToRad(10f);
             float azimuth = Mathf.Lerp(Mathf.DegToRad(-75f), Mathf.DegToRad(75f), dayT);
-            Sun.Rotation = new Vector3(-elevation, azimuth, 0f);
-            Sun.LightEnergy = 0.25f + sunUp;
+            // EMPIRICAL (Godot 4.7.2, this machine): DirectionalLight3D shines along its
+            // +Z axis — verified with test_sun.tscn sweep. rotation.x = +elevation aims
+            // +Z down at the scene. If the sun ever lights the world from below after an
+            // engine upgrade, flip this sign first.
+            Sun.Rotation = new Vector3(elevation, azimuth, 0f);
+            Sun.LightEnergy = 0.35f + sunUp * 1.1f;
             Sun.LightColor = DuskColor.Lerp(NoonColor, sunUp);
         }
         else
         {
             // Fixed low "moon" so nights stay readable but unmistakably dark.
-            Sun.Rotation = new Vector3(Mathf.DegToRad(-55f), Mathf.DegToRad(30f), 0f);
+            Sun.Rotation = new Vector3(Mathf.DegToRad(55f), Mathf.DegToRad(30f), 0f);
             Sun.LightEnergy = 0.06f;
             Sun.LightColor = MoonColor;
         }
 
-        if (_env is not null)
-        {
-            _env.AmbientLightEnergy = isDay ? Mathf.Lerp(0.35f, 1.0f, sunUp) : 0.18f;
-            _env.FogDensity = isDay ? Mathf.Lerp(0.020f, 0.012f, sunUp) : 0.030f;
-        }
-    }
+		if (_env is not null)
+		{
+			// Day ambient floor of 0.55: dawn/dusk stay readable, never a black void.
+			_env.AmbientLightEnergy = isDay ? Mathf.Lerp(0.55f, 1.0f, sunUp) : 0.18f;
+			_env.FogDensity = isDay ? Mathf.Lerp(0.020f, 0.012f, sunUp) : 0.030f;
+		}
+	}
 }

@@ -101,4 +101,6 @@ debug_time_accel={
 
 [rendering]
 
-rendering_device/driver.windows="d3d12"
+; M2 debug: D3D12 driver produced a fully-occluded directional shadow map
+; (entire scene rendered "in shadow"). Vulkan is Godot's reference backend.
+rendering_device/driver.windows="vulkan"
