@@ -42,10 +42,14 @@ func advance(delta: float) -> void:
 		cycle_time += step
 		remaining -= step
 		time_advanced.emit(step, night)
+		if get_tree().paused:
+			return
 		if cycle_time >= boundary:
 			if night:
 				cycle_time = 0.0
 				day_count += 1
 				dawn.emit()
+				if get_tree().paused:
+					return
 			else:
 				dusk.emit()

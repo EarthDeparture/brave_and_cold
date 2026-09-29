@@ -28,7 +28,7 @@ func _ready() -> void:
 func _on_temperature_changed(current: float, maximum: float) -> void:
 	temperature_label.text = "Warmth: %.1f / %.0f" % [current, maximum]
 	if Temperature.is_frozen:
-		temperature_label.text += " — FREEZING: half speed, sprint disabled"
+		temperature_label.text += " — FREEZING: no warmth remaining"
 
 	_update_warnings()
 
@@ -55,7 +55,7 @@ func _update_warnings() -> void:
 	if wood_amount <= low_wood_threshold:
 		warnings.append("LOW WOOD: gather wood")
 	if Temperature.is_frozen:
-		warnings.append("FREEZING: find a lit fire")
+		warnings.append("FREEZING: no warmth remaining")
 	elif Temperature.current_temperature <= Temperature.max_temperature * cold_threshold:
 		warnings.append("COLD: warm up by a lit fire")
 	warning_label.text = "\n".join(warnings)

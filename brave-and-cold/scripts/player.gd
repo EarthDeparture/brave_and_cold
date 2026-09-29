@@ -4,7 +4,10 @@ extends CharacterBody3D
 @export var sprint_speed: float = 8.0
 @export var mouse_sensitivity: float = 0.002
 
+signal died(reason: String)
 signal wood_changed(amount: int)
+
+var is_dead := false
 
 var wood: int = 0
 
@@ -31,7 +34,17 @@ func consume_wood() -> bool:
 	return true
 
 
+func die(reason: String) -> void:
+	if is_dead:
+		return
+	is_dead = true
+	velocity = Vector3.ZERO
+	died.emit(reason)
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if is_dead or get_tree().paused:
+		return
 	if event.is_action_pressed("interact") and not event.is_echo() and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		_interact()
 	elif event.is_action_pressed("ui_cancel"):
@@ -44,6 +57,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if is_dead or get_tree().paused:
+		return
 	_update_temperature_exposure()
 	if not is_on_floor():
 		velocity += get_gravity() * delta
@@ -60,6 +75,10 @@ func _physics_process(delta: float) -> void:
 	velocity.z = direction.z * speed
 	var previous_position := global_position
 	move_and_slide()
+	for index in get_slide_collision_count():
+		if get_slide_collision(index).get_collider().is_in_group("zombies"):
+			die("A zombie caught you.")
+			return
 	footstep_remaining = maxf(0.0, footstep_remaining - delta)
 	var horizontal_travel := Vector2(global_position.x - previous_position.x, global_position.z - previous_position.z)
 	if input_direction != Vector2.ZERO and is_on_floor() and horizontal_travel.length() > 0.001 and footstep_remaining <= 0.0:
