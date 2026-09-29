@@ -71,10 +71,29 @@ func _run() -> void:
 		"door starts closed and solid")
 	door.interact(player)
 	player._advance_work(2.0)
-	_check(door.is_open and door.get_node("CollisionShape3D").disabled, "interact opens the door")
+	_check(door.is_open and door.is_passable(), "interact opens the door")
 	door.interact(player)
 	player._advance_work(2.0)
 	_check(not door.is_open and not door.get_node("CollisionShape3D").disabled, "interact closes the open door")
+	# Exercise the actual interaction ray from both sides of the doorway.
+	for side in [-1.0, 1.0]:
+		player.global_position = door.global_position + Vector3(0.95, 0, side * 2.0)
+		player.rotation.y = PI if side < 0.0 else 0.0
+		await physics_frame
+		await physics_frame
+		player._interact()
+		_check(door.is_open, "aimed interaction opens door from either side")
+		await physics_frame
+		await physics_frame
+		var start: Vector3 = player.camera.global_position
+		var end: Vector3 = start - player.camera.global_basis.z * 3.0
+		var movement_query := PhysicsRayQueryParameters3D.create(start, end, 1)
+		movement_query.exclude = [player.get_rid()]
+		_check(world.get_world_3d().direct_space_state.intersect_ray(movement_query).is_empty(),
+			"open doorway does not block movement layer")
+		player._interact()
+		_check(not door.is_open and not door.is_passable() and door.collision_layer == 1,
+			"aimed interaction closes door and restores solid collision from either side")
 	source.interact(player)
 	door.interact(player)
 	player._advance_work(2.0)
