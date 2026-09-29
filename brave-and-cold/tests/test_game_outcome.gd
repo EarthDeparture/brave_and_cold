@@ -64,6 +64,36 @@ func _run() -> void:
 	Input.action_release("move_right")
 	_check(player.is_dead and paused and "zombie" in world.result_label.text, "physical zombie contact kills")
 	world.free()
+	world = _world()
+	current_scene = world
+	var restart_key := InputEventKey.new()
+	restart_key.keycode = KEY_R
+	restart_key.pressed = true
+	root.push_input(restart_key)
+	await process_frame
+	_check(current_scene == world and not world.finished, "R does not restart active play")
+	clock.day_count = 4
+	clock.cycle_time = 180.0
+	root.get_node("Stamina").current_stamina = 0.0
+	temperature.current_temperature = 0.0
+	_check(paused, "frozen restart begins paused")
+	root.push_input(restart_key)
+	await scene_changed
+	world = current_scene
+	_check(not paused and not world.finished and not world.get_node("Player").is_dead, "R restarts while paused")
+	_check(not world.get_node("EndScreen").visible and world.nights_survived == 0, "restart clears outcome")
+	_check(clock.day_count == 1 and clock.cycle_time == 0.0, "restart resets clock")
+	_check(not temperature.is_frozen and temperature.current_temperature == temperature.max_temperature, "restart restores warmth")
+	_check(root.get_node("Stamina").current_stamina == root.get_node("Stamina").max_stamina, "restart restores stamina")
+	world.nights_to_survive = 1
+	world._on_dawn()
+	_check(paused and "YOU WIN" in world.result_label.text, "restarted game can finish again")
+	var restart_button = world.get_node("EndScreen").find_child("Restart", true, false)
+	_check(restart_button.is_visible_in_tree() and restart_button.can_process(), "restart button available while paused")
+	restart_button.pressed.emit()
+	await scene_changed
+	_check(not paused and not current_scene.finished, "button restarts after win")
+	current_scene.free()
 	paused = false
 	print("Game outcome tests: %d failures." % failures)
 	quit(0 if failures == 0 else 1)
