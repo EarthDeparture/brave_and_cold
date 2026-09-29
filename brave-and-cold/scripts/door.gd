@@ -62,10 +62,10 @@ func take_hit() -> void:
 func _apply_state() -> void:
 	var closed := not is_open or boarded
 	$Hinge.rotation.y = 0.0 if closed else deg_to_rad(90.0)
-	$CollisionShape3D.disabled = not closed
+	$CollisionShape3D.disabled = false
 	$Hinge/Panel.visible = not broken
-	# Layer 2 remains ray-selectable without blocking moving bodies.
-	collision_layer = 2 if broken and not boarded else 1
+	# Keep open/broken doors selectable for closing/repair without blocking movement.
+	collision_layer = 2 if is_passable() else 1
 	collision_mask = 0
 	$Boards.visible = boarded
 	$Hinge/Panel.material_override.emission_enabled = not boarded and not is_open
