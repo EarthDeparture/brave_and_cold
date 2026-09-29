@@ -38,6 +38,22 @@ Manual checks (restart the game between cases):
 
 Use R or the restart button after either outcome to start a fresh run.
 
+## Final dawn polish (task 72c71495)
+
+Verified that the existing completed-night count already progresses to a final
+victory at the configured target (default three). The final result now explicitly
+shows `YOU WIN`, `Dawn survived!`, and the completed duration, with singular wording
+for a one-night goal. No difficulty changes were needed for the outcome logic.
+
+Reviewed all files listed above. Godot 4.5.1 headless import and all eight listed
+test suites passed with zero failures. Outcome coverage now also checks the default
+three-night goal, initial dawn, continued play at the second dawn, final dawn text,
+and ignored dawns after victory. Existing coverage checks death precedence and restart.
+
+Human review remains required: check the three-line final result and restart button
+at different window sizes, and complete the manual checks above. No separate
+planner brief was available to verify additional files or tests.
+
 ## Outside-loop verification
 
 scripts/game_outcome.gd already listens to player death, freezing, and dawn
