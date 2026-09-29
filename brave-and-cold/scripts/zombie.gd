@@ -1,6 +1,7 @@
 extends CharacterBody3D
-## Recent audible noise takes priority over the nearest unboarded window.
+## Visible outdoor players, then recent noise, then unboarded windows.
 @export var move_speed: float = 2.0
+@export var player_detection_radius: float = 12.0
 @export var light_detection_radius: float = 40.0
 @export var noise_memory: float = 4.0
 @export var attack_interval: float = 1.0
@@ -9,6 +10,7 @@ extends CharacterBody3D
 
 var attack_remaining := 0.0
 
+var target_player: Node3D
 var target_window: Node3D
 var noise_remaining: float = 0.0
 var noise_position := Vector3.ZERO
@@ -30,7 +32,12 @@ func _hear_noise(location: Vector3, radius: float) -> void:
 func _update_target(delta: float) -> void:
 	noise_remaining = maxf(0.0, noise_remaining - delta)
 	target_window = null
+	target_player = _visible_outdoor_player()
 	has_target = false
+	if is_instance_valid(target_player):
+		agent.target_position = target_player.global_position
+		has_target = true
+		return
 	if noise_remaining > 0.0:
 		agent.target_position = noise_position
 		has_target = true
@@ -47,6 +54,30 @@ func _update_target(delta: float) -> void:
 	if is_instance_valid(target_window):
 		agent.target_position = target_window.global_position
 		has_target = true
+
+
+func _visible_outdoor_player() -> Node3D:
+	var nearest := pow(player_detection_radius * DayNight.aggro_multiplier, 2)
+	var target: Node3D = null
+	for player in get_tree().get_nodes_in_group("players"):
+		if player.is_dead:
+			continue
+		var sheltered := false
+		for shelter in get_tree().get_nodes_in_group("temperature_shelters"):
+			if shelter.contains_point(player.global_position):
+				sheltered = true
+				break
+		var distance := global_position.distance_squared_to(player.global_position)
+		if sheltered or distance > nearest:
+			continue
+		var query := PhysicsRayQueryParameters3D.create(
+			global_position + Vector3.UP * 1.5, player.global_position + Vector3.UP * 1.5)
+		query.exclude = [get_rid()]
+		var hit := get_world_3d().direct_space_state.intersect_ray(query)
+		if not hit.is_empty() and hit.collider == player:
+			target = player
+			nearest = distance
+	return target
 
 
 func _physics_process(delta: float) -> void:
