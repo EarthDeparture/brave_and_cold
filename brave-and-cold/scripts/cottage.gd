@@ -1,0 +1,45 @@
+extends Node3D
+## Compact blockout interior. Window openings are left in the north wall.
+
+
+func _ready() -> void:
+	var wood := Color(0.23, 0.14, 0.085)
+	var stone := Color(0.24, 0.25, 0.27)
+	_box("Floor", Vector3(10, 0.2, 10), Vector3(0, -0.1, 0), wood)
+	_box("Roof", Vector3(10.4, 0.3, 10.4), Vector3(0, 3.65, 0), wood)
+	_box("WestWall", Vector3(0.3, 3.6, 10), Vector3(-5, 1.8, 0), wood)
+	_box("EastWall", Vector3(0.3, 3.6, 10), Vector3(5, 1.8, 0), wood)
+	_box("SouthWall", Vector3(10, 3.6, 0.3), Vector3(0, 1.8, 5), wood)
+	_box("NorthSill", Vector3(10, 1, 0.3), Vector3(0, 0.5, -5), wood)
+	_box("NorthLintel", Vector3(10, 1.2, 0.3), Vector3(0, 3, -5), wood)
+	_box("NorthCenter", Vector3(2.6, 1.4, 0.3), Vector3(0, 1.7, -5), wood)
+	for side in [-1, 1]:
+		_box("NorthEnd", Vector3(1.9, 1.4, 0.3), Vector3(side * 4.05, 1.7, -5), wood)
+	_box("Hearth", Vector3(2.4, 0.2, 1.2), Vector3(0, 0.1, -4.2), stone)
+	_box("Chimney", Vector3(2.0, 2, 0.6), Vector3(0, 2.6, -4.6), stone)
+	for side in [-1, 1]:
+		_box("HearthPillar", Vector3(0.3, 1.4, 0.8), Vector3(side * 0.85, 0.9, -4.5), stone)
+	_box("Embers", Vector3(1.2, 0.15, 0.5), Vector3(0, 0.3, -4.2), Color(1, 0.22, 0.025), true)
+
+
+func _box(label: String, size: Vector3, location: Vector3, color: Color, glowing: bool = false) -> void:
+	var body := StaticBody3D.new()
+	body.name = label
+	body.position = location
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = size
+	mesh.mesh = box
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.emission_enabled = glowing
+	material.emission = color
+	material.emission_energy_multiplier = 3.0
+	mesh.material_override = material
+	body.add_child(mesh)
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size
+	collision.shape = shape
+	body.add_child(collision)
+	add_child(body)
