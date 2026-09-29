@@ -81,8 +81,8 @@ func _update_visuals() -> void:
 	var lit := state != FireState.OUT
 	$Flame.visible = lit
 	$Light.visible = lit
-	$Light.omni_range = maxf(dying_light_radius if state == FireState.DYING else lit_light_radius, 0.0)
-	$Light.light_energy = 1.0 if state == FireState.DYING else 2.5
+	$Light.omni_range = maxf(dying_light_radius if state == FireState.DYING else lit_light_radius, 0.0) if lit else 0.0
+	$Light.light_energy = (1.0 if state == FireState.DYING else 2.5) if lit else 0.0
 	$Flame.scale = Vector3.ONE * (0.5 if state == FireState.DYING else 1.0)
 	$Prompt.text = "E: Add wood | %s | %.0fs fuel" % ["Dying" if state == FireState.DYING else "Lit", fuel_remaining] if fuel_remaining > 0.0 else "E: Light fire (1 wood)"
 	if lit != _was_lit:

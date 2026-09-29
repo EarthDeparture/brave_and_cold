@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="1_hud"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
@@ -15,6 +15,8 @@
 [ext_resource type="Script" path="res://scripts/game_outcome.gd" id="8_outcome"]
 
 [ext_resource type="PackedScene" path="res://scenes/hammer_pickup.tscn" id="9_hammer"]
+
+[ext_resource type="Script" path="res://scripts/world_lighting.gd" id="10_lighting"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 
@@ -39,6 +41,7 @@ script = ExtResource("8_outcome")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment")
+script = ExtResource("10_lighting")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-55, -30, 0)
