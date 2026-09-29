@@ -39,7 +39,7 @@ func _run() -> void:
 	player._interact()
 	_check(not left.boarded, "nearby interaction removes boards")
 	_check(cottage.has_node("Hearth") and cottage.has_node("Roof"), "shelter includes hearth and roof")
-	_check(cottage.get_node("HearthLight").light_energy > 0, "hearth remains lit")
+	_check(cottage.get_node("HearthLight").light_energy == 0, "unfueled hearth starts dark")
 	world.free()
 	print("Cottage tests: %d failures." % failures)
 	quit(0 if failures == 0 else 1)

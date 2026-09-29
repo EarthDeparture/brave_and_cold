@@ -18,3 +18,10 @@ offset_top = 48.0
 offset_right = 580.0
 offset_bottom = 74.0
 mouse_filter = 2
+
+[node name="WoodLabel" type="Label" parent="."]
+offset_left = 16.0
+offset_top = 80.0
+offset_right = 600.0
+offset_bottom = 106.0
+mouse_filter = 2
