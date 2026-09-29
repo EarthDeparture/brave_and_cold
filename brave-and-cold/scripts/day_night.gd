@@ -6,6 +6,7 @@ signal dusk
 signal time_advanced(seconds: float, night: bool)
 
 @export_range(1.0, 3600.0) var day_length: float = 240.0
+var day_count: int = 1
 var cycle_time: float = 0.0
 var time_of_day: float:
 	get:
@@ -44,6 +45,7 @@ func advance(delta: float) -> void:
 		if cycle_time >= boundary:
 			if night:
 				cycle_time = 0.0
+				day_count += 1
 				dawn.emit()
 			else:
 				dusk.emit()
