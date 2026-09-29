@@ -59,3 +59,7 @@ func _physics_process(delta: float) -> void:
 			velocity.x = direction.x * move_speed
 			velocity.z = direction.z * move_speed
 	move_and_slide()
+	for index in get_slide_collision_count():
+		var body = get_slide_collision(index).get_collider()
+		if body.is_in_group("players") and body.has_method("die"):
+			body.die("A zombie caught you.")

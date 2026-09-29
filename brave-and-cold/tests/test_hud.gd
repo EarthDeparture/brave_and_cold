@@ -26,9 +26,10 @@ func _run() -> void:
 	temperature.current_temperature = 25.0
 	_check("COLD" in warnings.text and "LOW WOOD" in warnings.text, "simultaneous warnings")
 	temperature.current_temperature = 0.0
-	_check("FREEZING" in warnings.text and "half speed" in hud.get_node("TemperatureLabel").text, "frozen warning and existing penalty")
+	_check("FREEZING" in warnings.text and "no warmth remaining" in hud.get_node("TemperatureLabel").text, "frozen warning")
 	temperature.current_temperature = 26.0
 	_check(not "COLD" in warnings.text and not "FREEZING" in warnings.text, "recovery clears cold warning")
+	paused = false # Continue isolated HUD clock checks after the death assertion.
 	clock.advance(120.0)
 	_check(hud.get_node("DayLabel").text == "Day 1 — Night" and "NIGHT" in warnings.text, "dusk")
 	clock.advance(120.0)

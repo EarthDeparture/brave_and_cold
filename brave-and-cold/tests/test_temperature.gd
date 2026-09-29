@@ -43,11 +43,11 @@ func _run() -> void:
 	temperature.advance(10.0)
 	_check(temperature.current_temperature == 0.0 and temperature.is_frozen, "drain clamps at zero")
 	_check(frozen_events == 1, "frozen transition emitted once")
-	_check("FREEZING" in world.get_node("HUD/TemperatureLabel").text, "HUD shows penalty")
+	_check("FREEZING" in world.get_node("HUD/TemperatureLabel").text, "HUD shows freezing")
 	Input.action_press("move_right")
 	Input.action_press("sprint")
 	player._physics_process(0.1)
-	_check(is_equal_approx(player.velocity.x, player.move_speed * 0.5), "frozen sprint restricted to half walking speed")
+	_check(player.is_dead and player.velocity == Vector3.ZERO and paused, "freezing kills player and stops movement")
 	Input.action_release("move_right")
 	Input.action_release("sprint")
 	temperature.current_temperature = 1000.0

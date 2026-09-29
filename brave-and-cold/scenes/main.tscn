@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="1_hud"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
@@ -11,6 +11,8 @@
 [ext_resource type="PackedScene" path="res://scenes/wood_source.tscn" id="6_wood"]
 
 [ext_resource type="Script" path="res://scripts/zombie_spawner.gd" id="7_spawner"]
+
+[ext_resource type="Script" path="res://scripts/game_outcome.gd" id="8_outcome"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 
@@ -31,6 +33,7 @@ size = Vector2(100, 100)
 size = Vector3(100, 1, 100)
 
 [node name="Main" type="Node3D"]
+script = ExtResource("8_outcome")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment")
