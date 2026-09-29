@@ -1,0 +1,55 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/main_menu.gd" id="1_menu"]
+
+[node name="MainMenu" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.035, 0.065, 0.09, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Menu" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="Center/Menu"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.93, 1, 1)
+theme_override_font_sizes/font_size = 36
+text = "Brave and Cold"
+horizontal_alignment = 1
+
+[node name="Start" type="Button" parent="Center/Menu"]
+custom_minimum_size = Vector2(260, 52)
+layout_mode = 2
+text = "Start"
+
+[node name="Quit" type="Button" parent="Center/Menu"]
+custom_minimum_size = Vector2(260, 52)
+layout_mode = 2
+text = "Quit"
+
+[connection signal="pressed" from="Center/Menu/Start" to="." method="_on_start_pressed"]
+[connection signal="pressed" from="Center/Menu/Quit" to="." method="_on_quit_pressed"]
