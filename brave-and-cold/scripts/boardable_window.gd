@@ -9,6 +9,7 @@ extends StaticBody3D
 
 
 func _ready() -> void:
+	add_to_group("attracting_windows")
 	$Pane.material_override = $Pane.material_override.duplicate()
 	_apply_state()
 

@@ -17,6 +17,8 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+NoiseEvents="*res://scripts/noise.gd"
+
 Stamina="*res://scripts/stamina.gd"
 Temperature="*res://scripts/temperature.gd"
 
