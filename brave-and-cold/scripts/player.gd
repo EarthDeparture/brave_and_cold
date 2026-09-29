@@ -4,6 +4,8 @@ extends CharacterBody3D
 @export var sprint_speed: float = 8.0
 @export var mouse_sensitivity: float = 0.002
 
+var footstep_remaining: float = 0.0
+
 @onready var camera: Camera3D = $Camera3D
 
 
@@ -38,7 +40,14 @@ func _physics_process(delta: float) -> void:
 		Stamina.drain(sprint_cost)
 	velocity.x = direction.x * speed
 	velocity.z = direction.z * speed
+	var previous_position := global_position
 	move_and_slide()
+	footstep_remaining = maxf(0.0, footstep_remaining - delta)
+	var horizontal_travel := Vector2(global_position.x - previous_position.x, global_position.z - previous_position.z)
+	if input_direction != Vector2.ZERO and is_on_floor() and horizontal_travel.length() > 0.001 and footstep_remaining <= 0.0:
+		var sprinting := speed == sprint_speed
+		NoiseEvents.emit_noise(global_position, 18.0 if sprinting else 8.0)
+		footstep_remaining = 0.3 if sprinting else 0.5
 
 
 func _update_temperature_exposure() -> void:
