@@ -1,18 +1,3 @@
-# Godot 4+ editor/import artifacts
+# Godot 4+ specific ignores
 .godot/
-the-brave-and-the-cold/android/
-
-# .NET / C# build output
-bin/
-obj/
-.vs/
-*.user
-
-# Blender backup files
-*.blend1
-
-# Look-dev screenshot output
-screenshots/
-
-# OS noise
-Thumbs.db
+/android/

@@ -1,0 +1,14 @@
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\bin\Debug\net10.0\sim_check.exe
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\bin\Debug\net10.0\sim_check.deps.json
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\bin\Debug\net10.0\sim_check.runtimeconfig.json
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\bin\Debug\net10.0\sim_check.dll
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\bin\Debug\net10.0\sim_check.pdb
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\obj\Debug\net10.0\sim_check.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\obj\Debug\net10.0\sim_check.AssemblyInfoInputs.cache
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\obj\Debug\net10.0\sim_check.AssemblyInfo.cs
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\obj\Debug\net10.0\sim_check.csproj.CoreCompileInputs.cache
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\obj\Debug\net10.0\sim_check.dll
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\obj\Debug\net10.0\refint\sim_check.dll
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\obj\Debug\net10.0\sim_check.pdb
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\obj\Debug\net10.0\sim_check.genruntimeconfig.cache
+C:\Users\parst\Development\game\brave_and_cold\tools\sim_check\obj\Debug\net10.0\ref\sim_check.dll
