@@ -12,11 +12,12 @@ var has_target := false
 
 
 func _ready() -> void:
+	add_to_group("zombies")
 	NoiseEvents.emitted.connect(_hear_noise)
 
 
 func _hear_noise(location: Vector3, radius: float) -> void:
-	if global_position.distance_to(location) <= radius:
+	if global_position.distance_to(location) <= radius * DayNight.aggro_multiplier:
 		noise_position = location
 		noise_remaining = noise_memory
 
@@ -29,7 +30,8 @@ func _update_target(delta: float) -> void:
 		agent.target_position = noise_position
 		has_target = true
 		return
-	var nearest := light_detection_radius * light_detection_radius
+	var detection_radius := light_detection_radius * DayNight.aggro_multiplier
+	var nearest := detection_radius * detection_radius
 	for window in get_tree().get_nodes_in_group("attracting_windows"):
 		if window.boarded:
 			continue

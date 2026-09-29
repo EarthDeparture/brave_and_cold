@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="1_hud"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
@@ -9,6 +9,8 @@
 [ext_resource type="Script" path="res://scripts/cottage_navigation.gd" id="5_navigation"]
 
 [ext_resource type="PackedScene" path="res://scenes/wood_source.tscn" id="6_wood"]
+
+[ext_resource type="Script" path="res://scripts/zombie_spawner.gd" id="7_spawner"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 
@@ -64,3 +66,6 @@ position = Vector3(2, 0.3, 7)
 
 [node name="Deadfall2" parent="." instance=ExtResource("6_wood")]
 position = Vector3(-3, 0.3, 9)
+
+[node name="ZombieSpawner" type="Node3D" parent="."]
+script = ExtResource("7_spawner")
