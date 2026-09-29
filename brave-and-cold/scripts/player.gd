@@ -19,6 +19,7 @@ var footstep_remaining: float = 0.0
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	add_to_group("players")
+	get_parent().ready.connect(_update_temperature_exposure, CONNECT_ONE_SHOT)
 
 
 func add_wood(amount: int) -> void:
@@ -88,11 +89,12 @@ func _physics_process(delta: float) -> void:
 
 
 func _update_temperature_exposure() -> void:
-	Temperature.is_outdoors = true
+	var outdoors := true
 	for shelter in get_tree().get_nodes_in_group("temperature_shelters"):
 		if shelter.contains_point(global_position):
-			Temperature.is_outdoors = false
+			outdoors = false
 			break
+	Temperature.is_outdoors = outdoors
 
 
 func _interact() -> void:

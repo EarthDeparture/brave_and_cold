@@ -36,4 +36,21 @@ Manual checks (restart the game between cases):
 - Automated tests cover a large clock step and fatal cold at the final dawn:
   death takes precedence and later events cannot replace the result.
 
-There is no restart/menu flow in this change; relaunch to play again.
+Use R or the restart button after either outcome to start a fresh run.
+
+## Outside-loop verification
+
+scripts/game_outcome.gd already listens to player death, freezing, and dawn
+without restricting player location; no production outcome change was needed.
+Tests now explicitly place the player outdoors for victory, fatal temperature
+drain, and freezing on the final dawn. Existing physical zombie contact coverage
+also takes place outdoors. First-result protection and restart remain covered.
+
+Godot 4.5.1 import and these suites passed after the hookup: test_hud.gd,
+test_game_outcome.gd, test_temperature.gd, test_day_night.gd, test_player.gd,
+test_firewood.gd, test_cottage.gd. test_zombie.gd passed when rerun alone;
+the initial concurrent run failed its navigation-route assertion.
+
+Human review pending: while carrying wood outdoors, separately trigger freezing,
+zombie contact, and the final dawn. Verify the result, paused world, cursor,
+and restart. The separate planner checklist is still unavailable.

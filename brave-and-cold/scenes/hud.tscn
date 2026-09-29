@@ -40,10 +40,17 @@ offset_right = 600.0
 offset_bottom = 170.0
 mouse_filter = 2
 
-[node name="WarningLabel" type="Label" parent="."]
+[node name="ExposureLabel" type="Label" parent="."]
 offset_left = 16.0
 offset_top = 176.0
 offset_right = 600.0
-offset_bottom = 258.0
+offset_bottom = 202.0
+mouse_filter = 2
+
+[node name="WarningLabel" type="Label" parent="."]
+offset_left = 16.0
+offset_top = 208.0
+offset_right = 700.0
+offset_bottom = 330.0
 mouse_filter = 2
 modulate = Color(1, 0.7, 0.3, 1)

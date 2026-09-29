@@ -21,6 +21,8 @@ func _ready() -> void:
 	_on_wood_changed(player.wood)
 	Stamina.stamina_changed.connect(_on_stamina_changed)
 	_on_stamina_changed(Stamina.current_stamina, Stamina.max_stamina)
+	Temperature.exposure_changed.connect(_on_exposure_changed)
+	_on_exposure_changed(Temperature.is_outdoors)
 	Temperature.temperature_changed.connect(_on_temperature_changed)
 	_on_temperature_changed(Temperature.current_temperature, Temperature.max_temperature)
 	var fireplace = get_parent().get_node("Cottage/Fireplace")
@@ -47,7 +49,12 @@ func _on_stamina_changed(current: float, _maximum: float) -> void:
 func _on_wood_changed(amount: int) -> void:
 	wood_amount = amount
 	_update_warnings()
-	$WoodLabel.text = "Wood: %d | E: gather / fuel fire / board window" % amount
+	$WoodLabel.text = "Wood: %d carried | E: gather / fuel fire / board window" % amount
+
+
+func _on_exposure_changed(outdoors: bool) -> void:
+	$ExposureLabel.text = "Outside: exposed" if outdoors else "Inside: sheltered"
+	_update_warnings()
 
 
 func _update_day_state() -> void:
@@ -57,6 +64,8 @@ func _update_day_state() -> void:
 
 func _update_warnings() -> void:
 	var warnings: PackedStringArray = []
+	if Temperature.is_outdoors:
+		warnings.append("DANGER: exposed to cold and zombies — return to shelter")
 	if DayNight.is_night:
 		warnings.append("NIGHT: colder, more zombies")
 	if wood_amount <= low_wood_threshold:
