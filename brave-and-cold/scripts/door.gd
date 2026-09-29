@@ -27,22 +27,27 @@ func _ready() -> void:
 
 
 func interact(player: Node) -> void:
-	if broken:
-		if player.consume_wood():
-			broken = false
-			hits_taken = 0
-			boarded = false
-			is_open = false
-			_apply_state()
+	if player.is_dead or player.work_remaining > 0.0:
 		return
-	if boarded:
+	if broken:
+		player.start_barrier_work(self, "repair")
+	elif boarded:
 		boarded = false
-	elif not is_open and Input.is_action_pressed("sprint") and player.consume_wood():
-		boarded = true
-	elif is_open:
-		is_open = false
+	elif not is_open and Input.is_action_pressed("sprint"):
+		player.start_barrier_work(self, "board")
 	else:
-		is_open = true
+		is_open = not is_open
+
+
+func complete_barrier_work(player: Node, action: String) -> void:
+	if action == "repair" and broken and player.consume_wood():
+		broken = false
+		hits_taken = 0
+		boarded = false
+		is_open = false
+		_apply_state()
+	elif action == "board" and not broken and not boarded and not is_open and player.consume_wood():
+		boarded = true
 
 
 func take_hit() -> void:

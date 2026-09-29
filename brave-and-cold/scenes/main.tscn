@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="1_hud"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
@@ -13,6 +13,8 @@
 [ext_resource type="Script" path="res://scripts/zombie_spawner.gd" id="7_spawner"]
 
 [ext_resource type="Script" path="res://scripts/game_outcome.gd" id="8_outcome"]
+
+[ext_resource type="PackedScene" path="res://scenes/hammer_pickup.tscn" id="9_hammer"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 
@@ -72,3 +74,6 @@ position = Vector3(-3, 0.3, 9)
 
 [node name="ZombieSpawner" type="Node3D" parent="."]
 script = ExtResource("7_spawner")
+
+[node name="Hammer" parent="." instance=ExtResource("9_hammer")]
+position = Vector3(4, 0.5, 8)

@@ -6,6 +6,15 @@ extends CharacterBody3D
 
 signal died(reason: String)
 signal wood_changed(amount: int)
+signal tool_changed(has_hammer: bool)
+signal work_changed(seconds_remaining: float)
+
+const BARRIER_WORK_SECONDS := 2.0
+var has_hammer := false
+var work_remaining := 0.0
+var _work_target: Node
+var _work_action := ""
+var _work_origin := Vector3.ZERO
 
 var is_dead := false
 
@@ -35,10 +44,50 @@ func consume_wood() -> bool:
 	return true
 
 
+func acquire_hammer() -> void:
+	if has_hammer or is_dead:
+		return
+	has_hammer = true
+	tool_changed.emit(has_hammer)
+
+
+func start_barrier_work(target: Node, action: String) -> void:
+	if is_dead or get_tree().paused or work_remaining > 0.0 or wood <= 0:
+		return
+	_work_target = target
+	_work_action = action
+	_work_origin = global_position
+	work_remaining = BARRIER_WORK_SECONDS / (2.0 if has_hammer else 1.0)
+	work_changed.emit(work_remaining)
+
+
+func cancel_work() -> void:
+	work_remaining = 0.0
+	_work_target = null
+	_work_action = ""
+	work_changed.emit(0.0)
+
+
+func _advance_work(delta: float) -> void:
+	if work_remaining <= 0.0 or get_tree().paused:
+		return
+	if is_dead or not is_instance_valid(_work_target) or global_position.distance_to(_work_origin) > 0.5:
+		cancel_work()
+		return
+	work_remaining = maxf(0.0, work_remaining - maxf(delta, 0.0))
+	work_changed.emit(work_remaining)
+	if work_remaining == 0.0:
+		var target := _work_target
+		var action := _work_action
+		cancel_work()
+		target.complete_barrier_work(self, action)
+
+
 func die(reason: String) -> void:
 	if is_dead:
 		return
 	is_dead = true
+	cancel_work()
 	velocity = Vector3.ZERO
 	died.emit(reason)
 
@@ -60,6 +109,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	if is_dead or get_tree().paused:
 		return
+	_advance_work(delta)
 	_update_temperature_exposure()
 	if not is_on_floor():
 		velocity += get_gravity() * delta
@@ -98,6 +148,8 @@ func _update_temperature_exposure() -> void:
 
 
 func _interact() -> void:
+	if is_dead or get_tree().paused or work_remaining > 0.0:
+		return
 	var start := camera.global_position
 	var query := PhysicsRayQueryParameters3D.create(start, start - camera.global_basis.z * 3.0)
 	query.collision_mask = 3

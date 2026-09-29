@@ -17,6 +17,10 @@ func _ready() -> void:
 	DayNight.dusk.connect(_update_day_state)
 	_update_day_state()
 	var player = get_parent().get_node("Player")
+	player.tool_changed.connect(_on_tool_changed)
+	player.work_changed.connect(_on_work_changed)
+	_on_tool_changed(player.has_hammer)
+	_on_work_changed(player.work_remaining)
 	player.wood_changed.connect(_on_wood_changed)
 	_on_wood_changed(player.wood)
 	Stamina.stamina_changed.connect(_on_stamina_changed)
@@ -76,3 +80,11 @@ func _update_warnings() -> void:
 		warnings.append("COLD: warm up by a lit fire")
 	warning_label.text = "\n".join(warnings)
 	warning_label.visible = not warnings.is_empty()
+
+
+func _on_tool_changed(has_hammer: bool) -> void:
+	$ToolLabel.text = "Tool: Hammer — board/repair 1s" if has_hammer else "Tool: Hands — board/repair 2s; find a hammer outside"
+
+
+func _on_work_changed(seconds_remaining: float) -> void:
+	$WorkLabel.text = "Working: %.1fs — stay still (moving cancels)" % seconds_remaining if seconds_remaining > 0.0 else ""

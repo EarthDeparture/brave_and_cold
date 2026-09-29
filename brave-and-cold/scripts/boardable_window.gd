@@ -19,16 +19,23 @@ func _ready() -> void:
 
 
 func interact(player: Node) -> void:
-	if broken:
-		if player.consume_wood():
-			broken = false
-			hits_taken = 0
-			boarded = false
-			_apply_state()
+	if player.is_dead or player.work_remaining > 0.0:
 		return
-	if boarded:
+	if broken:
+		player.start_barrier_work(self, "repair")
+	elif boarded:
 		boarded = false
-	elif player.consume_wood():
+	else:
+		player.start_barrier_work(self, "board")
+
+
+func complete_barrier_work(player: Node, action: String) -> void:
+	if action == "repair" and broken and player.consume_wood():
+		broken = false
+		hits_taken = 0
+		boarded = false
+		_apply_state()
+	elif action == "board" and not broken and not boarded and player.consume_wood():
 		boarded = true
 
 
