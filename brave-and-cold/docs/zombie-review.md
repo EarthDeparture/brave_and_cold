@@ -13,8 +13,13 @@ can call `NoiseEvents.emit_noise(world_position, radius)`.
 Navigation covers the flat exterior ground, excluding the cottage footprint with
 wall clearance. Interior noise is projected onto that exterior navigation mesh;
 zombies investigate from outside. The mesh bounds in `cottage_navigation.gd`
-must be updated if terrain or the cottage footprint changes. No attacks,
-barricade destruction, line-of-sight filtering, or crowd avoidance are implemented.
+must be updated if terrain or the cottage footprint changes. Zombies attack visible
+unboarded windows within 2 metres once per second; three hits break the glass.
+Subsequent attacks can kill a player within 3 metres through the breach, with
+walls blocking the attack ray. Zombies remain outside. Boards prevent attacks,
+including on broken windows; removing boards exposes the existing breach.
+The interaction collider remains in place so broken windows can be boarded.
+Barricade destruction and crowd avoidance are not implemented.
 
 Human review required:
 - Run the main scene and watch the zombie route around the walls to the lit window.
@@ -23,11 +28,17 @@ Human review required:
 - Walk/sprint near the zombie: it should investigate the latest footstep position.
 - Stop moving: after four seconds, it should return to a lit window or remain idle.
 - Confirm movement and stopping look acceptable and walls are never crossed.
+- Leave a window unboarded: verify the glass disappears after three attacks.
+- Stand inside near the breach: verify the next attack triggers game over.
+- Board a broken window: verify protection; remove boards and verify danger returns.
+- Stand farther inside or behind a wall: verify breach attacks cannot reach you.
 
 Implementation files: `scripts/zombie.gd`, `scripts/noise.gd`,
 `scripts/cottage_navigation.gd`, `scripts/player.gd`,
 `scripts/boardable_window.gd`, `scenes/zombie.tscn`, `scenes/main.tscn`,
-`project.godot`. New coverage: `tests/test_zombie.gd`.
+`project.godot`. Coverage: `tests/test_zombie.gd` and
+`tests/test_window_breach.gd` (cooldown, glass damage, reboarding, distance,
+wall occlusion, noise priority, and indoor death/game over).
 
 Automated checks (workspace root, Godot 4.5.1):
 ```
@@ -36,6 +47,8 @@ godot --headless --path brave-and-cold --script res://tests/test_zombie.gd
 godot --headless --path brave-and-cold --script res://tests/test_player.gd
 godot --headless --path brave-and-cold --script res://tests/test_cottage.gd
 godot --headless --path brave-and-cold --script res://tests/test_temperature.gd
+godot --headless --path brave-and-cold --script res://tests/test_window_breach.gd
+godot --headless --path brave-and-cold --script res://tests/test_game_outcome.gd
 ```
 
 The existing `tests/run_tests.gd` suite cannot compile because

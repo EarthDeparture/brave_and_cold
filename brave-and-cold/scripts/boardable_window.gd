@@ -1,6 +1,10 @@
 extends StaticBody3D
 ## Each window owns its material so boarding never changes another window.
 
+@export var hits_to_break: int = 3
+var hits_taken := 0
+var broken := false
+
 @export var boarded: bool = false:
 	set(value):
 		boarded = value
@@ -21,7 +25,18 @@ func interact(player: Node) -> void:
 		boarded = true
 
 
+func take_hit() -> void:
+	if boarded or broken:
+		return
+	hits_taken += 1
+	if hits_taken >= hits_to_break:
+		broken = true
+		_apply_state()
+
+
 func _apply_state() -> void:
+	$Pane.visible = not broken
+	# Keep the interaction collider so broken windows can still be boarded.
 	$Boards.visible = boarded
 	$LightBleed.visible = not boarded
 	$LightBleed.light_energy = 0.0 if boarded else 1.5

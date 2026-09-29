@@ -50,6 +50,7 @@ func _run() -> void:
 		await physics_frame
 	_check(zombie.global_position.distance_to(start) > 8.0, "zombie follows route")
 	_check(zombie.global_position.distance_to(left.global_position) < 2.5, "zombie reaches exterior window")
+	_check(left.broken, "zombie breaks window after navigating to it")
 	left.boarded = true
 	await physics_frame
 	await physics_frame
