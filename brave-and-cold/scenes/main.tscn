@@ -1,7 +1,9 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="1_hud"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
+
+[ext_resource type="PackedScene" path="res://scenes/cottage.tscn" id="3_cottage"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 
@@ -13,7 +15,7 @@ background_mode = 2
 sky = SubResource("Sky")
 ambient_light_source = 3
 ambient_light_color = Color(0.7, 0.8, 1, 1)
-ambient_light_energy = 0.5
+ambient_light_energy = 0.12
 
 [sub_resource type="PlaneMesh" id="GroundMesh"]
 size = Vector2(100, 100)
@@ -43,3 +45,5 @@ shape = SubResource("GroundShape")
 position = Vector3(0, 0.1, 4)
 
 [node name="HUD" parent="." instance=ExtResource("1_hud")]
+
+[node name="Cottage" parent="." instance=ExtResource("3_cottage")]

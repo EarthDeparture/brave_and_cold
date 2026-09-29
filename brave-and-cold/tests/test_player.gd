@@ -58,7 +58,8 @@ func _run() -> void:
 	_check(Input.mouse_mode == Input.MOUSE_MODE_VISIBLE, "escape releases mouse")
 	player.free()
 	var world = load("res://scenes/main.tscn").instantiate()
-	world.get_node("Player").position.y = 3.0
+	# Start below the cottage ceiling, with room for the player capsule.
+	world.get_node("Player").position.y = 1.5
 	root.add_child(world)
 	for frame in range(60):
 		await physics_frame
