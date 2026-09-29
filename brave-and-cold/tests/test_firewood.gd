@@ -37,6 +37,31 @@ func _run() -> void:
 	player.camera.look_at(source.global_position)
 	await physics_frame
 	await physics_frame
+	# A solid object in the sightline must prevent gathering through it.
+	var blocker := StaticBody3D.new()
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(2, 3, 0.2)
+	collision.shape = shape
+	blocker.add_child(collision)
+	world.add_child(blocker)
+	blocker.position = Vector3(2, 1.5, 8)
+	await physics_frame
+	await physics_frame
+	player._interact()
+	_check(player.wood == 0 and source.wood_remaining == 5, "obstructed gathering rejected")
+	blocker.free()
+	await physics_frame
+	await physics_frame
+	var gather := InputEventKey.new()
+	gather.physical_keycode = KEY_E
+	gather.keycode = KEY_E
+	gather.pressed = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	player._unhandled_input(gather)
+	_check(player.wood == 0, "released mouse prevents gathering")
+	_check(gather.is_action_pressed("interact"), "physical E is mapped to interaction")
+	# Headless DisplayServer cannot capture the mouse; exercise the ray directly.
 	player._interact()
 	_check(player.wood == 1 and source.wood_remaining == 4, "aimed gathering yields wood")
 	_check(stamina.current_stamina == 85.0 and gather_noises == 1, "gathering drains stamina and emits noise")
@@ -49,14 +74,23 @@ func _run() -> void:
 	_check(player.wood == 5 and source.wood_remaining == 0, "source finite and cannot duplicate wood")
 	_check(stamina.current_stamina == 25.0 and gather_noises == 5, "empty source costs no stamina and emits no noise")
 	_check(world.get_node("HUD/WoodLabel").text.begins_with("Wood: 5"), "inventory HUD updates")
+	_check(source.get_node("Prompt").text == "No wood remaining", "depleted prompt is explicit")
+	var second_source = world.get_node("Deadfall2")
+	_check(second_source.wood_remaining == 5, "deadfalls have independent stock")
+	player.position = Vector3(-3, 0, 11)
+	player.camera.look_at(second_source.global_position)
+	await physics_frame
+	await physics_frame
+	player._interact()
+	_check(player.wood == 6 and second_source.wood_remaining == 4, "second outdoor source is reachable by interaction")
 	player.position = Vector3(0, 0, -2)
 	player.camera.look_at(fire.global_position)
 	await physics_frame
 	await physics_frame
 	player._interact()
-	_check(player.wood == 4 and fire.fuel_remaining == 20.0, "aimed fueling consumes one wood")
+	_check(player.wood == 5 and fire.fuel_remaining == 20.0, "aimed fueling consumes one wood")
 	fire.interact(player)
-	_check(player.wood == 3 and fire.fuel_remaining == 40.0, "refueling extends burn")
+	_check(player.wood == 4 and fire.fuel_remaining == 40.0, "refueling extends burn")
 	temperature.current_temperature = 0.0
 	fire.advance(2.0)
 	_check(temperature.current_temperature == 10.0 and not temperature.is_frozen, "nearby heat restores warmth and clears freezing")

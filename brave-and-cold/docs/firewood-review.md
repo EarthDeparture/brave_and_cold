@@ -18,3 +18,26 @@ Human review required:
 No separate planner brief was supplied or found, so its file/test checklist could not be verified. Human visual/playability review remains pending. Deadfall and flame visuals are blockouts. Heat uses radial distance; it does not test wall occlusion. Existing zombie navigation remains exterior-only.
 
 Validation: Godot 4.5.1 headless import passed. Firewood, player, cottage, temperature and zombie suites passed with zero failures. The existing renamer runner (`tests/run_tests.gd`) timed out after 60 seconds.
+
+## Exterior loop verification — 2026-09-29
+
+Reviewed every file in the file list above, plus `project.godot` and
+`scenes/player.tscn`. Existing gameplay code already supports gathering from
+both outdoor deadfalls and spending carried wood at the fireplace; no runtime
+change was needed.
+
+Extended `tests/test_firewood.gd` to verify solid obstacles block gathering,
+the physical E binding exists, released mouse prevents gathering, remaining
+stock and depletion prompts update, and the second deadfall has independent
+stock and can be gathered via the player raycast before returning fuel.
+
+Validation: Godot 4.5.1 headless import passed. Firewood, cottage, player, HUD,
+and temperature suites each passed with zero failures.
+
+Human review remains required for the walkthrough above, including walking
+through the doorway in both directions and checking that holding E gathers
+only once until released and pressed again. Headless Godot cannot capture the
+mouse, so successful captured-mouse input and key-repeat behavior were not
+automated; successful interactions exercise the player raycast directly.
+The separate planner brief is still missing, so its exact file/test checklist
+cannot be verified.
