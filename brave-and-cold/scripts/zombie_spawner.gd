@@ -1,19 +1,29 @@
 extends Node3D
-## Spawn on the exterior navigation mesh, bounded to prevent endless growth.
+## Night-only spawning on the exterior ring; each day increases frequency.
 
 const ZOMBIE = preload("res://scenes/zombie.tscn")
-@export var spawn_interval: float = 30.0
+@export var spawn_interval: float = 15.0
 @export var max_zombies: int = 12
 var spawn_progress: float = 0.0
 
 
 func _ready() -> void:
 	DayNight.time_advanced.connect(_advance)
+	DayNight.dawn.connect(_reset_progress)
+
+
+func _reset_progress() -> void:
+	spawn_progress = 0.0
 
 
 func _advance(seconds: float, night: bool) -> void:
-	spawn_progress += seconds * (2.0 if night else 1.0)
-	var interval := maxf(spawn_interval, 0.1)
+	if not night:
+		_reset_progress()
+		return
+	if not is_finite(seconds) or seconds <= 0.0:
+		return
+	spawn_progress += seconds
+	var interval := maxf(spawn_interval / maxi(DayNight.day_count, 1), 0.1)
 	if get_tree().get_nodes_in_group("zombies").size() >= max_zombies:
 		spawn_progress = 0.0
 		return

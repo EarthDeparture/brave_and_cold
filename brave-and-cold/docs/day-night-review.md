@@ -9,10 +9,10 @@ code change.
 
 At night, zombie light and noise detection ranges multiply by 1.5. Noise retains
 priority and its existing four-second memory. Dawn restores the base ranges.
-The main scene spawner creates one zombie every 30 seconds by day or 15 seconds
-at night, on a 30-metre exterior ring inside the current navigation mesh. Mixed
-phase intervals retain accumulated progress. The cap is 12 live zombies including
-the original scene zombie; time at the cap does not build a spawn backlog.
+The main scene spawner creates zombies only at night, every 15 / day_count
+seconds (minimum 0.1 seconds), on a 30-metre exterior ring inside the current
+navigation mesh. Dawn clears partial progress. The cap is 12 live zombies
+including the original scene zombie; time at the cap does not build a backlog.
 Temperature consumes the same clock's day/night segments, preserving accurate
 drain across transitions. Its standalone `advance` API remains for simulation.
 
@@ -36,7 +36,7 @@ Human review required:
   the DayNight autoload's day_length through the remote inspector.
 - Confirm distant zombies react to windows and footsteps at longer ranges at
   night, and return to ordinary ranges at dawn after remembered noise expires.
-- Confirm spawn cadence doubles at dusk and returns to normal at dawn.
+- Confirm spawning starts at dusk, stops at dawn, and accelerates each day.
 - Check spawned zombies navigate around the cottage and stop at boarded windows.
 - Confirm the population stops at 12 and temperature follows the same phase.
 

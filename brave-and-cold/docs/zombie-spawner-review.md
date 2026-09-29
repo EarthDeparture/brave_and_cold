@@ -1,0 +1,29 @@
+# Zombie spawner review
+
+Spawns only during night segments from DayNight, on the existing 30-metre ring
+around the cottage at the main scene origin. First-night interval is 15 seconds;
+subsequent intervals are 15 / day_count seconds, clamped to 0.1 seconds.
+The exported spawn_interval sets the first-night interval. The existing initial
+scene zombie remains present during daylight. Existing zombies persist at dawn.
+
+Dawn discards partial spawn progress. The existing 12-zombie cap includes the
+initial zombie and discards backlog; spawning resumes when population drops.
+Large clock steps use the day count of each night segment.
+
+Changed files: scripts/zombie_spawner.gd, tests/test_day_night.gd,
+docs/day-night-review.md, and this document.
+
+Automated verification: Godot headless editor import; test_day_night.gd
+(night-only spawning, day scaling, large steps, invalid time, dawn reset,
+ring placement, cap, resumption, cleanup); test_game_outcome.gd;
+test_zombie.gd; test_temperature.gd; test_player.gd; test_cottage.gd;
+test_firewood.gd.
+
+Human review required:
+- Observe no new zombies during daylight, then timed arrivals after dusk.
+- Compare first- and second-night cadence: 15 seconds versus 7.5 seconds.
+- Confirm arrivals surround the cottage and navigate around walls.
+- Confirm no new arrivals after dawn and population never exceeds 12.
+
+No planner brief was supplied or found, so its file/test checklist could not be
+verified. Human review remains pending.
