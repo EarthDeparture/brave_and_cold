@@ -23,6 +23,13 @@ func _ready() -> void:
 	_on_stamina_changed(Stamina.current_stamina, Stamina.max_stamina)
 	Temperature.temperature_changed.connect(_on_temperature_changed)
 	_on_temperature_changed(Temperature.current_temperature, Temperature.max_temperature)
+	var fireplace = get_parent().get_node("Cottage/Fireplace")
+	fireplace.lit_changed.connect(_on_fire_lit_changed)
+	_on_fire_lit_changed(fireplace.is_lit())
+
+
+func _on_fire_lit_changed(lit: bool) -> void:
+	$FireLabel.text = "Fire: Lit" if lit else "Fire: Unlit"
 
 
 func _on_temperature_changed(current: float, maximum: float) -> void:

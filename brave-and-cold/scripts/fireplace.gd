@@ -1,9 +1,16 @@
 extends StaticBody3D
 
+signal lit_changed(lit: bool)
+
 @export var seconds_per_wood: float = 20.0
 @export var heat_radius: float = 3.0
 @export var warmth_per_second: float = 5.0
 var fuel_remaining: float = 0.0
+var _was_lit: bool = false
+
+
+func is_lit() -> bool:
+	return fuel_remaining > 0.0
 
 
 func _ready() -> void:
@@ -33,6 +40,10 @@ func advance(delta: float) -> void:
 
 
 func _update_visuals() -> void:
-	$Flame.visible = fuel_remaining > 0.0
-	$Light.visible = fuel_remaining > 0.0
+	var lit := is_lit()
+	$Flame.visible = lit
+	$Light.visible = lit
 	$Prompt.text = "E: Add wood | %.0fs fuel" % fuel_remaining if fuel_remaining > 0.0 else "E: Light fire (1 wood)"
+	if lit != _was_lit:
+		_was_lit = lit
+		lit_changed.emit(lit)
