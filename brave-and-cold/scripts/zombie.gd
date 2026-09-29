@@ -1,5 +1,8 @@
 extends CharacterBody3D
 ## Visible outdoor players, then recent noise, then unboarded windows.
+enum ZombieType { WALKER, RUNNER }
+
+@export var zombie_type: ZombieType = ZombieType.WALKER
 @export var move_speed: float = 2.0
 @export var player_detection_radius: float = 12.0
 @export var light_detection_radius: float = 40.0
@@ -19,6 +22,11 @@ var has_target := false
 
 
 func _ready() -> void:
+	if zombie_type == ZombieType.RUNNER:
+		move_speed *= 1.5
+		var material := StandardMaterial3D.new()
+		material.albedo_color = Color(0.65, 0.25, 0.12)
+		$MeshInstance3D.material_override = material
 	add_to_group("zombies")
 	NoiseEvents.emitted.connect(_hear_noise)
 
