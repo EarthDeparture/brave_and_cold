@@ -60,7 +60,8 @@ func _on_dawn() -> void:
 		return
 	nights_survived += 1
 	if nights_survived >= maxi(nights_to_survive, 1):
-		_finish("YOU WIN\nSurvived %d nights." % nights_survived)
+		var duration := "1 night" if nights_survived == 1 else "%d nights" % nights_survived
+		_finish("YOU WIN\nDawn survived!\nSurvived %s." % duration)
 
 
 func _finish(message: String) -> void:
