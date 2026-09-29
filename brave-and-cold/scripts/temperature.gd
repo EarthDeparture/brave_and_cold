@@ -1,5 +1,5 @@
 extends Node
-## Survival warmth points, not degrees. A full day lasts day_length seconds.
+## Survival warmth points, not degrees. Runtime follows the DayNight clock.
 
 signal temperature_changed(current: float, maximum: float)
 signal frozen_changed(frozen: bool)
@@ -27,8 +27,18 @@ var is_night: bool = false
 var cycle_time: float = 0.0
 
 
-func _process(delta: float) -> void:
-	advance(delta)
+func _ready() -> void:
+	set_process(true)
+	DayNight.time_advanced.connect(_advance_world_time)
+
+
+func _advance_world_time(seconds: float, night: bool) -> void:
+	if not is_processing():
+		return
+	day_length = DayNight.day_length
+	_drain(seconds, night)
+	is_night = DayNight.is_night
+	cycle_time = fposmod(DayNight.cycle_time, maxf(day_length, 1.0))
 
 
 func advance(delta: float) -> void:
@@ -42,12 +52,16 @@ func advance(delta: float) -> void:
 		is_night = cycle_time >= half_day
 		var boundary := half_day * 2.0 if is_night else half_day
 		var step := minf(remaining, boundary - cycle_time)
-		var rate := maxf(drain_rate, 0.0)
-		if is_outdoors:
-			rate *= maxf(outdoor_multiplier, 1.0)
-		if is_night:
-			rate *= maxf(night_multiplier, 1.0)
-		current_temperature -= rate * step
+		_drain(step, is_night)
 		remaining -= step
 		cycle_time = fposmod(cycle_time + step, half_day * 2.0)
 	is_night = cycle_time >= half_day
+
+
+func _drain(seconds: float, night: bool) -> void:
+	var rate := maxf(drain_rate, 0.0)
+	if is_outdoors:
+		rate *= maxf(outdoor_multiplier, 1.0)
+	if night:
+		rate *= maxf(night_multiplier, 1.0)
+	current_temperature -= rate * seconds
