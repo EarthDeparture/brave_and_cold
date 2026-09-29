@@ -34,6 +34,7 @@ func _init() -> void:
 	DirAccess.remove_absolute(path)
 	_check(Renamer.rename_file(path, "health", "energy").error != OK, "missing file")
 	_check(Renamer.rename_file("user://test.txt", "health", "energy").error == ERR_INVALID_PARAMETER, "wrong extension")
+	_test_project_references()
 	if failures == 0:
 		print("Renamer tests passed.")
 	quit(0 if failures == 0 else 1)
@@ -43,3 +44,49 @@ func _check(condition: bool, label: String) -> void:
 	if not condition:
 		push_error("FAIL: " + label)
 		failures += 1
+
+
+func _write(path: String, source: String) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(source)
+	file.close()
+
+
+func _test_project_references() -> void:
+	var root := "res://tests/rename_fixture"
+	DirAccess.make_dir_recursive_absolute(root + "/nested")
+	var owner := root + "/owner.gd"
+	var consumer := root + "/nested/consumer.gd"
+	var unrelated := root + "/unrelated.gd"
+	var source := "class_name RenameFixtureOwner\nextends Node\nvar health = 10\n"
+	var uses := "extends Node\nvar actor: RenameFixtureOwner\n"
+	uses += "func run():\n\tvar health = 1\n\tprint(health, actor.health, RenameFixtureGlobal.health) # health\n"
+	uses += "\tprint(\"RenameFixtureGlobal.health\")\n"
+	uses += "func shadow(RenameFixtureGlobal, actor):\n\tprint(RenameFixtureGlobal.health, actor.health)\n"
+	uses += "func block():\n\tif true:\n\t\tvar RenameFixtureGlobal = {}\n\t\tprint(RenameFixtureGlobal.health)\n\tprint(RenameFixtureGlobal.health)\n"
+	uses += "func typed(other: RenameFixtureOwner):\n\tprint(other.health)\n"
+	var expected := uses.replace("health, actor.health, RenameFixtureGlobal.health", "health, actor.energy, RenameFixtureGlobal.energy")
+	expected = expected.replace("\n\tprint(RenameFixtureGlobal.health)\n", "\n\tprint(RenameFixtureGlobal.energy)\n")
+	expected = expected.replace("other.health", "other.energy")
+	_write(owner, source)
+	_write(consumer, uses)
+	_write(unrelated, "extends Node\nvar health = 2\nfunc run():\n\tprint(health, self.health)\n")
+	var untouched := FileAccess.get_file_as_string(unrelated)
+	ProjectSettings.set_setting("autoload/RenameFixtureGlobal", "*" + owner)
+	var result := Renamer.rename_file(owner, "health", "energy")
+	_check(result.error == OK, "project rename succeeds")
+	_check(result.replacements == 5, "project replacement count")
+	_check(result.files.size() == 2, "changed file report")
+	_check(FileAccess.get_file_as_string(owner) == source.replace("health", "energy"), "owner declaration")
+	_check(FileAccess.get_file_as_string(consumer) == expected, "nested references, typed receivers, parameter and block shadowing")
+	_check(FileAccess.get_file_as_string(unrelated) == untouched, "unrelated members and bare names untouched")
+	_write(owner, "extends Node\nfunc run():\n\tvar health = 1\n")
+	_write(consumer, uses)
+	result = Renamer.rename_file(owner, "health", "energy")
+	_check(result.error == OK and result.replacements == 1, "local declaration stays file-local")
+	_check(FileAccess.get_file_as_string(consumer) == uses, "local rename skips external files")
+	ProjectSettings.set_setting("autoload/RenameFixtureGlobal", null)
+	for path in [owner, consumer, unrelated]:
+		DirAccess.remove_absolute(path)
+	DirAccess.remove_absolute(root + "/nested")
+	DirAccess.remove_absolute(root)
