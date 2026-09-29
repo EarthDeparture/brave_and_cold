@@ -1,6 +1,5 @@
 extends Node
-## Call drain(drain_rate * delta) each frame while using stamina.
-## Regeneration resumes on frames without a drain request.
+## Shared stamina pool. Call drain() each frame while using stamina.
 
 signal stamina_changed(current: float, maximum: float)
 signal exhausted
@@ -9,11 +8,7 @@ signal exhausted
 	set(value):
 		max_stamina = maxf(value, 0.0)
 		current_stamina = current_stamina
-
-@export var drain_rate: float = 20.0
-@export var regen_rate: float = 10.0
-
-var current_stamina: float = 100.0:
+@export var current_stamina: float = 100.0:
 	set(value):
 		var previous := current_stamina
 		var was_exhausted := is_exhausted
@@ -23,13 +18,15 @@ var current_stamina: float = 100.0:
 			stamina_changed.emit(current_stamina, max_stamina)
 		if is_exhausted and not was_exhausted:
 			exhausted.emit()
+@export var drain_rate: float = 20.0
+@export var regen_rate: float = 10.0
 
 var is_exhausted: bool = false
 var _drained_since_process: bool = false
 
 
 func _ready() -> void:
-	current_stamina = max_stamina
+	current_stamina = current_stamina
 
 
 func _process(delta: float) -> void:
@@ -38,7 +35,8 @@ func _process(delta: float) -> void:
 	_drained_since_process = false
 
 
-## With no argument, drain one frame's worth at drain_rate.
+## With no argument, drains drain_rate per second using this frame's delta.
+## Explicit amounts are immediate costs; negative amounts other than -1 are ignored.
 func drain(amount: float = -1.0) -> void:
 	if amount == -1.0:
 		amount = maxf(drain_rate, 0.0) * get_process_delta_time()
@@ -49,9 +47,8 @@ func drain(amount: float = -1.0) -> void:
 
 
 func regain(amount: float) -> void:
-	if amount > 0.0:
-		current_stamina += amount
+	current_stamina += maxf(amount, 0.0)
 
 
 func can_use(amount: float) -> bool:
-	return amount >= 0.0 and current_stamina >= amount
+	return amount >= 0.0 and not is_exhausted and current_stamina >= amount
