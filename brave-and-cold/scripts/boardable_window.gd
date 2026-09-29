@@ -14,8 +14,11 @@ func _ready() -> void:
 	_apply_state()
 
 
-func toggle_boarded() -> void:
-	boarded = not boarded
+func interact(player: Node) -> void:
+	if boarded:
+		boarded = false
+	elif player.consume_wood():
+		boarded = true
 
 
 func _apply_state() -> void:
@@ -23,4 +26,4 @@ func _apply_state() -> void:
 	$LightBleed.visible = not boarded
 	$LightBleed.light_energy = 0.0 if boarded else 1.5
 	$Pane.material_override.emission_enabled = not boarded
-	$Prompt.text = "E: Remove boards" if boarded else "E: Board window"
+	$Prompt.text = "E: Remove boards" if boarded else "E: Board window (1 wood)"
