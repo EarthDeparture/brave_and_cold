@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://scenes/boardable_window.tscn" id="2"]
 
 [ext_resource type="PackedScene" path="res://scenes/fireplace.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/door.tscn" id="4"]
 
 [node name="Cottage" type="Node3D"]
 script = ExtResource("1")
@@ -21,3 +22,6 @@ shadow_enabled = true
 
 [node name="Fireplace" parent="." instance=ExtResource("3")]
 position = Vector3(0, 0.5, -4.0)
+
+[node name="Door" parent="." instance=ExtResource("4")]
+position = Vector3(-1, 0, 5)
