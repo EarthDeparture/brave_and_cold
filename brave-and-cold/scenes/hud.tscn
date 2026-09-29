@@ -25,3 +25,18 @@ offset_top = 80.0
 offset_right = 600.0
 offset_bottom = 106.0
 mouse_filter = 2
+
+[node name="DayLabel" type="Label" parent="."]
+offset_left = 16.0
+offset_top = 112.0
+offset_right = 600.0
+offset_bottom = 138.0
+mouse_filter = 2
+
+[node name="WarningLabel" type="Label" parent="."]
+offset_left = 16.0
+offset_top = 144.0
+offset_right = 600.0
+offset_bottom = 226.0
+mouse_filter = 2
+modulate = Color(1, 0.7, 0.3, 1)
