@@ -27,3 +27,17 @@ readable and disappear after recovery, with existing HUD information intact.
 
 No planner brief was supplied or found; its exact file/test checklist cannot be
 verified. Human visual review remains pending.
+
+## Outside-loop hookup
+
+Wood is explicitly labeled as carried inventory. ExposureLabel shows inside /
+outside; outside adds a cold/zombie danger warning alongside existing warnings.
+Temperature.exposure_changed updates the HUD immediately on shelter transitions,
+without waiting for warmth to drain. Player initializes exposure after the world
+is ready and publishes only the final shelter result each physics tick.
+
+Additional files: scripts/player.gd, scripts/temperature.gd.
+Automated HUD coverage includes carrying, leaving/returning to shelter without a
+warmth change, and recreating the HUD with the current exposure.
+Human review pending: gather outside, return to fuel/board, check count updates,
+then remain outside through dusk and verify stacked warnings fit the viewport.

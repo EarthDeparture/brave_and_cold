@@ -23,6 +23,9 @@ func _run() -> void:
 	clock.set_process(false)
 	temperature.drain_rate = 0.0
 	var world = _world()
+	world.get_node("Player").position = Vector3(0, 0.1, 7)
+	world.get_node("Player")._update_temperature_exposure()
+	_check(temperature.is_outdoors, "win run is outdoors")
 	world.nights_to_survive = 2
 	_check(not world.finished and not world.get_node("EndScreen").visible, "starts playing")
 	clock.advance(120.0)
@@ -36,7 +39,12 @@ func _run() -> void:
 	_check("YOU WIN" in world.result_label.text, "result cannot be overwritten")
 	world.free()
 	world = _world()
-	temperature.current_temperature = 0.0
+	world.get_node("Player").position = Vector3(0, 0.1, 7)
+	world.get_node("Player")._update_temperature_exposure()
+	temperature.drain_rate = 1.0
+	temperature.current_temperature = 1.0
+	clock.advance(1.0)
+	_check(temperature.is_outdoors, "fatal cold occurs outdoors")
 	_check(world.get_node("Player").is_dead and paused, "freezing is fatal")
 	_check("GAME OVER" in world.result_label.text and "froze" in world.result_label.text, "freeze reason visible")
 	_check(Input.mouse_mode == Input.MOUSE_MODE_VISIBLE, "end releases cursor")
@@ -47,6 +55,8 @@ func _run() -> void:
 	world = _world()
 	world.nights_to_survive = 1
 	temperature.drain_rate = 1.0
+	world.get_node("Player").position = Vector3(0, 0.1, 7)
+	world.get_node("Player")._update_temperature_exposure()
 	clock.cycle_time = 239.0
 	temperature.current_temperature = 0.1
 	clock.advance(1.0)

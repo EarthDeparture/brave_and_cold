@@ -3,6 +3,7 @@ extends Node
 
 signal temperature_changed(current: float, maximum: float)
 signal frozen_changed(frozen: bool)
+signal exposure_changed(outdoors: bool)
 
 @export var max_temperature: float = 100.0
 @export var drain_rate: float = 0.25
@@ -22,7 +23,12 @@ var current_temperature: float = 100.0:
 			frozen_changed.emit(is_frozen)
 
 var is_frozen: bool = false
-var is_outdoors: bool = true
+var is_outdoors: bool = true:
+	set(value):
+		if is_outdoors == value:
+			return
+		is_outdoors = value
+		exposure_changed.emit(is_outdoors)
 var is_night: bool = false
 var cycle_time: float = 0.0
 
