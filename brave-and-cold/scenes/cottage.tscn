@@ -1,7 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/cottage.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/boardable_window.tscn" id="2"]
+
+[ext_resource type="PackedScene" path="res://scenes/fireplace.tscn" id="3"]
 
 [node name="Cottage" type="Node3D"]
 script = ExtResource("1")
@@ -13,6 +15,9 @@ boarded = true
 [node name="HearthLight" type="OmniLight3D" parent="."]
 position = Vector3(0, 0.9, -3.9)
 light_color = Color(1, 0.4, 0.12, 1)
-light_energy = 2.5
+light_energy = 0.0
 omni_range = 6.0
 shadow_enabled = true
+
+[node name="Fireplace" parent="." instance=ExtResource("3")]
+position = Vector3(0, 0.5, -4.0)

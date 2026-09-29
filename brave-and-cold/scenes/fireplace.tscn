@@ -1,0 +1,40 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/fireplace.gd" id="1"]
+[sub_resource type="BoxMesh" id="Mesh"]
+size = Vector3(1.2, 0.5, 0.5)
+[sub_resource type="BoxShape3D" id="Shape"]
+size = Vector3(1.2, 0.5, 0.5)
+[sub_resource type="StandardMaterial3D" id="Material"]
+albedo_color = Color(0.25, 0.12, 0.05, 1)
+
+[sub_resource type="SphereMesh" id="FlameMesh"]
+radius = 0.22
+height = 0.7
+[sub_resource type="StandardMaterial3D" id="FlameMaterial"]
+albedo_color = Color(1, 0.3, 0.02, 1)
+emission_enabled = true
+emission = Color(1, 0.2, 0.01, 1)
+emission_energy_multiplier = 3.0
+[node name="Fireplace" type="StaticBody3D"]
+script = ExtResource("1")
+[node name="Mesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh")
+material_override = SubResource("Material")
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("Shape")
+[node name="Prompt" type="Label3D" parent="."]
+position = Vector3(0, 0.9, 0)
+billboard = 1
+font_size = 32
+pixel_size = 0.006
+[node name="Flame" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.4, 0)
+mesh = SubResource("FlameMesh")
+material_override = SubResource("FlameMaterial")
+[node name="Light" type="OmniLight3D" parent="."]
+position = Vector3(0, 0.7, 0)
+light_color = Color(1, 0.4, 0.12, 1)
+light_energy = 2.5
+omni_range = 6.0
+shadow_enabled = true

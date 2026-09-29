@@ -10,7 +10,9 @@ func _ready() -> void:
 	_box("Roof", Vector3(10.4, 0.3, 10.4), Vector3(0, 3.65, 0), wood)
 	_box("WestWall", Vector3(0.3, 3.6, 10), Vector3(-5, 1.8, 0), wood)
 	_box("EastWall", Vector3(0.3, 3.6, 10), Vector3(5, 1.8, 0), wood)
-	_box("SouthWall", Vector3(10, 3.6, 0.3), Vector3(0, 1.8, 5), wood)
+	for side in [-1, 1]:
+		_box("SouthWall", Vector3(4, 3.6, 0.3), Vector3(side * 3, 1.8, 5), wood)
+	_box("DoorLintel", Vector3(2, 1, 0.3), Vector3(0, 3.1, 5), wood)
 	_box("NorthSill", Vector3(10, 1, 0.3), Vector3(0, 0.5, -5), wood)
 	_box("NorthLintel", Vector3(10, 1.2, 0.3), Vector3(0, 3, -5), wood)
 	_box("NorthCenter", Vector3(2.6, 1.4, 0.3), Vector3(0, 1.7, -5), wood)
@@ -20,7 +22,6 @@ func _ready() -> void:
 	_box("Chimney", Vector3(2.0, 2, 0.6), Vector3(0, 2.6, -4.6), stone)
 	for side in [-1, 1]:
 		_box("HearthPillar", Vector3(0.3, 1.4, 0.8), Vector3(side * 0.85, 0.9, -4.5), stone)
-	_box("Embers", Vector3(1.2, 0.15, 0.5), Vector3(0, 0.3, -4.2), Color(1, 0.22, 0.025), true)
 
 
 func contains_point(world_position: Vector3) -> bool:

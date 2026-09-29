@@ -5,6 +5,9 @@ extends CanvasLayer
 
 
 func _ready() -> void:
+	var player = get_parent().get_node("Player")
+	player.wood_changed.connect(_on_wood_changed)
+	_on_wood_changed(player.wood)
 	Stamina.stamina_changed.connect(_on_stamina_changed)
 	_on_stamina_changed(Stamina.current_stamina, Stamina.max_stamina)
 	Temperature.temperature_changed.connect(_on_temperature_changed)
@@ -19,3 +22,7 @@ func _on_temperature_changed(current: float, maximum: float) -> void:
 
 func _on_stamina_changed(current: float, _maximum: float) -> void:
 	stamina_label.text = str(current)
+
+
+func _on_wood_changed(amount: int) -> void:
+	$WoodLabel.text = "Wood: %d | E: gather / fuel fire / board window" % amount

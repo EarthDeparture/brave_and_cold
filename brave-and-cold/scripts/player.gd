@@ -4,6 +4,10 @@ extends CharacterBody3D
 @export var sprint_speed: float = 8.0
 @export var mouse_sensitivity: float = 0.002
 
+signal wood_changed(amount: int)
+
+var wood: int = 0
+
 var footstep_remaining: float = 0.0
 
 @onready var camera: Camera3D = $Camera3D
@@ -11,6 +15,20 @@ var footstep_remaining: float = 0.0
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	add_to_group("players")
+
+
+func add_wood(amount: int) -> void:
+	wood += maxi(amount, 0)
+	wood_changed.emit(wood)
+
+
+func consume_wood() -> bool:
+	if wood <= 0:
+		return false
+	wood -= 1
+	wood_changed.emit(wood)
+	return true
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -63,5 +81,7 @@ func _interact() -> void:
 	var query := PhysicsRayQueryParameters3D.create(start, start - camera.global_basis.z * 3.0)
 	query.exclude = [get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	if not hit.is_empty() and hit.collider.has_method("toggle_boarded"):
+	if not hit.is_empty() and hit.collider.has_method("interact"):
+		hit.collider.interact(self)
+	elif not hit.is_empty() and hit.collider.has_method("toggle_boarded"):
 		hit.collider.toggle_boarded()
