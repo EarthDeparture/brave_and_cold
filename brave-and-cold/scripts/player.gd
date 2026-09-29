@@ -102,5 +102,3 @@ func _interact() -> void:
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty() and hit.collider.has_method("interact"):
 		hit.collider.interact(self)
-	elif not hit.is_empty() and hit.collider.has_method("toggle_boarded"):
-		hit.collider.toggle_boarded()
