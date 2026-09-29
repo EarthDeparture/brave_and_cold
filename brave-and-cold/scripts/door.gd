@@ -27,6 +27,14 @@ func _ready() -> void:
 
 
 func interact(player: Node) -> void:
+	if broken:
+		if player.consume_wood():
+			broken = false
+			hits_taken = 0
+			boarded = false
+			is_open = false
+			_apply_state()
+		return
 	if boarded:
 		boarded = false
 	elif not is_open and Input.is_action_pressed("sprint") and player.consume_wood():
@@ -38,7 +46,7 @@ func interact(player: Node) -> void:
 
 
 func take_hit() -> void:
-	if boarded or broken:
+	if boarded or broken or is_open:
 		return
 	hits_taken += 1
 	if hits_taken >= hits_to_break:
@@ -51,12 +59,20 @@ func _apply_state() -> void:
 	$Hinge.rotation.y = 0.0 if closed else deg_to_rad(90.0)
 	$CollisionShape3D.disabled = not closed
 	$Hinge/Panel.visible = not broken
-	# Keep the interaction collider so broken doors can still be boarded.
+	# Layer 2 remains ray-selectable without blocking moving bodies.
+	collision_layer = 2 if broken and not boarded else 1
+	collision_mask = 0
 	$Boards.visible = boarded
 	$Hinge/Panel.material_override.emission_enabled = not boarded and not is_open
-	if boarded:
+	if broken:
+		$Prompt.text = "E: Repair door (1 wood) — cold breach!"
+	elif boarded:
 		$Prompt.text = "E: Remove boards"
 	elif is_open:
 		$Prompt.text = "E: Close door"
 	else:
 		$Prompt.text = "E: Open door (Sprint+E: board, 1 wood)"
+
+
+func is_passable() -> bool:
+	return not boarded and (broken or is_open)

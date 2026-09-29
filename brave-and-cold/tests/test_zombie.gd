@@ -13,8 +13,10 @@ func _run() -> void:
 	root.add_child(world)
 	var player = world.get_node("Player")
 	player.set_physics_process(false)
+	player.position = Vector3(30, 0, 30)
 	var zombie = world.get_node("Zombie")
 	zombie.set_physics_process(false)
+	world.get_node("Cottage/Door").boarded = true
 	var left = world.get_node("Cottage/LeftWindow")
 	var right = world.get_node("Cottage/RightWindow")
 	var noise = root.get_node("NoiseEvents")
@@ -49,7 +51,7 @@ func _run() -> void:
 	for frame in range(1200):
 		await physics_frame
 	_check(zombie.global_position.distance_to(start) > 8.0, "zombie follows route")
-	_check(zombie.global_position.distance_to(left.global_position) < 2.5, "zombie reaches exterior window")
+	_check(zombie.global_position.z > -4.5 and absf(zombie.global_position.x + 2.2) < 0.5, "zombie walks through broken window")
 	_check(left.broken, "zombie breaks window after navigating to it")
 	left.boarded = true
 	await physics_frame

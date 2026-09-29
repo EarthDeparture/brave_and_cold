@@ -69,6 +69,7 @@ func _run() -> void:
 	source.interact(player)
 	door.interact(player)
 	_check(not door.boarded and player.wood == 1, "boarding requires holding sprint")
+	door.interact(player) # Close the door before barricading.
 	Input.action_press("sprint")
 	door.interact(player)
 	Input.action_release("sprint")

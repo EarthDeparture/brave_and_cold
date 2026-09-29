@@ -35,9 +35,11 @@ func _run() -> void:
 	player.add_wood(1)
 	window.interact(player)
 	zombie._attack_windows(10.0)
-	_check(window.boarded and player.wood == 0 and not player.is_dead, "boarding a breach protects player")
+	_check(not window.broken and window.hits_taken == 1 and player.wood == 0 and not player.is_dead, "repair restores glass and fresh hit counter")
+	for hit in range(window.hits_to_break):
+		window.take_hit()
 	window.interact(player)
-	_check(window.broken, "removing boards does not repair glass")
+	_check(window.broken, "repair requires wood")
 	player.position = Vector3(-2.2, 0, 0)
 	await physics_frame
 	zombie._attack_windows(10.0)

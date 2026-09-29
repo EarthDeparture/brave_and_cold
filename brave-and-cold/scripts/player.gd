@@ -92,7 +92,7 @@ func _update_temperature_exposure() -> void:
 	var outdoors := true
 	for shelter in get_tree().get_nodes_in_group("temperature_shelters"):
 		if shelter.contains_point(global_position):
-			outdoors = false
+			outdoors = shelter.has_breach() if shelter.has_method("has_breach") else false
 			break
 	Temperature.is_outdoors = outdoors
 
@@ -100,6 +100,7 @@ func _update_temperature_exposure() -> void:
 func _interact() -> void:
 	var start := camera.global_position
 	var query := PhysicsRayQueryParameters3D.create(start, start - camera.global_basis.z * 3.0)
+	query.collision_mask = 3
 	query.exclude = [get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty() and hit.collider.has_method("interact"):
