@@ -1,6 +1,7 @@
 extends SceneTree
 
 var failures := 0
+var gather_noises := 0
 
 
 func _init() -> void:
@@ -14,6 +15,12 @@ func _run() -> void:
 	root.add_child(world)
 	var player = world.get_node("Player")
 	player.set_physics_process(false)
+	var stamina = root.get_node("Stamina")
+	stamina.set_process(false)
+	stamina.current_stamina = 100.0
+	root.get_node("NoiseEvents").emitted.connect(func(_position: Vector3, radius: float):
+		if radius == 20.0:
+			gather_noises += 1)
 	var source = world.get_node("Deadfall")
 	var fire = world.get_node("Cottage/Fireplace")
 	fire.set_process(false)
@@ -57,10 +64,15 @@ func _run() -> void:
 	# Headless DisplayServer cannot capture the mouse; exercise the ray directly.
 	player._interact()
 	_check(player.wood == 1 and source.wood_remaining == 4, "aimed gathering yields wood")
-	_check(source.get_node("Prompt").text == "E: Gather wood (4)", "prompt reflects remaining stock")
+	_check(stamina.current_stamina == 85.0 and gather_noises == 1, "gathering drains stamina and emits noise")
+	stamina.current_stamina = 14.0
+	source.interact(player)
+	_check(player.wood == 1 and source.wood_remaining == 4 and gather_noises == 1, "insufficient stamina prevents gathering without noise or wood loss")
+	stamina.current_stamina = 85.0
 	for index in range(6):
 		source.interact(player)
 	_check(player.wood == 5 and source.wood_remaining == 0, "source finite and cannot duplicate wood")
+	_check(stamina.current_stamina == 25.0 and gather_noises == 5, "empty source costs no stamina and emits no noise")
 	_check(world.get_node("HUD/WoodLabel").text.begins_with("Wood: 5"), "inventory HUD updates")
 	_check(source.get_node("Prompt").text == "No wood remaining", "depleted prompt is explicit")
 	var second_source = world.get_node("Deadfall2")
