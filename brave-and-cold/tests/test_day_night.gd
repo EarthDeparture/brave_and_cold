@@ -35,6 +35,7 @@ func _run() -> void:
 	world.get_node("Player").set_physics_process(false)
 	var zombie = world.get_node("Zombie")
 	zombie.set_physics_process(false)
+	world.get_node("Cottage/Door").boarded = true
 	var window = world.get_node("Cottage/LeftWindow")
 	zombie.global_position = window.global_position + Vector3(50, 0, 0)
 	zombie._update_target(0.0)

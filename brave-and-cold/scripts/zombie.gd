@@ -35,11 +35,11 @@ func _update_target(delta: float) -> void:
 	target_player = _visible_outdoor_player()
 	has_target = false
 	if is_instance_valid(target_player):
-		agent.target_position = target_player.global_position
+		_set_destination(target_player.global_position)
 		has_target = true
 		return
 	if noise_remaining > 0.0:
-		agent.target_position = noise_position
+		_set_destination(noise_position)
 		has_target = true
 		return
 	var detection_radius := light_detection_radius * DayNight.aggro_multiplier
@@ -52,7 +52,16 @@ func _update_target(delta: float) -> void:
 			nearest = distance
 			target_window = window
 	if is_instance_valid(target_window):
-		agent.target_position = target_window.global_position
+		var destination: Vector3 = target_window.global_position
+		if target_window.is_passable():
+			var entrance: Vector3 = target_window.global_position
+			entrance.y = 0.0
+			entrance.z += 2.0 if entrance.z < 0.0 else -2.0
+			if target_window.get("is_open") != null:
+				entrance.x += 0.95
+			destination = entrance
+		if not target_window.is_passable() or agent.is_navigation_finished() or not agent.target_position.is_equal_approx(destination):
+			agent.target_position = destination
 		has_target = true
 
 
@@ -64,7 +73,7 @@ func _visible_outdoor_player() -> Node3D:
 			continue
 		var sheltered := false
 		for shelter in get_tree().get_nodes_in_group("temperature_shelters"):
-			if shelter.contains_point(player.global_position):
+			if shelter.contains_point(player.global_position) and not shelter.has_breach() and not shelter.contains_point(global_position):
 				sheltered = true
 				break
 		var distance := global_position.distance_squared_to(player.global_position)
@@ -113,7 +122,7 @@ func _attack_windows(delta: float) -> void:
 		var origin := global_position + Vector3.UP * 1.5
 		if origin.distance_to(window.global_position) > window_attack_range:
 			continue
-		var query := PhysicsRayQueryParameters3D.create(origin, window.global_position)
+		var query := PhysicsRayQueryParameters3D.create(origin, window.global_position, 3)
 		query.exclude = [get_rid()]
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
 		if hit.is_empty() or hit.collider != window:
@@ -130,5 +139,12 @@ func _attack_windows(delta: float) -> void:
 			query.exclude = [get_rid(), window.get_rid()]
 			hit = get_world_3d().direct_space_state.intersect_ray(query)
 			if not hit.is_empty() and hit.collider == player:
-				player.die("A zombie reached through a broken window.")
+				player.die("A zombie reached through a broken barrier.")
 		return
+
+
+func _set_destination(destination: Vector3) -> void:
+	# Preserve link traversal; repeatedly resetting the path can send an agent
+	# back to the exterior endpoint halfway through a breach.
+	if agent.is_navigation_finished() or not agent.target_position.is_equal_approx(destination):
+		agent.target_position = destination

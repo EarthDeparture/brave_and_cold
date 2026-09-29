@@ -13,7 +13,11 @@ func _ready() -> void:
 	for side in [-1, 1]:
 		_box("SouthWall", Vector3(4, 3.6, 0.3), Vector3(side * 3, 1.8, 5), wood)
 	_box("DoorLintel", Vector3(2, 1, 0.3), Vector3(0, 3.1, 5), wood)
-	_box("NorthSill", Vector3(10, 1, 0.3), Vector3(0, 0.5, -5), wood)
+	_box("NorthSill", Vector3(2.6, 1, 0.3), Vector3(0, 0.5, -5), wood)
+	for side in [-1, 1]:
+		_box("SillEnd", Vector3(1.9, 1, 0.3), Vector3(side * 4.05, 0.5, -5), wood)
+	for window in [$LeftWindow, $RightWindow]:
+		_box(window.name + "Sill", Vector3(1.8, 1, 0.3), Vector3(window.position.x, 0.5, -5), wood)
 	_box("NorthLintel", Vector3(10, 1.2, 0.3), Vector3(0, 3, -5), wood)
 	_box("NorthCenter", Vector3(2.6, 1.4, 0.3), Vector3(0, 1.7, -5), wood)
 	for side in [-1, 1]:
@@ -49,3 +53,18 @@ func _box(label: String, size: Vector3, location: Vector3, color: Color, glowing
 	collision.shape = shape
 	body.add_child(collision)
 	add_child(body)
+
+
+func has_breach() -> bool:
+	for barrier in get_children():
+		if barrier.is_in_group("attracting_windows") and barrier.broken and not barrier.boarded:
+			return true
+	return false
+
+
+func update_window_breach(window: Node3D) -> void:
+	var sill = get_node_or_null(str(window.name) + "Sill")
+	if sill:
+		sill.visible = not window.is_passable()
+		sill.collision_layer = 0 if window.is_passable() else 1
+		sill.collision_mask = 0
