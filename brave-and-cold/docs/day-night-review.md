@@ -13,6 +13,8 @@ The main scene spawner creates zombies only at night, every 15 / day_count
 seconds (minimum 0.1 seconds), on a 30-metre exterior ring inside the current
 navigation mesh. Dawn clears partial progress. The cap is 12 live zombies
 including the original scene zombie; time at the cap does not build a backlog.
+From night two, runners spawn with a 15% chance per additional night (60% cap);
+orange runners move at 3 m/s, versus green walkers at 2 m/s.
 Temperature consumes the same clock's day/night segments, preserving accurate
 drain across transitions. Its standalone `advance` API remains for simulation.
 
