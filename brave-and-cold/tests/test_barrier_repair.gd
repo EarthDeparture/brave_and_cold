@@ -31,6 +31,7 @@ func _run() -> void:
 		barrier.take_hit()
 		_check(barrier.hits_taken == barrier.hits_to_break, "broken barrier ignores more hits")
 		barrier.interact(player)
+		player._advance_work(2.0)
 		_check(barrier.broken and player.wood == 0, "empty inventory cannot repair")
 		player._update_temperature_exposure()
 		temperature.current_temperature = 100
@@ -47,6 +48,7 @@ func _run() -> void:
 		_check(not hit.is_empty() and hit.collider == barrier, "broken barrier remains selectable for repair")
 		player.add_wood(1)
 		barrier.interact(player)
+		player._advance_work(2.0)
 		_check(not barrier.broken and barrier.hits_taken == 0 and player.wood == 0, "one wood fully repairs barrier")
 		_check(not barrier.is_passable() and barrier.collision_layer == 1, "repair restores solid barrier")
 		player._update_temperature_exposure()
@@ -70,6 +72,7 @@ func _run() -> void:
 	zombie.set_physics_process(false)
 	player.add_wood(1)
 	door.interact(player)
+	player._advance_work(2.0)
 	zombie._update_target(0)
 	_check(zombie.target_player == player, "repair does not hide player from indoor zombie")
 	world.free()

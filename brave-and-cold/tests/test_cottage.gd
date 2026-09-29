@@ -20,6 +20,7 @@ func _run() -> void:
 	var player = world.get_node("Player")
 	player.set_physics_process(false)
 	left.interact(player)
+	player._advance_work(2.0)
 	_check(not left.boarded and player.wood == 0, "empty inventory cannot board")
 	_check(left.get_node("LightBleed").visible and not left.get_node("Boards").visible, "failed boarding preserves visuals")
 	_check(left.get_node("Prompt").text.contains("1 wood"), "prompt displays boarding cost")
@@ -29,6 +30,7 @@ func _run() -> void:
 	_check(player.wood == 3 and source.wood_remaining == 2, "gathered wood supplies boarding")
 	for index in range(4):
 		left.interact(player)
+		player._advance_work(2.0)
 		_check(player.wood == 2 - index / 2, "only boarding spends one wood; removal gives no refund")
 		_check(left.get_node("Boards").visible == left.boarded, "boards follow state")
 		_check(left.get_node("LightBleed").visible != left.boarded, "light visibility follows state")
@@ -39,16 +41,20 @@ func _run() -> void:
 	await physics_frame
 	await physics_frame
 	player._interact()
+	player._advance_work(2.0)
 	_check(not left.boarded and player.wood == 1, "distant interaction spends no wood")
 	player.position.z = -3
 	await physics_frame
 	await physics_frame
 	player._interact()
+	player._advance_work(2.0)
 	_check(left.boarded and player.wood == 0, "nearby aimed interaction consumes last wood")
 	_check(world.get_node("HUD/WoodLabel").text.begins_with("Wood: 0"), "boarding updates inventory HUD")
 	player._interact()
+	player._advance_work(2.0)
 	_check(not left.boarded and player.wood == 0, "removal works without wood and gives no refund")
 	player._interact()
+	player._advance_work(2.0)
 	_check(not left.boarded and player.wood == 0, "reboarding requires more wood")
 	var fire = cottage.get_node("Fireplace")
 	fire.interact(player)
@@ -56,6 +62,7 @@ func _run() -> void:
 	source.interact(player)
 	fire.interact(player)
 	left.interact(player)
+	player._advance_work(2.0)
 	_check(not left.boarded and player.wood == 0, "spent firewood cannot board window")
 	_check(cottage.has_node("Hearth") and cottage.has_node("Roof"), "shelter includes hearth and roof")
 	_check(cottage.get_node("HearthLight").light_energy == 0, "unfueled hearth starts dark")
@@ -63,19 +70,25 @@ func _run() -> void:
 	_check(not door.is_open and not door.boarded and door.get_node("CollisionShape3D").disabled == false,
 		"door starts closed and solid")
 	door.interact(player)
+	player._advance_work(2.0)
 	_check(door.is_open and door.get_node("CollisionShape3D").disabled, "interact opens the door")
 	door.interact(player)
+	player._advance_work(2.0)
 	_check(not door.is_open and not door.get_node("CollisionShape3D").disabled, "interact closes the open door")
 	source.interact(player)
 	door.interact(player)
+	player._advance_work(2.0)
 	_check(not door.boarded and player.wood == 1, "boarding requires holding sprint")
 	door.interact(player) # Close the door before barricading.
+	player._advance_work(2.0)
 	Input.action_press("sprint")
 	door.interact(player)
+	player._advance_work(2.0)
 	Input.action_release("sprint")
 	_check(door.boarded and player.wood == 0 and door.get_node("Boards").visible,
 		"sprint+interact boards the closed door")
 	door.interact(player)
+	player._advance_work(2.0)
 	_check(not door.boarded and door.is_in_group("attracting_windows"), "door unboards and attracts zombies like a window")
 	world.free()
 	print("Cottage tests: %d failures." % failures)

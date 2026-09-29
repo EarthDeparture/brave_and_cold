@@ -54,3 +54,17 @@ offset_right = 700.0
 offset_bottom = 330.0
 mouse_filter = 2
 modulate = Color(1, 0.7, 0.3, 1)
+
+[node name="ToolLabel" type="Label" parent="."]
+offset_left = 16.0
+offset_top = 340.0
+offset_right = 700.0
+offset_bottom = 366.0
+mouse_filter = 2
+
+[node name="WorkLabel" type="Label" parent="."]
+offset_left = 16.0
+offset_top = 372.0
+offset_right = 700.0
+offset_bottom = 398.0
+mouse_filter = 2
