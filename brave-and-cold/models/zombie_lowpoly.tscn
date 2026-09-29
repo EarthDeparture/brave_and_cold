@@ -1,0 +1,53 @@
+[gd_scene load_steps=10 format=3]
+
+[sub_resource type="StandardMaterial3D" id="SkinMat"]
+albedo_color = Color(0.36, 0.45, 0.27, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="ClothMat"]
+albedo_color = Color(0.22, 0.2, 0.18, 1)
+roughness = 1.0
+
+[sub_resource type="BoxMesh" id="TorsoMesh"]
+size = Vector3(0.5, 0.7, 0.3)
+
+[sub_resource type="BoxMesh" id="HeadMesh"]
+size = Vector3(0.32, 0.34, 0.32)
+
+[sub_resource type="BoxMesh" id="ArmMesh"]
+size = Vector3(0.16, 0.55, 0.16)
+
+[sub_resource type="BoxMesh" id="LegMesh"]
+size = Vector3(0.2, 0.75, 0.2)
+
+[node name="ZombieLowPoly" type="Node3D"]
+
+[node name="Torso" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+mesh = SubResource("TorsoMesh")
+material_override = SubResource("ClothMat")
+
+[node name="Head" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0)
+mesh = SubResource("HeadMesh")
+material_override = SubResource("SkinMat")
+
+[node name="ArmLeft" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7071, 0.7071, 0, -0.7071, 0.7071, -0.4, 1.25, -0.1)
+mesh = SubResource("ArmMesh")
+material_override = SubResource("SkinMat")
+
+[node name="ArmRight" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7071, 0.7071, 0, -0.7071, 0.7071, 0.4, 1.25, -0.1)
+mesh = SubResource("ArmMesh")
+material_override = SubResource("SkinMat")
+
+[node name="LegLeft" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.14, 0.375, 0)
+mesh = SubResource("LegMesh")
+material_override = SubResource("ClothMat")
+
+[node name="LegRight" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.14, 0.375, 0)
+mesh = SubResource("LegMesh")
+material_override = SubResource("ClothMat")

@@ -26,7 +26,8 @@ func _ready() -> void:
 		move_speed *= 1.5
 		var material := StandardMaterial3D.new()
 		material.albedo_color = Color(0.65, 0.25, 0.12)
-		$MeshInstance3D.material_override = material
+		for child: Node in $Model.find_children("*", "MeshInstance3D"):
+			(child as MeshInstance3D).material_override = material
 	add_to_group("zombies")
 	NoiseEvents.emitted.connect(_hear_noise)
 
