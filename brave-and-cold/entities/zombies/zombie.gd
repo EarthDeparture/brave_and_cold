@@ -174,7 +174,7 @@ func _process(delta: float) -> void:
 				if _cd <= 0.0 and _stagger <= 0.0:
 					_cd = COOLDOWN
 					grabs += 1
-					player.hurt(DAMAGE)
+					player.hurt(DAMAGE, "Torn apart by the infected")
 			var cb := _shut_cabin_with_player()
 			if cb != null:
 				# heard the player inside: pound on the door

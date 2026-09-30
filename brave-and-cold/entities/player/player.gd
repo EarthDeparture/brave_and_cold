@@ -41,6 +41,7 @@ var _ready_ground := false
 var frozen := false  # set by GameWorld for screenshots
 var health := 100.0
 var dead := false
+var death_cause := ""
 
 
 func setup(t: Terrain3D, s: SnowField, b: BodyTemperature, n: NoiseBus) -> void:
@@ -57,12 +58,13 @@ func setup(t: Terrain3D, s: SnowField, b: BodyTemperature, n: NoiseBus) -> void:
 	terrain.set_camera(cam)
 
 
-func hurt(amount: float) -> void:
+func hurt(amount: float, cause: String = "Killed") -> void:
 	if dead:
 		return
 	health = maxf(0.0, health - amount)
 	if health <= 0.0:
 		dead = true
+		death_cause = cause
 		frozen = true
 
 

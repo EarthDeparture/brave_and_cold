@@ -167,7 +167,7 @@ func _process(delta: float) -> void:
 				if _bite_cd <= 0.0:
 					_bite_cd = BITE_COOLDOWN
 					bites += 1
-					player.hurt(BITE_DAMAGE)
+					player.hurt(BITE_DAMAGE, "Mauled by a wolf")
 			if dist > GIVE_UP_DIST or (_state_t > 25.0 and dist > 35.0) or _stuck_t > 6.0:
 				_set_state(State.RETREAT)
 				var away := (global_position - pp)

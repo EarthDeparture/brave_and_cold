@@ -9,6 +9,7 @@ var info := ""
 var toast := ""
 var inv_text := ""
 var _toast_l: Label
+var _death_l: Label
 var _inv_l: Label
 var _bars: Control
 var player: Player
@@ -58,6 +59,15 @@ func setup(p: Player, b: BodyTemperature, s: SnowField, c: GameClock) -> void:
 	_inv_l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	_inv_l.add_theme_constant_override("outline_size", 5)
 	add_child(_inv_l)
+	_death_l = Label.new()
+	_death_l.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_death_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_death_l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_death_l.add_theme_font_size_override("font_size", 40)
+	_death_l.add_theme_color_override("font_color", Color(0.9, 0.85, 0.85))
+	_death_l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
+	_death_l.add_theme_constant_override("outline_size", 10)
+	add_child(_death_l)
 	_bars = Control.new()
 	_bars.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_bars.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -82,6 +92,7 @@ func _process(_d: float) -> void:
 	_stam_frac = player.stamina / 100.0
 	_core_frac = clampf((body.core - 30.0) / 7.0, 0.0, 1.0)
 	_warn = body.core < BodyTemperature.SHIVER
+	_death_l.text = ("YOU DIED\n" + player.death_cause + "\n\nPress R to try again") if player.dead else ""
 	_toast_l.text = toast
 	_inv_l.text = inv_text
 	_bars.queue_redraw()

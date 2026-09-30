@@ -105,6 +105,7 @@ func _ready() -> void:
 	_selftest = opts.has("selftest")
 	_wolftest = opts.has("wolftest")
 	_zombietest = opts.has("zombietest")
+	_force_death = opts.has("dead")
 	wolf_test_dist = float(opts.get("wdist", 22.0))
 	walk_secs = float(opts.get("walk", 0.0))
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if (out_path == "" and walk_secs == 0.0) else Input.MOUSE_MODE_VISIBLE
@@ -169,11 +170,15 @@ func _process(delta: float) -> void:
 	for cb in cabins:
 		fw = maxf(fw, cb.heat_at(player.position.x, player.position.z))
 	body.update(gs, clock.ambient_c(), wind, player.is_sheltered(), fw, player.activity, 0.0, false)
+	if body.core <= BodyTemperature.FATAL:
+		player.hurt(9999.0, "Froze to death")
 	_update_prompt()
 	if out_path != "" and _frames == 40:
 		get_viewport().get_texture().get_image().save_png(out_path)
 		print("SHOT_SAVED ", out_path, " hour=", clock.hour)
 		get_tree().quit()
+	if _force_death and _frames == 35:
+		player.hurt(999.0, "Mauled by a wolf")
 	if _zombietest and _frames > 30:
 		_zombietest_step(delta)
 	if _wolftest and _frames > 30:
@@ -381,6 +386,9 @@ func _inv_text() -> String:
 
 
 func _unhandled_input(e: InputEvent) -> void:
+	if e is InputEventKey and e.pressed and e.keycode == KEY_R and player.dead:
+		get_tree().reload_current_scene()
+		return
 	if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		_attack()
 		return
@@ -509,6 +517,7 @@ var _wt_last := -1
 
 
 var zombies: Array[Zombie] = []
+var _force_death := false
 var _zombietest := false
 var _zt := 0.0
 var _zt_spawned := false
