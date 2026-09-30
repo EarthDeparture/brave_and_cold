@@ -232,3 +232,7 @@ func _animate(delta: float) -> void:
 		_arms[0].rotation.x = reach + 0.08 * sin(_phase * 0.8)
 		_arms[1].rotation.x = reach + 0.08 * sin(_phase * 0.8 + 1.3)
 	_model.rotation.z = sin(_phase * 0.5) * 0.04
+
+
+func is_dead() -> bool:
+	return state == State.DEAD

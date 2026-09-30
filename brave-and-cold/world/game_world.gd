@@ -72,9 +72,10 @@ func _ready() -> void:
 	var sp := home if not opts.has("pos") else Vector2(float(String(opts["pos"]).split(",")[0]), float(String(opts["pos"]).split(",")[1]))
 	player.place(sp.x, sp.y)
 	_place_cabin(home)
-	if not opts.has("wolftest") and not opts.has("zombietest"):
+	if not opts.has("wolftest") and not opts.has("zombietest") and not opts.has("deertest"):
 		_spawn_wolves(int(opts.get("wolves", 3)), home, 70.0, 140.0)
 		_spawn_zombies(int(opts.get("zombies", 10)), home)
+		_spawn_deer(int(opts.get("deer", 6)), home)
 	player.cabins = cabins
 	if not cabins.is_empty():
 		if opts.has("stove"):
@@ -105,6 +106,7 @@ func _ready() -> void:
 	_selftest = opts.has("selftest")
 	_wolftest = opts.has("wolftest")
 	_zombietest = opts.has("zombietest")
+	_deertest = opts.has("deertest")
 	_force_death = opts.has("dead")
 	wolf_test_dist = float(opts.get("wdist", 22.0))
 	walk_secs = float(opts.get("walk", 0.0))
@@ -169,7 +171,12 @@ func _process(delta: float) -> void:
 	var fw := player.fire_w
 	for cb in cabins:
 		fw = maxf(fw, cb.heat_at(player.position.x, player.position.z))
+	body.metabolism_mult = needs.metabolism_mult()
 	body.update(gs, clock.ambient_c(), wind, player.is_sheltered(), fw, player.activity, 0.0, false)
+	needs.update(gs, player.activity, body.core)
+	var sd := needs.damage_per_s()
+	if sd > 0.0 and not player.dead:
+		player.hurt(sd * delta, 'Died of thirst' if needs.water <= 0.0 else 'Starved to death')
 	if body.core <= BodyTemperature.FATAL:
 		player.hurt(9999.0, "Froze to death")
 	_update_prompt()
@@ -181,6 +188,8 @@ func _process(delta: float) -> void:
 		player.hurt(999.0, "Mauled by a wolf")
 	if _zombietest and _frames > 30:
 		_zombietest_step(delta)
+	if _deertest and _frames > 30:
+		_deertest_step(delta)
 	if _wolftest and _frames > 30:
 		_wolftest_step(delta)
 	if _selftest and _frames == 30:
@@ -311,6 +320,7 @@ func _update_prompt() -> void:
 		inv = Inventory.new(body)
 		inv.add("wood", 2)
 		inv.add("matches", 1)
+		inv.needs = needs
 	_toast_t = maxf(0.0, _toast_t - get_process_delta_time())
 	if _toast_t <= 0.0:
 		hud.toast = ""
@@ -339,6 +349,12 @@ func _update_prompt() -> void:
 					inv.remove("wood")
 					cb.add_wood()
 					_say("Added firewood")},
+			{"pos": cb.stove_world_pos(), "r": 1.7, "text": "Cook meat", "hide": not (cb.is_lit() and inv.count('venison_raw') > 0), "act": func() -> void:
+				var n := inv.cook_all()
+				_say('Cooked %d venison' % n)},
+			{"pos": cb.stove_world_pos(), "r": 1.7, "text": "Drink melted snow", "hide": not cb.is_lit() or needs.water > 95.0, "act": func() -> void:
+				needs.drink(35.0)
+				_say('Drank melted snow (+35 water)')},
 			{"pos": cb.woodpile_world_pos(), "r": 1.9, "text": "Take firewood (%d left)" % cb.wood_pile, "act": func() -> void:
 				if cb.take_firewood():
 					inv.add("wood")
@@ -351,8 +367,13 @@ func _update_prompt() -> void:
 				inv.add("parka")
 				inv.add("axe")
 				inv.add("sweater")
-				_say("Found: hatchet, down parka, wool sweater, 4 matches")})
+				inv.add("rifle")
+				inv.add("ammo", 6)
+				inv.add("beans", 2)
+				_say("Found: hatchet, rifle + 6 rounds, parka, sweater, matches, beans")})
 		for it in items:
+			if it.get('hide', false):
+				continue
 			var to: Vector3 = it["pos"] - player.position
 			var d := to.length()
 			if d > float(it["r"]):
@@ -363,6 +384,16 @@ func _update_prompt() -> void:
 			if d < bd:
 				bd = d
 				best = it
+	for dr in deer:
+		if is_instance_valid(dr) and dr.state == Deer.State.DEAD and not dr.harvested:
+			var dd: float = dr.global_position.distance_to(player.position)
+			if dd < 2.4 and dd < bd:
+				bd = dd
+				best = {"text": "Harvest deer (+%d venison)" % Deer.MEAT_YIELD, "act": func() -> void:
+					dr.harvested = true
+					inv.add('venison_raw', Deer.MEAT_YIELD)
+					dr.queue_free()
+					_say('Harvested %d raw venison' % Deer.MEAT_YIELD)}
 	_cur = best
 	hud.prompt = String(best.get("text", ""))
 	var info := "Wood %d  Matches %d" % [inv.count("wood"), inv.count("matches")]
@@ -371,6 +402,9 @@ func _update_prompt() -> void:
 	for cb in cabins:
 		if cb.is_lit():
 			info += "   Stove: %.0f min left" % (cb.stove_fuel_s / 60.0)
+	info += '   Cal %d (%s)  Water %d%% (%s)' % [int(needs.calories), needs.hunger_state(), int(needs.water), needs.thirst_state()]
+	if inv.count('rifle') > 0:
+		info += '   [%s] ammo %d' % ['RIFLE' if rifle_up else 'hatchet', inv.count('ammo')]
 	hud.info = info
 	hud.inv_text = _inv_text() if inv_open else ""
 
@@ -396,6 +430,9 @@ func _unhandled_input(e: InputEvent) -> void:
 		return
 	if e.keycode == KEY_E and not _cur.is_empty():
 		(_cur["act"] as Callable).call()
+	elif e.keycode == KEY_X and inv != null and inv.count('rifle') > 0:
+		rifle_up = not rifle_up
+		_say('Rifle raised' if rifle_up else 'Hatchet')
 	elif e.keycode == KEY_F:
 		_attack()
 	elif e.keycode == KEY_TAB:
@@ -565,6 +602,9 @@ func _add_zombie(p: Vector3, idx: int) -> Zombie:
 func _attack() -> void:
 	if _attack_cd > 0.0 or player.dead or inv == null:
 		return
+	if rifle_up and inv.count('rifle') > 0:
+		_shoot()
+		return
 	var axe := inv.count("axe") > 0
 	_attack_cd = 0.9 if axe else 0.7
 	var dmg := AXE_DAMAGE if axe else FIST_DAMAGE
@@ -611,4 +651,118 @@ func _zombietest_step(delta: float) -> void:
 			print("ZT t=%d state=%d dist=%.1f speed=%.2f hp=%.0f zhp=%.0f grabs=%d" % [_zt_last, z0.state, z0.global_position.distance_to(player.position), z0.speed_now, player.health, z0.hp, z0.grabs])
 	if _zt > 60.0 or player.dead or z0.state == Zombie.State.DEAD:
 		print("ZOMBIETEST done php=%.0f zombie_dead=%s grabs=%d" % [player.health, str(z0.state == Zombie.State.DEAD), z0.grabs])
+		get_tree().quit()
+
+
+var needs := Needs.new()
+var rifle_up := false
+var deer: Array[Deer] = []
+var _deertest := false
+var _dt := 0.0
+var _dt_spawned := false
+var _dt_last := -1
+const RIFLE_DAMAGE := 100.0
+
+
+func _spawn_deer(n: int, center: Vector2) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 31
+	var made := 0
+	var tries := 0
+	while made < n and tries < 300:
+		tries += 1
+		var a := rng.randf() * TAU
+		var r := rng.randf_range(60.0, 260.0)
+		var x := center.x + cos(a) * r
+		var z := center.y + sin(a) * r
+		if absf(x) > 950.0 or absf(z) > 950.0:
+			continue
+		var h: float = terrain.data.get_height(Vector3(x, 0, z))
+		if is_nan(h):
+			continue
+		_add_deer(Vector3(x, h, z), made)
+		made += 1
+
+
+func _add_deer(p: Vector3, idx: int) -> Deer:
+	var d := Deer.new()
+	add_child(d)
+	d.global_position = p
+	d.setup(terrain, snow, player, forest, noise_bus, 2000 + idx)
+	deer.append(d)
+	return d
+
+
+func _shoot() -> void:
+	if inv.count('ammo') == 0:
+		_attack_cd = 0.4
+		_say('Click. No ammo')
+		return
+	inv.remove('ammo')
+	_attack_cd = 1.2
+	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_GUNSHOT, player)
+	var eye := player.position + Vector3(0, 1.6, 0)
+	var dir := Vector3(-sin(player.yaw) * cos(player.pitch), sin(player.pitch), -cos(player.yaw) * cos(player.pitch)).normalized()
+	var best: Node3D = null
+	var bt := 120.0
+	var groups := ['hostile', 'prey']
+	for g in groups:
+		for h in get_tree().get_nodes_in_group(g):
+			var n := h as Node3D
+			if n == null:
+				continue
+			if n.has_method('is_dead') and n.call('is_dead'):
+				continue
+			var c := n.global_position + Vector3(0, 0.9, 0)
+			var t := (c - eye).dot(dir)
+			if t < 1.0 or t > bt:
+				continue
+			if (eye + dir * t).distance_to(c) < 0.8:
+				bt = t
+				best = n
+	if best != null:
+		best.call('hit', RIFLE_DAMAGE, player.position)
+		_say('Shot hit')
+	else:
+		_say('Bang. Miss')
+
+
+func _deertest_step(delta: float) -> void:
+	_dt += delta
+	if not _dt_spawned:
+		_dt_spawned = true
+		inv = Inventory.new(body)
+		inv.needs = needs
+		inv.add('rifle')
+		inv.add('ammo', 3)
+		rifle_up = true
+		var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+		var dp := player.position + fwd * 40.0
+		dp.y = terrain.data.get_height(dp)
+		_add_deer(dp, 1)
+		player.pitch = deg_to_rad(0.0)
+		print('DT deer at 40m')
+	var d0: Deer = deer[0]
+	_attack_cd = maxf(0.0, _attack_cd - delta)
+	if _dt > 2.0 and d0.state != Deer.State.DEAD and _attack_cd <= 0.0 and inv.count('ammo') > 0:
+		var to := d0.global_position + Vector3(0, 0.9, 0) - (player.position + Vector3(0, 1.6, 0))
+		player.yaw = atan2(-to.x, -to.z)
+		player.pitch = atan2(to.y, Vector2(to.x, to.z).length())
+		_attack()
+	if int(_dt) != _dt_last:
+		_dt_last = int(_dt)
+		print('DT t=%d state=%d dist=%.1f hp=%.0f ammo=%d' % [_dt_last, d0.state, d0.global_position.distance_to(player.position), d0.hp, inv.count('ammo')])
+	if d0.state == Deer.State.DEAD and _dt > 3.0:
+		player.position = d0.global_position + Vector3(1.0, 0.0, 0.0)
+		_update_prompt()
+		print('DEERTEST prompt=[%s]' % hud.prompt)
+		if _cur.has('act'):
+			(_cur['act'] as Callable).call()
+		print('DEERTEST venison_raw=%d ammo=%d' % [inv.count('venison_raw'), inv.count('ammo')])
+		var cal0 := needs.calories
+		needs.calories = 500.0
+		print('DEERTEST eat: ', inv.use('venison_raw'), ' cal ', needs.calories)
+		get_tree().quit()
+	elif _dt > 40.0:
+		print('DEERTEST timeout state=%d' % d0.state)
 		get_tree().quit()

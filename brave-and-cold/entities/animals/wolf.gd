@@ -235,3 +235,7 @@ func _animate(delta: float) -> void:
 		_tail.rotation.x = -0.15 + sin(_phase * 0.5) * 0.06 - (0.35 if state == State.CHASE else 0.0)
 	if _body != null:
 		_body.position.y = absf(sin(_phase)) * 0.04 * amp
+
+
+func is_dead() -> bool:
+	return dead

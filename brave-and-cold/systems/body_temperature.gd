@@ -17,6 +17,7 @@ const WIND_FACTOR := 0.055          # extra loss multiplier per m/s of wind (red
 const WET_LOSS_MULT := 2.5          # fully wet clothing multiplies loss
 
 var core: float = NORMAL
+var metabolism_mult: float = 1.0
 var wetness: float = 0.0            # 0..1 clothing wetness
 var warmth: float = 0.25            # 0..1 clothing insulation (base layer only ~0.25)
 var windproof: float = 0.1          # 0..1
@@ -44,7 +45,7 @@ func update(delta: float, ambient: float, wind: float, sheltered: bool, fire_w: 
 	var diff := maxf(NORMAL - 10.0 - ambient, -20.0)  # skin ~27 C
 	var loss := LOSS_W_PER_C * diff * wind_mult * (1.0 - insulation) * (1.0 + (WET_LOSS_MULT - 1.0) * wetness)
 	loss = maxf(loss, 0.0)
-	var gain: float = BASE_METABOLISM_W + ACTIVITY_W[clampi(activity, 0, 2)] + fire_w
+	var gain: float = BASE_METABOLISM_W * metabolism_mult + ACTIVITY_W[clampi(activity, 0, 2)] + fire_w
 	last_loss_w = loss
 	last_gain_w = gain
 	# Net watts -> deg C / s. Comfort band: gain==loss at ~zero net.

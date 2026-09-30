@@ -6,6 +6,11 @@ const ITEMS := {
 	"wood": {"name": "Firewood"},
 	"matches": {"name": "Matches"},
 	"axe": {"name": "Hatchet"},
+	"rifle": {"name": "Hunting Rifle"},
+	"ammo": {"name": "Rifle Rounds"},
+	"beans": {"name": "Canned Beans", "kcal": 650.0},
+	"venison_raw": {"name": "Raw Venison", "kcal": 350.0, "raw": true, "cooked": "venison_cooked"},
+	"venison_cooked": {"name": "Cooked Venison", "kcal": 900.0},
 	"sweater": {"name": "Wool Sweater", "slot": "body", "warmth": 0.55, "windproof": 0.2, "waterproof": 0.1},
 	"parka": {"name": "Down Parka", "slot": "body", "warmth": 0.85, "windproof": 0.8, "waterproof": 0.6},
 }
@@ -16,6 +21,7 @@ const BASE_WATERPROOF := 0.1
 var counts: Dictionary = {}
 var equipped_body: String = ""
 var body: BodyTemperature
+var needs: Needs
 
 
 func _init(b: BodyTemperature = null) -> void:
@@ -49,12 +55,31 @@ func name_of(id: String) -> String:
 	return String(ITEMS[id]["name"])
 
 
+## Cook all raw food in the pack. Returns number of items cooked.
+func cook_all() -> int:
+	var n := 0
+	for id in counts.keys():
+		if ITEMS[id].get("raw", false):
+			var c: int = count(id)
+			var out: String = ITEMS[id]["cooked"]
+			counts.erase(id)
+			add(out, c)
+			n += c
+	return n
+
+
 func is_wearable(id: String) -> bool:
 	return ITEMS.has(id) and ITEMS[id].has("slot")
 
 
 ## Toggle equip/unequip. Returns a short status message.
 func use(id: String) -> String:
+	if ITEMS.has(id) and ITEMS[id].has("kcal") and needs != null:
+		var k: float = ITEMS[id]["kcal"]
+		if not remove(id):
+			return 'None left'
+		needs.eat(k)
+		return "Ate %s (+%d kcal)" % [name_of(id), int(k)]
 	if not is_wearable(id):
 		return "%s: nothing to do" % name_of(id)
 	if equipped_body == id:
