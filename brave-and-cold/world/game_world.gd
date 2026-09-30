@@ -73,13 +73,26 @@ func _ready() -> void:
 	player.place(sp.x, sp.y)
 	_place_cabin(home)
 	player.cabins = cabins
+	if not cabins.is_empty():
+		if opts.has("stove"):
+			cabins[0].add_wood()
+		if opts.has("dooropen"):
+			cabins[0].toggle_door()
+		if opts.has("cabinpos"):
+			var lp := String(opts["cabinpos"]).split(",")
+			var wp: Vector3 = cabins[0].to_global(Vector3(float(lp[0]), 0.0, float(lp[1])))
+			player.place(wp.x, wp.z)
+			var st: Vector3 = cabins[0].stove_world_pos()
+			player.yaw = atan2(-(st.x - wp.x), -(st.z - wp.z))
+			player.pitch = deg_to_rad(-12.0)
 	snow.interior_check = func(x: float, z: float) -> bool:
 		for cb in cabins:
 			if cb.contains_xz(x, z):
 				return true
 		return false
-	player.yaw = deg_to_rad(float(opts.get("yaw", 0.0)))
-	player.pitch = deg_to_rad(float(opts.get("pitch", -3.0)))
+	if not opts.has("cabinpos"):
+		player.yaw = deg_to_rad(float(opts.get("yaw", 0.0)))
+		player.pitch = deg_to_rad(float(opts.get("pitch", -3.0)))
 	if opts.has("trail"):
 		_lay_trail(int(opts["trail"]))
 	hud = Hud.new()
@@ -143,7 +156,11 @@ func _process(delta: float) -> void:
 		cb.set_night(night)
 	# survival
 	snow.advance(delta)
-	body.update(gs, clock.ambient_c(), wind, player.is_sheltered(), player.fire_w, player.activity, 0.0, false)
+	var fw := player.fire_w
+	for cb in cabins:
+		fw = maxf(fw, cb.heat_at(player.position.x, player.position.z))
+	body.update(gs, clock.ambient_c(), wind, player.is_sheltered(), fw, player.activity, 0.0, false)
+	_update_prompt()
 	if out_path != "" and _frames == 40:
 		get_viewport().get_texture().get_image().save_png(out_path)
 		print("SHOT_SAVED ", out_path, " hour=", clock.hour)
@@ -256,3 +273,46 @@ func _site_ok(x: float, z: float, water: Image) -> bool:
 				return false
 			hs.append(h)
 	return (hs.max() - hs.min()) < 1.4
+
+
+var _cur: Dictionary = {}
+
+
+func _update_prompt() -> void:
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var best: Dictionary = {}
+	var bd := 1e9
+	for cb in cabins:
+		var items: Array[Dictionary] = [
+			{"pos": cb.door_world_pos(), "r": 2.0, "text": "Close door" if cb.door_open else "Open door", "act": cb.toggle_door},
+			{"pos": cb.stove_world_pos(), "r": 1.7, "text": ("Add wood to stove (%d)" % player.wood) if player.wood > 0 else "Stove needs wood", "act": func() -> void:
+				if player.wood > 0:
+					player.wood -= 1
+					cb.add_wood()},
+			{"pos": cb.woodpile_world_pos(), "r": 1.9, "text": "Take firewood (%d left)" % cb.wood_pile, "act": func() -> void:
+				if cb.take_firewood():
+					player.wood += 1},
+		]
+		for it in items:
+			var to: Vector3 = it["pos"] - player.position
+			var d := to.length()
+			if d > float(it["r"]):
+				continue
+			var flat := Vector3(to.x, 0.0, to.z)
+			if flat.length() > 0.6 and flat.normalized().dot(fwd) < 0.5:
+				continue
+			if d < bd:
+				bd = d
+				best = it
+	_cur = best
+	hud.prompt = String(best.get("text", ""))
+	var info := "Wood: %d" % player.wood
+	for cb in cabins:
+		if cb.is_lit():
+			info += "   Stove: %.0f min left" % (cb.stove_fuel_s / 60.0)
+	hud.info = info
+
+
+func _unhandled_input(e: InputEvent) -> void:
+	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_E and not _cur.is_empty():
+		(_cur["act"] as Callable).call()

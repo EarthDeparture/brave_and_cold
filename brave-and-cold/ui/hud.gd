@@ -3,6 +3,9 @@ extends CanvasLayer
 ## Minimal survival HUD (placeholder styling): time, temperatures, stamina, snow depth, noise.
 
 var _label: Label
+var _prompt: Label
+var prompt := ""
+var info := ""
 var _bars: Control
 var player: Player
 var body: BodyTemperature
@@ -25,6 +28,15 @@ func setup(p: Player, b: BodyTemperature, s: SnowField, c: GameClock) -> void:
 	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 	_label.add_theme_constant_override("outline_size", 5)
 	add_child(_label)
+	_prompt = Label.new()
+	_prompt.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_prompt.position = Vector2(-200, -140)
+	_prompt.size = Vector2(400, 30)
+	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_prompt.add_theme_font_size_override("font_size", 20)
+	_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	_prompt.add_theme_constant_override("outline_size", 6)
+	add_child(_prompt)
 	_bars = Control.new()
 	_bars.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_bars.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -42,7 +54,10 @@ func _process(_d: float) -> void:
 	txt += "Core %.1f C  %s\n" % [body.core, body.state_name()]
 	txt += "Snow: %s%s  (x%.2f speed)\n" % [SnowField.TIER_NAMES[tier], " (packed)" if trampled else "", SnowField.PLAYER_SPEED[tier]]
 	txt += "Noise radius %.0f m%s" % [player.noise_radius(), "   [FIRE]" if player.fire_w > 0.0 else ""]
+	if info != "":
+		txt += "\n" + info
 	_label.text = txt
+	_prompt.text = ("[E] " + prompt) if prompt != "" else ""
 	_stam_frac = player.stamina / 100.0
 	_core_frac = clampf((body.core - 30.0) / 7.0, 0.0, 1.0)
 	_warn = body.core < BodyTemperature.SHIVER

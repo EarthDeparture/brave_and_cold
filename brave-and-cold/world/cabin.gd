@@ -15,6 +15,17 @@ var floor_y := 0.0  # world y of the interior floor
 var glass_mat: StandardMaterial3D
 var light: OmniLight3D
 var _walls: Array[Rect2] = []  # local xz rects
+const STOVE_LOCAL := Vector3(-2.35, 0.0, -1.75)
+const WOOD_BURN_S := 300.0  # real seconds per log
+var door_open := false
+var stove_fuel_s := 0.0
+var wood_pile := 6
+var _door_pivot: Node3D
+var _door_rect := Rect2(-DOOR_HALF, HZ - 0.06, 2 * DOOR_HALF, 0.12)
+var _fire_glow: MeshInstance3D
+var _fire_mat: StandardMaterial3D
+var _fire_light: OmniLight3D
+var _t := 0.0
 
 
 func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
@@ -68,11 +79,109 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 		Rect2(-HX - t, -HZ - t, 2 * t, 2 * HZ + 2 * t),                       # left wall
 		Rect2(HX - t, -HZ - t, 2 * t, 2 * HZ + 2 * t),                        # right wall
 	]
+	_build_door()
+	_build_stove_fire()
 	return true
 
 
+func _build_door() -> void:
+	_door_pivot = Node3D.new()
+	_door_pivot.position = Vector3(-DOOR_HALF, FLOOR_LOCAL_Y, HZ)
+	add_child(_door_pivot)
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = Vector3(2 * DOOR_HALF, 2.05, 0.08)
+	mi.mesh = bm
+	mi.position = Vector3(DOOR_HALF, 1.025, 0.0)
+	var dm := StandardMaterial3D.new()
+	dm.albedo_color = Color(0.22, 0.15, 0.10)
+	dm.roughness = 0.95
+	mi.material_override = dm
+	_door_pivot.add_child(mi)
+
+
+func _build_stove_fire() -> void:
+	_fire_glow = MeshInstance3D.new()
+	var q := QuadMesh.new()
+	q.size = Vector2(0.26, 0.2)
+	_fire_glow.mesh = q
+	_fire_glow.position = STOVE_LOCAL + Vector3(0.0, FLOOR_LOCAL_Y + 0.42, 0.285)
+	_fire_mat = StandardMaterial3D.new()
+	_fire_mat.albedo_color = Color(0.1, 0.03, 0.01)
+	_fire_mat.emission_enabled = true
+	_fire_mat.emission = Color(1.0, 0.45, 0.12)
+	_fire_mat.emission_energy_multiplier = 0.0
+	_fire_glow.material_override = _fire_mat
+	add_child(_fire_glow)
+	_fire_light = OmniLight3D.new()
+	_fire_light.position = STOVE_LOCAL + Vector3(0.0, FLOOR_LOCAL_Y + 0.55, 0.5)
+	_fire_light.light_color = Color(1.0, 0.5, 0.2)
+	_fire_light.light_energy = 0.0
+	_fire_light.omni_range = 6.0
+	_fire_light.shadow_enabled = true
+	add_child(_fire_light)
+
+
+func is_lit() -> bool:
+	return stove_fuel_s > 0.0
+
+
+func add_wood() -> void:
+	stove_fuel_s += WOOD_BURN_S
+
+
+func take_firewood() -> bool:
+	if wood_pile <= 0:
+		return false
+	wood_pile -= 1
+	return true
+
+
+func toggle_door() -> void:
+	door_open = not door_open
+	var tw := create_tween()
+	tw.tween_property(_door_pivot, "rotation:y", deg_to_rad(105.0) if door_open else 0.0, 0.5).set_trans(Tween.TRANS_SINE)
+
+
+func door_world_pos() -> Vector3:
+	return to_global(Vector3(0.0, FLOOR_LOCAL_Y + 1.2, HZ))
+
+
+func stove_world_pos() -> Vector3:
+	return to_global(STOVE_LOCAL + Vector3(0.0, FLOOR_LOCAL_Y + 0.9, 0.0))
+
+
+func woodpile_world_pos() -> Vector3:
+	return to_global(Vector3(2.5, FLOOR_LOCAL_Y + 0.5, HZ + 0.55))
+
+
+## Heat (W) felt at world xz from the stove: strong near it, room-level inside the cabin.
+func heat_at(x: float, z: float) -> float:
+	if not is_lit():
+		return 0.0
+	var l := to_local_xz(x, z)
+	if absf(l.x) > HX or absf(l.y) > HZ:
+		return 0.0
+	var d := l.distance_to(Vector2(STOVE_LOCAL.x, STOVE_LOCAL.z))
+	return 120.0 + 430.0 * clampf(1.0 - d / 2.5, 0.0, 1.0)
+
+
+func _process(delta: float) -> void:
+	if _fire_mat == null:
+		return
+	_t += delta
+	if stove_fuel_s > 0.0:
+		stove_fuel_s = maxf(0.0, stove_fuel_s - delta)
+		var fl := 0.75 + 0.25 * sin(_t * 11.0) * sin(_t * 7.3) + 0.1 * sin(_t * 23.0)
+		_fire_mat.emission_energy_multiplier = 3.0 * fl
+		_fire_light.light_energy = 2.2 * fl
+	else:
+		_fire_mat.emission_energy_multiplier = 0.0
+		_fire_light.light_energy = 0.0
+
+
 func set_night(f: float) -> void:
-	glass_mat.emission_energy_multiplier = 2.5 * f
+	glass_mat.emission_energy_multiplier = 1.2 * f
 	light.light_energy = 1.6 * f + 0.7
 
 
@@ -90,7 +199,10 @@ func contains_xz(x: float, z: float) -> bool:
 func resolve(x: float, z: float, r: float) -> Vector2:
 	var l := to_local_xz(x, z)
 	var moved := false
-	for w in _walls:
+	var rects := _walls.duplicate()
+	if not door_open:
+		rects.append(_door_rect)
+	for w in rects:
 		var cx := clampf(l.x, w.position.x, w.end.x)
 		var cz := clampf(l.y, w.position.y, w.end.y)
 		var d := l - Vector2(cx, cz)

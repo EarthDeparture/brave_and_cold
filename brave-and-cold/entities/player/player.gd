@@ -33,6 +33,7 @@ var moving := false
 var activity := 0
 var speed_now := 0.0
 var fire_w := 0.0  # debug fire heat
+var wood := 2
 var eye_h := EYE
 var _since_trample := 0.0
 var _since_noise := 0.0
