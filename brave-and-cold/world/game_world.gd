@@ -72,6 +72,8 @@ func _ready() -> void:
 	var sp := home if not opts.has("pos") else Vector2(float(String(opts["pos"]).split(",")[0]), float(String(opts["pos"]).split(",")[1]))
 	player.place(sp.x, sp.y)
 	_place_cabin(home)
+	if not opts.has("wolftest"):
+		_spawn_wolves(int(opts.get("wolves", 3)), home, 70.0, 140.0)
 	player.cabins = cabins
 	if not cabins.is_empty():
 		if opts.has("stove"):
@@ -100,6 +102,8 @@ func _ready() -> void:
 	hud.setup(player, body, snow, clock)
 	out_path = String(opts.get("out", ""))
 	_selftest = opts.has("selftest")
+	_wolftest = opts.has("wolftest")
+	wolf_test_dist = float(opts.get("wdist", 22.0))
 	walk_secs = float(opts.get("walk", 0.0))
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if (out_path == "" and walk_secs == 0.0) else Input.MOUSE_MODE_VISIBLE
 
@@ -166,6 +170,8 @@ func _process(delta: float) -> void:
 		get_viewport().get_texture().get_image().save_png(out_path)
 		print("SHOT_SAVED ", out_path, " hour=", clock.hour)
 		get_tree().quit()
+	if _wolftest and _frames > 30:
+		_wolftest_step(delta)
 	if _selftest and _frames == 30:
 		_run_selftest()
 	if walk_secs > 0.0 and _frames > 10:
@@ -425,3 +431,66 @@ func _run_selftest() -> void:
 		fails += 1
 	print("SELFTEST failures=", fails)
 	get_tree().quit()
+
+
+var wolves: Array[Wolf] = []
+var _wolftest := false
+var _wt := 0.0
+
+
+func _spawn_wolves(n: int, center: Vector2, min_d: float, max_d: float) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 99
+	var made := 0
+	var tries := 0
+	while made < n and tries < 200:
+		tries += 1
+		var a := rng.randf() * TAU
+		var r := rng.randf_range(min_d, max_d)
+		var x := center.x + cos(a) * r
+		var z := center.y + sin(a) * r
+		if absf(x) > 950.0 or absf(z) > 950.0:
+			continue
+		var h: float = terrain.data.get_height(Vector3(x, 0, z))
+		if is_nan(h):
+			continue
+		_add_wolf(Vector3(x, h, z), made)
+		made += 1
+
+
+func _add_wolf(p: Vector3, idx: int) -> Wolf:
+	var w := Wolf.new()
+	add_child(w)
+	w.global_position = p
+	w.setup(terrain, snow, player, forest, cabins, noise_bus, 1000 + idx)
+	wolves.append(w)
+	return w
+
+
+func _wolftest_step(delta: float) -> void:
+	_wt += delta
+	if _wolves_spawned_for_test == false:
+		_wolves_spawned_for_test = true
+		var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+		var wp := player.position + fwd * wolf_test_dist
+		wp.y = terrain.data.get_height(wp)
+		_add_wolf(wp, 0)
+		print("WT wolf at dist 22, tier under player ", snow.tier_at(player.position.x, player.position.z))
+	if _wt > 1.0 and not _noise_sent:
+		_noise_sent = true
+		noise_bus.emit_noise(player.position, 40.0, player)
+		print("WT noise sent state=", wolves[0].state)
+	if int(_wt * 2) != _wt_last:
+		_wt_last = int(_wt * 2)
+		var w := wolves[0]
+		if _wt_last % 2 == 0:
+			print("WT t=%.0f state=%d dist=%.1f speed=%.2f hp=%.0f bites=%d" % [_wt, w.state, w.global_position.distance_to(player.position), w.speed_now, player.health, w.bites])
+	if _wt > 26.0 or player.dead:
+		print("WOLFTEST done hp=%.0f dead=%s bites=%d" % [player.health, str(player.dead), wolves[0].bites])
+		get_tree().quit()
+
+
+var _wolves_spawned_for_test := false
+var wolf_test_dist := 22.0
+var _noise_sent := false
+var _wt_last := -1

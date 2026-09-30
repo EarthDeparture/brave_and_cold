@@ -39,6 +39,8 @@ var _since_noise := 0.0
 var _last_pos := Vector3.ZERO
 var _ready_ground := false
 var frozen := false  # set by GameWorld for screenshots
+var health := 100.0
+var dead := false
 
 
 func setup(t: Terrain3D, s: SnowField, b: BodyTemperature, n: NoiseBus) -> void:
@@ -53,6 +55,15 @@ func setup(t: Terrain3D, s: SnowField, b: BodyTemperature, n: NoiseBus) -> void:
 	add_child(cam)
 	cam.make_current()
 	terrain.set_camera(cam)
+
+
+func hurt(amount: float) -> void:
+	if dead:
+		return
+	health = maxf(0.0, health - amount)
+	if health <= 0.0:
+		dead = true
+		frozen = true
 
 
 func place(x: float, z: float) -> void:

@@ -91,10 +91,14 @@ func _draw_bars() -> void:
 	var sz := _bars.size
 	var w := 220.0
 	var x := 24.0
-	var y := sz.y - 60.0
+	var y := sz.y - 70.0
 	_bars.draw_rect(Rect2(x, y, w, 8), Color(0, 0, 0, 0.5))
 	_bars.draw_rect(Rect2(x, y, w * _stam_frac, 8), Color(0.85, 0.9, 0.7) if not player.exhausted else Color(0.9, 0.4, 0.3))
 	_bars.draw_rect(Rect2(x, y + 16, w, 8), Color(0, 0, 0, 0.5))
 	_bars.draw_rect(Rect2(x, y + 16, w * _core_frac, 8), Color(0.55, 0.75, 1.0) if not _warn else Color(0.4, 0.55, 1.0))
+	_bars.draw_rect(Rect2(x, y + 32, w, 8), Color(0, 0, 0, 0.5))
+	_bars.draw_rect(Rect2(x, y + 32, w * clampf(player.health / 100.0, 0.0, 1.0), 8), Color(0.85, 0.25, 0.22))
+	if player.dead:
+		_bars.draw_rect(Rect2(Vector2.ZERO, sz), Color(0.3, 0.0, 0.0, 0.45))
 	# crosshair dot
 	_bars.draw_circle(sz * 0.5, 1.5, Color(1, 1, 1, 0.6))
