@@ -57,21 +57,24 @@ func _initialize() -> void:
 	noise.frequency = 0.02
 	for py in range(0, size_m):
 		for px in range(0, size_m):
-			var c: int = int(canopy.get_pixel(px, py).r * 255.0)
-			if c < 64:  # < ~10 m tall: open ground stays snow
-				continue
 			var s: float = slope.get_pixel(px, py).r * 90.0
-			if s > 32.0:
-				continue
-			var density := clampf((c - 64.0) / 96.0, 0.0, 1.0)
-			var n := noise.get_noise_2d(px, py) * 0.5 + 0.5
-			var blend := density * (0.25 + 0.75 * n) * 0.35
+			var c: int = int(canopy.get_pixel(px, py).r * 255.0)
 			var p := Vector3(px - half + 0.5, 0.0, py - half + 0.5)
-			t.data.set_control_base_id(p, 0)
-			t.data.set_control_overlay_id(p, 2)
-			t.data.set_control_blend(p, blend)
-			t.data.set_control_auto(p, false)
-			painted += 1
+			if s >= 30.0:
+				# steep: snow sheds, rock shows through (more on steeper ground)
+				t.data.set_control_base_id(p, 0)
+				t.data.set_control_overlay_id(p, 1)
+				t.data.set_control_blend(p, clampf((s - 30.0) / 18.0, 0.0, 1.0) * 0.9)
+				t.data.set_control_auto(p, false)
+				painted += 1
+			elif c >= 64:  # > ~10 m canopy: forest floor shows through the snow
+				var density := clampf((c - 64.0) / 96.0, 0.0, 1.0)
+				var n := noise.get_noise_2d(px, py) * 0.5 + 0.5
+				t.data.set_control_base_id(p, 0)
+				t.data.set_control_overlay_id(p, 2)
+				t.data.set_control_blend(p, density * (0.25 + 0.75 * n) * 0.5)
+				t.data.set_control_auto(p, false)
+				painted += 1
 	print("FOREST_PIXELS ", painted, " of ", size_m * size_m)
 	t.data.save_directory(out_dir)
 	print("PAINT_OK")

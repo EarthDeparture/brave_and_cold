@@ -7,6 +7,7 @@ const CHUNK := 128
 const SPACING := 5.0
 const MIN_CANOPY_M := 6.0
 const VIS_END := 700.0
+var near_end := 140.0
 const VARIANTS := ["spruce_a", "spruce_b", "spruce_c"]
 const TREE_UNIT_M := 1.0  # source models are 1.0 high; scale = real canopy height
 
@@ -28,8 +29,10 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 	water.convert(Image.FORMAT_L8)
 
 	var meshes: Array[Mesh] = []
+	var far_meshes: Array[Mesh] = []
 	for v in VARIANTS:
 		meshes.append(_load_mesh("res://assets/models/trees/%s.glb" % v))
+		far_meshes.append(_load_mesh("res://assets/models/trees/%s_far.glb" % v))
 	var mat := StandardMaterial3D.new()
 	mat.vertex_color_use_as_albedo = true
 	mat.roughness = 1.0
@@ -77,18 +80,25 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 			var xf: Array = per_variant[vi]
 			if xf.is_empty():
 				continue
-			var mm := MultiMesh.new()
-			mm.transform_format = MultiMesh.TRANSFORM_3D
-			mm.mesh = meshes[vi]
-			mm.instance_count = xf.size()
-			for i in range(xf.size()):
-				mm.set_instance_transform(i, xf[i])
-			var inst := MultiMeshInstance3D.new()
-			inst.multimesh = mm
-			inst.material_override = mat
-			inst.visibility_range_end = VIS_END
-			inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-			add_child(inst)
+			for lod in range(2):
+				var mm := MultiMesh.new()
+				mm.transform_format = MultiMesh.TRANSFORM_3D
+				mm.mesh = meshes[vi] if lod == 0 else far_meshes[vi]
+				mm.instance_count = xf.size()
+				for i in range(xf.size()):
+					mm.set_instance_transform(i, xf[i])
+				var inst := MultiMeshInstance3D.new()
+				inst.multimesh = mm
+				inst.material_override = mat
+				if lod == 0:
+					inst.visibility_range_end = near_end
+					inst.visibility_range_end_margin = 20.0
+					inst.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+				else:
+					inst.visibility_range_begin = near_end - 10.0
+					inst.visibility_range_end = VIS_END
+				inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if lod == 0 else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				add_child(inst)
 	print("FOREST_TREES ", tree_count, " chunks ", buckets.size())
 
 

@@ -33,6 +33,7 @@ func _ready() -> void:
 	_build_world()
 	if opts.get("trees", "1") == "1":
 		var f := ForestScatter.new()
+		f.near_end = float(opts.get("near_end", 140.0))
 		add_child(f)
 		f.build(terrain)
 	var w := WaterSurfaces.new()
@@ -73,10 +74,11 @@ func _build_world() -> void:
 	terrain.assets = load("res://data/terrain/terrain_assets.tres")
 	terrain.data_directory = MAP
 	add_child(terrain)
-	terrain.material.auto_shader = true
+	terrain.material.auto_shader = false
 	terrain.material.set_shader_param("auto_base_texture", 0)
 	terrain.material.set_shader_param("auto_overlay_texture", 1)
-	terrain.material.set_shader_param("auto_slope", 1.0)
+	terrain.material.set_shader_param("auto_slope", 4.0)
+	terrain.material.set_shader_param("auto_height_reduction", 0.0)
 	terrain.material.set_shader_param("blend_sharpness", 0.1)
 
 	sun = DirectionalLight3D.new()

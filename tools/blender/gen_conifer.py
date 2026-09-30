@@ -93,6 +93,73 @@ def build(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
     return obj
 
 
+def build_near(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
+    """Near LOD: drooping bough wedges per tier -> irregular silhouette, visible trunk between boughs."""
+    rng = random.Random(seed + 1000)
+    bm = bmesh.new()
+    sides = 6
+    bot = [bm.verts.new((math.cos(2 * math.pi * i / sides) * 0.024, math.sin(2 * math.pi * i / sides) * 0.024, 0)) for i in range(sides)]
+    top = [bm.verts.new((math.cos(2 * math.pi * i / sides) * 0.008, math.sin(2 * math.pi * i / sides) * 0.008, 0.97)) for i in range(sides)]
+    for i in range(sides):
+        bm.faces.new((bot[i], bot[(i + 1) % sides], top[(i + 1) % sides], top[i]))
+    n_trunk = len(bm.faces)
+    for t in range(tiers):
+        f = t / max(tiers - 1, 1)
+        z = trunk_h + f * (0.94 - trunk_h)
+        reach = base_r * 1.25 * (1.0 - f) ** 0.85 + 0.015
+        nb = 9 if f < 0.5 else 7
+        phase = rng.random() * 6.283
+        for b in range(nb):
+            a = phase + 2 * math.pi * b / nb + rng.uniform(-0.25, 0.25)
+            L = reach * rng.uniform(0.7, 1.15)
+            wd = max(0.02, L * rng.uniform(0.32, 0.45))
+            dz = -droop * L * rng.uniform(0.9, 2.0)
+            ca, sa = math.cos(a), math.sin(a)
+            px, py = -sa, ca
+            root = Vector((ca * 0.01, sa * 0.01, z + 0.012))
+            tip = Vector((ca * L, sa * L, z + dz))
+            mid_l = Vector((ca * L * 0.55 + px * wd, sa * L * 0.55 + py * wd, z + dz * 0.25 + 0.01))
+            mid_r = Vector((ca * L * 0.55 - px * wd, sa * L * 0.55 - py * wd, z + dz * 0.25 + 0.01))
+            under = Vector((ca * L * 0.5, sa * L * 0.5, z + dz * 0.15 - 0.03))
+            v = [bm.verts.new(p) for p in (root, mid_l, tip, mid_r, under)]
+            bm.faces.new((v[0], v[3], v[2], v[1]))      # top surface (quad, may be non planar)
+            bm.faces.new((v[0], v[1], v[2], v[3]))[0:0] if False else None
+            bm.faces.new((v[0], v[1], v[4]))
+            bm.faces.new((v[1], v[2], v[4]))
+            bm.faces.new((v[2], v[3], v[4]))
+            bm.faces.new((v[3], v[0], v[4]))
+    spike_v = [bm.verts.new(p) for p in ((0.02, 0, 0.90), (-0.01, 0.017, 0.90), (-0.01, -0.017, 0.90), (0, 0, 1.0))]
+    bm.faces.new((spike_v[0], spike_v[1], spike_v[3]))
+    bm.faces.new((spike_v[1], spike_v[2], spike_v[3]))
+    bm.faces.new((spike_v[2], spike_v[0], spike_v[3]))
+    bm.normal_update()
+    bm.faces.ensure_lookup_table()
+    col = bm.loops.layers.color.new("Color")
+    for fi, f in enumerate(bm.faces):
+        n = f.normal
+        for loop in f.loops:
+            if fi < n_trunk:
+                c = BARK
+            else:
+                hh = min(max(loop.vert.co.z, 0.0), 1.0)
+                base = tuple(GREEN_DARK[k] * (1 - hh) + GREEN_MID[k] * hh for k in range(4))
+                jitter = 0.85 + 0.3 * rng.random()
+                base = tuple(min(1.0, base[k] * jitter) if k < 3 else 1.0 for k in range(4))
+                s = min(1.0, (max(n.z, 0.0) ** 1.2) * snow * 1.8)
+                c = tuple(base[k] * (1 - s) + SNOW[k] * s for k in range(4))
+            loop[col] = c
+    mesh = bpy.data.meshes.new(name)
+    bm.to_mesh(mesh)
+    bm.free()
+    if mesh.color_attributes:
+        mesh.color_attributes.active_color = mesh.color_attributes[0]
+        mesh.color_attributes.render_color_index = 0
+    for p in mesh.polygons:
+        p.use_smooth = False
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    return obj
+
 def export(obj, path):
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
@@ -105,7 +172,10 @@ if __name__ == "__main__":
     clear()
     for name, cfg in VARIANTS.items():
         clear()
-        obj = build(name, **cfg)
-        tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
-        export(obj, f"{OUT}/{name}.glb")
-        print("TREE", name, "tris", tris)
+        far = build(name + "_far", **cfg)
+        export(far, f"{OUT}/{name}_far.glb")
+        clear()
+        near = build_near(name, **cfg)
+        tris = sum(len(p.vertices) - 2 for p in near.data.polygons)
+        export(near, f"{OUT}/{name}.glb")
+        print("TREE", name, "near tris", tris)
