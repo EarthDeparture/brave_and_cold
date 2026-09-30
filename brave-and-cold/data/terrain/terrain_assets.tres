@@ -1,0 +1,38 @@
+[gd_resource type="Terrain3DAssets" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/terrain/snow_alb.png" id="1_ut1gc"]
+[ext_resource type="Texture2D" path="res://assets/terrain/snow_nrm.png" id="2_6e1al"]
+[ext_resource type="Texture2D" path="res://assets/terrain/rock_alb.png" id="3_gbjp4"]
+[ext_resource type="Texture2D" path="res://assets/terrain/rock_nrm.png" id="4_y857b"]
+[ext_resource type="Texture2D" path="res://assets/terrain/forest_alb.png" id="5_cx40s"]
+[ext_resource type="Texture2D" path="res://assets/terrain/forest_nrm.png" id="6_oe57p"]
+[ext_resource type="Texture2D" path="res://assets/terrain/ice_alb.png" id="7_skrwb"]
+[ext_resource type="Texture2D" path="res://assets/terrain/ice_nrm.png" id="8_81hjr"]
+
+[sub_resource type="Terrain3DTextureAsset" id="Terrain3DTextureAsset_q6m73"]
+name = "snow"
+albedo_texture = ExtResource("1_ut1gc")
+normal_texture = ExtResource("2_6e1al")
+
+[sub_resource type="Terrain3DTextureAsset" id="Terrain3DTextureAsset_joh7e"]
+name = "rock"
+id = 1
+albedo_texture = ExtResource("3_gbjp4")
+normal_texture = ExtResource("4_y857b")
+uv_scale = 0.08
+
+[sub_resource type="Terrain3DTextureAsset" id="Terrain3DTextureAsset_isrjm"]
+name = "forest"
+id = 2
+albedo_texture = ExtResource("5_cx40s")
+normal_texture = ExtResource("6_oe57p")
+
+[sub_resource type="Terrain3DTextureAsset" id="Terrain3DTextureAsset_rpicd"]
+name = "ice"
+id = 3
+albedo_texture = ExtResource("7_skrwb")
+normal_texture = ExtResource("8_81hjr")
+uv_scale = 0.06
+
+[resource]
+texture_list = Array[Terrain3DTextureAsset]([SubResource("Terrain3DTextureAsset_q6m73"), SubResource("Terrain3DTextureAsset_joh7e"), SubResource("Terrain3DTextureAsset_isrjm"), SubResource("Terrain3DTextureAsset_rpicd")])

@@ -1,0 +1,111 @@
+"""Procedural stylized conifer (spruce/fir) generator, seedable, Long Dark-like painted silhouette.
+
+Run: blender.exe --background --factory-startup --python gen_conifer.py -- <out_dir>
+Outputs spruce_a/b/c.glb (~total height 1.0 unit = scaled at 12 m in game by the scatterer).
+Vertex colour: dark cool green base, snow on upward faces, bark brown trunk. Godot material must use vertex colours.
+"""
+import sys
+import math
+import random
+import bpy
+import bmesh
+from mathutils import Vector
+
+argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+OUT = argv[0] if argv else "."
+
+VARIANTS = {
+    "spruce_a": dict(seed=11, tiers=17, base_r=0.15, droop=0.16, trunk_h=0.07, snow=0.55),
+    "spruce_b": dict(seed=23, tiers=20, base_r=0.13, droop=0.20, trunk_h=0.10, snow=0.45),
+    "spruce_c": dict(seed=37, tiers=14, base_r=0.17, droop=0.12, trunk_h=0.05, snow=0.70),
+}
+GREEN_DARK = (0.035, 0.075, 0.085, 1.0)
+GREEN_MID = (0.07, 0.15, 0.13, 1.0)
+SNOW = (0.86, 0.90, 0.97, 1.0)
+BARK = (0.10, 0.075, 0.06, 1.0)
+
+
+def clear():
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.object.delete()
+
+
+def add_cone_ring(bm, z0, z1, r, sides, rng, droop):
+    """Skirt: apex at z1, ring of radius r at z0 with droop and jitter (a bough tier)."""
+    apex = bm.verts.new((0, 0, z1))
+    ring = []
+    for i in range(sides):
+        a = 2 * math.pi * i / sides
+        rr = r * (0.85 + 0.3 * rng.random())
+        zz = z0 - droop * rr * (0.5 + rng.random()) * (1 if i % 2 else 0.4)
+        ring.append(bm.verts.new((math.cos(a) * rr, math.sin(a) * rr, zz)))
+    center = bm.verts.new((0, 0, z0 + (z1 - z0) * 0.25))
+    for i in range(sides):
+        bm.faces.new((apex, ring[i], ring[(i + 1) % sides]))
+        bm.faces.new((center, ring[(i + 1) % sides], ring[i]))
+
+
+def build(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
+    rng = random.Random(seed)
+    bm = bmesh.new()
+    # trunk
+    sides = 6
+    bot = [bm.verts.new((math.cos(2 * math.pi * i / sides) * 0.022, math.sin(2 * math.pi * i / sides) * 0.022, 0)) for i in range(sides)]
+    top = [bm.verts.new((math.cos(2 * math.pi * i / sides) * 0.012, math.sin(2 * math.pi * i / sides) * 0.012, 0.95)) for i in range(sides)]
+    for i in range(sides):
+        bm.faces.new((bot[i], bot[(i + 1) % sides], top[(i + 1) % sides], top[i]))
+    trunk_faces = set(f.index for f in bm.faces)
+    bm.faces.ensure_lookup_table()
+    n_trunk = len(bm.faces)
+    for t in range(tiers):
+        f = t / max(tiers - 1, 1)
+        z0 = trunk_h + f * (0.93 - trunk_h) * 0.92
+        h = 0.16 - 0.06 * f
+        r = base_r * (1.0 - f) ** 0.8 + 0.02
+        add_cone_ring(bm, z0, z0 + h, r, 12 if f < 0.5 else 8, rng, droop)
+    # top spike
+    add_cone_ring(bm, 0.86, 1.0, 0.035, 5, rng, 0.0)
+    bm.normal_update()
+    bm.faces.ensure_lookup_table()
+    col = bm.loops.layers.color.new("Color")
+    for fi, f in enumerate(bm.faces):
+        n = f.normal
+        for loop in f.loops:
+            if fi < n_trunk:
+                c = BARK
+            else:
+                h = min(max(loop.vert.co.z, 0.0), 1.0)
+                base = tuple(GREEN_DARK[k] * (1 - h) + GREEN_MID[k] * h for k in range(4))
+                up = max(n.z, 0.0)
+                s = min(1.0, (up ** 1.5) * snow * 2.2 + (0.12 * snow if n.z > 0 else 0))
+                c = tuple(base[k] * (1 - s) + SNOW[k] * s for k in range(4))
+            loop[col] = c
+    mesh = bpy.data.meshes.new(name)
+    bm.to_mesh(mesh)
+    bm.free()
+    if mesh.color_attributes:
+        mesh.color_attributes.active_color = mesh.color_attributes[0]
+        mesh.color_attributes.render_color_index = 0
+    for p in mesh.polygons:
+        p.use_smooth = False
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    return obj
+
+
+def export(obj, path):
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", use_selection=True, export_yup=True,
+                              export_vertex_color="ACTIVE", export_all_vertex_colors=False)
+
+
+if __name__ == "__main__":
+    clear()
+    for name, cfg in VARIANTS.items():
+        clear()
+        obj = build(name, **cfg)
+        tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
+        export(obj, f"{OUT}/{name}.glb")
+        print("TREE", name, "tris", tris)

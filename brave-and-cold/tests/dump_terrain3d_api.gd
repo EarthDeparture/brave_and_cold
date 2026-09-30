@@ -1,7 +1,7 @@
 extends SceneTree
 ## Prints Terrain3D API surface so scripts match the installed addon version.
 func _initialize() -> void:
-	for c in ["Terrain3D", "Terrain3DData", "Terrain3DUtil", "Terrain3DRegion"]:
+	for c in ["Terrain3DUtil", "Terrain3DAssets", "Terrain3DTextureAsset", "Terrain3DMaterial", "Terrain3DData", "Terrain3DRegion"]:
 		print("== ", c)
 		for m in ClassDB.class_get_method_list(c, true):
 			print("M ", m.name)

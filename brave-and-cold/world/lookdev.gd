@@ -31,7 +31,13 @@ var frames := 0
 func _ready() -> void:
 	var opts := _parse_args()
 	_build_world()
+	if opts.get("trees", "1") == "1":
+		var f := ForestScatter.new()
+		add_child(f)
+		f.build(terrain)
 	apply_preset(opts.get("preset", "noon"))
+	if opts.has("debug"):
+		terrain.material.set("show_" + String(opts["debug"]), true)
 	var xz := PackedStringArray(String(opts.get("pos", "0,0")).split(","))
 	var p := Vector3(float(xz[0]), 0.0, float(xz[1]))
 	yaw = deg_to_rad(float(opts.get("yaw", 0.0)))
@@ -61,11 +67,20 @@ func _parse_args() -> Dictionary:
 func _build_world() -> void:
 	terrain = Terrain3D.new()
 	terrain.name = "Terrain3D"
+	terrain.assets = load("res://data/terrain/terrain_assets.tres")
 	terrain.data_directory = MAP
 	add_child(terrain)
+	terrain.material.auto_shader = true
+	terrain.material.set_shader_param("auto_base_texture", 0)
+	terrain.material.set_shader_param("auto_overlay_texture", 1)
+	terrain.material.set_shader_param("auto_slope", 1.0)
+	terrain.material.set_shader_param("blend_sharpness", 0.1)
 
 	sun = DirectionalLight3D.new()
 	sun.shadow_enabled = true
+	sun.shadow_bias = 0.15
+	sun.shadow_normal_bias = 3.0
+	sun.shadow_blur = 1.5
 	sun.directional_shadow_max_distance = 300.0
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
 	add_child(sun)
@@ -84,7 +99,7 @@ func _build_world() -> void:
 	env.fog_enabled = true
 	env.fog_sky_affect = 0.6
 	env.fog_aerial_perspective = 0.5
-	env.ssao_enabled = true
+	env.ssao_enabled = false
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
