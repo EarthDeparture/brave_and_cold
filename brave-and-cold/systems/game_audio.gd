@@ -72,7 +72,7 @@ func _on_step(tier: int, radius: float) -> void:
 	_step_n += 1
 	var p := AudioStreamPlayer.new()
 	p.stream = Sfx.get_stream("step%d%d" % [set_id, _step_n % 3])
-	p.volume_db = lerpf(-24.0, -6.0, clampf((radius - 3.0) / 15.0, 0.0, 1.0))
+	p.volume_db = lerpf(-36.0, -17.0, clampf((radius - 3.0) / 15.0, 0.0, 1.0))
 	p.pitch_scale = _rng.randf_range(0.9, 1.1)
 	p.finished.connect(p.queue_free)
 	add_child(p)

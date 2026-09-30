@@ -117,6 +117,13 @@ func _ready() -> void:
 	add_child(hud)
 	hud.setup(player, body, snow, clock)
 	hud.visible = not opts.has('nohud')
+	gear = GearScreen.new()
+	add_child(gear)
+	_loot = opts.has('loot')
+	_gear_opt = opts.has('gear')
+	_gear_sel = String(opts.get('gearsel', ''))
+	_geartest = opts.has('geartest')
+	opts_dropdemo = opts.has('dropdemo')
 	audio = GameAudio.new()
 	add_child(audio)
 	audio.setup(player, self, wind)
@@ -252,6 +259,15 @@ func _process(delta: float) -> void:
 			print('SAVETEST wrote=', save_game())
 		_print_state()
 		get_tree().quit()
+	if _gear_opt and _frames == 36 and gear.inv != null:
+		gear.open()
+		if _gear_sel != '':
+			gear._sel = {'id': _gear_sel, 'from': 'pack', 'n': inv.count(_gear_sel)}
+	if opts_dropdemo and _frames == 34 and inv != null:
+		drop_item('beans', 3)
+		drop_item('flare', 1)
+	if _geartest and _frames == 35:
+		_run_geartest()
 	if _campfire_opt and _frames == 25:
 		inv = Inventory.new(body)
 		inv.needs = needs
@@ -376,14 +392,204 @@ func _site_ok(x: float, z: float, water: Image) -> bool:
 
 
 var inv: Inventory
-var inv_open := false
+var gear: GearScreen
+var _sel_text := ""
+var _sel_idx := 0
+var _n_actions := 0
+var _kill_ids := {}
+var _loot := false
+var _loot_done := false
+var _gear_opt := false
+var _gear_sel := ''
+var _geartest := false
+var opts_dropdemo := false
+var _cands_cache: Array = []
 var _cur: Dictionary = {}
-var _toast_t := 0.0
 
 
 func _say(msg: String) -> void:
-	hud.toast = msg
-	_toast_t = 3.0
+	hud.say(msg)
+
+
+func _ensure_gear() -> void:
+	if inv == null:
+		return
+	if _loot and not _loot_done:
+		_loot_done = true
+		for id in Inventory.ITEMS.keys():
+			inv.add(id, 3 if id in ['wood', 'beans', 'ammo', 'matches'] else 1)
+		inv.add('wood', 6)
+	if gear != null and gear.inv != inv:
+		gear.setup(self, inv, player, needs, body, clock, hud)
+	hud.inv = inv
+	hud.needs = needs
+
+
+func _count_kills() -> int:
+	for z in zombies:
+		if is_instance_valid(z) and z.is_dead() and not _kill_ids.has(z.get_instance_id()):
+			_kill_ids[z.get_instance_id()] = true
+	return _kill_ids.size()
+
+
+func gear_use(id: String) -> void:
+	if inv == null:
+		return
+	if id == 'flare':
+		_throw_flare()
+		return
+	_say(inv.use(id))
+
+
+func gear_hands(rifle: bool) -> void:
+	if rifle and inv.count('rifle') > 0:
+		rifle_up = true
+		_say('Rifle raised')
+	else:
+		rifle_up = false
+		_say('Hatchet in hands' if inv.count('axe') > 0 else 'Empty hands')
+
+
+func drop_item(id: String, n: int) -> void:
+	if inv == null or inv.count(id) < 1:
+		return
+	n = mini(n, inv.count(id))
+	if id == inv.equipped_body and n >= inv.count(id):
+		inv.use(id)
+	if id == 'rifle' and n >= inv.count(id):
+		rifle_up = false
+	var nm := inv.name_of(id)
+	if not inv.remove(id, n):
+		return
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var p := player.position + fwd * 1.3
+	var h: float = player.ground_at(p.x, p.z)
+	if is_nan(h):
+		h = player.position.y - player.eye_h
+	ItemPickup.spawn(self, id, n, Vector3(p.x, h, p.z))
+	_say('Dropped %s%s' % [nm, ' x%d' % n if n > 1 else ''])
+
+
+func take_pickup(node: Node) -> void:
+	var p := node as ItemPickup
+	if p == null or inv == null or p.is_queued_for_deletion():
+		return
+	if not inv.can_add(p.id, p.n):
+		_say('Your pack is full')
+		return
+	inv.add(p.id, p.n)
+	_say('Picked up %s%s' % [inv.name_of(p.id), ' x%d' % p.n if p.n > 1 else ''])
+	p.queue_free()
+
+
+func _run_geartest() -> void:
+	var fails := 0
+	inv = Inventory.new(body)
+	inv.needs = needs
+	inv.add('wood', 9)
+	var c1 := inv.stacks().size() == 3
+	inv.add('parka')
+	inv.use('parka')
+	inv.add('rifle')
+	var c2 := inv.stacks().size() == 3
+	var inv2 := Inventory.new(body)
+	inv2.add('ammo', 240)
+	var c3 := inv2.stacks().size() == Inventory.CAPACITY and not inv2.can_add('ammo', 1) and not inv2.can_add('matches', 1) and inv2.can_add('rifle', 1)
+	var pk0 := get_tree().get_nodes_in_group('pickups').size()
+	drop_item('wood', 2)
+	var c4 := inv.count('wood') == 7 and get_tree().get_nodes_in_group('pickups').size() == pk0 + 1
+	var node: Node = get_tree().get_nodes_in_group('pickups')[pk0]
+	take_pickup(node)
+	var c5 := inv.count('wood') == 9 and node.is_queued_for_deletion()
+	drop_item('parka', 1)
+	var c6 := inv.equipped_body == '' and inv.count('parka') == 0 and is_equal_approx(body.warmth, 0.25)
+	gear.setup(self, inv, player, needs, body, clock, hud)
+	gear.open()
+	var c7 := gear.is_open and player.ui_open
+	gear.close()
+	var c8 := not gear.is_open and not player.ui_open
+	print('GEARTEST stacks=%s worn+equip=%s cap=%s drop=%s take=%s dropworn=%s open=%s close=%s' % [c1, c2, c3, c4, c5, c6, c7, c8])
+	for c in [c1, c2, c3, c4, c5, c6, c7, c8]:
+		if not c:
+			fails += 1
+	# --- simulated mouse UI ---
+	inv = Inventory.new(body)
+	inv.needs = needs
+	inv.add('beans', 2)
+	inv.add('wood', 5)
+	inv.add('parka')
+	inv.add('matches', 2)
+	gear.setup(self, inv, player, needs, body, clock, hud)
+	gear.open()
+	await _frames_wait(3)
+	await _sim_double(gear._pack_rect(1).get_center())       # stacks: parka, beans, wood4, wood1, matches
+	var u1ok := inv.count('beans') == 1
+	await _frames_wait(2)
+	await _sim_drag(gear._pack_rect(0).get_center(), gear._slot_rect('body').get_center())
+	var u2ok := inv.equipped_body == 'parka'
+	await _frames_wait(2)
+	var pk1 := get_tree().get_nodes_in_group('pickups').size()
+	await _sim_drag(gear._pack_rect(1).get_center(), gear._ground_rect(2).get_center())   # wood x4 -> ground
+	var u3ok := inv.count('wood') == 1 and get_tree().get_nodes_in_group('pickups').size() == pk1 + 1
+	await _frames_wait(2)
+	await _sim_btn(gear._pack_rect(0).get_center(), MOUSE_BUTTON_RIGHT)    # beans -> menu
+	var u4ok: bool = not gear._menu.is_empty() and gear._menu['entries'].size() >= 2
+	await _frames_wait(2)
+	var mr: Rect2 = gear._hits.filter(func(h) -> bool: return h['k'] == 'menu')[0]['r']
+	await _sim_btn(mr.get_center(), MOUSE_BUTTON_LEFT)
+	await _sim_btn(mr.get_center(), MOUSE_BUTTON_LEFT, false)
+	var u5ok := inv.count('beans') == 0
+	var ke := InputEventKey.new()
+	ke.keycode = KEY_ESCAPE
+	ke.pressed = true
+	gear._input(ke)
+	var u6ok := not gear.is_open
+	print('GEARTEST ui dbl-eat=%s drag-wear=%s drag-drop=%s menu=%s menu-act=%s esc=%s' % [u1ok, u2ok, u3ok, u4ok, u5ok, u6ok])
+	for c in [u1ok, u2ok, u3ok, u4ok, u5ok, u6ok]:
+		if not c:
+			fails += 1
+	print('GEARTEST failures=', fails)
+	get_tree().quit()
+
+
+func _frames_wait(n: int) -> void:
+	for i in n:
+		await get_tree().process_frame
+
+
+func _sv(v: Vector2) -> Vector2:
+	return gear._origin() + v * gear._scale()
+
+
+func _sim_btn(v: Vector2, btn: int, pressed := true) -> void:
+	var e := InputEventMouseButton.new()
+	e.button_index = btn
+	e.pressed = pressed
+	e.position = _sv(v)
+	gear._on_gui(e)
+	await get_tree().process_frame
+
+
+func _sim_move(v: Vector2) -> void:
+	var e := InputEventMouseMotion.new()
+	e.position = _sv(v)
+	gear._on_gui(e)
+	await get_tree().process_frame
+
+
+func _sim_double(v: Vector2) -> void:
+	await _sim_btn(v, MOUSE_BUTTON_LEFT, true)
+	await _sim_btn(v, MOUSE_BUTTON_LEFT, false)
+	await _sim_btn(v, MOUSE_BUTTON_LEFT, true)
+	await _sim_btn(v, MOUSE_BUTTON_LEFT, false)
+
+
+func _sim_drag(a: Vector2, b: Vector2) -> void:
+	await _sim_move(a)
+	await _sim_btn(a, MOUSE_BUTTON_LEFT, true)
+	await _sim_move(a + (b - a) * 0.5)
+	await _sim_move(b)
+	await _sim_btn(b, MOUSE_BUTTON_LEFT, false)
 
 
 func _update_prompt() -> void:
@@ -392,12 +598,9 @@ func _update_prompt() -> void:
 		inv.add("wood", 2)
 		inv.add("matches", 1)
 		inv.needs = needs
-	_toast_t = maxf(0.0, _toast_t - get_process_delta_time())
-	if _toast_t <= 0.0:
-		hud.toast = ""
+	_ensure_gear()
 	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
-	var best: Dictionary = {}
-	var bd := 1e9
+	var cands: Array = []
 	for cb in cabins:
 		var stove_text := "Add wood to stove (%d)" % inv.count("wood")
 		if not cb.is_lit():
@@ -453,9 +656,8 @@ func _update_prompt() -> void:
 			var flat := Vector3(to.x, 0.0, to.z)
 			if flat.length() > 0.6 and flat.normalized().dot(fwd) < 0.5:
 				continue
-			if d < bd:
-				bd = d
-				best = it
+			it["d"] = d
+			cands.append(it)
 	for cf in campfires:
 		var cd: float = cf.global_position.distance_to(player.position)
 		if cd < 2.6:
@@ -463,32 +665,57 @@ func _update_prompt() -> void:
 			var ctext := 'Add log to fire (%d)' % inv.count('wood')
 			if inv.count('wood') == 0:
 				ctext = 'Fire needs wood'
-			if cd < bd:
-				bd = cd
-				best = {"text": ctext, "act": func() -> void:
-					if inv.remove('wood'):
-						cfire.add_wood()
-						_say('Added log: %d min of fuel' % int(cfire.fuel_s / 60.0))
-					else:
-						_say('No firewood')}
-			if cfire.is_lit() and inv.count('venison_raw') > 0 and cd < bd + 0.01 and cd < 1.8:
-				best = {"text": "Cook meat over fire", "act": func() -> void:
-					_say('Cooked %d venison' % inv.cook_all())}
-			elif cfire.is_lit() and needs.water < 90.0 and cd < 1.8 and inv.count('venison_raw') == 0:
-				best = {"text": "Melt snow and drink", "act": func() -> void:
+			cands.append({"d": cd, "text": ctext, "act": func() -> void:
+				if inv.remove('wood'):
+					cfire.add_wood()
+					_say('Added log: %d min of fuel' % int(cfire.fuel_s / 60.0))
+				else:
+					_say('No firewood')})
+			if cfire.is_lit() and inv.count('venison_raw') > 0 and cd < 1.8:
+				cands.append({"d": cd - 0.01, "text": "Cook meat over fire", "act": func() -> void:
+					_say('Cooked %d venison' % inv.cook_all())})
+			if cfire.is_lit() and needs.water < 90.0 and cd < 1.8:
+				cands.append({"d": cd + 0.01, "text": "Melt snow and drink", "act": func() -> void:
 					needs.drink(35.0)
-					_say('Drank melted snow (+35 water)')}
+					_say('Drank melted snow (+35 water)')})
 	for dr in deer:
 		if is_instance_valid(dr) and dr.state == Deer.State.DEAD and not dr.harvested:
 			var dd: float = dr.global_position.distance_to(player.position)
-			if dd < 2.4 and dd < bd:
-				bd = dd
-				best = {"text": "Harvest deer (+%d venison)" % Deer.MEAT_YIELD, "act": func() -> void:
+			if dd < 2.4:
+				cands.append({"d": dd, "text": "Harvest deer (+%d venison)" % Deer.MEAT_YIELD, "act": func() -> void:
 					dr.harvested = true
 					inv.add('venison_raw', Deer.MEAT_YIELD)
 					dr.queue_free()
-					_say('Harvested %d raw venison' % Deer.MEAT_YIELD)}
+					_say('Harvested %d raw venison' % Deer.MEAT_YIELD)})
+	for pk in get_tree().get_nodes_in_group("pickups"):
+		var ip := pk as ItemPickup
+		if ip == null:
+			continue
+		var pto := ip.global_position - player.position
+		pto.y = 0.0
+		var pd := pto.length()
+		if pd < 2.4 and (pd < 0.9 or pto.normalized().dot(fwd) > 0.3):
+			var pick: ItemPickup = ip
+			cands.append({"d": pd + 0.5, "text": "Take %s%s" % [inv.name_of(ip.id), " x%d" % ip.n if ip.n > 1 else ""], "act": func() -> void: take_pickup(pick)})
+	cands.sort_custom(func(x, y) -> bool: return float(x["d"]) < float(y["d"]))
+	if cands.size() > 7:
+		cands.resize(7)
+	var texts: Array = []
+	for c in cands:
+		texts.append(String(c["text"]).split(" (")[0])
+	_n_actions = cands.size()
+	_sel_idx = texts.find(_sel_text)
+	if _sel_idx < 0:
+		_sel_idx = 0
+	var best: Dictionary = cands[_sel_idx] if not cands.is_empty() else {}
+	_sel_text = String(texts[_sel_idx]) if not cands.is_empty() else ""
+	var shown: Array = []
+	for c in cands:
+		shown.append(String(c["text"]))
+	hud.actions = shown
+	hud.action_sel = _sel_idx
 	_cur = best
+	_cands_cache = cands
 	hud.prompt = String(best.get("text", ""))
 	var info := "Wood %d  Matches %d" % [inv.count("wood"), inv.count("matches")]
 	if inv.equipped_body != "":
@@ -500,17 +727,8 @@ func _update_prompt() -> void:
 	if inv.count('rifle') > 0:
 		info += '   [%s] ammo %d' % ['RIFLE' if rifle_up else 'hatchet', inv.count('ammo')]
 	hud.info = info
-	hud.inv_text = _inv_text() if inv_open else ""
-
-
-func _inv_text() -> String:
-	var t := "INVENTORY  (press number to use/wear, Tab closes)\n"
-	var i := 1
-	for id in inv.ids():
-		var mark := " (worn)" if inv.equipped_body == id else ""
-		t += "%d) %s x%d%s\n" % [i, inv.name_of(id), inv.count(id), mark]
-		i += 1
-	return t
+	hud.rifle_up = rifle_up
+	hud.kills = _count_kills()
 
 
 func _unhandled_input(e: InputEvent) -> void:
@@ -529,6 +747,14 @@ func _unhandled_input(e: InputEvent) -> void:
 		SaveGame.pending = SaveGame.read()
 		get_tree().reload_current_scene()
 		return
+	if e is InputEventMouseButton and e.pressed and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and (e.button_index == MOUSE_BUTTON_WHEEL_UP or e.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+		if _n_actions > 1:
+			var stepv := -1 if e.button_index == MOUSE_BUTTON_WHEEL_UP else 1
+			_sel_idx = posmod(_sel_idx + stepv, _n_actions)
+			hud.action_sel = _sel_idx
+			_sel_text = String(hud.actions[_sel_idx]).split(" (")[0]
+			_cur = _cands_cache[_sel_idx]
+		return
 	if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		_attack()
 		return
@@ -545,13 +771,6 @@ func _unhandled_input(e: InputEvent) -> void:
 		_say('Rifle raised' if rifle_up else 'Hatchet')
 	elif e.keycode == KEY_F:
 		_attack()
-	elif e.keycode == KEY_TAB:
-		inv_open = not inv_open
-	elif inv_open and e.keycode >= KEY_1 and e.keycode <= KEY_9:
-		var idx: int = e.keycode - KEY_1
-		var ids: Array = inv.ids()
-		if idx < ids.size():
-			_say(inv.use(ids[idx]))
 
 
 func _throw_flare() -> void:
@@ -1009,11 +1228,21 @@ func save_game() -> bool:
 		'cabins': cabs,
 		'fires': fires,
 		'wolves': _alive_list(wolves),
+		'pickups': _pickup_list(),
 		'bears': _alive_list(bears),
 		'zombies': _alive_list(zombies),
 		'deer': _alive_list(deer),
 	}
 	return SaveGame.write(d)
+
+
+func _pickup_list() -> Array:
+	var out: Array = []
+	for pk in get_tree().get_nodes_in_group('pickups'):
+		var ip := pk as ItemPickup
+		if ip != null and not ip.is_queued_for_deletion():
+			out.append({'id': ip.id, 'n': ip.n, 'x': ip.global_position.x, 'z': ip.global_position.z})
+	return out
 
 
 func _alive_list(arr: Array) -> Array:
@@ -1025,6 +1254,9 @@ func _alive_list(arr: Array) -> Array:
 
 
 func _restore_creatures(sv: Dictionary) -> void:
+	for e in sv.get('pickups', []):
+		if Inventory.ITEMS.has(String(e['id'])):
+			ItemPickup.spawn(self, String(e['id']), int(e['n']), _ground(float(e['x']), float(e['z'])))
 	var i := 0
 	for e in sv.get('wolves', []):
 		var w := _add_wolf(_ground(float(e['x']), float(e['z'])), i)

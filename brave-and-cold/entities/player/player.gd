@@ -44,6 +44,7 @@ var health := 100.0
 var dead := false
 var death_cause := ""
 var struggling := false
+var ui_open := false  # gear screen etc: no movement, world keeps running
 var struggle_by: Node = null
 var struggle_prog := 0.0
 var struggle_gain := 0.12
@@ -147,7 +148,7 @@ func _process(delta: float) -> void:
 	cam.rotation = Vector3(pitch, yaw, 0.0)
 	if struggling:
 		_struggle_update(delta)
-	if frozen or struggling:
+	if frozen or struggling or ui_open:
 		return
 	_move(delta)
 	_stamina(delta)
