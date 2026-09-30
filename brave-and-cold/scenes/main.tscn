@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="1_hud"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
@@ -30,8 +30,22 @@ ambient_light_source = 3
 ambient_light_color = Color(0.7, 0.8, 1, 1)
 ambient_light_energy = 0.12
 
+[ext_resource type="Shader" path="res://shaders/terrain_snow_rock.gdshader" id="11_terrain_shader"]
+
+[sub_resource type="ShaderMaterial" id="TerrainMaterial"]
+shader = ExtResource("11_terrain_shader")
+shader_parameter/snow_color = Color(0.92, 0.94, 0.98, 1)
+shader_parameter/rock_color = Color(0.28, 0.26, 0.24, 1)
+shader_parameter/snow_roughness = 0.25
+shader_parameter/rock_roughness = 0.85
+shader_parameter/slope_threshold = 0.7
+shader_parameter/slope_blend_width = 0.15
+shader_parameter/snow_line_height = 0.0
+shader_parameter/height_blend_width = 1.5
+
 [sub_resource type="PlaneMesh" id="GroundMesh"]
 size = Vector2(100, 100)
+material = SubResource("TerrainMaterial")
 
 [sub_resource type="BoxShape3D" id="GroundShape"]
 size = Vector3(100, 1, 100)
