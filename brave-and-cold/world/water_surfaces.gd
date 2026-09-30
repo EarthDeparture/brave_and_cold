@@ -14,7 +14,7 @@ func build(map_dir: String = "res://data/maps/valley_b") -> void:
 	var zmax: float = data["z_max_m"]
 	var n: int = int(data["size_m"])
 	var half := n / 2
-	var mask := Image.load_from_file(ProjectSettings.globalize_path(map_dir + "/water_mask.png"))
+	var mask := MapIO.load_png(map_dir + "/water_mask.png")
 	mask.convert(Image.FORMAT_L8)
 	var f := FileAccess.open(map_dir + "/water_level.r16", FileAccess.READ)
 	var buf := f.get_buffer(n * n * 2)

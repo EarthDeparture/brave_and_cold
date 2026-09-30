@@ -42,11 +42,11 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 	var meta = JSON.parse_string(FileAccess.get_file_as_string(map_dir + "/meta.json"))
 	var size_m: int = int(meta["size_m"])
 	var half := size_m / 2
-	var canopy := Image.load_from_file(ProjectSettings.globalize_path(map_dir + "/canopy.png"))
-	var slope := Image.load_from_file(ProjectSettings.globalize_path(map_dir + "/slope.png"))
+	var canopy := MapIO.load_png(map_dir + "/canopy.png")
+	var slope := MapIO.load_png(map_dir + "/slope.png")
 	canopy.convert(Image.FORMAT_L8)
 	slope.convert(Image.FORMAT_L8)
-	var water := Image.load_from_file(ProjectSettings.globalize_path(map_dir + "/water_mask.png"))
+	var water := MapIO.load_png(map_dir + "/water_mask.png")
 	water.convert(Image.FORMAT_L8)
 
 	var meshes: Array[Mesh] = []

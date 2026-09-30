@@ -29,9 +29,9 @@ func build(map_dir: String) -> void:
 	var meta = JSON.parse_string(FileAccess.get_file_as_string(map_dir + "/meta.json"))
 	size_m = int(meta["size_m"])
 	half = size_m * 0.5
-	var can := Image.load_from_file(ProjectSettings.globalize_path(map_dir + "/canopy.png"))
-	var slope := Image.load_from_file(ProjectSettings.globalize_path(map_dir + "/slope.png"))
-	var water := Image.load_from_file(ProjectSettings.globalize_path(map_dir + "/water_mask.png"))
+	var can := MapIO.load_png(map_dir + "/canopy.png")
+	var slope := MapIO.load_png(map_dir + "/slope.png")
+	var water := MapIO.load_png(map_dir + "/water_mask.png")
 	can.convert(Image.FORMAT_L8)
 	slope.convert(Image.FORMAT_L8)
 	water.convert(Image.FORMAT_L8)

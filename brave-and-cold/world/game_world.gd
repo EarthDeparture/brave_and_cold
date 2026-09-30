@@ -257,7 +257,7 @@ func _autowalk() -> void:
 
 ## Spawn: nearest open, gentle, dry, snowy spot to map centre that borders forest (shelter within ~25 m).
 func _find_spawn() -> Vector2:
-	var water := Image.load_from_file(ProjectSettings.globalize_path("res://data/maps/valley_b/water_mask.png"))
+	var water := MapIO.load_png("res://data/maps/valley_b/water_mask.png")
 	water.convert(Image.FORMAT_L8)
 	var half := 1024
 	var best := Vector2.ZERO
@@ -299,7 +299,7 @@ func _lay_trail(n: int) -> void:
 
 ## Cabin site: flat, open, dry ground 25-90 m from spawn, door facing the spawn point.
 func _place_cabin(spawn: Vector2) -> void:
-	var water := Image.load_from_file(ProjectSettings.globalize_path("res://data/maps/valley_b/water_mask.png"))
+	var water := MapIO.load_png("res://data/maps/valley_b/water_mask.png")
 	water.convert(Image.FORMAT_L8)
 	for r in range(28, 110, 6):
 		for a in range(0, 360, 15):
