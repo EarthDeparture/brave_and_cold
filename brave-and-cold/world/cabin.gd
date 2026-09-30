@@ -16,7 +16,8 @@ var glass_mat: StandardMaterial3D
 var light: OmniLight3D
 var _walls: Array[Rect2] = []  # local xz rects
 const STOVE_LOCAL := Vector3(-2.35, 0.0, -1.75)
-const WOOD_BURN_S := 300.0  # real seconds per log
+const WOOD_BURN_S := 7200.0  # GAME seconds per log (2 h)
+static var game_scale := 48.0
 var door_open := false
 var door_hp := 100.0
 var door_broken := false
@@ -192,7 +193,7 @@ func _process(delta: float) -> void:
 		return
 	_t += delta
 	if stove_fuel_s > 0.0:
-		stove_fuel_s = maxf(0.0, stove_fuel_s - delta)
+		stove_fuel_s = maxf(0.0, stove_fuel_s - delta * game_scale)
 		var fl := 0.75 + 0.25 * sin(_t * 11.0) * sin(_t * 7.3) + 0.1 * sin(_t * 23.0)
 		_fire_mat.emission_energy_multiplier = 3.0 * fl
 		_fire_light.light_energy = 2.2 * fl

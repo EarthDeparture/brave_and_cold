@@ -51,6 +51,7 @@ func _ready() -> void:
 	snow.build("res://data/maps/valley_b")
 	clock.hour = float(opts.get("hour", 16.5))
 	clock.time_scale = float(opts.get("speed", clock.time_scale))
+	Cabin.game_scale = clock.time_scale
 	sky_rig = SkyRig.new()
 	add_child(sky_rig)
 	sky_rig.setup(sun, env, sky_mat)
@@ -107,6 +108,7 @@ func _ready() -> void:
 	_wolftest = opts.has("wolftest")
 	_zombietest = opts.has("zombietest")
 	_deertest = opts.has("deertest")
+	_campfire_opt = opts.has("campfire")
 	_force_death = opts.has("dead")
 	wolf_test_dist = float(opts.get("wdist", 22.0))
 	walk_secs = float(opts.get("walk", 0.0))
@@ -171,6 +173,9 @@ func _process(delta: float) -> void:
 	var fw := player.fire_w
 	for cb in cabins:
 		fw = maxf(fw, cb.heat_at(player.position.x, player.position.z))
+	for cf in campfires:
+		cf.advance(gs)
+		fw = maxf(fw, cf.heat_at(player.position.x, player.position.z))
 	body.metabolism_mult = needs.metabolism_mult()
 	body.update(gs, clock.ambient_c(), wind, player.is_sheltered(), fw, player.activity, 0.0, false)
 	needs.update(gs, player.activity, body.core)
@@ -188,6 +193,12 @@ func _process(delta: float) -> void:
 		player.hurt(999.0, "Mauled by a wolf")
 	if _zombietest and _frames > 30:
 		_zombietest_step(delta)
+	if _campfire_opt and _frames == 25:
+		inv = Inventory.new(body)
+		inv.needs = needs
+		inv.add('wood', 3)
+		inv.add('matches', 1)
+		_build_campfire()
 	if _deertest and _frames > 30:
 		_deertest_step(delta)
 	if _wolftest and _frames > 30:
@@ -384,6 +395,28 @@ func _update_prompt() -> void:
 			if d < bd:
 				bd = d
 				best = it
+	for cf in campfires:
+		var cd: float = cf.global_position.distance_to(player.position)
+		if cd < 2.6:
+			var cfire: Campfire = cf
+			var ctext := 'Add log to fire (%d)' % inv.count('wood')
+			if inv.count('wood') == 0:
+				ctext = 'Fire needs wood'
+			if cd < bd:
+				bd = cd
+				best = {"text": ctext, "act": func() -> void:
+					if inv.remove('wood'):
+						cfire.add_wood()
+						_say('Added log: %d min of fuel' % int(cfire.fuel_s / 60.0))
+					else:
+						_say('No firewood')}
+			if cfire.is_lit() and inv.count('venison_raw') > 0 and cd < bd + 0.01 and cd < 1.8:
+				best = {"text": "Cook meat over fire", "act": func() -> void:
+					_say('Cooked %d venison' % inv.cook_all())}
+			elif cfire.is_lit() and needs.water < 90.0 and cd < 1.8 and inv.count('venison_raw') == 0:
+				best = {"text": "Melt snow and drink", "act": func() -> void:
+					needs.drink(35.0)
+					_say('Drank melted snow (+35 water)')}
 	for dr in deer:
 		if is_instance_valid(dr) and dr.state == Deer.State.DEAD and not dr.harvested:
 			var dd: float = dr.global_position.distance_to(player.position)
@@ -430,6 +463,8 @@ func _unhandled_input(e: InputEvent) -> void:
 		return
 	if e.keycode == KEY_E and not _cur.is_empty():
 		(_cur["act"] as Callable).call()
+	elif e.keycode == KEY_B and inv != null:
+		_build_campfire()
 	elif e.keycode == KEY_X and inv != null and inv.count('rifle') > 0:
 		rifle_up = not rifle_up
 		_say('Rifle raised' if rifle_up else 'Hatchet')
@@ -766,3 +801,36 @@ func _deertest_step(delta: float) -> void:
 	elif _dt > 40.0:
 		print('DEERTEST timeout state=%d' % d0.state)
 		get_tree().quit()
+
+var campfires: Array[Campfire] = []
+
+
+func _build_campfire() -> void:
+	if player.dead:
+		return
+	for cb in cabins:
+		if cb.contains_xz(player.position.x, player.position.z):
+			_say('Not indoors. Use the stove')
+			return
+	if inv.count('wood') < 2 or inv.count('matches') < 1:
+		_say('Campfire needs 2 firewood + 1 match')
+		return
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var p := player.position + fwd * 1.6
+	var h: float = terrain.data.get_height(Vector3(p.x, 0, p.z))
+	if is_nan(h):
+		return
+	for cf in campfires:
+		if cf.global_position.distance_to(p) < 2.0:
+			_say('Too close to another fire')
+			return
+	inv.remove('wood', 2)
+	inv.remove('matches')
+	var cf := Campfire.new()
+	add_child(cf)
+	cf.global_position = Vector3(p.x, h, p.z)
+	cf.add_wood(2)
+	campfires.append(cf)
+	_say('Built a campfire')
+
+var _campfire_opt := false
