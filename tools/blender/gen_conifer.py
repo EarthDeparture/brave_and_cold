@@ -49,9 +49,9 @@ def build(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
     rng = random.Random(seed)
     bm = bmesh.new()
     # trunk
-    sides = 6
-    bot = [bm.verts.new((math.cos(2 * math.pi * i / sides) * 0.022, math.sin(2 * math.pi * i / sides) * 0.022, 0)) for i in range(sides)]
-    top = [bm.verts.new((math.cos(2 * math.pi * i / sides) * 0.012, math.sin(2 * math.pi * i / sides) * 0.012, 0.95)) for i in range(sides)]
+    sides = 8
+    bot = [bm.verts.new((math.cos(2 * math.pi * i / sides) * 0.010, math.sin(2 * math.pi * i / sides) * 0.010, 0)) for i in range(sides)]
+    top = [bm.verts.new((math.cos(2 * math.pi * i / sides) * 0.005, math.sin(2 * math.pi * i / sides) * 0.005, 0.95)) for i in range(sides)]
     for i in range(sides):
         bm.faces.new((bot[i], bot[(i + 1) % sides], top[(i + 1) % sides], top[i]))
     trunk_faces = set(f.index for f in bm.faces)
@@ -97,9 +97,9 @@ def build_near(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
     """Near LOD: drooping bough wedges per tier -> irregular silhouette, visible trunk between boughs."""
     rng = random.Random(seed + 1000)
     bm = bmesh.new()
-    sides = 6
-    bot = [bm.verts.new((math.cos(2 * math.pi * i / sides) * 0.024, math.sin(2 * math.pi * i / sides) * 0.024, 0)) for i in range(sides)]
-    top = [bm.verts.new((math.cos(2 * math.pi * i / sides) * 0.008, math.sin(2 * math.pi * i / sides) * 0.008, 0.97)) for i in range(sides)]
+    sides = 8
+    bot = [bm.verts.new((math.cos(2 * math.pi * i / sides) * 0.011, math.sin(2 * math.pi * i / sides) * 0.011, 0)) for i in range(sides)]
+    top = [bm.verts.new((math.cos(2 * math.pi * i / sides) * 0.004, math.sin(2 * math.pi * i / sides) * 0.004, 0.97)) for i in range(sides)]
     for i in range(sides):
         bm.faces.new((bot[i], bot[(i + 1) % sides], top[(i + 1) % sides], top[i]))
     n_trunk = len(bm.faces)
