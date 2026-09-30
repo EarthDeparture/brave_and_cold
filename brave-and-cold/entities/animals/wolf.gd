@@ -5,18 +5,21 @@ extends Node3D
 
 enum State { WANDER, INVESTIGATE, ALERT, CHASE, RETREAT }
 
-const MODEL := "res://assets/models/animals/wolf.glb"
-const WALK_SPEED := 1.6
-const TROT_SPEED := 3.4
-const RUN_SPEED := 8.0
-const SIGHT_RANGE := 32.0
+var WALK_SPEED := 1.6
+var TROT_SPEED := 3.4
+var RUN_SPEED := 8.0
+var SIGHT_RANGE := 32.0
 const SIGHT_FOV_DOT := 0.35  # cos of half-FOV (~70 deg)
-const ALERT_TIME := 1.2
-const BITE_RANGE := 1.6
-const BITE_DAMAGE := 12.0
-const BITE_COOLDOWN := 1.3
-const GIVE_UP_DIST := 70.0
+var ALERT_TIME := 1.2
+var BITE_RANGE := 1.6
+var BITE_DAMAGE := 12.0
+var BITE_COOLDOWN := 1.3
+var GIVE_UP_DIST := 70.0
 
+var model_path := "res://assets/models/animals/wolf.glb"
+var part_prefix := "wolf"
+var death_msg := "Mauled by a wolf"
+var body_radius := 0.4
 var terrain: Terrain3D
 var snow: SnowField
 var player: Player
@@ -47,7 +50,7 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	cabins = cbs
 	_rng.seed = seed_value
 	bus.noise.connect(_on_noise)
-	var model := (load(MODEL) as PackedScene).instantiate()
+	var model := (load(model_path) as PackedScene).instantiate()
 	add_child(model)
 	var mat := StandardMaterial3D.new()
 	mat.vertex_color_use_as_albedo = true
@@ -56,9 +59,9 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	for mi in model.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).material_override = mat
 	for n in ["fl", "fr", "bl", "br"]:
-		_legs[n] = model.find_child("wolf_leg_" + n, true, false)
-	_tail = model.find_child("wolf_tail", true, false)
-	_body = model.find_child("wolf_body", true, false)
+		_legs[n] = model.find_child(part_prefix + "_leg_" + n, true, false)
+	_tail = model.find_child(part_prefix + "_tail", true, false)
+	_body = model.find_child(part_prefix + "_body", true, false)
 	add_to_group("hostile")
 	_pick_wander()
 
@@ -167,7 +170,7 @@ func _process(delta: float) -> void:
 				if _bite_cd <= 0.0:
 					_bite_cd = BITE_COOLDOWN
 					bites += 1
-					player.hurt(BITE_DAMAGE, "Mauled by a wolf")
+					player.hurt(BITE_DAMAGE, death_msg)
 			if dist > GIVE_UP_DIST or (_state_t > 25.0 and dist > 35.0) or _stuck_t > 6.0:
 				_set_state(State.RETREAT)
 				var away := (global_position - pp)
@@ -204,11 +207,11 @@ func _move(want: float, delta: float) -> void:
 			np.y = pos.y
 			var before := Vector2(np.x, np.z)
 			if forest != null:
-				var q := forest.resolve_trunks(np.x, np.z, 0.4)
+				var q := forest.resolve_trunks(np.x, np.z, body_radius)
 				np.x = q.x
 				np.z = q.y
 			for cb in cabins:
-				var q2: Vector2 = cb.resolve(np.x, np.z, 0.45)
+				var q2: Vector2 = cb.resolve(np.x, np.z, body_radius + 0.05)
 				np.x = q2.x
 				np.z = q2.y
 			if state == State.CHASE and Vector2(np.x, np.z).distance_to(before) > step.length() * 0.6:

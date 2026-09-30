@@ -84,6 +84,7 @@ func _ready() -> void:
 			_restore_creatures(sv)
 		else:
 			_spawn_wolves(int(opts.get("wolves", 3)), home, 70.0, 140.0)
+			_spawn_bears(int(opts.get("bears", 2)), home, 150.0, 320.0)
 		if not loading:
 			_spawn_zombies(int(opts.get("zombies", 10)), home)
 			_spawn_deer(int(opts.get("deer", 6)), home)
@@ -125,6 +126,7 @@ func _ready() -> void:
 	out_path = String(opts.get("out", ""))
 	_selftest = opts.has("selftest")
 	_wolftest = opts.has("wolftest")
+	_beartest = opts.has("bear")
 	_zombietest = opts.has("zombietest")
 	_deertest = opts.has("deertest")
 	_campfire_opt = opts.has("campfire")
@@ -588,7 +590,9 @@ func _run_selftest() -> void:
 
 
 var wolves: Array[Wolf] = []
+var bears: Array[Wolf] = []
 var _wolftest := false
+var _beartest := false
 var _wt := 0.0
 
 
@@ -612,12 +616,35 @@ func _spawn_wolves(n: int, center: Vector2, min_d: float, max_d: float) -> void:
 		made += 1
 
 
-func _add_wolf(p: Vector3, idx: int) -> Wolf:
-	var w := Wolf.new()
+func _spawn_bears(n: int, center: Vector2, min_d: float, max_d: float) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 4242
+	var made := 0
+	var tries := 0
+	while made < n and tries < 200:
+		tries += 1
+		var a := rng.randf() * TAU
+		var r := rng.randf_range(min_d, max_d)
+		var x := center.x + cos(a) * r
+		var z := center.y + sin(a) * r
+		if absf(x) > 950.0 or absf(z) > 950.0:
+			continue
+		var h: float = terrain.data.get_height(Vector3(x, 0, z))
+		if is_nan(h):
+			continue
+		_add_wolf(Vector3(x, h, z), 2000 + made, true)
+		made += 1
+
+
+func _add_wolf(p: Vector3, idx: int, bear := false) -> Wolf:
+	var w: Wolf = Bear.new() if bear else Wolf.new()
 	add_child(w)
 	w.global_position = p
 	w.setup(terrain, snow, player, forest, cabins, noise_bus, 1000 + idx)
-	wolves.append(w)
+	if bear:
+		bears.append(w)
+	else:
+		wolves.append(w)
 	return w
 
 
@@ -628,20 +655,24 @@ func _wolftest_step(delta: float) -> void:
 		var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
 		var wp := player.position + fwd * wolf_test_dist
 		wp.y = terrain.data.get_height(wp)
-		_add_wolf(wp, 0)
+		_add_wolf(wp, 0, _beartest)
 		print("WT wolf at dist 22, tier under player ", snow.tier_at(player.position.x, player.position.z))
 	if _wt > 1.0 and not _noise_sent:
 		_noise_sent = true
 		noise_bus.emit_noise(player.position, 40.0, player)
-		print("WT noise sent state=", wolves[0].state)
+		print("WT noise sent state=", _wt_w().state)
 	if int(_wt * 2) != _wt_last:
 		_wt_last = int(_wt * 2)
-		var w := wolves[0]
+		var w := _wt_w()
 		if _wt_last % 2 == 0:
 			print("WT t=%.0f state=%d dist=%.1f speed=%.2f hp=%.0f bites=%d" % [_wt, w.state, w.global_position.distance_to(player.position), w.speed_now, player.health, w.bites])
 	if _wt > 26.0 or player.dead:
-		print("WOLFTEST done hp=%.0f dead=%s bites=%d" % [player.health, str(player.dead), wolves[0].bites])
+		print("WOLFTEST done hp=%.0f dead=%s bites=%d" % [player.health, str(player.dead), _wt_w().bites])
 		get_tree().quit()
+
+
+func _wt_w() -> Wolf:
+	return bears[0] if _beartest else wolves[0]
 
 
 var _wolves_spawned_for_test := false
@@ -939,6 +970,7 @@ func save_game() -> bool:
 		'cabins': cabs,
 		'fires': fires,
 		'wolves': _alive_list(wolves),
+		'bears': _alive_list(bears),
 		'zombies': _alive_list(zombies),
 		'deer': _alive_list(deer),
 	}
@@ -958,6 +990,11 @@ func _restore_creatures(sv: Dictionary) -> void:
 	for e in sv.get('wolves', []):
 		var w := _add_wolf(_ground(float(e['x']), float(e['z'])), i)
 		w.hp = float(e['hp'])
+		i += 1
+	i = 0
+	for e in sv.get('bears', []):
+		var br := _add_wolf(_ground(float(e['x']), float(e['z'])), 2000 + i, true)
+		br.hp = float(e['hp'])
 		i += 1
 	i = 0
 	for e in sv.get('zombies', []):

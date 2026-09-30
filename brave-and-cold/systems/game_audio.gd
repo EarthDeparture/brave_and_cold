@@ -133,3 +133,13 @@ func _creatures(delta: float) -> void:
 			elif wst == Wolf.State.CHASE and wd < 120.0:
 				play_at("growl", w.global_position + Vector3(0, 0.8, 0), 4.0, _rng.randf_range(0.9, 1.1), 10.0, 120.0)
 		_wstate[wid] = wst
+	for bw in world.get("bears"):
+		if not is_instance_valid(bw):
+			continue
+		var bid: int = bw.get_instance_id()
+		var bst: int = bw.state
+		if _wstate.get(bid, -1) != bst:
+			var bd: float = bw.global_position.distance_to(player.position)
+			if (bst == Wolf.State.ALERT or bst == Wolf.State.CHASE) and bd < 120.0:
+				play_at("growl", bw.global_position + Vector3(0, 1.2, 0), 8.0, _rng.randf_range(0.5, 0.62), 12.0, 160.0)
+		_wstate[bid] = bst
