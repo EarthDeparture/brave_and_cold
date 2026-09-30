@@ -16,6 +16,8 @@ var snow := SnowField.new()
 var noise_bus := NoiseBus.new()
 var player: Player
 var hud: Hud
+var forest: ForestScatter
+var footprints: Footprints
 var out_path := ""
 var walk_secs := 0.0
 var _t := 0.0
@@ -38,9 +40,9 @@ func _ready() -> void:
 	terrain.material.set_shader_param("macro_variation1", Color(0.80, 0.88, 1.0))
 	terrain.material.set_shader_param("macro_variation2", Color(1.0, 0.94, 0.97))
 	if opts.get("trees", "1") == "1":
-		var f := ForestScatter.new()
-		add_child(f)
-		f.build(terrain)
+		forest = ForestScatter.new()
+		add_child(forest)
+		forest.build(terrain)
 	var w := WaterSurfaces.new()
 	add_child(w)
 	w.build()
@@ -54,8 +56,14 @@ func _ready() -> void:
 	player = Player.new()
 	add_child(player)
 	player.setup(terrain, snow, body, noise_bus)
-	var xz := PackedStringArray(String(opts.get("pos", "0,0")).split(","))
-	player.place(float(xz[0]), float(xz[1]))
+	player.forest = forest
+	footprints = Footprints.new()
+	add_child(footprints)
+	player.footprints = footprints
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var sp := _find_spawn() if not opts.has("pos") else Vector2(float(String(opts["pos"]).split(",")[0]), float(String(opts["pos"]).split(",")[1]))
+	player.place(sp.x, sp.y)
 	player.yaw = deg_to_rad(float(opts.get("yaw", 0.0)))
 	player.pitch = deg_to_rad(float(opts.get("pitch", -3.0)))
 	hud = Hud.new()
@@ -107,6 +115,8 @@ func _build_environment() -> void:
 
 
 func _process(delta: float) -> void:
+	if hud == null:
+		return
 	_frames += 1
 	_t += delta
 	# time / lighting
@@ -141,3 +151,33 @@ func _autowalk() -> void:
 		print("WALK_END pos=", player.position, " stamina=%.1f exhausted=%s core=%.2f state=%s tier=%d hour=%.2f moved_speed=%.2f" % [
 			player.stamina, str(player.exhausted), body.core, body.state_name(), snow.tier_at(player.position.x, player.position.z), clock.hour, player.speed_now])
 		get_tree().quit()
+
+
+## Spawn: nearest open, gentle, dry, snowy spot to map centre that borders forest (shelter within ~25 m).
+func _find_spawn() -> Vector2:
+	var water := Image.load_from_file(ProjectSettings.globalize_path("res://data/maps/valley_b/water_mask.png"))
+	water.convert(Image.FORMAT_L8)
+	var half := 1024
+	var best := Vector2.ZERO
+	var best_d := 1e9
+	for r in range(0, 700, 6):
+		for a in range(0, 360, 12):
+			var x := cos(deg_to_rad(a)) * r
+			var z := sin(deg_to_rad(a)) * r
+			if snow.canopy_height_at(x, z) > 1.0:
+				continue
+			if water.get_pixel(int(x) + half, int(z) + half).r > 0.5:
+				continue
+			var h: float = terrain.data.get_height(Vector3(x, 0, z))
+			var hx: float = terrain.data.get_height(Vector3(x + 6, 0, z))
+			var hz: float = terrain.data.get_height(Vector3(x, 0, z + 6))
+			if is_nan(h) or is_nan(hx) or is_nan(hz) or absf(hx - h) > 0.7 or absf(hz - h) > 0.7:
+				continue
+			var shelter := snow.canopy_height_at(x + 20, z) >= 10.0 or snow.canopy_height_at(x - 20, z) >= 10.0 or snow.canopy_height_at(x, z + 20) >= 10.0 or snow.canopy_height_at(x, z - 20) >= 10.0
+			if shelter and r < best_d:
+				best_d = r
+				best = Vector2(x, z)
+		if best_d < 1e8:
+			break
+	print("SPAWN ", best)
+	return best

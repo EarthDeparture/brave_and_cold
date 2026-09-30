@@ -14,6 +14,27 @@ const TREE_UNIT_M := 1.0  # source models are 1.0 high; scale = real canopy heig
 var terrain: Terrain3D
 var map_dir := "res://data/maps/valley_b"
 var tree_count := 0
+const TRUNK_CELL := 8.0
+var _trunks: Dictionary = {}  # Vector2i cell -> PackedVector3Array(x, z, radius)
+
+
+## Push a circle (x,z,r) out of any trunk it overlaps. Returns corrected xz.
+func resolve_trunks(x: float, z: float, r: float) -> Vector2:
+	var p := Vector2(x, z)
+	var cx := int(floor(x / TRUNK_CELL))
+	var cz := int(floor(z / TRUNK_CELL))
+	for oz in range(-1, 2):
+		for ox in range(-1, 2):
+			var arr = _trunks.get(Vector2i(cx + ox, cz + oz))
+			if arr == null:
+				continue
+			for t in (arr as PackedVector3Array):
+				var d := p - Vector2(t.x, t.y)
+				var minr: float = t.z + r
+				var l := d.length()
+				if l < minr:
+					p = Vector2(t.x, t.y) + (d / maxf(l, 0.0001)) * minr if l > 0.0001 else p + Vector2(minr, 0)
+	return p
 
 
 func build(t: Terrain3D, seed_value: int = 1337) -> void:
@@ -73,6 +94,10 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 				buckets[key] = [[], [], []]
 			buckets[key][vi].append(Transform3D(b, Vector3(wx, h - 0.15, wz)))
 			tree_count += 1
+			var ck := Vector2i(int(floor(wx / TRUNK_CELL)), int(floor(wz / TRUNK_CELL)))
+			if not _trunks.has(ck):
+				_trunks[ck] = PackedVector3Array()
+			(_trunks[ck] as PackedVector3Array).append(Vector3(wx, wz, 0.12 + 0.012 * height_m))
 
 	for key in buckets:
 		var per_variant: Array = buckets[key]

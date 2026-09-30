@@ -19,6 +19,8 @@ var snow: SnowField
 var body: BodyTemperature
 var noise: NoiseBus
 var cam: Camera3D
+var forest: ForestScatter
+var footprints: Footprints
 
 var yaw := 0.0
 var pitch := 0.0
@@ -118,6 +120,10 @@ func _move(delta: float) -> void:
 		if not is_nan(h1) and not is_nan(h0) and (h1 - h0) / maxf(step.length(), 0.001) < MAX_SLOPE:
 			position.x = np.x
 			position.z = np.z
+			if forest != null:
+				var q := forest.resolve_trunks(position.x, position.z, 0.35)
+				position.x = q.x
+				position.z = q.y
 		else:
 			speed_now = 0.0
 			moving = false
@@ -156,6 +162,10 @@ func _footsteps(delta: float) -> void:
 	if _since_trample >= TRAMPLE_STEP:
 		_since_trample = 0.0
 		snow.trample(position.x, position.z, 0.5)
+		if footprints != null:
+			var gy: float = ground_at(position.x, position.z)
+			if not is_nan(gy):
+				footprints.step(position.x, gy, position.z, yaw, snow.tier_at(position.x, position.z))
 	_since_noise += delta
 	if _since_noise >= NOISE_INTERVAL:
 		_since_noise = 0.0
