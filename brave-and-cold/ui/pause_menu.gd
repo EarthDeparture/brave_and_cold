@@ -3,6 +3,9 @@ extends CanvasLayer
 ## Esc menu. Pauses the tree; this node keeps processing.
 
 signal resumed
+signal save_requested
+
+var _save_btn: Button
 
 var _box: VBoxContainer
 var _options: OptionsPanel
@@ -26,9 +29,11 @@ func _init() -> void:
 	var t := UiKit.label("PAUSED", 48)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_box.add_child(t)
-	for spec in [["Resume", resume], ["Options", _show_options], ["Main Menu", _to_menu], ["Quit Game", _quit]]:
+	for spec in [["Resume", resume], ["Save Game", func() -> void: save_requested.emit()], ["Options", _show_options], ["Main Menu", _to_menu], ["Quit Game", _quit]]:
 		var b := UiKit.button(spec[0])
 		b.pressed.connect(spec[1])
+		if spec[0] == 'Save Game':
+			_save_btn = b
 		var c := CenterContainer.new()
 		c.add_child(b)
 		_box.add_child(c)
@@ -51,10 +56,16 @@ func _unhandled_input(e: InputEvent) -> void:
 
 func open() -> void:
 	visible = true
+	if _save_btn != null:
+		_save_btn.text = 'Save Game'
 	_box.visible = true
 	_options.visible = false
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+
+func save_status(ok: bool) -> void:
+	_save_btn.text = 'Saved' if ok else 'Cannot save now'
 
 
 func resume() -> void:

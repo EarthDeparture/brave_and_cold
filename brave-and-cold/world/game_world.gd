@@ -72,12 +72,21 @@ func _ready() -> void:
 	await get_tree().process_frame
 	var home := _find_spawn()
 	var sp := home if not opts.has("pos") else Vector2(float(String(opts["pos"]).split(",")[0]), float(String(opts["pos"]).split(",")[1]))
+	var sv: Dictionary = SaveGame.pending
+	SaveGame.pending = {}
+	var loading := not sv.is_empty()
+	if loading:
+		sp = Vector2(float(sv['player']['x']), float(sv['player']['z']))
 	player.place(sp.x, sp.y)
 	_place_cabin(home)
 	if not opts.has("wolftest") and not opts.has("zombietest") and not opts.has("deertest"):
-		_spawn_wolves(int(opts.get("wolves", 3)), home, 70.0, 140.0)
-		_spawn_zombies(int(opts.get("zombies", 10)), home)
-		_spawn_deer(int(opts.get("deer", 6)), home)
+		if loading:
+			_restore_creatures(sv)
+		else:
+			_spawn_wolves(int(opts.get("wolves", 3)), home, 70.0, 140.0)
+		if not loading:
+			_spawn_zombies(int(opts.get("zombies", 10)), home)
+			_spawn_deer(int(opts.get("deer", 6)), home)
 	player.cabins = cabins
 	if not cabins.is_empty():
 		if opts.has("stove"):
@@ -101,6 +110,8 @@ func _ready() -> void:
 		player.pitch = deg_to_rad(float(opts.get("pitch", -3.0)))
 	if opts.has("trail"):
 		_lay_trail(int(opts["trail"]))
+	if loading:
+		_apply_save(sv)
 	hud = Hud.new()
 	add_child(hud)
 	hud.setup(player, body, snow, clock)
@@ -109,12 +120,14 @@ func _ready() -> void:
 	audio.setup(player, self, wind)
 	pause_menu = PauseMenu.new()
 	add_child(pause_menu)
+	pause_menu.save_requested.connect(func() -> void: pause_menu.save_status(save_game()))
 	out_path = String(opts.get("out", ""))
 	_selftest = opts.has("selftest")
 	_wolftest = opts.has("wolftest")
 	_zombietest = opts.has("zombietest")
 	_deertest = opts.has("deertest")
 	_campfire_opt = opts.has("campfire")
+	_savetest = String(opts.get('savetest', ''))
 	opts_pausetest = opts.has('pausetest')
 	pause_shot = String(opts.get('pausetest', ''))
 	_force_death = opts.has("dead")
@@ -174,6 +187,11 @@ func _process(delta: float) -> void:
 	var night := clampf(1.0 - sun.light_energy / 0.7, 0.0, 1.0)
 	Zombie.night_factor = night
 	_attack_cd = maxf(0.0, _attack_cd - delta)
+	_autosave_t += delta
+	if _autosave_t > 120.0 and out_path == '' and walk_secs == 0.0 and not _selftest and not _wolftest and not _zombietest and not _deertest:
+		_autosave_t = 0.0
+		if _safe_to_save() and save_game():
+			_say('Autosaved')
 	for cb in cabins:
 		cb.set_night(night)
 	# survival
@@ -211,6 +229,23 @@ func _process(delta: float) -> void:
 		pause_menu.resume()
 		await get_tree().create_timer(0.5).timeout
 		print('PT resumed paused=', get_tree().paused, ' frames advanced=', _frames > f0, ' mouse=', Input.mouse_mode)
+		get_tree().quit()
+	if _savetest != '' and _frames == 40:
+		if _savetest == 'save':
+			inv = Inventory.new(body)
+			inv.needs = needs
+			inv.add('wood', 3)
+			inv.add('matches', 4)
+			inv.add('parka')
+			inv.use('parka')
+			_build_campfire()
+			needs.calories = 1234.0
+			body.core = 35.5
+			player.health = 71.0
+			clock.hour = 9.25
+			deer[0].hp = 33.0
+			print('SAVETEST wrote=', save_game())
+		_print_state()
 		get_tree().quit()
 	if _campfire_opt and _frames == 25:
 		inv = Inventory.new(body)
@@ -479,6 +514,7 @@ func _unhandled_input(e: InputEvent) -> void:
 		get_tree().change_scene_to_file('res://ui/main_menu.tscn')
 		return
 	if e is InputEventKey and e.pressed and e.keycode == KEY_R and player.dead:
+		SaveGame.pending = SaveGame.read()
 		get_tree().reload_current_scene()
 		return
 	if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -869,3 +905,114 @@ var pause_menu: PauseMenu
 
 var opts_pausetest := false
 var pause_shot := ''
+
+
+var _autosave_t := 0.0
+
+
+func _safe_to_save() -> bool:
+	if player.dead or inv == null:
+		return false
+	for h in get_tree().get_nodes_in_group('hostile'):
+		var n := h as Node3D
+		if n != null and not bool(n.call('is_dead')) and n.global_position.distance_to(player.position) < 45.0:
+			return false
+	return true
+
+
+func save_game() -> bool:
+	if inv == null or player.dead:
+		return false
+	var cabs: Array = []
+	for cb in cabins:
+		cabs.append({'stove': cb.stove_fuel_s, 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open})
+	var fires: Array = []
+	for cf in campfires:
+		fires.append({'x': cf.global_position.x, 'y': cf.global_position.y, 'z': cf.global_position.z, 'fuel': cf.fuel_s})
+	var d := {
+		'clock': {'hour': clock.hour, 'day': clock.day, 'total': clock.total_game_s},
+		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
+		'body': {'core': body.core, 'wet': body.wetness},
+		'needs': {'cal': needs.calories, 'water': needs.water},
+		'inv': {'counts': inv.counts, 'worn': inv.equipped_body, 'rifle_up': rifle_up},
+		'cabins': cabs,
+		'fires': fires,
+		'wolves': _alive_list(wolves),
+		'zombies': _alive_list(zombies),
+		'deer': _alive_list(deer),
+	}
+	return SaveGame.write(d)
+
+
+func _alive_list(arr: Array) -> Array:
+	var out: Array = []
+	for a in arr:
+		if is_instance_valid(a) and not bool(a.call('is_dead')):
+			out.append({'x': a.global_position.x, 'z': a.global_position.z, 'hp': a.hp})
+	return out
+
+
+func _restore_creatures(sv: Dictionary) -> void:
+	var i := 0
+	for e in sv.get('wolves', []):
+		var w := _add_wolf(_ground(float(e['x']), float(e['z'])), i)
+		w.hp = float(e['hp'])
+		i += 1
+	i = 0
+	for e in sv.get('zombies', []):
+		var z := _add_zombie(_ground(float(e['x']), float(e['z'])), 500 + i)
+		z.hp = float(e['hp'])
+		i += 1
+	i = 0
+	for e in sv.get('deer', []):
+		var dr := _add_deer(_ground(float(e['x']), float(e['z'])), i)
+		dr.hp = float(e['hp'])
+		i += 1
+
+
+func _ground(x: float, z: float) -> Vector3:
+	var h: float = terrain.data.get_height(Vector3(x, 0, z))
+	return Vector3(x, 0.0 if is_nan(h) else h, z)
+
+
+func _apply_save(sv: Dictionary) -> void:
+	var c: Dictionary = sv['clock']
+	clock.hour = float(c['hour'])
+	clock.day = int(c['day'])
+	clock.total_game_s = float(c['total'])
+	var p: Dictionary = sv['player']
+	player.yaw = float(p['yaw'])
+	player.pitch = float(p['pitch'])
+	player.health = float(p['hp'])
+	player.stamina = float(p['stam'])
+	body.core = float(sv['body']['core'])
+	body.wetness = float(sv['body']['wet'])
+	needs.calories = float(sv['needs']['cal'])
+	needs.water = float(sv['needs']['water'])
+	inv = Inventory.new(body)
+	inv.needs = needs
+	for k in sv['inv']['counts']:
+		inv.add(String(k), int(sv['inv']['counts'][k]))
+	if String(sv['inv']['worn']) != '':
+		inv.use(String(sv['inv']['worn']))
+	rifle_up = bool(sv['inv']['rifle_up']) and inv.count('rifle') > 0
+	var cabs: Array = sv['cabins']
+	for i in range(mini(cabs.size(), cabins.size())):
+		var cb = cabins[i]
+		cb.stove_fuel_s = float(cabs[i]['stove'])
+		cb.wood_pile = int(cabs[i]['wood'])
+		cb.crate_looted = bool(cabs[i]['looted'])
+		if bool(cabs[i]['door_open']) != cb.door_open:
+			cb.toggle_door()
+	for f in sv['fires']:
+		var cf := Campfire.new()
+		add_child(cf)
+		cf.global_position = Vector3(float(f['x']), float(f['y']), float(f['z']))
+		cf.fuel_s = float(f['fuel'])
+		campfires.append(cf)
+
+var _savetest := ''
+
+
+func _print_state() -> void:
+	print('STATE pos=(%.1f,%.1f) hp=%.0f cal=%.0f core=%.2f hour=%.2f wood=%d matches=%d worn=%s fires=%d fuel=%.0f wolves=%d zombies=%d deer=%d deer0hp=%.0f' % [player.position.x, player.position.z, player.health, needs.calories, body.core, clock.hour, inv.count('wood') if inv else -1, inv.count('matches') if inv else -1, inv.equipped_body if inv else '?', campfires.size(), campfires[0].fuel_s if campfires.size() > 0 else -1.0, wolves.size(), zombies.size(), deer.size(), deer[0].hp if deer.size() > 0 else -1.0])

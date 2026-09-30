@@ -45,7 +45,10 @@ func _ready() -> void:
 	var gap := Control.new()
 	gap.custom_minimum_size = Vector2(0, 40)
 	_main.add_child(gap)
-	for spec in [["Start Game", _start], ["Options", _show_options], ["Quit", _quit]]:
+	var specs: Array = [["New Game", _new_game], ["Options", _show_options], ["Quit", _quit]]
+	if SaveGame.exists():
+		specs.push_front(["Continue", _continue])
+	for spec in specs:
 		var b := UiKit.button(spec[0])
 		b.pressed.connect(spec[1])
 		var c := CenterContainer.new()
@@ -82,7 +85,9 @@ func _ready() -> void:
 			print('MENU_SHOT')
 			get_tree().quit()
 		elif a == 'autostart':
-			_start()
+			_new_game()
+		elif a == 'autocontinue':
+			_continue()
 
 
 func _add_snow() -> void:
@@ -112,6 +117,16 @@ func _show_options() -> void:
 func _show_main() -> void:
 	_options.visible = false
 	_main.visible = true
+
+
+func _new_game() -> void:
+	SaveGame.pending = {}
+	_start()
+
+
+func _continue() -> void:
+	SaveGame.pending = SaveGame.read()
+	_start()
 
 
 func _start() -> void:
