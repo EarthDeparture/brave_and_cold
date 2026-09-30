@@ -30,9 +30,9 @@ func _initialize() -> void:
 	var half := size_m / 2
 
 	var assets := Terrain3DAssets.new()
-	assets.set_texture(0, _make_tex(0, "snow", Color.WHITE, 0.10))
+	assets.set_texture(0, _make_tex(0, "snow", Color.WHITE, 0.22))
 	assets.set_texture(1, _make_tex(1, "rock", Color.WHITE, 0.08))
-	assets.set_texture(2, _make_tex(2, "forest", Color.WHITE, 0.10))
+	assets.set_texture(2, _make_tex(2, "forest", Color.WHITE, 0.22))
 	assets.set_texture(3, _make_tex(3, "ice", Color.WHITE, 0.06))
 	var err := ResourceSaver.save(assets, ASSETS_PATH)
 	print("ASSETS_SAVED ", err)

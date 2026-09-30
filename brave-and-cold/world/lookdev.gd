@@ -85,6 +85,9 @@ func _build_world() -> void:
 	terrain.material.set_shader_param("auto_slope", 4.0)
 	terrain.material.set_shader_param("auto_height_reduction", 0.0)
 	terrain.material.set_shader_param("blend_sharpness", 0.1)
+	terrain.material.set_shader_param("enable_macro_variation", true)
+	terrain.material.set_shader_param("macro_variation1", Color(0.80, 0.88, 1.0))
+	terrain.material.set_shader_param("macro_variation2", Color(1.0, 0.94, 0.97))
 
 	sun = DirectionalLight3D.new()
 	sun.shadow_enabled = true
@@ -104,7 +107,9 @@ func _build_world() -> void:
 	env = Environment.new()
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
+	env.ambient_light_sky_contribution = 0.75
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.fog_enabled = true
 	env.fog_sky_affect = 0.6

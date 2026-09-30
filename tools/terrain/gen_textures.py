@@ -69,7 +69,7 @@ def snow():
     rgb = lerp(np.broadcast_to(base, (N, N, 3)).copy(), np.broadcast_to(shade, (N, N, 3)).copy(), (1 - big) * 0.55)
     sparkle = (norm01(fbm(1, 220, 1.0, 3)) > 0.985).astype(np.float32) * 0.06
     rgb += sparkle[..., None]
-    save("snow", rgb, h, np.full((N, N), 0.72, np.float32), 5.0)
+    save("snow", rgb, h, np.full((N, N), 0.72, np.float32), 9.0)
 
 
 def rock():
@@ -106,7 +106,10 @@ def ice():
     pale = np.array([0.66, 0.84, 0.90])
     rgb = lerp(np.broadcast_to(deep, (N, N, 3)).copy(), np.broadcast_to(pale, (N, N, 3)).copy(), base)
     rgb = lerp(rgb, np.broadcast_to(np.array([0.92, 0.97, 1.0]), (N, N, 3)).copy(), crack_mask * 0.7)
-    save("ice", rgb, 0.4 * base + 0.2 * crack_mask, np.full((N, N), 0.18, np.float32), 3.0)
+    drift = norm01(fbm(3, 4, 0.55, 12))
+    dmask = np.clip((drift - 0.55) * 4.0, 0, 1)
+    rgb = lerp(rgb, np.broadcast_to(np.array([0.88, 0.92, 0.98]), (N, N, 3)).copy(), dmask * 0.85)
+    save("ice", rgb, 0.4 * base + 0.2 * crack_mask + 0.3 * dmask, np.full((N, N), 0.18, np.float32), 3.0)
 
 
 if __name__ == "__main__":

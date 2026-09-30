@@ -15,12 +15,12 @@ argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT = argv[0] if argv else "."
 
 VARIANTS = {
-    "spruce_a": dict(seed=11, tiers=17, base_r=0.15, droop=0.16, trunk_h=0.07, snow=0.55),
-    "spruce_b": dict(seed=23, tiers=20, base_r=0.13, droop=0.20, trunk_h=0.10, snow=0.45),
-    "spruce_c": dict(seed=37, tiers=14, base_r=0.17, droop=0.12, trunk_h=0.05, snow=0.70),
+    "spruce_a": dict(seed=11, tiers=17, base_r=0.15, droop=0.16, trunk_h=0.16, snow=0.55),
+    "spruce_b": dict(seed=23, tiers=20, base_r=0.13, droop=0.20, trunk_h=0.20, snow=0.45),
+    "spruce_c": dict(seed=37, tiers=14, base_r=0.17, droop=0.12, trunk_h=0.13, snow=0.70),
 }
-GREEN_DARK = (0.035, 0.075, 0.085, 1.0)
-GREEN_MID = (0.07, 0.15, 0.13, 1.0)
+GREEN_DARK = (0.07, 0.10, 0.15, 1.0)
+GREEN_MID = (0.10, 0.19, 0.20, 1.0)
 SNOW = (0.86, 0.90, 0.97, 1.0)
 BARK = (0.10, 0.075, 0.06, 1.0)
 
@@ -106,14 +106,14 @@ def build_near(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
     for t in range(tiers):
         f = t / max(tiers - 1, 1)
         z = trunk_h + f * (0.94 - trunk_h)
-        reach = base_r * 1.25 * (1.0 - f) ** 0.85 + 0.015
+        reach = base_r * 1.0 * (1.0 - f) ** 0.85 + 0.015
         nb = 9 if f < 0.5 else 7
         phase = rng.random() * 6.283
         for b in range(nb):
             a = phase + 2 * math.pi * b / nb + rng.uniform(-0.25, 0.25)
             L = reach * rng.uniform(0.7, 1.15)
-            wd = max(0.02, L * rng.uniform(0.32, 0.45))
-            dz = -droop * L * rng.uniform(0.9, 2.0)
+            wd = max(0.02, L * rng.uniform(0.45, 0.6))
+            dz = -droop * L * rng.uniform(0.7, 1.4)
             ca, sa = math.cos(a), math.sin(a)
             px, py = -sa, ca
             root = Vector((ca * 0.01, sa * 0.01, z + 0.012))

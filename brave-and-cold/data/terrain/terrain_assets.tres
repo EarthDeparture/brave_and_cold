@@ -11,6 +11,8 @@
 
 [sub_resource type="Terrain3DTextureAsset" id="Terrain3DTextureAsset_q6m73"]
 name = "snow"
+uv_scale = 0.22
+normal_depth = 1.8
 albedo_texture = ExtResource("1_ut1gc")
 normal_texture = ExtResource("2_6e1al")
 
