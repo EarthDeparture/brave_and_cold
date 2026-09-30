@@ -18,6 +18,7 @@ var _walls: Array[Rect2] = []  # local xz rects
 const STOVE_LOCAL := Vector3(-2.35, 0.0, -1.75)
 const WOOD_BURN_S := 7200.0  # GAME seconds per log (2 h)
 static var game_scale := 48.0
+var _snd: AudioStreamPlayer3D
 var door_open := false
 var door_hp := 100.0
 var door_broken := false
@@ -117,6 +118,13 @@ func _build_stove_fire() -> void:
 	_fire_mat.emission_energy_multiplier = 0.0
 	_fire_glow.material_override = _fire_mat
 	add_child(_fire_glow)
+	_snd = AudioStreamPlayer3D.new()
+	_snd.stream = Sfx.get_stream("fire")
+	_snd.unit_size = 3.0
+	_snd.max_distance = 25.0
+	_snd.volume_db = -6.0
+	_snd.position = STOVE_LOCAL + Vector3(0.0, FLOOR_LOCAL_Y + 0.4, 0.0)
+	add_child(_snd)
 	_fire_light = OmniLight3D.new()
 	_fire_light.position = STOVE_LOCAL + Vector3(0.0, FLOOR_LOCAL_Y + 0.55, 0.5)
 	_fire_light.light_color = Color(1.0, 0.5, 0.2)
@@ -192,6 +200,11 @@ func _process(delta: float) -> void:
 	if _fire_mat == null:
 		return
 	_t += delta
+	if _snd != null:
+		if stove_fuel_s > 0.0 and not _snd.playing:
+			_snd.play()
+		elif stove_fuel_s <= 0.0 and _snd.playing:
+			_snd.stop()
 	if stove_fuel_s > 0.0:
 		stove_fuel_s = maxf(0.0, stove_fuel_s - delta * game_scale)
 		var fl := 0.75 + 0.25 * sin(_t * 11.0) * sin(_t * 7.3) + 0.1 * sin(_t * 23.0)

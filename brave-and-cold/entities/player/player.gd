@@ -39,6 +39,7 @@ var _since_noise := 0.0
 var _last_pos := Vector3.ZERO
 var _ready_ground := false
 var frozen := false  # set by GameWorld for screenshots
+signal stepped(tier: int, radius: float)
 var health := 100.0
 var dead := false
 var death_cause := ""
@@ -185,6 +186,7 @@ func _footsteps(delta: float) -> void:
 	if _since_trample >= TRAMPLE_STEP:
 		_since_trample = 0.0
 		snow.trample(position.x, position.z, 0.5)
+		stepped.emit(snow.tier_at(position.x, position.z), noise_radius())
 		if footprints != null:
 			var gy: float = ground_at(position.x, position.z)
 			if not is_nan(gy):
@@ -197,11 +199,9 @@ func _footsteps(delta: float) -> void:
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		yaw -= e.relative.x * 0.002
-		pitch = clampf(pitch - e.relative.y * 0.002, -1.5, 1.5)
+		yaw -= e.relative.x * Settings.sensitivity
+		pitch = clampf(pitch - e.relative.y * Settings.sensitivity, -1.5, 1.5)
 	elif e is InputEventKey and e.pressed and not e.echo:
 		match e.keycode:
 			KEY_G:
 				fire_w = 0.0 if fire_w > 0.0 else 350.0
-			KEY_ESCAPE:
-				get_tree().quit()

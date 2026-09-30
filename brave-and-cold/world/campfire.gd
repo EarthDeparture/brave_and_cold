@@ -14,6 +14,7 @@ var _embers: CPUParticles3D
 var _flame_mat: StandardMaterial3D
 var _t := 0.0
 var _phase := randf() * 10.0
+var _snd: AudioStreamPlayer3D
 
 
 func _ready() -> void:
@@ -65,6 +66,13 @@ func _ready() -> void:
 	_light.position = Vector3(0, 0.9, 0)
 	_light.shadow_enabled = false
 	add_child(_light)
+	_snd = AudioStreamPlayer3D.new()
+	_snd.stream = Sfx.get_stream("fire")
+	_snd.unit_size = 5.0
+	_snd.max_distance = 45.0
+	_snd.volume_db = -4.0
+	_snd.position = Vector3(0, 0.4, 0)
+	add_child(_snd)
 	_set_visual(false)
 
 
@@ -136,6 +144,10 @@ func _set_visual(on: bool) -> void:
 	_flames.emitting = on
 	_embers.emitting = on
 	_light.visible = on
+	if on and not _snd.playing:
+		_snd.play()
+	elif not on:
+		_snd.stop()
 
 
 func _process(delta: float) -> void:

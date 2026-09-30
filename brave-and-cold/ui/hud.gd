@@ -92,7 +92,7 @@ func _process(_d: float) -> void:
 	_stam_frac = player.stamina / 100.0
 	_core_frac = clampf((body.core - 30.0) / 7.0, 0.0, 1.0)
 	_warn = body.core < BodyTemperature.SHIVER
-	_death_l.text = ("YOU DIED\n" + player.death_cause + "\n\nPress R to try again") if player.dead else ""
+	_death_l.text = ("YOU DIED\n" + player.death_cause + "\n\nR: try again    M: main menu") if player.dead else ""
 	_toast_l.text = toast
 	_inv_l.text = inv_text
 	_bars.queue_redraw()

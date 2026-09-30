@@ -29,6 +29,7 @@ var _ft: Array[float] = []
 
 
 func _ready() -> void:
+	Settings.load_all()
 	var opts := _args()
 	_build_environment()
 	terrain = Terrain3D.new()
@@ -103,12 +104,19 @@ func _ready() -> void:
 	hud = Hud.new()
 	add_child(hud)
 	hud.setup(player, body, snow, clock)
+	audio = GameAudio.new()
+	add_child(audio)
+	audio.setup(player, self, wind)
+	pause_menu = PauseMenu.new()
+	add_child(pause_menu)
 	out_path = String(opts.get("out", ""))
 	_selftest = opts.has("selftest")
 	_wolftest = opts.has("wolftest")
 	_zombietest = opts.has("zombietest")
 	_deertest = opts.has("deertest")
 	_campfire_opt = opts.has("campfire")
+	opts_pausetest = opts.has('pausetest')
+	pause_shot = String(opts.get('pausetest', ''))
 	_force_death = opts.has("dead")
 	wolf_test_dist = float(opts.get("wdist", 22.0))
 	walk_secs = float(opts.get("walk", 0.0))
@@ -193,6 +201,17 @@ func _process(delta: float) -> void:
 		player.hurt(999.0, "Mauled by a wolf")
 	if _zombietest and _frames > 30:
 		_zombietest_step(delta)
+	if opts_pausetest and _frames == 40:
+		opts_pausetest = false
+		pause_menu.open()
+		print('PT paused=', get_tree().paused)
+		await get_tree().create_timer(0.6, true).timeout
+		get_viewport().get_texture().get_image().save_png(pause_shot)
+		var f0 := _frames
+		pause_menu.resume()
+		await get_tree().create_timer(0.5).timeout
+		print('PT resumed paused=', get_tree().paused, ' frames advanced=', _frames > f0, ' mouse=', Input.mouse_mode)
+		get_tree().quit()
 	if _campfire_opt and _frames == 25:
 		inv = Inventory.new(body)
 		inv.needs = needs
@@ -453,6 +472,12 @@ func _inv_text() -> String:
 
 
 func _unhandled_input(e: InputEvent) -> void:
+	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_ESCAPE and pause_menu != null and not pause_menu.visible:
+		pause_menu.open()
+		return
+	if e is InputEventKey and e.pressed and e.keycode == KEY_M and player.dead:
+		get_tree().change_scene_to_file('res://ui/main_menu.tscn')
+		return
 	if e is InputEventKey and e.pressed and e.keycode == KEY_R and player.dead:
 		get_tree().reload_current_scene()
 		return
@@ -657,6 +682,7 @@ func _attack() -> void:
 			best = n
 	if best != null:
 		best.call("hit", dmg, player.position)
+		audio.hit(best.global_position + Vector3(0, 1.0, 0))
 		_say("Hit!")
 	else:
 		_say("Swing")
@@ -736,6 +762,7 @@ func _shoot() -> void:
 	inv.remove('ammo')
 	_attack_cd = 1.2
 	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_GUNSHOT, player)
+	audio.gunshot()
 	var eye := player.position + Vector3(0, 1.6, 0)
 	var dir := Vector3(-sin(player.yaw) * cos(player.pitch), sin(player.pitch), -cos(player.yaw) * cos(player.pitch)).normalized()
 	var best: Node3D = null
@@ -757,6 +784,7 @@ func _shoot() -> void:
 				best = n
 	if best != null:
 		best.call('hit', RIFLE_DAMAGE, player.position)
+		audio.hit(best.global_position + Vector3(0, 1.0, 0))
 		_say('Shot hit')
 	else:
 		_say('Bang. Miss')
@@ -834,3 +862,10 @@ func _build_campfire() -> void:
 	_say('Built a campfire')
 
 var _campfire_opt := false
+
+
+var audio: GameAudio
+var pause_menu: PauseMenu
+
+var opts_pausetest := false
+var pause_shot := ''
