@@ -40,8 +40,8 @@ func _ready() -> void:
 	terrain.material.auto_shader = false
 	terrain.material.set_shader_param("blend_sharpness", 0.1)
 	terrain.material.set_shader_param("enable_macro_variation", true)
-	terrain.material.set_shader_param("macro_variation1", Color(0.80, 0.88, 1.0))
-	terrain.material.set_shader_param("macro_variation2", Color(1.0, 0.94, 0.97))
+	terrain.material.set_shader_param("macro_variation1", Color(0.88, 0.93, 1.0))
+	terrain.material.set_shader_param("macro_variation2", Color(1.0, 0.97, 0.98))
 	if opts.get("trees", "1") == "1":
 		forest = ForestScatter.new()
 		add_child(forest)

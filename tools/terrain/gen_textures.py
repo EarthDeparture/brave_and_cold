@@ -63,14 +63,18 @@ def save(name, rgb, height, rough, nstrength):
 def snow():
     big = norm01(fbm(3, 2, 0.5, 1))
     ripple = norm01(fbm(4, 10, 0.55, 2))
-    h = 0.6 * big + 0.4 * ripple
-    base = np.array([0.90, 0.93, 0.98])
-    shade = np.array([0.74, 0.82, 0.94])
-    rgb = lerp(np.broadcast_to(base, (N, N, 3)).copy(), np.broadcast_to(shade, (N, N, 3)).copy(), (1 - big) * 0.55)
-    sparkle = (norm01(fbm(1, 220, 1.0, 3)) > 0.985).astype(np.float32) * 0.06
-    rgb += sparkle[..., None]
-    save("snow", rgb, h, np.full((N, N), 0.72, np.float32), 9.0)
-
+    grain = norm01(fbm(3, 160, 0.6, 5))
+    wind = norm01(fbm(2, 3, 0.5, 8))
+    # wind-scoured ridges: sharpen a mid-frequency band
+    ridge = 1.0 - np.abs(2.0 * norm01(fbm(3, 6, 0.5, 11)) - 1.0)
+    h = 0.42 * big + 0.26 * ripple + 0.16 * ridge ** 2 + 0.16 * grain
+    base = np.array([0.93, 0.95, 0.99])
+    shade = np.array([0.82, 0.88, 0.97])
+    rgb = lerp(np.broadcast_to(base, (N, N, 3)).copy(), np.broadcast_to(shade, (N, N, 3)).copy(), (1 - wind) * 0.28)
+    rgb *= (0.97 + 0.06 * grain)[..., None]
+    glint = (norm01(fbm(1, 300, 1.0, 3)) > 0.975).astype(np.float32)
+    rough = 0.62 - 0.22 * glint - 0.1 * grain
+    save("snow", rgb, h, rough.astype(np.float32), 7.0)
 
 def rock():
     facets = norm01(fbm(3, 3, 0.6, 4))
