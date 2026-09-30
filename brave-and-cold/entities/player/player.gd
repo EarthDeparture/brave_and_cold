@@ -33,7 +33,6 @@ var moving := false
 var activity := 0
 var speed_now := 0.0
 var fire_w := 0.0  # debug fire heat
-var wood := 2
 var eye_h := EYE
 var _since_trample := 0.0
 var _since_noise := 0.0
@@ -191,14 +190,5 @@ func _unhandled_input(e: InputEvent) -> void:
 		match e.keycode:
 			KEY_G:
 				fire_w = 0.0 if fire_w > 0.0 else 350.0
-			KEY_H:
-				if body.warmth < 0.5:
-					body.warmth = 0.85
-					body.windproof = 0.8
-					body.waterproof = 0.6
-				else:
-					body.warmth = 0.25
-					body.windproof = 0.1
-					body.waterproof = 0.1
 			KEY_ESCAPE:
 				get_tree().quit()

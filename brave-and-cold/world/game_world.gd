@@ -99,6 +99,7 @@ func _ready() -> void:
 	add_child(hud)
 	hud.setup(player, body, snow, clock)
 	out_path = String(opts.get("out", ""))
+	_selftest = opts.has("selftest")
 	walk_secs = float(opts.get("walk", 0.0))
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if (out_path == "" and walk_secs == 0.0) else Input.MOUSE_MODE_VISIBLE
 
@@ -165,6 +166,8 @@ func _process(delta: float) -> void:
 		get_viewport().get_texture().get_image().save_png(out_path)
 		print("SHOT_SAVED ", out_path, " hour=", clock.hour)
 		get_tree().quit()
+	if _selftest and _frames == 30:
+		_run_selftest()
 	if walk_secs > 0.0 and _frames > 10:
 		_autowalk()
 
@@ -275,24 +278,62 @@ func _site_ok(x: float, z: float, water: Image) -> bool:
 	return (hs.max() - hs.min()) < 1.4
 
 
+var inv: Inventory
+var inv_open := false
 var _cur: Dictionary = {}
+var _toast_t := 0.0
+
+
+func _say(msg: String) -> void:
+	hud.toast = msg
+	_toast_t = 3.0
 
 
 func _update_prompt() -> void:
+	if inv == null:
+		inv = Inventory.new(body)
+		inv.add("wood", 2)
+		inv.add("matches", 1)
+	_toast_t = maxf(0.0, _toast_t - get_process_delta_time())
+	if _toast_t <= 0.0:
+		hud.toast = ""
 	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
 	var best: Dictionary = {}
 	var bd := 1e9
 	for cb in cabins:
+		var stove_text := "Add wood to stove (%d)" % inv.count("wood")
+		if not cb.is_lit():
+			stove_text = "Light stove (wood + match)"
+		if inv.count("wood") == 0:
+			stove_text = "Stove needs wood"
 		var items: Array[Dictionary] = [
 			{"pos": cb.door_world_pos(), "r": 2.0, "text": "Close door" if cb.door_open else "Open door", "act": cb.toggle_door},
-			{"pos": cb.stove_world_pos(), "r": 1.7, "text": ("Add wood to stove (%d)" % player.wood) if player.wood > 0 else "Stove needs wood", "act": func() -> void:
-				if player.wood > 0:
-					player.wood -= 1
-					cb.add_wood()},
+			{"pos": cb.stove_world_pos(), "r": 1.7, "text": stove_text, "act": func() -> void:
+				if inv.count("wood") == 0:
+					_say("No firewood")
+				elif not cb.is_lit():
+					if inv.remove("matches"):
+						inv.remove("wood")
+						cb.add_wood()
+						_say("Struck a match: the stove catches")
+					else:
+						_say("No matches")
+				else:
+					inv.remove("wood")
+					cb.add_wood()
+					_say("Added firewood")},
 			{"pos": cb.woodpile_world_pos(), "r": 1.9, "text": "Take firewood (%d left)" % cb.wood_pile, "act": func() -> void:
 				if cb.take_firewood():
-					player.wood += 1},
+					inv.add("wood")
+					_say("+1 firewood")},
 		]
+		if not cb.crate_looted:
+			items.append({"pos": cb.crate_world_pos(), "r": 1.7, "text": "Search crate", "act": func() -> void:
+				cb.crate_looted = true
+				inv.add("matches", 4)
+				inv.add("parka")
+				inv.add("sweater")
+				_say("Found: down parka, wool sweater, 4 matches")})
 		for it in items:
 			var to: Vector3 = it["pos"] - player.position
 			var d := to.length()
@@ -306,13 +347,81 @@ func _update_prompt() -> void:
 				best = it
 	_cur = best
 	hud.prompt = String(best.get("text", ""))
-	var info := "Wood: %d" % player.wood
+	var info := "Wood %d  Matches %d" % [inv.count("wood"), inv.count("matches")]
+	if inv.equipped_body != "":
+		info += "  [%s]" % inv.name_of(inv.equipped_body)
 	for cb in cabins:
 		if cb.is_lit():
 			info += "   Stove: %.0f min left" % (cb.stove_fuel_s / 60.0)
 	hud.info = info
+	hud.inv_text = _inv_text() if inv_open else ""
+
+
+func _inv_text() -> String:
+	var t := "INVENTORY  (press number to use/wear, Tab closes)\n"
+	var i := 1
+	for id in inv.ids():
+		var mark := " (worn)" if inv.equipped_body == id else ""
+		t += "%d) %s x%d%s\n" % [i, inv.name_of(id), inv.count(id), mark]
+		i += 1
+	return t
 
 
 func _unhandled_input(e: InputEvent) -> void:
-	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_E and not _cur.is_empty():
+	if not (e is InputEventKey and e.pressed and not e.echo):
+		return
+	if e.keycode == KEY_E and not _cur.is_empty():
 		(_cur["act"] as Callable).call()
+	elif e.keycode == KEY_TAB:
+		inv_open = not inv_open
+	elif inv_open and e.keycode >= KEY_1 and e.keycode <= KEY_9:
+		var idx: int = e.keycode - KEY_1
+		var ids: Array = inv.ids()
+		if idx < ids.size():
+			_say(inv.use(ids[idx]))
+
+
+var _selftest := false
+
+
+func _stand_at(p: Vector3, look: Vector3) -> void:
+	player.position = Vector3(p.x, p.y, p.z)
+	player.yaw = atan2(-(look.x - p.x), -(look.z - p.z))
+	_update_prompt()
+
+
+func _run_selftest() -> void:
+	var cb: Cabin = cabins[0]
+	var fails := 0
+	# crate
+	var cp := cb.crate_world_pos()
+	_stand_at(cp + Vector3(-1.0, 0.0, 0.0), cp)
+	var ok1 := String(_cur.get("text", "")) == "Search crate"
+	if ok1:
+		(_cur["act"] as Callable).call()
+	var ok2 := inv.count("parka") == 1 and inv.count("matches") == 5
+	print("TEST crate prompt=%s loot=%s" % [ok1, ok2])
+	# door
+	var dp := cb.door_world_pos()
+	_stand_at(dp + cb.global_transform.basis.z * 1.2, dp)
+	var ok3 := String(_cur.get("text", "")).ends_with("door")
+	print("TEST door prompt=%s" % ok3)
+	# stove light
+	var sp := cb.stove_world_pos()
+	_stand_at(cb.to_global(Vector3(-1.4, 0.0, -0.6)) + Vector3(0, 1.7, 0), sp)
+	var w0 := inv.count("wood")
+	var ok4 := String(_cur.get("text", "")).begins_with("Light stove")
+	if ok4:
+		(_cur["act"] as Callable).call()
+	var lit := cb.is_lit()
+	var heat := cb.heat_at(player.position.x, player.position.z)
+	print("TEST stove prompt=%s lit=%s wood %d->%d matches=%d heat=%.0fW" % [ok4, lit, w0, inv.count("wood"), inv.count("matches"), heat])
+	# wear parka
+	var msg := inv.use("parka")
+	print("TEST wear '%s' warmth=%.2f windproof=%.2f" % [msg, body.warmth, body.windproof])
+	var msg2 := inv.use("parka")
+	print("TEST unwear '%s' warmth=%.2f" % [msg2, body.warmth])
+	if not (ok1 and ok2 and ok3 and ok4 and lit and heat > 100.0 and is_equal_approx(body.warmth, 0.25)):
+		fails += 1
+	print("SELFTEST failures=", fails)
+	get_tree().quit()

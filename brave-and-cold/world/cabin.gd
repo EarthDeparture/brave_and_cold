@@ -20,6 +20,7 @@ const WOOD_BURN_S := 300.0  # real seconds per log
 var door_open := false
 var stove_fuel_s := 0.0
 var wood_pile := 6
+var crate_looted := false
 var _door_pivot: Node3D
 var _door_rect := Rect2(-DOOR_HALF, HZ - 0.06, 2 * DOOR_HALF, 0.12)
 var _fire_glow: MeshInstance3D
@@ -149,6 +150,10 @@ func door_world_pos() -> Vector3:
 
 func stove_world_pos() -> Vector3:
 	return to_global(STOVE_LOCAL + Vector3(0.0, FLOOR_LOCAL_Y + 0.9, 0.0))
+
+
+func crate_world_pos() -> Vector3:
+	return to_global(Vector3(2.5, FLOOR_LOCAL_Y + 0.5, 1.6))
 
 
 func woodpile_world_pos() -> Vector3:

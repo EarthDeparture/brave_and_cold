@@ -6,6 +6,10 @@ var _label: Label
 var _prompt: Label
 var prompt := ""
 var info := ""
+var toast := ""
+var inv_text := ""
+var _toast_l: Label
+var _inv_l: Label
 var _bars: Control
 var player: Player
 var body: BodyTemperature
@@ -37,6 +41,23 @@ func setup(p: Player, b: BodyTemperature, s: SnowField, c: GameClock) -> void:
 	_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	_prompt.add_theme_constant_override("outline_size", 6)
 	add_child(_prompt)
+	_toast_l = Label.new()
+	_toast_l.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_toast_l.position = Vector2(-300, -190)
+	_toast_l.size = Vector2(600, 30)
+	_toast_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_toast_l.add_theme_font_size_override("font_size", 18)
+	_toast_l.add_theme_color_override("font_color", Color(1.0, 0.9, 0.7))
+	_toast_l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	_toast_l.add_theme_constant_override("outline_size", 6)
+	add_child(_toast_l)
+	_inv_l = Label.new()
+	_inv_l.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+	_inv_l.position = Vector2(-420, -100)
+	_inv_l.add_theme_font_size_override("font_size", 18)
+	_inv_l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	_inv_l.add_theme_constant_override("outline_size", 5)
+	add_child(_inv_l)
 	_bars = Control.new()
 	_bars.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_bars.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -61,6 +82,8 @@ func _process(_d: float) -> void:
 	_stam_frac = player.stamina / 100.0
 	_core_frac = clampf((body.core - 30.0) / 7.0, 0.0, 1.0)
 	_warn = body.core < BodyTemperature.SHIVER
+	_toast_l.text = toast
+	_inv_l.text = inv_text
 	_bars.queue_redraw()
 
 
