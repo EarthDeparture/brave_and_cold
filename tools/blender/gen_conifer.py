@@ -133,7 +133,7 @@ def build_near(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
         for b in range(nb):
             a = phase + 2 * math.pi * b / nb + rng.uniform(-0.25, 0.25)
             L = reach * rng.uniform(0.7, 1.15)
-            wd = max(0.02, L * rng.uniform(0.45, 0.6))
+            wd = max(0.012, L * rng.uniform(0.2, 0.3))
             dz = -droop * L * rng.uniform(0.7, 1.4)
             ca, sa = math.cos(a), math.sin(a)
             px, py = -sa, ca
@@ -149,6 +149,23 @@ def build_near(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
             bm.faces.new((v[1], v[2], v[4]))
             bm.faces.new((v[2], v[3], v[4]))
             bm.faces.new((v[3], v[0], v[4]))
+            nt = 9
+            for k in range(nt):
+                u = (k + 0.5) / nt
+                base_p = root.lerp(tip, u * 0.95) + Vector((0, 0, dz * 0.12 * math.sin(u * 3.14159)))
+                tl = L * (0.55 * (1.0 - u * 0.7)) * rng.uniform(0.8, 1.2)
+                for side in (-1, 1):
+                    ang = math.radians(rng.uniform(35, 65))
+                    dirv = Vector((ca * math.cos(ang) * 0.7 + px * side * math.sin(ang),
+                                   sa * math.cos(ang) * 0.7 + py * side * math.sin(ang),
+                                   -0.30 - 0.25 * rng.random()))
+                    dirv.normalize()
+                    tp = base_p + dirv * tl
+                    hw = tl * 0.24
+                    a0 = base_p + Vector((ca, sa, 0)) * hw
+                    a1 = base_p - Vector((ca, sa, 0)) * hw
+                    bm.faces.new([bm.verts.new(q) for q in (a0, a1, tp)])
+                    bm.faces.new([bm.verts.new(q) for q in (a1, a0, tp)])
     spike_v = [bm.verts.new(p) for p in ((0.02, 0, 0.90), (-0.01, 0.017, 0.90), (-0.01, -0.017, 0.90), (0, 0, 1.0))]
     bm.faces.new((spike_v[0], spike_v[1], spike_v[3]))
     bm.faces.new((spike_v[1], spike_v[2], spike_v[3]))
