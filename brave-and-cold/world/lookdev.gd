@@ -35,6 +35,9 @@ func _ready() -> void:
 		var f := ForestScatter.new()
 		add_child(f)
 		f.build(terrain)
+	var w := WaterSurfaces.new()
+	add_child(w)
+	w.build()
 	apply_preset(opts.get("preset", "noon"))
 	if opts.has("debug"):
 		terrain.material.set("show_" + String(opts["debug"]), true)

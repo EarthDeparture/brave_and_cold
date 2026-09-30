@@ -24,6 +24,8 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 	var slope := Image.load_from_file(ProjectSettings.globalize_path(map_dir + "/slope.png"))
 	canopy.convert(Image.FORMAT_L8)
 	slope.convert(Image.FORMAT_L8)
+	var water := Image.load_from_file(ProjectSettings.globalize_path(map_dir + "/water_mask.png"))
+	water.convert(Image.FORMAT_L8)
 
 	var meshes: Array[Mesh] = []
 	for v in VARIANTS:
@@ -49,6 +51,8 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 				continue
 			if slope.get_pixel(px, py).r * 90.0 > 34.0:
 				continue
+			if _near_water(water, px, py):
+				continue
 			# density falls off in sparse canopy so edges break up naturally
 			if rng.randf() > clampf((c_m - MIN_CANOPY_M) / 10.0 + 0.25, 0.0, 1.0):
 				continue
@@ -58,7 +62,7 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 			if is_nan(h):
 				continue
 			var height_m := clampf(c_m * rng.randf_range(0.9, 1.1), 5.0, 26.0)
-			var girth := height_m * rng.randf_range(0.42, 0.62)
+			var girth := height_m * rng.randf_range(0.9, 1.3)
 			var b := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(girth, height_m, girth))
 			var key := Vector2i(int(floor((wx + half) / CHUNK)), int(floor((wz + half) / CHUNK)))
 			var vi := rng.randi() % VARIANTS.size()
@@ -97,3 +101,12 @@ func _load_mesh(path: String) -> Mesh:
 		break
 	n.queue_free()
 	return found
+
+
+func _near_water(w: Image, px: int, py: int) -> bool:
+	for d in [Vector2i(0, 0), Vector2i(4, 0), Vector2i(-4, 0), Vector2i(0, 4), Vector2i(0, -4)]:
+		var x := clampi(px + d.x, 0, w.get_width() - 1)
+		var y := clampi(py + d.y, 0, w.get_height() - 1)
+		if w.get_pixel(x, y).r > 0.5:
+			return true
+	return false

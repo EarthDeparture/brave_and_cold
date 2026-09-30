@@ -5,11 +5,17 @@
   "size_m": 2048,
   "res_m": 1.0,
   "crs": "EPSG:3979",
-  "z_min_m": 172.03341674804688,
+  "z_min_m": 171.0,
   "z_max_m": 497.1143798828125,
   "smooth_sigma_m": 1.5,
   "nodata_filled_frac": 0.0,
   "walkable_lt30": 0.8506138324737549,
   "attribution": "Contains information licensed under the Open Government Licence - Canada (NRCan HRDEM).",
-  "r16_note": "height_m = z_min + raw/65535 * (z_max - z_min); import in Terrain3D with that range"
+  "r16_note": "height_m = z_min + raw/65535 * (z_max - z_min); import in Terrain3D with that range",
+  "z_min_orig": 172.03341674804688,
+  "z_max_orig": 497.1143798828125,
+  "water": {
+    "river_width_m": 16.0,
+    "lake_level_asl": 178.00438232421874
+  }
 }

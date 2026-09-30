@@ -42,6 +42,7 @@ func _initialize() -> void:
 		push_error("failed to load height.r16")
 		quit(1)
 		return
+	img = _smooth(img, 3, 2)
 	var mm := Terrain3DUtil.get_min_max(img)
 	print("HEIGHT_IMAGE ", img.get_size(), " min/max ", mm)
 
@@ -55,3 +56,32 @@ func _initialize() -> void:
 	print("REGIONS ", t.data.get_region_count(), " height_range ", t.data.get_height_range())
 	print("BUILD_OK ", out_dir)
 	quit(0)
+
+
+## Box-blur a float heightmap (radius r px, n passes) to remove 16-bit quantisation terraces
+## (they show up as contour-line banding under grazing sun).
+func _smooth(img: Image, r: int, passes: int) -> Image:
+	if img.get_format() != Image.FORMAT_RF:
+		img.convert(Image.FORMAT_RF)
+	var w := img.get_width()
+	var h := img.get_height()
+	var a: PackedFloat32Array = img.get_data().to_float32_array()
+	var b := PackedFloat32Array()
+	b.resize(a.size())
+	for _p in range(passes):
+		# horizontal
+		for y in range(h):
+			var row := y * w
+			for x in range(w):
+				var s := 0.0
+				for k in range(-r, r + 1):
+					s += a[row + clampi(x + k, 0, w - 1)]
+				b[row + x] = s / float(2 * r + 1)
+		# vertical
+		for y in range(h):
+			for x in range(w):
+				var s2 := 0.0
+				for k in range(-r, r + 1):
+					s2 += b[clampi(y + k, 0, h - 1) * w + x]
+				a[y * w + x] = s2 / float(2 * r + 1)
+	return Image.create_from_data(w, h, false, Image.FORMAT_RF, a.to_byte_array())
