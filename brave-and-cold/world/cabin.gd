@@ -73,7 +73,7 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	light.light_color = Color(1.0, 0.68, 0.38)
 	light.light_energy = 0.0
 	light.omni_range = 7.0
-	light.shadow_enabled = true
+	light.shadow_enabled = false
 	add_child(light)
 	# wall rects (local xz). Front wall is +z with a door gap.
 	var t := WALL_T
@@ -205,6 +205,9 @@ func _process(delta: float) -> void:
 			_snd.play()
 		elif stove_fuel_s <= 0.0 and _snd.playing:
 			_snd.stop()
+	if (stove_fuel_s > 0.0) != _was_lit:
+		_was_lit = stove_fuel_s > 0.0
+		_apply_glow()
 	if stove_fuel_s > 0.0:
 		stove_fuel_s = maxf(0.0, stove_fuel_s - delta * game_scale)
 		var fl := 0.75 + 0.25 * sin(_t * 11.0) * sin(_t * 7.3) + 0.1 * sin(_t * 23.0)
@@ -215,9 +218,19 @@ func _process(delta: float) -> void:
 		_fire_light.light_energy = 0.0
 
 
+var _night := 0.0
+var _was_lit := false
+
+
 func set_night(f: float) -> void:
-	glass_mat.emission_energy_multiplier = 1.2 * f
-	light.light_energy = 1.6 * f + 0.7
+	_night = f
+	_apply_glow()
+
+
+func _apply_glow() -> void:
+	var lit := 1.0 if stove_fuel_s > 0.0 else 0.0
+	glass_mat.emission_energy_multiplier = 0.1 + 1.4 * _night + 1.1 * lit
+	light.light_energy = 0.1 + 0.9 * _night + 0.7 * lit
 
 
 func to_local_xz(x: float, z: float) -> Vector2:
