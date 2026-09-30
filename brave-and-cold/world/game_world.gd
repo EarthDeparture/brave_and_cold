@@ -115,6 +115,7 @@ func _ready() -> void:
 	hud = Hud.new()
 	add_child(hud)
 	hud.setup(player, body, snow, clock)
+	hud.visible = not opts.has('nohud')
 	audio = GameAudio.new()
 	add_child(audio)
 	audio.setup(player, self, wind)

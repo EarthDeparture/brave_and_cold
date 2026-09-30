@@ -28,19 +28,21 @@ func _ready() -> void:
 	tr.stretch_mode = TextureRect.STRETCH_SCALE
 	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	add_child(tr)
+	_add_backdrop()
 	_add_snow()
 	_main = VBoxContainer.new()
-	_main.set_anchors_preset(Control.PRESET_CENTER)
-	_main.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_main.set_anchors_preset(Control.PRESET_CENTER_LEFT)
+	_main.offset_left = 110.0
+	_main.grow_horizontal = Control.GROW_DIRECTION_END
 	_main.grow_vertical = Control.GROW_DIRECTION_BOTH
 	_main.alignment = BoxContainer.ALIGNMENT_CENTER
 	_main.add_theme_constant_override("separation", 14)
 	add_child(_main)
-	var title := UiKit.label("BRAVE AND COLD", 76, Color(0.93, 0.96, 1.0))
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var title := UiKit.label("BRAVE AND COLD", 64, Color(0.93, 0.96, 1.0))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_main.add_child(title)
 	var sub := UiKit.label("survive the cold.  survive the dead.", 20, UiKit.DIM)
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_main.add_child(sub)
 	var gap := Control.new()
 	gap.custom_minimum_size = Vector2(0, 40)
@@ -51,9 +53,8 @@ func _ready() -> void:
 	for spec in specs:
 		var b := UiKit.button(spec[0])
 		b.pressed.connect(spec[1])
-		var c := CenterContainer.new()
-		c.add_child(b)
-		_main.add_child(c)
+		b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		_main.add_child(b)
 	var hint := UiKit.label("WASD move  |  Shift sprint  |  C crouch  |  E interact  |  LMB attack  |  X rifle  |  B campfire  |  Tab inventory  |  Esc pause", 14, UiKit.DIM)
 	hint.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	hint.grow_horizontal = Control.GROW_DIRECTION_BOTH
@@ -88,6 +89,33 @@ func _ready() -> void:
 			_new_game()
 		elif a == 'autocontinue':
 			_continue()
+
+
+func _add_backdrop() -> void:
+	if not ResourceLoader.exists('res://assets/ui/menu_bg.png'):
+		return
+	var bg := TextureRect.new()
+	bg.texture = load('res://assets/ui/menu_bg.png')
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	bg.pivot_offset = get_viewport_rect().size * 0.5
+	add_child(bg)
+	var tw := create_tween().set_loops()
+	tw.tween_property(bg, 'scale', Vector2(1.07, 1.07), 30.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(bg, 'scale', Vector2(1.0, 1.0), 30.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	var g := Gradient.new()
+	g.colors = PackedColorArray([Color(0.02, 0.04, 0.08, 0.05), Color(0.02, 0.04, 0.08, 0.62)])
+	var gt := GradientTexture2D.new()
+	gt.gradient = g
+	gt.fill_from = Vector2(0.5, 0.35)
+	gt.fill_to = Vector2(0.5, 1.0)
+	var shade := TextureRect.new()
+	shade.texture = gt
+	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	shade.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	shade.stretch_mode = TextureRect.STRETCH_SCALE
+	add_child(shade)
 
 
 func _add_snow() -> void:
