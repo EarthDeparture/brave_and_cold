@@ -12,6 +12,8 @@ const P_DUSK := [-5.0, 250.0, Color(1.0, 0.45, 0.22), 1.3, Color(0.20, 0.16, 0.4
 var sun: DirectionalLight3D
 var env: Environment
 var sky_mat: ProceduralSkyMaterial
+var clouds: CloudLayer
+var coverage := 0.45
 var _keys: Array = []  # [hour, preset]
 
 
@@ -61,3 +63,12 @@ func apply_hour(h: float) -> void:
 	env.fog_density = lerpf(pa[8], pb[8], t)
 	env.ambient_light_color = (pa[9] as Color).lerp(pb[9], t)
 	env.ambient_light_energy = lerpf(pa[10], pb[10], t)
+
+	if clouds != null:
+		var lum := 0.3 + 0.7 * clampf(sun.light_energy / 1.5, 0.0, 1.0)
+		var hor: Color = sky_mat.sky_horizon_color
+		var lit: Color = hor.lerp(sun.light_color, 0.45).lightened(0.2) * lum
+		var shade: Color = (sky_mat.sky_top_color as Color).lerp(hor, 0.55) * (0.55 + 0.45 * lum)
+		lit.a = 1.0
+		shade.a = 1.0
+		clouds.set_tint(lit, shade, coverage)

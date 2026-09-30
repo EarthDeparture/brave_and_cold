@@ -52,11 +52,15 @@ func _ready() -> void:
 	sky_rig = SkyRig.new()
 	add_child(sky_rig)
 	sky_rig.setup(sun, env, sky_mat)
+	sky_rig.clouds = CloudLayer.new()
+	add_child(sky_rig.clouds)
 	sky_rig.apply_hour(clock.hour)
 	player = Player.new()
 	add_child(player)
 	player.setup(terrain, snow, body, noise_bus)
 	player.forest = forest
+	sky_rig.clouds.follow = player
+	sky_rig.apply_hour(clock.hour)
 	footprints = Footprints.new()
 	add_child(footprints)
 	player.footprints = footprints
@@ -66,6 +70,8 @@ func _ready() -> void:
 	player.place(sp.x, sp.y)
 	player.yaw = deg_to_rad(float(opts.get("yaw", 0.0)))
 	player.pitch = deg_to_rad(float(opts.get("pitch", -3.0)))
+	if opts.has("trail"):
+		_lay_trail(int(opts["trail"]))
 	hud = Hud.new()
 	add_child(hud)
 	hud.setup(player, body, snow, clock)
@@ -103,7 +109,7 @@ func _build_environment() -> void:
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
-	env.ambient_light_sky_contribution = 0.75
+	env.ambient_light_sky_contribution = 0.45
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.fog_enabled = true
 	env.fog_sky_affect = 0.6
@@ -181,3 +187,15 @@ func _find_spawn() -> Vector2:
 			break
 	print("SPAWN ", best)
 	return best
+
+
+func _lay_trail(n: int) -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	for i in range(2, n + 2):
+		var p := player.position + fwd * i * 0.7
+		var g: float = terrain.data.get_height(p)
+		if not is_nan(g):
+			snow.trample(p.x, p.z, 0.5)
+			footprints.step(p.x, g, p.z, player.yaw, maxi(snow.tier_at(p.x, p.z), 2))
