@@ -146,10 +146,7 @@ def build_near(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
             bm.faces.new((v[0], v[3], v[2], v[1]))      # top surface (quad, may be non planar)
             bm.faces.new((v[0], v[1], v[2], v[3]))[0:0] if False else None
             bm.faces.new((v[0], v[1], v[4]))
-            bm.faces.new((v[1], v[2], v[4]))
-            bm.faces.new((v[2], v[3], v[4]))
-            bm.faces.new((v[3], v[0], v[4]))
-            nt = 9
+            nt = 5
             for k in range(nt):
                 u = (k + 0.5) / nt
                 base_p = root.lerp(tip, u * 0.95) + Vector((0, 0, dz * 0.12 * math.sin(u * 3.14159)))
@@ -161,11 +158,10 @@ def build_near(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
                                    -0.30 - 0.25 * rng.random()))
                     dirv.normalize()
                     tp = base_p + dirv * tl
-                    hw = tl * 0.24
+                    hw = tl * 0.30
                     a0 = base_p + Vector((ca, sa, 0)) * hw
                     a1 = base_p - Vector((ca, sa, 0)) * hw
                     bm.faces.new([bm.verts.new(q) for q in (a0, a1, tp)])
-                    bm.faces.new([bm.verts.new(q) for q in (a1, a0, tp)])
     spike_v = [bm.verts.new(p) for p in ((0.02, 0, 0.90), (-0.01, 0.017, 0.90), (-0.01, -0.017, 0.90), (0, 0, 1.0))]
     bm.faces.new((spike_v[0], spike_v[1], spike_v[3]))
     bm.faces.new((spike_v[1], spike_v[2], spike_v[3]))
