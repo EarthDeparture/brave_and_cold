@@ -127,6 +127,7 @@ func _ready() -> void:
 	_selftest = opts.has("selftest")
 	_wolftest = opts.has("wolftest")
 	_beartest = opts.has("bear")
+	_mash = opts.has("mash")
 	_zombietest = opts.has("zombietest")
 	_deertest = opts.has("deertest")
 	_campfire_opt = opts.has("campfire")
@@ -513,6 +514,11 @@ func _unhandled_input(e: InputEvent) -> void:
 	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_ESCAPE and pause_menu != null and not pause_menu.visible:
 		pause_menu.open()
 		return
+	if player.struggling and not player.dead:
+		if e is InputEventKey and e.pressed and not e.echo and (e.keycode == KEY_SPACE or e.keycode == KEY_E):
+			player.struggle_press()
+		if e is InputEventKey or e is InputEventMouseButton:
+			return
 	if e is InputEventKey and e.pressed and e.keycode == KEY_M and player.dead:
 		get_tree().change_scene_to_file('res://ui/main_menu.tscn')
 		return
@@ -593,6 +599,8 @@ var wolves: Array[Wolf] = []
 var bears: Array[Wolf] = []
 var _wolftest := false
 var _beartest := false
+var _mash := false
+var _mash_t := 0.0
 var _wt := 0.0
 
 
@@ -650,6 +658,11 @@ func _add_wolf(p: Vector3, idx: int, bear := false) -> Wolf:
 
 func _wolftest_step(delta: float) -> void:
 	_wt += delta
+	if _mash and player.struggling:
+		_mash_t += delta
+		if _mash_t > 0.125:
+			_mash_t = 0.0
+			player.struggle_press()
 	if _wolves_spawned_for_test == false:
 		_wolves_spawned_for_test = true
 		var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
@@ -665,7 +678,7 @@ func _wolftest_step(delta: float) -> void:
 		_wt_last = int(_wt * 2)
 		var w := _wt_w()
 		if _wt_last % 2 == 0:
-			print("WT t=%.0f state=%d dist=%.1f speed=%.2f hp=%.0f bites=%d" % [_wt, w.state, w.global_position.distance_to(player.position), w.speed_now, player.health, w.bites])
+			print("WT strug=%s prog=%.2f" % [str(player.struggling), player.struggle_prog]); print("WT t=%.0f state=%d dist=%.1f speed=%.2f hp=%.0f bites=%d" % [_wt, w.state, w.global_position.distance_to(player.position), w.speed_now, player.health, w.bites])
 	if _wt > 26.0 or player.dead:
 		print("WOLFTEST done hp=%.0f dead=%s bites=%d" % [player.health, str(player.dead), _wt_w().bites])
 		get_tree().quit()

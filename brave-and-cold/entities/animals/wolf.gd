@@ -20,6 +20,9 @@ var model_path := "res://assets/models/animals/wolf.glb"
 var part_prefix := "wolf"
 var death_msg := "Mauled by a wolf"
 var body_radius := 0.4
+var struggle_gain := 0.14
+var _struggle_cd := 0.0
+var _tick := 0.0
 var terrain: Terrain3D
 var snow: SnowField
 var player: Player
@@ -81,6 +84,19 @@ func hit(dmg: float, from: Vector3) -> void:
 	_set_state(State.CHASE)
 
 
+func repel() -> void:
+	_struggle_cd = 12.0
+	_bite_cd = 3.0
+	var away := global_position - player.position
+	away.y = 0.0
+	_target = global_position + away.normalized() * 45.0
+	_set_state(State.RETREAT)
+
+
+func struggle_failed() -> void:
+	_struggle_cd = 5.0
+
+
 func _on_noise(pos: Vector3, radius: float, source: Object) -> void:
 	if source == self or state == State.CHASE or state == State.ALERT:
 		return
@@ -132,6 +148,7 @@ func _process(delta: float) -> void:
 		return
 	_state_t += delta
 	_bite_cd = maxf(0.0, _bite_cd - delta)
+	_struggle_cd = maxf(0.0, _struggle_cd - delta)
 	var pp := player.position
 	var dist := Vector2(pp.x - global_position.x, pp.z - global_position.z).length()
 	var want_speed := 0.0
@@ -167,9 +184,17 @@ func _process(delta: float) -> void:
 			if dist < BITE_RANGE and absf(pp.y - global_position.y - 1.0) < 2.5:
 				want_speed = 0.0
 				_face(pp, delta, 12.0)
-				if _bite_cd <= 0.0:
+				if player.struggling and player.struggle_by == self:
+					_tick -= delta
+					if _tick <= 0.0:
+						_tick = 1.3
+						player.hurt(BITE_DAMAGE * 0.3, death_msg)
+				elif _bite_cd <= 0.0:
 					_bite_cd = BITE_COOLDOWN
 					bites += 1
+					if not player.struggling and _struggle_cd <= 0.0 and not player.dead:
+						player.start_struggle(self, struggle_gain)
+						_tick = 1.3
 					player.hurt(BITE_DAMAGE, death_msg)
 			if dist > GIVE_UP_DIST or (_state_t > 25.0 and dist > 35.0) or _stuck_t > 6.0:
 				_set_state(State.RETREAT)

@@ -89,6 +89,8 @@ func _process(_d: float) -> void:
 		txt += "\n" + info
 	_label.text = txt
 	_prompt.text = ("[E] " + prompt) if prompt != "" else ""
+	if player.struggling:
+		_prompt.text = "STRUGGLE!  mash SPACE / E"
 	_stam_frac = player.stamina / 100.0
 	_core_frac = clampf((body.core - 30.0) / 7.0, 0.0, 1.0)
 	_warn = body.core < BodyTemperature.SHIVER
@@ -111,5 +113,11 @@ func _draw_bars() -> void:
 	_bars.draw_rect(Rect2(x, y + 32, w * clampf(player.health / 100.0, 0.0, 1.0), 8), Color(0.85, 0.25, 0.22))
 	if player.dead:
 		_bars.draw_rect(Rect2(Vector2.ZERO, sz), Color(0.3, 0.0, 0.0, 0.45))
+	if player.struggling:
+		var bw := 260.0
+		var bx := sz.x * 0.5 - bw * 0.5
+		var by := sz.y * 0.5 + 60.0
+		_bars.draw_rect(Rect2(bx, by, bw, 14), Color(0, 0, 0, 0.6))
+		_bars.draw_rect(Rect2(bx, by, bw * player.struggle_prog, 14), Color(0.9, 0.75, 0.3))
 	# crosshair dot
 	_bars.draw_circle(sz * 0.5, 1.5, Color(1, 1, 1, 0.6))

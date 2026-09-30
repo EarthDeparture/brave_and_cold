@@ -43,6 +43,41 @@ signal stepped(tier: int, radius: float)
 var health := 100.0
 var dead := false
 var death_cause := ""
+var struggling := false
+var struggle_by: Node = null
+var struggle_prog := 0.0
+var struggle_gain := 0.12
+var struggle_t := 0.0
+
+
+func start_struggle(attacker: Node, gain: float) -> void:
+	struggling = true
+	struggle_by = attacker
+	struggle_gain = gain
+	struggle_prog = 0.15
+	struggle_t = 0.0
+
+
+func struggle_press() -> void:
+	if struggling:
+		struggle_prog = minf(1.0, struggle_prog + struggle_gain)
+		if struggle_prog >= 1.0:
+			struggling = false
+			if is_instance_valid(struggle_by):
+				struggle_by.call("repel")
+
+
+func _struggle_update(delta: float) -> void:
+	struggle_t += delta
+	struggle_prog = maxf(0.0, struggle_prog - 0.25 * delta)
+	if dead or not is_instance_valid(struggle_by) or bool(struggle_by.call("is_dead")):
+		struggling = false
+	elif struggle_prog >= 1.0:
+		struggling = false
+		struggle_by.call("repel")
+	elif struggle_t > 6.0:
+		struggling = false
+		struggle_by.call("struggle_failed")
 
 
 func setup(t: Terrain3D, s: SnowField, b: BodyTemperature, n: NoiseBus) -> void:
@@ -110,7 +145,9 @@ func _process(delta: float) -> void:
 		position.y = h0 + eye_h
 		_ready_ground = true
 	cam.rotation = Vector3(pitch, yaw, 0.0)
-	if frozen:
+	if struggling:
+		_struggle_update(delta)
+	if frozen or struggling:
 		return
 	_move(delta)
 	_stamina(delta)

@@ -18,4 +18,5 @@ func _init() -> void:
 	BITE_COOLDOWN = 1.7
 	GIVE_UP_DIST = 60.0
 	hp = 260.0
+	struggle_gain = 0.085
 	body_radius = 0.9
