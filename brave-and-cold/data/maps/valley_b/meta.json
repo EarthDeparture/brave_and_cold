@@ -1,0 +1,15 @@
+{
+  "project": "QC-600020_09_Gaspesie_MTM5_2020_21_A-1m",
+  "easting_topleft": 2107808.0,
+  "northing_topleft": 445630.0,
+  "size_m": 2048,
+  "res_m": 1.0,
+  "crs": "EPSG:3979",
+  "z_min_m": 172.03341674804688,
+  "z_max_m": 497.1143798828125,
+  "smooth_sigma_m": 1.5,
+  "nodata_filled_frac": 0.0,
+  "walkable_lt30": 0.8506138324737549,
+  "attribution": "Contains information licensed under the Open Government Licence - Canada (NRCan HRDEM).",
+  "r16_note": "height_m = z_min + raw/65535 * (z_max - z_min); import in Terrain3D with that range"
+}
