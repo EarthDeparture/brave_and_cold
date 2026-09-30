@@ -84,6 +84,14 @@ func hit(dmg: float, from: Vector3) -> void:
 	_set_state(State.CHASE)
 
 
+func _flare_near() -> Node3D:
+	for f in get_tree().get_nodes_in_group("flares"):
+		var n := f as Node3D
+		if n != null and n.global_position.distance_to(global_position) < Flare.REPEL_RADIUS:
+			return n
+	return null
+
+
 func repel() -> void:
 	_struggle_cd = 12.0
 	_bite_cd = 3.0
@@ -149,6 +157,16 @@ func _process(delta: float) -> void:
 	_state_t += delta
 	_bite_cd = maxf(0.0, _bite_cd - delta)
 	_struggle_cd = maxf(0.0, _struggle_cd - delta)
+	var fl := _flare_near()
+	if fl != null:
+		var away := global_position - fl.global_position
+		away.y = 0.0
+		_target = global_position + away.normalized() * 40.0
+		if state != State.RETREAT:
+			_set_state(State.RETREAT)
+		if player.struggling and player.struggle_by == self:
+			player.struggling = false
+		_state_t = minf(_state_t, 6.0)
 	var pp := player.position
 	var dist := Vector2(pp.x - global_position.x, pp.z - global_position.z).length()
 	var want_speed := 0.0

@@ -128,6 +128,7 @@ func _ready() -> void:
 	_wolftest = opts.has("wolftest")
 	_beartest = opts.has("bear")
 	_mash = opts.has("mash")
+	_flareopt = opts.has("flare")
 	_zombietest = opts.has("zombietest")
 	_deertest = opts.has("deertest")
 	_campfire_opt = opts.has("campfire")
@@ -256,6 +257,7 @@ func _process(delta: float) -> void:
 		inv.needs = needs
 		inv.add('wood', 3)
 		inv.add('matches', 1)
+		inv.add('flare', 2)
 		_build_campfire()
 	if _deertest and _frames > 30:
 		_deertest_step(delta)
@@ -433,6 +435,7 @@ func _update_prompt() -> void:
 			items.append({"pos": cb.crate_world_pos(), "r": 1.7, "text": "Search crate", "act": func() -> void:
 				cb.crate_looted = true
 				inv.add("matches", 4)
+				inv.add("flare", 1)
 				inv.add("parka")
 				inv.add("axe")
 				inv.add("sweater")
@@ -533,6 +536,8 @@ func _unhandled_input(e: InputEvent) -> void:
 		return
 	if e.keycode == KEY_E and not _cur.is_empty():
 		(_cur["act"] as Callable).call()
+	elif e.keycode == KEY_V and inv != null:
+		_throw_flare()
 	elif e.keycode == KEY_B and inv != null:
 		_build_campfire()
 	elif e.keycode == KEY_X and inv != null and inv.count('rifle') > 0:
@@ -547,6 +552,21 @@ func _unhandled_input(e: InputEvent) -> void:
 		var ids: Array = inv.ids()
 		if idx < ids.size():
 			_say(inv.use(ids[idx]))
+
+
+func _throw_flare() -> void:
+	if not inv.remove('flare'):
+		_say('No flares')
+		return
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var p := player.position + fwd * 2.5
+	var h: float = player.ground_at(p.x, p.z)
+	if is_nan(h):
+		h = player.position.y - player.eye_h
+	var f := Flare.new()
+	add_child(f)
+	f.global_position = Vector3(p.x, h, p.z)
+	_say('Flare lit (60 s)')
 
 
 var _selftest := false
@@ -599,6 +619,8 @@ var wolves: Array[Wolf] = []
 var bears: Array[Wolf] = []
 var _wolftest := false
 var _beartest := false
+var _flareopt := false
+var _flare_done := false
 var _mash := false
 var _mash_t := 0.0
 var _wt := 0.0
@@ -658,6 +680,10 @@ func _add_wolf(p: Vector3, idx: int, bear := false) -> Wolf:
 
 func _wolftest_step(delta: float) -> void:
 	_wt += delta
+	if _flareopt and (_wt > 3.5 or out_path != "") and not _flare_done:
+		_flare_done = true
+		inv.add('flare', 1)
+		_throw_flare()
 	if _mash and player.struggling:
 		_mash_t += delta
 		if _mash_t > 0.125:

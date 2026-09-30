@@ -5,6 +5,7 @@ extends RefCounted
 const ITEMS := {
 	"wood": {"name": "Firewood"},
 	"matches": {"name": "Matches"},
+	"flare": {"name": "Road Flare"},
 	"axe": {"name": "Hatchet"},
 	"rifle": {"name": "Hunting Rifle"},
 	"ammo": {"name": "Rifle Rounds"},
