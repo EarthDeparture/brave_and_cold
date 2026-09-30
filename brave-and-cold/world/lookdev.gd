@@ -25,6 +25,8 @@ var yaw := 0.0
 var pitch := 0.0
 var speed := 12.0
 var out_path := ""
+var walk_mode := true
+var forest_count := 0
 var frames := 0
 
 
@@ -36,6 +38,7 @@ func _ready() -> void:
 		f.near_end = float(opts.get("near_end", 140.0))
 		add_child(f)
 		f.build(terrain)
+		forest_count = f.tree_count
 	var w := WaterSurfaces.new()
 	add_child(w)
 	w.build()
@@ -47,6 +50,8 @@ func _ready() -> void:
 	yaw = deg_to_rad(float(opts.get("yaw", 0.0)))
 	pitch = deg_to_rad(float(opts.get("pitch", -5.0)))
 	out_path = String(opts.get("out", ""))
+	bench = opts.get("bench", "0") == "1"
+	walk_mode = opts.get("fly", "0") != "1"
 	cam.position = p
 	cam.position.y = 400.0
 	_pending_ground_pos = p
@@ -152,6 +157,12 @@ func _process(delta: float) -> void:
 			print("SHOT_SAVED ", out_path, " cam ", cam.position)
 			get_tree().quit()
 		return
+	if bench:
+		_bench_step(delta)
+		return
+	if walk_mode:
+		_walk(delta)
+		return
 	var dir := Vector3.ZERO
 	if Input.is_key_pressed(KEY_W): dir -= cam.global_transform.basis.z
 	if Input.is_key_pressed(KEY_S): dir += cam.global_transform.basis.z
@@ -163,6 +174,55 @@ func _process(delta: float) -> void:
 	cam.position += dir.normalized() * s * delta
 
 
+## Ground-following walk: snaps to terrain height, blocks steep slopes (temporary until the real player controller).
+func _walk(delta: float) -> void:
+	var fwd := Vector3(-sin(yaw), 0.0, -cos(yaw))
+	var right := Vector3(cos(yaw), 0.0, -sin(yaw))
+	var dir := Vector3.ZERO
+	if Input.is_key_pressed(KEY_W): dir += fwd
+	if Input.is_key_pressed(KEY_S): dir -= fwd
+	if Input.is_key_pressed(KEY_D): dir += right
+	if Input.is_key_pressed(KEY_A): dir -= right
+	var s := 7.0 if Input.is_key_pressed(KEY_SHIFT) else 3.6
+	if dir.length() > 0.0:
+		var step := dir.normalized() * s * delta
+		var np := cam.position + step
+		var h0: float = terrain.data.get_height(Vector3(cam.position.x, 0, cam.position.z))
+		var h1: float = terrain.data.get_height(Vector3(np.x, 0, np.z))
+		if not is_nan(h1) and not is_nan(h0) and (h1 - h0) / maxf(step.length(), 0.001) < 1.0:
+			cam.position.x = np.x
+			cam.position.z = np.z
+	var g: float = terrain.data.get_height(Vector3(cam.position.x, 0, cam.position.z))
+	if not is_nan(g):
+		cam.position.y = lerpf(cam.position.y, g + 1.7, minf(1.0, delta * 12.0))
+
+
+var bench := false
+var bench_t := 0.0
+var bench_times: Array[float] = []
+var bench_start := Vector3.ZERO
+
+
+func _bench_step(delta: float) -> void:
+	bench_t += delta
+	if bench_t > 3.0:
+		bench_times.append(delta)
+	yaw += delta * 0.25
+	var fwd := Vector3(-sin(yaw), 0.0, -cos(yaw))
+	cam.position += fwd * 6.0 * delta
+	var g: float = terrain.data.get_height(Vector3(cam.position.x, 0, cam.position.z))
+	if not is_nan(g):
+		cam.position.y = g + 1.7
+	if bench_t > 23.0:
+		bench_times.sort()
+		var total := 0.0
+		for t in bench_times:
+			total += t
+		var avg_fps := bench_times.size() / total
+		var p99: float = bench_times[int(bench_times.size() * 0.99)]
+		print("BENCH avg_fps=%.1f p99_frametime_ms=%.1f min_fps_1pct=%.1f frames=%d trees=%d" % [avg_fps, p99 * 1000.0, 1.0 / p99, bench_times.size(), forest_count])
+		get_tree().quit()
+
 func _unhandled_input(e: InputEvent) -> void:
 	if e is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		yaw -= e.relative.x * 0.002
@@ -170,5 +230,7 @@ func _unhandled_input(e: InputEvent) -> void:
 	elif e is InputEventKey and e.pressed:
 		if e.keycode >= KEY_1 and e.keycode <= KEY_6:
 			apply_preset(PRESET_KEYS[e.keycode - KEY_1])
+		elif e.keycode == KEY_F:
+			walk_mode = not walk_mode
 		elif e.keycode == KEY_ESCAPE:
 			get_tree().quit()
