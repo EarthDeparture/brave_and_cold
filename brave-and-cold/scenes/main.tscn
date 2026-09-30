@@ -48,6 +48,7 @@ rotation_degrees = Vector3(-55, -30, 0)
 shadow_enabled = true
 
 [node name="Ground" type="StaticBody3D" parent="."]
+collision_layer = 5
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
 mesh = SubResource("GroundMesh")

@@ -1,4 +1,7 @@
 extends CharacterBody3D
+
+const GroundAlignment = preload("res://scripts/ground_alignment.gd")
+var _ground_pending := true
 ## Visible outdoor players, then recent noise, then unboarded windows.
 enum ZombieType { WALKER, RUNNER }
 
@@ -22,6 +25,7 @@ var has_target := false
 
 
 func _ready() -> void:
+	floor_snap_length = 0.5
 	if zombie_type == ZombieType.RUNNER:
 		move_speed *= 1.5
 		var material := StandardMaterial3D.new()
@@ -64,13 +68,11 @@ func _update_target(delta: float) -> void:
 		var destination: Vector3 = target_window.global_position
 		if target_window.is_passable():
 			var entrance: Vector3 = target_window.global_position
-			entrance.y = 0.0
 			entrance.z += 2.0 if entrance.z < 0.0 else -2.0
 			if target_window.get("is_open") != null:
 				entrance.x += 0.95
 			destination = entrance
-		if not target_window.is_passable() or agent.is_navigation_finished() or not agent.target_position.is_equal_approx(destination):
-			agent.target_position = destination
+		_set_destination(destination)
 		has_target = true
 
 
@@ -99,6 +101,10 @@ func _visible_outdoor_player() -> Node3D:
 
 
 func _physics_process(delta: float) -> void:
+	# Query after scene collision bodies have entered the physics world.
+	if _ground_pending:
+		GroundAlignment.place(self)
+		_ground_pending = false
 	_update_target(delta)
 	_attack_windows(delta)
 	velocity.x = 0.0
@@ -153,6 +159,7 @@ func _attack_windows(delta: float) -> void:
 
 
 func _set_destination(destination: Vector3) -> void:
+	destination = GroundAlignment.project(self, destination)
 	# Preserve link traversal; repeatedly resetting the path can send an agent
 	# back to the exterior endpoint halfway through a breach.
 	if agent.is_navigation_finished() or not agent.target_position.is_equal_approx(destination):

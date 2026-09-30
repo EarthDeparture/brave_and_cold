@@ -1,5 +1,8 @@
 extends CharacterBody3D
 
+const GroundAlignment = preload("res://scripts/ground_alignment.gd")
+var _ground_pending := true
+
 @export var move_speed: float = 5.0
 @export var sprint_speed: float = 8.0
 @export var mouse_sensitivity: float = 0.002
@@ -26,6 +29,7 @@ var footstep_remaining: float = 0.0
 
 
 func _ready() -> void:
+	floor_snap_length = 0.5
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	add_to_group("players")
 	get_parent().ready.connect(_update_temperature_exposure, CONNECT_ONE_SHOT)
@@ -107,6 +111,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# Query after scene collision bodies have entered the physics world.
+	if _ground_pending:
+		GroundAlignment.place(self)
+		_ground_pending = false
 	if is_dead or get_tree().paused:
 		return
 	_advance_work(delta)
