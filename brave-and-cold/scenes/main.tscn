@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="1_hud"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
@@ -18,6 +18,8 @@
 
 [ext_resource type="Script" path="res://scripts/world_lighting.gd" id="10_lighting"]
 
+[ext_resource type="Script" path="res://scripts/terrain.gd" id="11_terrain"]
+
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 
 [sub_resource type="Sky" id="Sky"]
@@ -29,12 +31,6 @@ sky = SubResource("Sky")
 ambient_light_source = 3
 ambient_light_color = Color(0.7, 0.8, 1, 1)
 ambient_light_energy = 0.12
-
-[sub_resource type="PlaneMesh" id="GroundMesh"]
-size = Vector2(100, 100)
-
-[sub_resource type="BoxShape3D" id="GroundShape"]
-size = Vector3(100, 1, 100)
 
 [node name="Main" type="Node3D"]
 script = ExtResource("8_outcome")
@@ -48,13 +44,11 @@ rotation_degrees = Vector3(-55, -30, 0)
 shadow_enabled = true
 
 [node name="Ground" type="StaticBody3D" parent="."]
+script = ExtResource("11_terrain")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
-mesh = SubResource("GroundMesh")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
-position = Vector3(0, -0.5, 0)
-shape = SubResource("GroundShape")
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
 position = Vector3(0, 0.1, 4)
