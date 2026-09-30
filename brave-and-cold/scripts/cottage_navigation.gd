@@ -1,12 +1,23 @@
 extends NavigationRegion3D
-## Flat blockout ground with clearance around the cottage walls.
+## Ground-projected blockout navigation with clearance around cottage walls.
 ## Update these bounds when the cottage footprint or terrain changes.
 
+
+const GroundAlignment = preload("res://scripts/ground_alignment.gd")
 
 var breach_links: Dictionary = {}
 
 
 func _ready() -> void:
+	set_physics_process(true)
+
+
+func _physics_process(_delta: float) -> void:
+	set_physics_process(false)
+	_build_navigation()
+
+
+func _build_navigation() -> void:
 	var mesh := NavigationMesh.new()
 	var edges := [-48.0, -5.8, 5.8, 48.0]
 	var vertices := PackedVector3Array()
@@ -25,6 +36,8 @@ func _ready() -> void:
 	vertices.append_array(PackedVector3Array([
 		Vector3(-4.4, 0, -3.6), Vector3(-4.4, 0, 4.4),
 		Vector3(4.4, 0, 4.4), Vector3(4.4, 0, -3.6)]))
+	for index in vertices.size():
+		vertices[index] = to_local(GroundAlignment.project(self, to_global(vertices[index])))
 	mesh.vertices = vertices
 	mesh.add_polygon(PackedInt32Array([start, start + 1, start + 2, start + 3]))
 	navigation_mesh = mesh
@@ -43,6 +56,8 @@ func _create_breach_links() -> void:
 			center.x += 0.95
 		link.start_position = Vector3(center.x, 0, -5.9 if north else 5.9)
 		link.end_position = Vector3(center.x, 0, -3.5 if north else 4.3)
+		link.start_position = to_local(GroundAlignment.project(self, link.start_position))
+		link.end_position = to_local(GroundAlignment.project(self, link.end_position))
 		link.enabled = barrier.is_passable()
 		add_child(link)
 		breach_links[barrier] = link
