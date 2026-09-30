@@ -19,10 +19,32 @@ VARIANTS = {
     "spruce_b": dict(seed=23, tiers=20, base_r=0.13, droop=0.20, trunk_h=0.20, snow=0.45),
     "spruce_c": dict(seed=37, tiers=14, base_r=0.17, droop=0.12, trunk_h=0.13, snow=0.70),
 }
-GREEN_DARK = (0.07, 0.10, 0.15, 1.0)
-GREEN_MID = (0.10, 0.19, 0.20, 1.0)
+GREEN_DARK = (0.05, 0.13, 0.15, 1.0)
+GREEN_MID = (0.08, 0.24, 0.22, 1.0)
 SNOW = (0.86, 0.90, 0.97, 1.0)
-BARK = (0.10, 0.075, 0.06, 1.0)
+BARK = (0.20, 0.135, 0.095, 1.0)
+
+
+def bark_color(co):
+    a = math.atan2(co.y, co.x)
+    k = 0.78 + 0.22 * math.sin(co.z * 70.0 + a * 4.0) * math.sin(a * 7.0 + co.z * 11.0)
+    k *= 1.0 - 0.35 * max(0.0, 1.0 - co.z * 6.0) * 0.0
+    return (BARK[0] * k, BARK[1] * k, BARK[2] * k, 1.0)
+
+
+def soft_normals(mesh):
+    ns = []
+    for i, v in enumerate(mesh.vertices):
+        r = math.hypot(v.co.x, v.co.y)
+        if i < 16:
+            n = Vector((v.co.x, v.co.y, 0.0)) if r > 1e-6 else Vector((0, 0, 1))
+        else:
+            w = min(1.0, r / 0.03)
+            n = Vector((v.co.x / max(r, 1e-6) * 0.8 * w, v.co.y / max(r, 1e-6) * 0.8 * w, 0.6 + 0.4 * (1 - w)))
+        ns.append(n.normalized())
+    for p in mesh.polygons:
+        p.use_smooth = True
+    mesh.normals_split_custom_set_from_vertices(ns)
 
 
 def clear():
@@ -72,7 +94,7 @@ def build(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
         n = f.normal
         for loop in f.loops:
             if fi < n_trunk:
-                c = BARK
+                c = bark_color(loop.vert.co)
             else:
                 h = min(max(loop.vert.co.z, 0.0), 1.0)
                 base = tuple(GREEN_DARK[k] * (1 - h) + GREEN_MID[k] * h for k in range(4))
@@ -86,8 +108,7 @@ def build(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
     if mesh.color_attributes:
         mesh.color_attributes.active_color = mesh.color_attributes[0]
         mesh.color_attributes.render_color_index = 0
-    for p in mesh.polygons:
-        p.use_smooth = False
+    soft_normals(mesh)
     obj = bpy.data.objects.new(name, mesh)
     bpy.context.collection.objects.link(obj)
     return obj
@@ -107,7 +128,7 @@ def build_near(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
         f = t / max(tiers - 1, 1)
         z = trunk_h + f * (0.94 - trunk_h)
         reach = base_r * 1.0 * (1.0 - f) ** 0.85 + 0.015
-        nb = 9 if f < 0.5 else 7
+        nb = 11 if f < 0.5 else 8
         phase = rng.random() * 6.283
         for b in range(nb):
             a = phase + 2 * math.pi * b / nb + rng.uniform(-0.25, 0.25)
@@ -139,7 +160,7 @@ def build_near(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
         n = f.normal
         for loop in f.loops:
             if fi < n_trunk:
-                c = BARK
+                c = bark_color(loop.vert.co)
             else:
                 hh = min(max(loop.vert.co.z, 0.0), 1.0)
                 base = tuple(GREEN_DARK[k] * (1 - hh) + GREEN_MID[k] * hh for k in range(4))
@@ -154,8 +175,7 @@ def build_near(name, seed, tiers, base_r, droop, snow, trunk_h=0.1):
     if mesh.color_attributes:
         mesh.color_attributes.active_color = mesh.color_attributes[0]
         mesh.color_attributes.render_color_index = 0
-    for p in mesh.polygons:
-        p.use_smooth = False
+    soft_normals(mesh)
     obj = bpy.data.objects.new(name, mesh)
     bpy.context.collection.objects.link(obj)
     return obj
