@@ -72,8 +72,9 @@ func _ready() -> void:
 	var sp := home if not opts.has("pos") else Vector2(float(String(opts["pos"]).split(",")[0]), float(String(opts["pos"]).split(",")[1]))
 	player.place(sp.x, sp.y)
 	_place_cabin(home)
-	if not opts.has("wolftest"):
+	if not opts.has("wolftest") and not opts.has("zombietest"):
 		_spawn_wolves(int(opts.get("wolves", 3)), home, 70.0, 140.0)
+		_spawn_zombies(int(opts.get("zombies", 10)), home)
 	player.cabins = cabins
 	if not cabins.is_empty():
 		if opts.has("stove"):
@@ -103,6 +104,7 @@ func _ready() -> void:
 	out_path = String(opts.get("out", ""))
 	_selftest = opts.has("selftest")
 	_wolftest = opts.has("wolftest")
+	_zombietest = opts.has("zombietest")
 	wolf_test_dist = float(opts.get("wdist", 22.0))
 	walk_secs = float(opts.get("walk", 0.0))
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if (out_path == "" and walk_secs == 0.0) else Input.MOUSE_MODE_VISIBLE
@@ -157,6 +159,8 @@ func _process(delta: float) -> void:
 	var gs := clock.advance(delta)
 	sky_rig.apply_hour(clock.hour)
 	var night := clampf(1.0 - sun.light_energy / 0.7, 0.0, 1.0)
+	Zombie.night_factor = night
+	_attack_cd = maxf(0.0, _attack_cd - delta)
 	for cb in cabins:
 		cb.set_night(night)
 	# survival
@@ -170,6 +174,8 @@ func _process(delta: float) -> void:
 		get_viewport().get_texture().get_image().save_png(out_path)
 		print("SHOT_SAVED ", out_path, " hour=", clock.hour)
 		get_tree().quit()
+	if _zombietest and _frames > 30:
+		_zombietest_step(delta)
 	if _wolftest and _frames > 30:
 		_wolftest_step(delta)
 	if _selftest and _frames == 30:
@@ -313,7 +319,7 @@ func _update_prompt() -> void:
 		if inv.count("wood") == 0:
 			stove_text = "Stove needs wood"
 		var items: Array[Dictionary] = [
-			{"pos": cb.door_world_pos(), "r": 2.0, "text": "Close door" if cb.door_open else "Open door", "act": cb.toggle_door},
+			{"pos": cb.door_world_pos(), "r": 2.0, "text": "Door is broken" if cb.door_broken else ("Close door" if cb.door_open else "Open door"), "act": cb.toggle_door},
 			{"pos": cb.stove_world_pos(), "r": 1.7, "text": stove_text, "act": func() -> void:
 				if inv.count("wood") == 0:
 					_say("No firewood")
@@ -338,8 +344,9 @@ func _update_prompt() -> void:
 				cb.crate_looted = true
 				inv.add("matches", 4)
 				inv.add("parka")
+				inv.add("axe")
 				inv.add("sweater")
-				_say("Found: down parka, wool sweater, 4 matches")})
+				_say("Found: hatchet, down parka, wool sweater, 4 matches")})
 		for it in items:
 			var to: Vector3 = it["pos"] - player.position
 			var d := to.length()
@@ -374,10 +381,15 @@ func _inv_text() -> String:
 
 
 func _unhandled_input(e: InputEvent) -> void:
+	if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		_attack()
+		return
 	if not (e is InputEventKey and e.pressed and not e.echo):
 		return
 	if e.keycode == KEY_E and not _cur.is_empty():
 		(_cur["act"] as Callable).call()
+	elif e.keycode == KEY_F:
+		_attack()
 	elif e.keycode == KEY_TAB:
 		inv_open = not inv_open
 	elif inv_open and e.keycode >= KEY_1 and e.keycode <= KEY_9:
@@ -494,3 +506,100 @@ var _wolves_spawned_for_test := false
 var wolf_test_dist := 22.0
 var _noise_sent := false
 var _wt_last := -1
+
+
+var zombies: Array[Zombie] = []
+var _zombietest := false
+var _zt := 0.0
+var _zt_spawned := false
+var _zt_noise := false
+var _zt_last := -1
+var _attack_cd := 0.0
+const AXE_DAMAGE := 40.0
+const FIST_DAMAGE := 10.0
+
+
+func _spawn_zombies(n: int, center: Vector2) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var made := 0
+	var tries := 0
+	while made < n and tries < 400:
+		tries += 1
+		var a := rng.randf() * TAU
+		var r := rng.randf_range(50.0, 240.0)
+		var cx := center.x + cos(a) * r
+		var cz := center.y + sin(a) * r
+		var group := mini(3, n - made)
+		for k in range(group):
+			var x := cx + rng.randf_range(-5.0, 5.0)
+			var z := cz + rng.randf_range(-5.0, 5.0)
+			if absf(x) > 950.0 or absf(z) > 950.0:
+				continue
+			var h: float = terrain.data.get_height(Vector3(x, 0, z))
+			if is_nan(h):
+				continue
+			_add_zombie(Vector3(x, h, z), 500 + made)
+			made += 1
+
+
+func _add_zombie(p: Vector3, idx: int) -> Zombie:
+	var z := Zombie.new()
+	add_child(z)
+	z.global_position = p
+	z.rotation.y = randf() * TAU
+	z.setup(terrain, snow, player, forest, cabins, noise_bus, idx)
+	zombies.append(z)
+	return z
+
+
+func _attack() -> void:
+	if _attack_cd > 0.0 or player.dead or inv == null:
+		return
+	var axe := inv.count("axe") > 0
+	_attack_cd = 0.9 if axe else 0.7
+	var dmg := AXE_DAMAGE if axe else FIST_DAMAGE
+	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_AXE if axe else 10.0, player)
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var best: Node3D = null
+	var bd := 2.1
+	for h in get_tree().get_nodes_in_group("hostile"):
+		var n := h as Node3D
+		var to := n.global_position - player.position
+		to.y = 0.0
+		var d := to.length()
+		if d < bd and (d < 0.6 or fwd.dot(to / maxf(d, 0.001)) > 0.5):
+			bd = d
+			best = n
+	if best != null:
+		best.call("hit", dmg, player.position)
+		_say("Hit!")
+	else:
+		_say("Swing")
+
+
+func _zombietest_step(delta: float) -> void:
+	_zt += delta
+	if not _zt_spawned:
+		_zt_spawned = true
+		inv = Inventory.new(body)
+		inv.add("axe")
+		var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+		var zp := player.position + fwd * wolf_test_dist
+		zp.y = terrain.data.get_height(zp)
+		var z := _add_zombie(zp, 1)
+		print("ZT zombie at dist %.0f, tier at zombie %d, tier at player %d" % [wolf_test_dist, snow.tier_at(zp.x, zp.z), snow.tier_at(player.position.x, player.position.z)])
+	if _zt > 1.0 and not _zt_noise:
+		_zt_noise = true
+		noise_bus.emit_noise(player.position, 40.0, player)
+	var z0: Zombie = zombies[0]
+	_attack_cd = maxf(0.0, _attack_cd - delta)
+	if z0.state != Zombie.State.DEAD and z0.global_position.distance_to(player.position) < 2.2:
+		_attack()
+	if int(_zt) != _zt_last:
+		_zt_last = int(_zt)
+		if _zt_last % 2 == 0:
+			print("ZT t=%d state=%d dist=%.1f speed=%.2f hp=%.0f zhp=%.0f grabs=%d" % [_zt_last, z0.state, z0.global_position.distance_to(player.position), z0.speed_now, player.health, z0.hp, z0.grabs])
+	if _zt > 60.0 or player.dead or z0.state == Zombie.State.DEAD:
+		print("ZOMBIETEST done php=%.0f zombie_dead=%s grabs=%d" % [player.health, str(z0.state == Zombie.State.DEAD), z0.grabs])
+		get_tree().quit()

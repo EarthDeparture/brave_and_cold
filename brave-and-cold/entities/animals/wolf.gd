@@ -25,6 +25,9 @@ var cabins: Array = []
 var state: State = State.WANDER
 var speed_now := 0.0
 var bites := 0
+var hp := 40.0
+var dead := false
+var _dead_t := 0.0
 var _target := Vector3.ZERO
 var _state_t := 0.0
 var _bite_cd := 0.0
@@ -56,7 +59,23 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 		_legs[n] = model.find_child("wolf_leg_" + n, true, false)
 	_tail = model.find_child("wolf_tail", true, false)
 	_body = model.find_child("wolf_body", true, false)
+	add_to_group("hostile")
 	_pick_wander()
+
+
+func hit(dmg: float, from: Vector3) -> void:
+	if dead:
+		return
+	hp -= dmg
+	if hp <= 0.0:
+		dead = true
+		remove_from_group("hostile")
+		speed_now = 0.0
+		var tw := create_tween()
+		tw.tween_property(self, "rotation:z", PI / 2.0, 0.5)
+		return
+	_target = from
+	_set_state(State.CHASE)
 
 
 func _on_noise(pos: Vector3, radius: float, source: Object) -> void:
@@ -102,6 +121,11 @@ func animal_snow_mult(x: float, z: float) -> float:
 
 func _process(delta: float) -> void:
 	if terrain == null or terrain.data == null or player == null:
+		return
+	if dead:
+		_dead_t += delta
+		if _dead_t > 60.0:
+			queue_free()
 		return
 	_state_t += delta
 	_bite_cd = maxf(0.0, _bite_cd - delta)

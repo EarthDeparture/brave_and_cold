@@ -18,6 +18,8 @@ var _walls: Array[Rect2] = []  # local xz rects
 const STOVE_LOCAL := Vector3(-2.35, 0.0, -1.75)
 const WOOD_BURN_S := 300.0  # real seconds per log
 var door_open := false
+var door_hp := 100.0
+var door_broken := false
 var stove_fuel_s := 0.0
 var wood_pile := 6
 var crate_looted := false
@@ -138,7 +140,21 @@ func take_firewood() -> bool:
 	return true
 
 
+func bash_door(dmg: float) -> void:
+	if door_broken or door_open:
+		return
+	door_hp -= dmg
+	_door_pivot.rotation.y = sin(Time.get_ticks_msec() * 0.06) * 0.03 * (1.0 - door_hp / 100.0 + 0.3)
+	if door_hp <= 0.0:
+		door_broken = true
+		door_open = true
+		var tw := create_tween()
+		tw.tween_property(_door_pivot, "rotation:y", deg_to_rad(120.0), 0.25)
+
+
 func toggle_door() -> void:
+	if door_broken:
+		return
 	door_open = not door_open
 	var tw := create_tween()
 	tw.tween_property(_door_pivot, "rotation:y", deg_to_rad(105.0) if door_open else 0.0, 0.5).set_trans(Tween.TRANS_SINE)
