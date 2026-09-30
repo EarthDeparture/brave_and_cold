@@ -21,6 +21,7 @@ var _base: PackedByteArray  # tier per BASE_CELL
 var _trample: Dictionary = {}  # cell key -> expiry time (seconds, game clock)
 var _now: float = 0.0
 var canopy_m: Image  # for shelter queries
+var interior_check: Callable = Callable()  # (x, z) -> bool; true inside a building
 var _canopy_scale := 40.0
 
 
@@ -81,6 +82,8 @@ func base_tier_at(x: float, z: float) -> int:
 
 
 func tier_at(x: float, z: float) -> int:
+	if interior_check.is_valid() and interior_check.call(x, z):
+		return 0
 	var t := base_tier_at(x, z)
 	if _trample.has(_key(x, z)) and float(_trample[_key(x, z)]) > _now:
 		t = maxi(0, t - TRAMPLE_DROP)
@@ -118,6 +121,8 @@ func player_speed_mult(x: float, z: float) -> float:
 
 
 func canopy_height_at(x: float, z: float) -> float:
+	if interior_check.is_valid() and interior_check.call(x, z):
+		return 20.0
 	var px := clampi(int(x + half), 0, size_m - 1)
 	var pz := clampi(int(z + half), 0, size_m - 1)
 	return canopy_m.get_pixel(px, pz).r * _canopy_scale

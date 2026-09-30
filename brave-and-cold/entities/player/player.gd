@@ -20,6 +20,7 @@ var body: BodyTemperature
 var noise: NoiseBus
 var cam: Camera3D
 var forest: ForestScatter
+var cabins: Array = []
 var footprints: Footprints
 
 var yaw := 0.0
@@ -61,7 +62,12 @@ func place(x: float, z: float) -> void:
 
 
 func ground_at(x: float, z: float) -> float:
-	return terrain.data.get_height(Vector3(x, 0.0, z))
+	var th: float = terrain.data.get_height(Vector3(x, 0.0, z))
+	for cb in cabins:
+		var f: float = cb.floor_at(x, z, th)
+		if not is_nan(f):
+			return f
+	return th
 
 
 func is_sheltered() -> bool:
@@ -124,6 +130,10 @@ func _move(delta: float) -> void:
 				var q := forest.resolve_trunks(position.x, position.z, 0.35)
 				position.x = q.x
 				position.z = q.y
+			for cb in cabins:
+				var q2: Vector2 = cb.resolve(position.x, position.z, 0.35)
+				position.x = q2.x
+				position.z = q2.y
 		else:
 			speed_now = 0.0
 			moving = false

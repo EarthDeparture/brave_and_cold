@@ -18,12 +18,14 @@ var player: Player
 var hud: Hud
 var forest: ForestScatter
 var footprints: Footprints
+var cabins: Array[Cabin] = []
 var out_path := ""
 var walk_secs := 0.0
 var _t := 0.0
 var _frames := 0
 var wind := 3.0
 var _walk_started := false
+var _ft: Array[float] = []
 
 
 func _ready() -> void:
@@ -66,8 +68,16 @@ func _ready() -> void:
 	player.footprints = footprints
 	await get_tree().process_frame
 	await get_tree().process_frame
-	var sp := _find_spawn() if not opts.has("pos") else Vector2(float(String(opts["pos"]).split(",")[0]), float(String(opts["pos"]).split(",")[1]))
+	var home := _find_spawn()
+	var sp := home if not opts.has("pos") else Vector2(float(String(opts["pos"]).split(",")[0]), float(String(opts["pos"]).split(",")[1]))
 	player.place(sp.x, sp.y)
+	_place_cabin(home)
+	player.cabins = cabins
+	snow.interior_check = func(x: float, z: float) -> bool:
+		for cb in cabins:
+			if cb.contains_xz(x, z):
+				return true
+		return false
 	player.yaw = deg_to_rad(float(opts.get("yaw", 0.0)))
 	player.pitch = deg_to_rad(float(opts.get("pitch", -3.0)))
 	if opts.has("trail"):
@@ -128,6 +138,9 @@ func _process(delta: float) -> void:
 	# time / lighting
 	var gs := clock.advance(delta)
 	sky_rig.apply_hour(clock.hour)
+	var night := clampf(1.0 - sun.light_energy / 0.7, 0.0, 1.0)
+	for cb in cabins:
+		cb.set_night(night)
 	# survival
 	snow.advance(delta)
 	body.update(gs, clock.ambient_c(), wind, player.is_sheltered(), player.fire_w, player.activity, 0.0, false)
@@ -140,6 +153,8 @@ func _process(delta: float) -> void:
 
 
 func _autowalk() -> void:
+	if _t > 3.0:
+		_ft.append(get_process_delta_time())
 	if not _walk_started:
 		_walk_started = true
 		var ev := InputEventKey.new()
@@ -154,6 +169,11 @@ func _autowalk() -> void:
 		Input.parse_input_event(ev2)
 		print("WALK_START pos=", player.position)
 	if _t > walk_secs:
+		_ft.sort()
+		var tot := 0.0
+		for x in _ft:
+			tot += x
+		print("BENCH avg_fps=%.1f p99_ms=%.1f frames=%d" % [_ft.size() / maxf(tot, 0.001), _ft[int(_ft.size() * 0.99)] * 1000.0, _ft.size()])
 		print("WALK_END pos=", player.position, " stamina=%.1f exhausted=%s core=%.2f state=%s tier=%d hour=%.2f moved_speed=%.2f" % [
 			player.stamina, str(player.exhausted), body.core, body.state_name(), snow.tier_at(player.position.x, player.position.z), clock.hour, player.speed_now])
 		get_tree().quit()
@@ -199,3 +219,40 @@ func _lay_trail(n: int) -> void:
 		if not is_nan(g):
 			snow.trample(p.x, p.z, 0.5)
 			footprints.step(p.x, g, p.z, player.yaw, maxi(snow.tier_at(p.x, p.z), 2))
+
+
+## Cabin site: flat, open, dry ground 25-90 m from spawn, door facing the spawn point.
+func _place_cabin(spawn: Vector2) -> void:
+	var water := Image.load_from_file(ProjectSettings.globalize_path("res://data/maps/valley_b/water_mask.png"))
+	water.convert(Image.FORMAT_L8)
+	for r in range(28, 110, 6):
+		for a in range(0, 360, 15):
+			var x := spawn.x + cos(deg_to_rad(a)) * r
+			var z := spawn.y + sin(deg_to_rad(a)) * r
+			if _site_ok(x, z, water):
+				var cb := Cabin.new()
+				add_child(cb)
+				var yaw := rad_to_deg(atan2(spawn.x - x, spawn.y - z))
+				if cb.setup(terrain, x, z, yaw):
+					cabins.append(cb)
+					print("CABIN at ", Vector2(x, z), " yaw ", yaw)
+					return
+				cb.queue_free()
+	print("CABIN no site found")
+
+
+func _site_ok(x: float, z: float, water: Image) -> bool:
+	var hs: Array[float] = []
+	for ox in [-5.0, 0.0, 5.0]:
+		for oz in [-5.0, 0.0, 5.0]:
+			var px: float = x + ox
+			var pz: float = z + oz
+			if snow.canopy_height_at(px, pz) > 1.0:
+				return false
+			if water.get_pixel(int(px) + 1024, int(pz) + 1024).r > 0.5:
+				return false
+			var h: float = terrain.data.get_height(Vector3(px, 0, pz))
+			if is_nan(h):
+				return false
+			hs.append(h)
+	return (hs.max() - hs.min()) < 1.4
