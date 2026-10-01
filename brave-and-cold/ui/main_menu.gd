@@ -17,7 +17,7 @@ func _ready() -> void:
 	var bg := ColorRect.new()
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	var grad := Gradient.new()
-	grad.colors = PackedColorArray([Color(0.03, 0.05, 0.09), Color(0.16, 0.24, 0.34)])
+	grad.colors = PackedColorArray([Color(0.03, 0.035, 0.03), Color(0.16, 0.18, 0.16)])
 	var gt := GradientTexture2D.new()
 	gt.gradient = grad
 	gt.fill_from = Vector2(0.5, 0.0)
@@ -38,10 +38,10 @@ func _ready() -> void:
 	_main.alignment = BoxContainer.ALIGNMENT_CENTER
 	_main.add_theme_constant_override("separation", 14)
 	add_child(_main)
-	var title := UiKit.label("BRAVE AND COLD", 64, Color(0.93, 0.96, 1.0))
+	var title := UiKit.label("BRAVE AND COLD", 64, Color(0.88, 0.89, 0.84))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_main.add_child(title)
-	var sub := UiKit.label("survive the cold.  survive the dead.", 20, UiKit.DIM)
+	var sub := UiKit.label("survive the cold.  survive the dead.", 20, DZ.ACCENT)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_main.add_child(sub)
 	var gap := Control.new()
@@ -55,7 +55,7 @@ func _ready() -> void:
 		b.pressed.connect(spec[1])
 		b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		_main.add_child(b)
-	var hint := UiKit.label("WASD move  |  Shift sprint  |  C crouch  |  E interact  |  LMB attack  |  X rifle  |  B campfire  |  Tab inventory  |  Esc pause", 14, UiKit.DIM)
+	var hint := UiKit.label("WASD move   Shift sprint   C crouch   Wheel + E actions   LMB / F attack   X rifle   V flare   B campfire   Tab gear   Esc pause", 14, UiKit.DIM)
 	hint.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	hint.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	hint.grow_vertical = Control.GROW_DIRECTION_BEGIN
@@ -100,12 +100,17 @@ func _add_backdrop() -> void:
 	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.pivot_offset = get_viewport_rect().size * 0.5
+	var sh := Shader.new()
+	sh.code = "shader_type canvas_item;\nvoid fragment(){ vec4 c = texture(TEXTURE, UV); float g = dot(c.rgb, vec3(0.299,0.587,0.114)); vec3 d = mix(vec3(g), c.rgb, 0.45) * vec3(1.02,1.0,0.94); COLOR = vec4(d, c.a); }"
+	var smat := ShaderMaterial.new()
+	smat.shader = sh
+	bg.material = smat
 	add_child(bg)
 	var tw := create_tween().set_loops()
 	tw.tween_property(bg, 'scale', Vector2(1.07, 1.07), 30.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_property(bg, 'scale', Vector2(1.0, 1.0), 30.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	var g := Gradient.new()
-	g.colors = PackedColorArray([Color(0.02, 0.04, 0.08, 0.05), Color(0.02, 0.04, 0.08, 0.62)])
+	g.colors = PackedColorArray([Color(0.01, 0.012, 0.01, 0.1), Color(0.01, 0.012, 0.01, 0.7)])
 	var gt := GradientTexture2D.new()
 	gt.gradient = g
 	gt.fill_from = Vector2(0.5, 0.35)
