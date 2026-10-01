@@ -58,6 +58,8 @@ func setup(w: Node) -> void:
 		_gathertest()
 	if "crafttest=1" in ua:
 		_crafttest()
+	if "weartest=1" in ua:
+		_weartest()
 
 
 func _selftest() -> void:
@@ -629,7 +631,7 @@ func _kit() -> void:
 	var inv: Inventory = world.get("inv")
 	if inv == null:
 		return
-	for pr in [["rifle", 1], ["ammo", 40], ["axe", 1], ["knife", 1], ["bow_drill", 1], ["tinder", 3], ["kindling", 4], ["parka", 1], ["sweater", 1], ["matches", 8], ["wood", 10], ["beans", 4], ["flare", 3]]:
+	for pr in [["rifle", 1], ["ammo", 40], ["axe", 1], ["knife", 1], ["cordage", 6], ["deer_hide", 2], ["bow_drill", 1], ["tinder", 3], ["kindling", 4], ["parka", 1], ["sweater", 1], ["matches", 8], ["wood", 10], ["beans", 4], ["flare", 3]]:
 		inv.add(pr[0], pr[1])
 	world.call("_say", "Dev kit added")
 
@@ -1174,4 +1176,157 @@ func _crafttest() -> void:
 	print("CRAFTTEST cooking state present for save=", found)
 	fails += 0 if found else 1
 	print("CRAFTTEST failures=", fails)
+	get_tree().quit()
+
+
+func _weartest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	var body: BodyTemperature = world.get("body")
+	player.god = false
+	for id in inv.worn_list():
+		inv.use(String(id))
+	var ok := is_equal_approx(body.warmth, 0.25) and is_equal_approx(body.windproof, 0.1) and inv.worn_list().is_empty()
+	print("WEARTEST bare invariant=", ok)
+	fails += 0 if ok else 1
+	# recipes validate
+	var bad := RecipeDB.validate()
+	ok = RecipeDB.all().size() >= 18 and bad.is_empty()
+	print("WEARTEST recipes=", RecipeDB.all().size(), " bad=", bad, " ok=", ok)
+	fails += 0 if ok else 1
+	# head slot adds on top of base
+	inv.add("toque")
+	inv.use("toque")
+	ok = is_equal_approx(body.warmth, 0.33) and inv.extra.get("head", "") == "toque" and inv.equipped_body == ""
+	print("WEARTEST toque on base warmth=", body.warmth, " ", ok)
+	fails += 0 if ok else 1
+	# worn item leaves its pack cell
+	var cells0 := inv.slots_used()
+	ok = inv.stacks().filter(func(s) -> bool: return s["id"] == "toque").is_empty() and cells0 >= 0
+	print("WEARTEST worn leaves pack=", ok)
+	fails += 0 if ok else 1
+	# stacking with parka
+	inv.add("parka")
+	inv.use("parka")
+	ok = is_equal_approx(body.warmth, 0.93) and inv.worn_list() == ["parka", "toque"]
+	print("WEARTEST parka+toque=", body.warmth, " ", inv.worn_list(), " ", ok)
+	fails += 0 if ok else 1
+	# cap
+	for id in ["hide_boots", "hide_leggings", "hide_mitts", "wolf_hat"]:
+		inv.add(id)
+		inv.use(id)
+	ok = body.warmth <= 0.97 + 0.0001 and body.windproof <= 0.95 + 0.0001 and body.waterproof <= 0.95 + 0.0001 and inv.extra.size() == 4
+	print("WEARTEST capped warmth=", body.warmth, " wind=", body.windproof, " water=", body.waterproof, " ", ok)
+	fails += 0 if ok else 1
+	# same slot replaces
+	ok = inv.extra["head"] == "wolf_hat"
+	print("WEARTEST slot replace=", ok)
+	fails += 0 if ok else 1
+	# take off one
+	inv.use("hide_boots")
+	ok = not inv.extra.has("feet") and inv.is_worn("wolf_hat") and not inv.is_worn("hide_boots")
+	print("WEARTEST take off=", ok)
+	fails += 0 if ok else 1
+	# drop worn item: unequips
+	world.call("drop_item", "hide_leggings", 1)
+	ok = not inv.extra.has("legs") and inv.count("hide_leggings") == 0
+	print("WEARTEST drop worn=", ok)
+	fails += 0 if ok else 1
+	# remove() of a worn extra clears it
+	inv.remove("hide_mitts", 1)
+	ok = not inv.extra.has("hands")
+	print("WEARTEST remove clears slot=", ok)
+	fails += 0 if ok else 1
+	# bear coat replaces torso
+	inv.add("bear_coat")
+	inv.use("bear_coat")
+	ok = inv.equipped_body == "bear_coat" and not inv.is_worn("parka")
+	print("WEARTEST torso swap=", ok)
+	fails += 0 if ok else 1
+	# strip back to bare
+	for id in inv.worn_list():
+		inv.use(String(id))
+	ok = is_equal_approx(body.warmth, 0.25) and inv.worn_list().is_empty()
+	print("WEARTEST bare again=", ok, " ", body.warmth)
+	fails += 0 if ok else 1
+	# slot_of / drag-target logic
+	ok = Inventory.slot_of("hide_cap") == "head" and Inventory.slot_of("hide_boots") == "feet" and Inventory.slot_of("beans") == ""
+	print("WEARTEST slot_of=", ok)
+	fails += 0 if ok else 1
+	# cure + sew chain at a fire
+	inv.counts.erase("deer_hide")
+	inv.counts.erase("cordage")
+	inv.counts.erase("knife")
+	inv.cond.erase("knife")
+	inv.add("knife")
+	inv.add("deer_hide", 2)
+	inv.add("cordage", 6)
+	var why: String = world.call("craft_start", "cure_hide")
+	ok = why.contains("fire")
+	print("WEARTEST cure needs fire=", ok, " ", why)
+	fails += 0 if ok else 1
+	var fires: Array = world.get("campfires")
+	var cf: Campfire = fires[0] if fires.size() > 0 else null
+	if cf == null:
+		inv.counts.erase("wood")
+		inv.counts.erase("matches")
+		inv.add("wood", 2)
+		inv.add("matches", 1)
+		world.call("_build_campfire")
+		cf = fires[fires.size() - 1]
+	_tp(cf.global_position.x + 1.0, cf.global_position.z, cf.global_position)
+	await get_tree().create_timer(0.8).timeout
+	cf.fuel_s = 3000.0
+	world.call("_update_prompt")
+	why = world.call("craft_start", "cure_hide")
+	_craft_run(26.0)
+	ok = why == "" and inv.count("cured_hide") == 1 and inv.count("deer_hide") == 1
+	print("WEARTEST cure hide=", ok, " ", why)
+	fails += 0 if ok else 1
+	world.call("_update_prompt")
+	why = world.call("craft_start", "cure_hide")
+	_craft_run(26.0)
+	ok = inv.count("cured_hide") == 2 and inv.count("deer_hide") == 0
+	print("WEARTEST cure 2nd=", ok, " ", why, " near=", world.call("_near_fire"))
+	fails += 0 if ok else 1
+	var hb0 := inv.count("hide_boots")
+	world.call("_update_prompt")
+	why = world.call("craft_start", "hide_boots")
+	_craft_run(26.0)
+	ok = inv.count("hide_boots") == hb0 + 1 and inv.count("cured_hide") == 0 and inv.count("cordage") == 4
+	print("WEARTEST sew boots=", ok, " ", why, " hide=", inv.count("cured_hide"), " cord=", inv.count("cordage"), " near=", world.call("_near_fire"))
+	fails += 0 if ok else 1
+	inv.use("hide_boots")
+	ok = inv.extra.get("feet", "") == "hide_boots" and body.warmth > 0.25
+	print("WEARTEST wear sewn boots=", ok)
+	fails += 0 if ok else 1
+	# wolf + bear pelts
+	var wh0 := inv.count("wolf_hat")
+	var bc0 := inv.count("bear_coat")
+	inv.add("wolf_pelt")
+	inv.add("bear_pelt")
+	world.call("craft_start", "cure_wolf")
+	_craft_run(26.0)
+	world.call("craft_start", "wolf_hat")
+	_craft_run(19.0)
+	ok = inv.count("wolf_hat") == wh0 + 1 and inv.count("wolf_fur") == 0
+	print("WEARTEST wolf pelt -> hat=", ok)
+	fails += 0 if ok else 1
+	inv.add("cordage", 1)
+	world.call("craft_start", "cure_bear")
+	_craft_run(41.0)
+	world.call("craft_start", "bear_coat")
+	_craft_run(41.0)
+	ok = inv.count("bear_coat") == bc0 + 1 and inv.count("bear_fur") == 0 and inv.count("cordage") == 0
+	print("WEARTEST bear pelt -> coat=", ok, " cordage=", inv.count("cordage"))
+	fails += 0 if ok else 1
+	# save/restore of extras via the world save dictionary shape
+	inv.use("wolf_hat")
+	var snap: Dictionary = inv.extra.duplicate()
+	ok = snap.size() == 2 and snap["head"] == "wolf_hat"
+	print("WEARTEST extra snapshot=", ok)
+	fails += 0 if ok else 1
+	print("WEARTEST failures=", fails)
 	get_tree().quit()

@@ -27,31 +27,50 @@ const ITEMS := {
 	"bear_meat_cooked": {"name": "Cooked Bear Meat", "kind": "food", "stack": 4, "kcal": 800.0, "desc": "Fatty and calorie dense."},
 	"fat": {"name": "Animal Fat", "kind": "misc", "stack": 4, "desc": "Rendered fat. Future: candles, waterproofing, tinder."},
 	"gut": {"name": "Gut", "kind": "misc", "stack": 4, "desc": "Cleaned animal gut. Future: cordage, sewing."},
-	"deer_hide": {"name": "Deer Hide", "kind": "misc", "stack": 2, "desc": "Raw hide. Future: cure and sew into clothing."},
-	"wolf_pelt": {"name": "Wolf Pelt", "kind": "misc", "stack": 2, "desc": "Thick grey fur. Future: warm clothing."},
-	"bear_pelt": {"name": "Bear Pelt", "kind": "misc", "stack": 1, "desc": "Huge heavy pelt. Future: the warmest coat."},
+	"deer_hide": {"name": "Deer Hide", "kind": "misc", "stack": 2, "desc": "Raw hide. Cure it by a fire, then sew it into clothing."},
+	"wolf_pelt": {"name": "Wolf Pelt", "kind": "misc", "stack": 2, "desc": "Thick grey fur. Cure it by a fire, then sew it into warm clothing."},
+	"bear_pelt": {"name": "Bear Pelt", "kind": "misc", "stack": 1, "desc": "Huge heavy pelt. Cure it by a fire: the warmest coat there is."},
+	"cured_hide": {"name": "Cured Hide", "kind": "misc", "stack": 4, "desc": "Scraped and smoked deer leather. Sews into hats, mitts, boots and leggings."},
+	"wolf_fur": {"name": "Wolf Fur", "kind": "misc", "stack": 2, "desc": "Cured wolf pelt. Warm, thick fur for hats and mitts."},
+	"bear_fur": {"name": "Bear Fur", "kind": "misc", "stack": 1, "desc": "Cured bear pelt. Enough for a full coat."},
+	"toque": {"name": "Wool Toque", "kind": "clothing", "stack": 1, "slot": "head", "warmth": 0.08, "windproof": 0.05, "waterproof": 0.02, "desc": "Knit cap. Warm head, cold-day basics."},
+	"hide_cap": {"name": "Hide Cap", "kind": "clothing", "stack": 1, "slot": "head", "warmth": 0.06, "windproof": 0.05, "waterproof": 0.02, "desc": "Crude leather cap."},
+	"wolf_hat": {"name": "Wolf Fur Hat", "kind": "clothing", "stack": 1, "slot": "head", "warmth": 0.10, "windproof": 0.10, "waterproof": 0.05, "desc": "Fur hat with ear flaps. Keeps the wind off your skull."},
+	"hide_mitts": {"name": "Hide Mitts", "kind": "clothing", "stack": 1, "slot": "hands", "warmth": 0.06, "windproof": 0.10, "waterproof": 0.05, "desc": "Rough leather mitts."},
+	"wolf_mitts": {"name": "Wolf Fur Mitts", "kind": "clothing", "stack": 1, "slot": "hands", "warmth": 0.10, "windproof": 0.12, "waterproof": 0.05, "desc": "Fur-lined mitts. Hands stay alive."},
+	"hide_boots": {"name": "Hide Boots", "kind": "clothing", "stack": 1, "slot": "feet", "warmth": 0.08, "windproof": 0.10, "waterproof": 0.10, "desc": "Laced leather boots. Not pretty, dry-ish."},
+	"hide_leggings": {"name": "Hide Leggings", "kind": "clothing", "stack": 1, "slot": "legs", "warmth": 0.10, "windproof": 0.10, "waterproof": 0.05, "desc": "Leather leggings tied at the knee."},
+	"bear_coat": {"name": "Bear Fur Coat", "kind": "clothing", "stack": 1, "slot": "body", "warmth": 0.95, "windproof": 0.75, "waterproof": 0.45, "desc": "Heavy as sin, warmest thing you can wear. Weaker against rain than the parka."},
 	"sweater": {"name": "Wool Sweater", "kind": "clothing", "stack": 1, "slot": "body", "warmth": 0.55, "windproof": 0.2, "waterproof": 0.1, "desc": "Warm but lets the wind straight through."},
 	"parka": {"name": "Down Parka", "kind": "clothing", "stack": 1, "slot": "body", "warmth": 0.85, "windproof": 0.8, "waterproof": 0.6, "desc": "Heavy insulated parka. Wind and water resistant."},
 }
 const KIND_ORDER := ["weapon", "tool", "ammo", "clothing", "food", "fuel", "misc"]
 const CAPACITY := 24          # backpack cells
 const EQUIP_ITEMS := ["rifle", "axe"]   # live in equipment slots, not backpack cells
-const WEIGHTS := {"wood": 1.2, "stick": 0.15, "thatch": 0.05, "cordage": 0.05, "kindling": 0.1, "bow_drill": 0.4, "jerky": 0.2, "reed": 0.06, "tinder": 0.02, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6}
+const WEIGHTS := {"wood": 1.2, "stick": 0.15, "thatch": 0.05, "cordage": 0.05, "kindling": 0.1, "bow_drill": 0.4, "jerky": 0.2, "reed": 0.06, "tinder": 0.02, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6, "cured_hide": 1.0, "wolf_fur": 0.7, "bear_fur": 3.0, "toque": 0.1, "hide_cap": 0.3, "wolf_hat": 0.3, "hide_mitts": 0.3, "wolf_mitts": 0.3, "hide_boots": 0.8, "hide_leggings": 0.8, "bear_coat": 4.5}
 const WEIGHT_SOFT := 30.0   # kg carried before you slow down
 const WEIGHT_HARD := 45.0   # kg hard cap (cannot pick up more)
 const BASE_WARMTH := 0.25
 const BASE_WINDPROOF := 0.1
 const BASE_WATERPROOF := 0.1
+const WARM_CAP := 0.97
+const PROOF_CAP := 0.95
+const EXTRA_SLOTS := ["head", "legs", "hands", "feet"]
 
 var counts: Dictionary = {}
 var cond: Dictionary = {}       # id -> 0..1 condition for tools/weapons (missing = 1.0)
-var equipped_body: String = ""
+var equipped_body: String = ""      # torso slot (also the one that sets the base insulation)
+var extra: Dictionary = {}          # slot (head/legs/hands/feet) -> id, adds to the torso insulation
 var body: BodyTemperature
 var needs: Needs
 
 
 func _init(b: BodyTemperature = null) -> void:
 	body = b
+
+
+static func slot_of(id: String) -> String:
+	return String(ITEMS[id].get("slot", "")) if ITEMS.has(id) else ""
 
 
 static func stack_max(id: String) -> int:
@@ -90,13 +109,28 @@ static func kind_of(id: String) -> String:
 	return String(ITEMS[id].get("kind", "misc")) if ITEMS.has(id) else "misc"
 
 
-## Backpack cells: [{id, n}] sorted by kind. Worn clothing (one unit) and equipment-slot items are not counted.
-func stacks_for(cnt: Dictionary, worn: String) -> Array:
+## Ids currently worn: torso first, then head/legs/hands/feet.
+func worn_list() -> Array:
+	var out: Array = []
+	if equipped_body != "":
+		out.append(equipped_body)
+	for s in EXTRA_SLOTS:
+		if extra.has(s):
+			out.append(extra[s])
+	return out
+
+
+func is_worn(id: String) -> bool:
+	return id != "" and (equipped_body == id or extra.values().has(id))
+
+
+## Backpack cells: [{id, n}] sorted by kind. Worn clothing (one unit each) and equipment-slot items are not counted.
+func stacks_for(cnt: Dictionary, worn: Array) -> Array:
 	var out: Array = []
 	for id in cnt.keys():
 		if EQUIP_ITEMS.has(id):
 			continue
-		var n: int = int(cnt[id]) - (1 if id == worn else 0)
+		var n: int = int(cnt[id]) - (1 if worn.has(id) else 0)
 		var sm := stack_max(id)
 		while n > 0:
 			out.append({"id": id, "n": mini(n, sm)})
@@ -113,7 +147,7 @@ func stacks_for(cnt: Dictionary, worn: String) -> Array:
 
 
 func stacks() -> Array:
-	return stacks_for(counts, equipped_body)
+	return stacks_for(counts, worn_list())
 
 
 func slots_used() -> int:
@@ -127,7 +161,7 @@ func can_add(id: String, n: int = 1) -> bool:
 		return false
 	var c := counts.duplicate()
 	c[id] = int(c.get(id, 0)) + n
-	return stacks_for(c, equipped_body).size() <= CAPACITY
+	return stacks_for(c, worn_list()).size() <= CAPACITY
 
 
 func count(id: String) -> int:
@@ -147,6 +181,11 @@ func remove(id: String, n: int = 1) -> bool:
 		cond.erase(id)
 		if equipped_body == id:
 			_apply("")
+		else:
+			for s in EXTRA_SLOTS:
+				if extra.get(s, "") == id:
+					extra.erase(s)
+			_recompute()
 	return true
 
 
@@ -192,6 +231,15 @@ func use(id: String) -> String:
 		return "Ate %s (+%d kcal)" % [name_of(id), int(k)]
 	if not is_wearable(id):
 		return "%s: nothing to do" % name_of(id)
+	var slot := slot_of(id)
+	if slot != "body":
+		if extra.get(slot, "") == id:
+			extra.erase(slot)
+			_recompute()
+			return "Took off %s" % name_of(id)
+		extra[slot] = id
+		_recompute()
+		return "Wearing %s" % name_of(id)
 	if equipped_body == id:
 		_apply("")
 		return "Took off %s" % name_of(id)
@@ -201,14 +249,27 @@ func use(id: String) -> String:
 
 func _apply(id: String) -> void:
 	equipped_body = id
+	_recompute()
+
+
+## Torso item sets the base, head/legs/hands/feet add on top (capped so no outfit is a perfect shell).
+func _recompute() -> void:
 	if body == null:
 		return
-	if id == "":
-		body.warmth = BASE_WARMTH
-		body.windproof = BASE_WINDPROOF
-		body.waterproof = BASE_WATERPROOF
-	else:
-		var d: Dictionary = ITEMS[id]
-		body.warmth = d["warmth"]
-		body.windproof = d["windproof"]
-		body.waterproof = d["waterproof"]
+	var w := BASE_WARMTH
+	var wp := BASE_WINDPROOF
+	var wa := BASE_WATERPROOF
+	if equipped_body != "":
+		var d: Dictionary = ITEMS[equipped_body]
+		w = float(d["warmth"])
+		wp = float(d["windproof"])
+		wa = float(d["waterproof"])
+	for s in EXTRA_SLOTS:
+		if extra.has(s):
+			var e: Dictionary = ITEMS[extra[s]]
+			w += float(e["warmth"])
+			wp += float(e["windproof"])
+			wa += float(e["waterproof"])
+	body.warmth = minf(w, WARM_CAP)
+	body.windproof = minf(wp, PROOF_CAP)
+	body.waterproof = minf(wa, PROOF_CAP)

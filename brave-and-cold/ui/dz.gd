@@ -62,6 +62,17 @@ static func item_color(id: String) -> Color:
 		"venison_cooked": return Color(0.52, 0.30, 0.16)
 		"sweater": return Color(0.40, 0.46, 0.52)
 		"parka": return Color(0.28, 0.40, 0.30)
+		"cured_hide": return Color(0.70, 0.52, 0.30)
+		"wolf_fur": return Color(0.62, 0.62, 0.64)
+		"bear_fur": return Color(0.30, 0.20, 0.14)
+		"toque": return Color(0.55, 0.20, 0.18)
+		"hide_cap": return Color(0.62, 0.45, 0.26)
+		"wolf_hat": return Color(0.58, 0.58, 0.60)
+		"hide_mitts": return Color(0.62, 0.45, 0.26)
+		"wolf_mitts": return Color(0.58, 0.58, 0.60)
+		"hide_boots": return Color(0.55, 0.38, 0.22)
+		"hide_leggings": return Color(0.60, 0.43, 0.25)
+		"bear_coat": return Color(0.32, 0.22, 0.15)
 		"stick": return Color(0.45, 0.32, 0.20)
 		"kindling": return Color(0.62, 0.48, 0.28)
 		"thatch": return Color(0.72, 0.62, 0.36)
@@ -145,8 +156,8 @@ static func item_icon(ci: CanvasItem, id: String, r: Rect2, dim: float = 1.0) ->
 			ci.draw_colored_polygon(pts, col)
 			ci.draw_arc(c + Vector2(-u * 0.15, 0), u * 0.3, 0.3, 4.6, 12, lite, 2.0)
 			ci.draw_circle(c + Vector2(u * 0.35, u * 0.05), u * 0.12, Color(0.9, 0.85, 0.78))
-		"sweater", "parka":
-			var w := 1.0 if id == "parka" else 0.85
+		"sweater", "parka", "bear_coat":
+			var w := 1.0 if (id == "parka" or id == "bear_coat") else 0.85
 			ci.draw_colored_polygon(PackedVector2Array([
 				c + Vector2(-u * 0.45, -u * 0.8), c + Vector2(u * 0.45, -u * 0.8), c + Vector2(u * 1.0 * w, -u * 0.3),
 				c + Vector2(u * 0.85 * w, u * 0.15), c + Vector2(u * 0.5, -u * 0.05), c + Vector2(u * 0.5, u * 0.85),
@@ -186,7 +197,7 @@ static func item_icon(ci: CanvasItem, id: String, r: Rect2, dim: float = 1.0) ->
 			ci.draw_colored_polygon(pts2, col)
 			if id == "gut":
 				ci.draw_arc(c, u * 0.35, 0.0, TAU, 12, dark, 3.0)
-		"deer_hide", "wolf_pelt", "bear_pelt":
+		"deer_hide", "wolf_pelt", "bear_pelt", "cured_hide", "wolf_fur", "bear_fur":
 			var pts3 := PackedVector2Array()
 			for k in 16:
 				var a5 := TAU * k / 16.0
@@ -194,6 +205,23 @@ static func item_icon(ci: CanvasItem, id: String, r: Rect2, dim: float = 1.0) ->
 				pts3.append(c + Vector2(cos(a5) * u * rr, sin(a5) * u * rr * 0.8))
 			ci.draw_colored_polygon(pts3, col)
 			ci.draw_arc(c, u * 0.5, 0.2, 3.0, 10, lite, 2.0)
+		"toque", "hide_cap", "wolf_hat":
+			ci.draw_arc(c + Vector2(0, u * 0.15), u * 0.75, PI, TAU, 14, col, u * 0.7)
+			ci.draw_rect(Rect2(c + Vector2(-u * 0.8, u * 0.1), Vector2(u * 1.6, u * 0.4)), lite)
+			if id != "hide_cap":
+				ci.draw_circle(c + Vector2(0, -u * 0.7), u * 0.2, dark)
+		"hide_mitts", "wolf_mitts":
+			_quad(ci, c + Vector2(0, u * 0.15), u * 0.9, u * 1.2, 0.0, col)
+			ci.draw_circle(c + Vector2(-u * 0.5, -u * 0.15), u * 0.28, col)
+			_quad(ci, c + Vector2(0, u * 0.85), u * 1.0, u * 0.3, 0.0, lite)
+		"hide_boots":
+			_quad(ci, c + Vector2(-u * 0.2, -u * 0.2), u * 0.6, u * 1.2, 0.0, col)
+			_quad(ci, c + Vector2(u * 0.15, u * 0.6), u * 1.2, u * 0.45, 0.0, dark)
+			_quad(ci, c + Vector2(-u * 0.2, -u * 0.85), u * 0.7, u * 0.25, 0.0, lite)
+		"hide_leggings":
+			_quad(ci, c + Vector2(-u * 0.32, 0), u * 0.5, u * 1.8, 0.0, col)
+			_quad(ci, c + Vector2(u * 0.32, 0), u * 0.5, u * 1.8, 0.0, col)
+			_quad(ci, c + Vector2(0, -u * 0.8), u * 1.15, u * 0.25, 0.0, lite)
 		_:
 			ci.draw_rect(Rect2(c - Vector2(u, u) * 0.6, Vector2(u, u) * 1.2), col)
 

@@ -17,6 +17,7 @@ const GROUND_O := Vector2(520, 560)
 const GROUND_N := 8
 const NEAR_R := 3.5
 const DOUBLE_S := 0.35
+const CRAFT_PER_PAGE := 18
 
 var world: Node
 var inv: Inventory
@@ -41,6 +42,7 @@ var _last_click_key := ""
 var _prev_mouse_mode := Input.MOUSE_MODE_CAPTURED
 var _time := 0.0
 var _craft_mode := false
+var _craft_page := 0
 
 
 func setup(w: Node, i: Inventory, p: Player, n: Needs, b: BodyTemperature, c: GameClock, h: Hud) -> void:
@@ -163,6 +165,9 @@ func _ground_rect(i: int) -> Rect2:
 
 
 func _slot_rect(slot: String) -> Rect2:
+	var ci := Inventory.EXTRA_SLOTS.find(slot)
+	if ci >= 0:
+		return Rect2(Vector2(140 + ci * 84, 330), Vector2(72, 72))
 	var i := {"body": 0, "primary": 1, "tool": 2}[slot] as int
 	return Rect2(Vector2(140 + i * 112, 196), Vector2(CELL, CELL))
 
@@ -175,7 +180,7 @@ func _slot_item(slot: String) -> String:
 			return "rifle" if inv.count("rifle") > 0 else ""
 		"tool":
 			return "axe" if inv.count("axe") > 0 else ""
-	return ""
+	return String(inv.extra.get(slot, ""))
 
 
 func _in_hand(slot: String) -> bool:
@@ -194,7 +199,7 @@ func _validate_sel() -> void:
 	var ok := false
 	match from:
 		"pack":
-			ok = inv.count(id) - (1 if id == inv.equipped_body else 0) > 0
+			ok = inv.count(id) - (1 if inv.is_worn(id) else 0) > 0
 		"equip":
 			ok = _slot_item(_sel["slot"]) == id
 		"ground":
@@ -225,7 +230,7 @@ func _entries(id: String, from: String, n: int, node: Node = null) -> Array:
 		"food":
 			out.append({"label": "Eat", "act": func() -> void: world.gear_use(id)})
 		"clothing":
-			var worn: bool = inv.equipped_body == id
+			var worn: bool = inv.is_worn(id)
 			out.append({"label": "Take off" if worn else "Wear", "act": func() -> void: world.gear_use(id)})
 		"tool":
 			if id == "flare":
@@ -235,7 +240,7 @@ func _entries(id: String, from: String, n: int, node: Node = null) -> Array:
 		"weapon":
 			var up: bool = world.rifle_up
 			out.append({"label": "Lower rifle" if up else "Raise rifle", "act": func() -> void: world.gear_hands(not up)})
-	if inv.count(id) - (1 if from == "pack" and id == inv.equipped_body else 0) >= 1 or from == "equip":
+	if inv.count(id) - (1 if from == "pack" and inv.is_worn(id) else 0) >= 1 or from == "equip":
 		out.append({"label": "Drop one" if n > 1 else "Drop", "act": func() -> void: world.drop_item(id, 1)})
 		if n > 1:
 			out.append({"label": "Drop all (%d)" % n, "act": func() -> void: world.drop_item(id, n)})
@@ -269,13 +274,13 @@ func _drop_on(target: Dictionary) -> void:
 	var to_ground := tk == "drop"
 	match from:
 		"pack":
-			if tk == "equip" and target["slot"] == "body" and Inventory.kind_of(id) == "clothing" and inv.equipped_body != id:
+			if tk == "equip" and Inventory.kind_of(id) == "clothing" and target["slot"] == Inventory.slot_of(id) and not inv.is_worn(id):
 				world.gear_use(id)
 			elif to_ground:
 				world.drop_item(id, n)
 		"equip":
 			var slot: String = _drag["slot"]
-			if slot == "body":
+			if slot == "body" or Inventory.EXTRA_SLOTS.has(slot):
 				if tk == "pack":
 					world.gear_use(id)   # take off
 				elif to_ground:
@@ -286,7 +291,7 @@ func _drop_on(target: Dictionary) -> void:
 				elif to_ground:
 					world.drop_item(id, 1)
 		"ground":
-			if tk == "pack" or (tk == "equip" and target["slot"] == "body"):
+			if tk == "pack" or (tk == "equip" and Inventory.kind_of(id) == "clothing" and target["slot"] == Inventory.slot_of(id)):
 				_take(_drag["node"])
 				if tk == "equip" and Inventory.kind_of(id) == "clothing":
 					world.gear_use(id)
@@ -312,6 +317,10 @@ func _on_gui(e: InputEvent) -> void:
 	if not (e is InputEventMouseButton):
 		return
 	_mouse = _to_v(e.position)
+	if _craft_mode and e.pressed and (e.button_index == MOUSE_BUTTON_WHEEL_UP or e.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+		var pages := maxi(1, ceili(float(RecipeDB.all().size()) / float(CRAFT_PER_PAGE)))
+		_craft_page = clampi(_craft_page + (1 if e.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, pages - 1)
+		return
 	var h := _hit_at(_mouse)
 	if e.button_index == MOUSE_BUTTON_LEFT and e.pressed:
 		if not _menu.is_empty():
@@ -390,6 +399,7 @@ func _draw_tab_button() -> void:
 	DZ.text(_c, "BACK TO GEAR" if _craft_mode else "CRAFTING", br.position + Vector2(0, 26), 16, DZ.ACCENT if hv else DZ.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 230.0)
 	_hits.append({"k": "btn", "r": br, "act": func() -> void:
 		_craft_mode = not _craft_mode
+		_craft_page = 0
 		_sel = {}})
 
 
@@ -397,21 +407,29 @@ func _draw_craft() -> void:
 	var recs := RecipeDB.all()
 	var near: bool = world._near_fire()
 	var job: Dictionary = world.craft_job
-	DZ.text(_c, "CRAFTING   (click a recipe)", Vector2(PACK_O.x, 548), 16, DZ.DIM)
-	var col_w := 408.0
+	var pages := maxi(1, ceili(float(recs.size()) / float(CRAFT_PER_PAGE)))
+	_craft_page = clampi(_craft_page, 0, pages - 1)
+	var head := "CRAFTING   (click a recipe)"
+	if pages > 1:
+		head += "     mouse wheel: page %d / %d" % [_craft_page + 1, pages]
+	DZ.text(_c, head, Vector2(PACK_O.x, 548), 16, DZ.DIM)
+	var col_w := 268.0
 	var hover_r := {}
 	var hover_why := ""
-	for i in recs.size():
+	for j in range(CRAFT_PER_PAGE):
+		var i := _craft_page * CRAFT_PER_PAGE + j
+		if i >= recs.size():
+			break
 		var r: Dictionary = recs[i]
-		var rr := Rect2(Vector2(PACK_O.x + (i / 6) * (col_w + 8.0), 560 + (i % 6) * 34), Vector2(col_w, 30))
+		var rr := Rect2(Vector2(PACK_O.x + (j / 6) * (col_w + 8.0), 560 + (j % 6) * 34), Vector2(col_w, 30))
 		var why := RecipeDB.blocked(inv, r, near)
 		var ok := why == "" and job.is_empty()
 		var hv := rr.has_point(_mouse)
 		_c.draw_rect(rr, Color(0.16, 0.18, 0.14, 0.95) if (hv and ok) else Color(0.09, 0.10, 0.09, 0.92))
 		_c.draw_rect(rr, DZ.ACCENT if ok else Color(0.30, 0.32, 0.27, 0.9), false, 1.0)
-		DZ.text(_c, String(r["name"]), rr.position + Vector2(10, 21), 16, DZ.TEXT if ok else DZ.DIM)
+		DZ.text(_c, String(r["name"]), rr.position + Vector2(8, 21), 14, DZ.TEXT if ok else DZ.DIM)
 		var tm := "%ds" % int(r["time_s"])
-		DZ.text(_c, tm, rr.position + Vector2(col_w - 10 - DZ.text_w(tm, 14), 21), 14, DZ.DIM)
+		DZ.text(_c, tm, rr.position + Vector2(col_w - 8 - DZ.text_w(tm, 13), 21), 13, DZ.DIM)
 		if hv:
 			hover_r = r
 			hover_why = why
@@ -480,6 +498,19 @@ func _draw_equipment() -> void:
 			lab += "  (in hands)"
 			col = DZ.ACCENT
 		DZ.text(_c, lab, Vector2(r.position.x, r.end.y + 20), 13, col)
+	var cn := {"head": "HEAD", "legs": "LEGS", "hands": "HANDS", "feet": "FEET"}
+	for slot in Inventory.EXTRA_SLOTS:
+		var r2 := _slot_rect(slot)
+		var id2 := _slot_item(slot)
+		if id2 == "":
+			_cell_bg(r2, false, false, true)
+			_hits.append({"k": "equip", "slot": slot, "id": "", "r": r2})
+		else:
+			var hover := r2.has_point(_mouse) and not _dragging
+			_cell_bg(r2, hover, _is_sel(id2, "equip", slot))
+			DZ.item_icon(_c, id2, r2.grow(-10))
+			_hits.append({"k": "equip", "slot": slot, "id": id2, "n": 1, "r": r2})
+		DZ.text(_c, String(cn[slot]), Vector2(r2.position.x, r2.end.y + 16), 12, DZ.DIM)
 
 
 func _bar(pos: Vector2, w: float, label: String, frac: float, value: String) -> void:
@@ -492,22 +523,31 @@ func _bar(pos: Vector2, w: float, label: String, frac: float, value: String) -> 
 
 
 func _draw_condition() -> void:
-	DZ.text(_c, "CONDITION", Vector2(140, 380), 16, DZ.DIM)
+	DZ.text(_c, "CONDITION", Vector2(140, 450), 16, DZ.DIM)
 	var x := 140.0
 	var w := 230.0
-	_bar(Vector2(x, 414), w, "Blood", player.health / 100.0, "%d" % int(player.health * 120.0))
-	_bar(Vector2(x, 446), w, "Food", needs.calories / 1500.0, "%d kcal" % int(needs.calories))
-	_bar(Vector2(x, 478), w, "Water", needs.water / 70.0, "%d%%" % int(needs.water))
-	_bar(Vector2(x, 510), w, "Temperature", (body.core - 32.0) / 4.5, "%.1f C" % body.core)
-	DZ.text(_c, "WORN", Vector2(140, 566), 16, DZ.DIM)
-	var worn := inv.equipped_body
-	DZ.text(_c, inv.name_of(worn) if worn != "" else "Nothing over your base layer", Vector2(140, 594), 17, DZ.TEXT)
+	_bar(Vector2(x, 480), w, "Blood", player.health / 100.0, "%d" % int(player.health * 120.0))
+	_bar(Vector2(x, 508), w, "Food", needs.calories / 1500.0, "%d kcal" % int(needs.calories))
+	_bar(Vector2(x, 536), w, "Water", needs.water / 70.0, "%d%%" % int(needs.water))
+	_bar(Vector2(x, 564), w, "Temperature", (body.core - 32.0) / 4.5, "%.1f C" % body.core)
+	DZ.text(_c, "WORN", Vector2(140, 604), 16, DZ.DIM)
+	var worn := inv.worn_list()
+	if worn.is_empty():
+		DZ.text(_c, "Nothing over your base layer", Vector2(140, 630), 15, DZ.TEXT)
+	else:
+		var l1: Array = []
+		var l2: Array = []
+		for k in worn.size():
+			(l1 if k < 2 else l2).append(inv.name_of(String(worn[k])))
+		DZ.text(_c, ", ".join(l1), Vector2(140, 630), 15, DZ.TEXT)
+		if not l2.is_empty():
+			DZ.text(_c, ", ".join(l2), Vector2(140, 650), 15, DZ.TEXT)
 	var wt: float = body.warmth
 	var wp: float = body.windproof
 	var wa: float = body.waterproof
-	_bar(Vector2(x, 630), w, "Warmth", wt, "%d%%" % int(wt * 100))
-	_bar(Vector2(x, 660), w, "Windproof", wp, "%d%%" % int(wp * 100))
-	_bar(Vector2(x, 690), w, "Waterproof", wa, "%d%%" % int(wa * 100))
+	_bar(Vector2(x, 686), w, "Warmth", wt, "%d%%" % int(wt * 100))
+	_bar(Vector2(x, 714), w, "Windproof", wp, "%d%%" % int(wp * 100))
+	_bar(Vector2(x, 742), w, "Waterproof", wa, "%d%%" % int(wa * 100))
 
 
 func _draw_pack() -> void:
@@ -580,7 +620,7 @@ func _draw_drag() -> void:
 	var tk := _tk(h)
 	var id: String = _drag["id"]
 	var from: String = _drag["from"]
-	if tk == "equip" and h.get("slot", "") == "body" and Inventory.kind_of(id) == "clothing" and from != "equip":
+	if tk == "equip" and h.get("slot", "") == Inventory.slot_of(id) and Inventory.kind_of(id) == "clothing" and from != "equip":
 		tip = "Wear"
 	elif tk == "drop" and from != "ground":
 		tip = "Drop"

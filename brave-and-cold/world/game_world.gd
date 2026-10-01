@@ -189,6 +189,7 @@ func _ready() -> void:
 	_loot = opts.has('loot')
 	_gear_opt = opts.has('gear')
 	_craftui = opts.has('craftui')
+	_wearui = opts.has('wearui')
 	_gear_sel = String(opts.get('gearsel', ''))
 	_geartest = opts.has('geartest')
 	opts_dropdemo = opts.has('dropdemo')
@@ -353,6 +354,11 @@ func _process(delta: float) -> void:
 			gear._craft_mode = true
 			for pr in [['reed', 3], ['stick', 5], ['thatch', 2], ['knife', 1], ['gut', 1], ['wood', 2]]:
 				inv.add(pr[0], pr[1])
+		if _wearui:
+			for wid in ['parka', 'toque', 'hide_mitts', 'hide_boots', 'hide_leggings', 'wolf_hat', 'sweater', 'bear_coat']:
+				inv.add(wid)
+			for wid in ['bear_coat', 'wolf_hat', 'hide_mitts', 'hide_boots', 'hide_leggings']:
+				inv.use(wid)
 		if _gear_sel != '':
 			gear._sel = {'id': _gear_sel, 'from': 'pack', 'n': inv.count(_gear_sel)}
 	if opts_dropdemo and _frames == 34 and inv != null:
@@ -528,6 +534,7 @@ var _gear_opt := false
 var _gear_sel := ''
 var _geartest := false
 var _craftui := false
+var _wearui := false
 var opts_dropdemo := false
 var _cands_cache: Array = []
 var _cur: Dictionary = {}
@@ -580,7 +587,7 @@ func drop_item(id: String, n: int) -> void:
 	if inv == null or inv.count(id) < 1:
 		return
 	n = mini(n, inv.count(id))
-	if id == inv.equipped_body and n >= inv.count(id):
+	if inv.is_worn(id) and n >= inv.count(id):
 		inv.use(id)
 	if id == 'rifle' and n >= inv.count(id):
 		rifle_up = false
@@ -781,10 +788,11 @@ func _update_prompt() -> void:
 				inv.add("axe")
 				inv.add("knife")
 				inv.add("sweater")
+				inv.add("toque")
 				inv.add("rifle")
 				inv.add("ammo", 6)
 				inv.add("beans", 2)
-				_say("Found: hatchet, knife, rifle + 6 rounds, parka, sweater, matches, beans")})
+				_say("Found: hatchet, knife, rifle + 6 rounds, parka, sweater, toque, matches, beans")})
 		for it in items:
 			if it.get('hide', false):
 				continue
@@ -920,6 +928,8 @@ func _update_prompt() -> void:
 	var info := "Wood %d  Matches %d" % [inv.count("wood"), inv.count("matches")]
 	if inv.equipped_body != "":
 		info += "  [%s]" % inv.name_of(inv.equipped_body)
+	if inv.extra.size() > 0:
+		info += " +%d" % inv.extra.size()
 	for cb in cabins:
 		if cb.is_lit():
 			info += "   Stove: %.0f min left" % (cb.stove_fuel_s / 60.0)
@@ -1764,7 +1774,7 @@ func save_game() -> bool:
 		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
 		'body': {'core': body.core, 'wet': body.wetness},
 		'needs': {'cal': needs.calories, 'water': needs.water},
-		'inv': {'counts': inv.counts, 'worn': inv.equipped_body, 'rifle_up': rifle_up, 'cond': inv.cond},
+		'inv': {'counts': inv.counts, 'worn': inv.equipped_body, 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond},
 		'cabins': cabs,
 		'fires': fires,
 		'wolves': _alive_list(wolves),
@@ -1874,6 +1884,11 @@ func _apply_save(sv: Dictionary) -> void:
 		inv.cond[String(k)] = float(sv['inv']['cond'][k])
 	if String(sv['inv']['worn']) != '':
 		inv.use(String(sv['inv']['worn']))
+	var ex: Dictionary = sv['inv'].get('extra', {})
+	for sl in ex:
+		if Inventory.EXTRA_SLOTS.has(String(sl)) and inv.count(String(ex[sl])) > 0 and Inventory.slot_of(String(ex[sl])) == String(sl):
+			inv.extra[String(sl)] = String(ex[sl])
+	inv._recompute()
 	rifle_up = bool(sv['inv']['rifle_up']) and inv.count('rifle') > 0
 	var cabs: Array = sv['cabins']
 	for i in range(mini(cabs.size(), cabins.size())):
