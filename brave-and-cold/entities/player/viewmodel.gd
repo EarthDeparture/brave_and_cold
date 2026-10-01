@@ -13,6 +13,7 @@ const WRIST_R := Vector3(0.075, -0.005, 0.05)
 const WRIST_L := Vector3(-0.075, -0.005, 0.05)
 const SLEEVE_R := Vector3(0.25, -0.12, 1.0)
 const SLEEVE_L := Vector3(-0.25, -0.12, 1.0)
+const FIST_ROLL := -32.0
 const BOLT_ORIGIN := Vector3(0.0, 0.046, 0.06)
 
 var player: Player
@@ -24,6 +25,8 @@ var _rifle: MeshInstance3D
 var _bolt: MeshInstance3D
 var _hand_r: MeshInstance3D
 var _hand_l: MeshInstance3D
+var _fist_r: MeshInstance3D
+var _fist_l: MeshInstance3D
 var _sl_r: MeshInstance3D
 var _sl_l: MeshInstance3D
 var _cur := ""
@@ -49,6 +52,8 @@ func _ready() -> void:
 	_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_hand_r = _pick(HANDS, "vm_hand_r")
 	_hand_l = _pick(HANDS, "vm_hand_l")
+	_fist_r = _pick(HANDS, "vm_fist_r")
+	_fist_l = _pick(HANDS, "vm_fist_l")
 	_sl_r = _pick(HANDS, "vm_sleeve_r")
 	_sl_l = _pick(HANDS, "vm_sleeve_l")
 	_axe = _pick(AXE, "vm_axe")
@@ -187,8 +192,10 @@ func _process(delta: float) -> void:
 	_axe.visible = shown == "axe"
 	_rifle.visible = shown == "rifle"
 	_bolt.visible = shown == "rifle"
-	_hand_r.visible = shown != ""
-	_hand_l.visible = shown != "" and shown != "axe"
+	_hand_r.visible = shown == "axe" or shown == "rifle"
+	_hand_l.visible = shown == "rifle"
+	_fist_r.visible = shown == "fists"
+	_fist_l.visible = shown == "fists"
 	_sl_r.visible = shown != ""
 	_sl_l.visible = shown != "" and shown != "axe"
 	if shown == "axe":
@@ -271,9 +278,9 @@ func _pose_fists(base: Transform3D) -> void:
 		jab = sin(clampf(_swing_t / 0.38, 0.0, 1.0) * PI)
 	var er := Vector3(0.45, -0.85, 0.45)
 	var el := Vector3(-0.45, -0.85, 0.45)
-	var tr := _free_hand(1.0, Vector3(0.22, -0.30 + 0.05 * jab, -0.34 - 0.24 * jab), er, 0.0, base)
-	var tl := _free_hand(-1.0, Vector3(-0.22, -0.31, -0.34), el, 0.0, base)
-	_hand_r.transform = tr
-	_hand_l.transform = tl
+	var tr := _free_hand(1.0, Vector3(0.20, -0.20 + 0.05 * jab, -0.38 - 0.24 * jab), er, FIST_ROLL, base)
+	var tl := _free_hand(-1.0, Vector3(-0.20, -0.21, -0.38), el, -FIST_ROLL, base)
+	_fist_r.transform = tr
+	_fist_l.transform = tl
 	_sl_r.transform = tr * Transform3D(Basis.IDENTITY, WRIST_R)
 	_sl_l.transform = tl * Transform3D(Basis.IDENTITY, WRIST_L)

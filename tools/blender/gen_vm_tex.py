@@ -116,9 +116,9 @@ def skin(name):
     vein = np.exp(-((v - 0.5) / 0.03) ** 2)
     cr = pnoise(sx=3.0, sy=40.0, seed=33)
     crease = np.exp(-((cr - 0.5) / 0.02) ** 2)
-    base = np.array([0.86, 0.69, 0.62])
-    pink = np.array([0.90, 0.56, 0.52])
-    c = lerp(base, pink, np.clip((mott - 0.35) * 1.6, 0, 1) * 0.55)
+    base = np.array([0.72, 0.55, 0.45])
+    pink = np.array([0.76, 0.48, 0.40])
+    c = lerp(base, pink, np.clip((mott - 0.35) * 1.6, 0, 1) * 0.40)
     c = c * (0.93 + 0.12 * fine[..., None])
     c = c * (1 - 0.10 * crease[..., None])
     c = c * (1 - 0.14 * vein[..., None]) + np.array([0.0, 0.0, 0.03]) * vein[..., None]
@@ -145,6 +145,6 @@ if __name__ == "__main__":
     steel("steel", (0.50, 0.51, 0.54), (0.35, 0.35, 0.35))
     rubber("rubber")
     skin("skin")
-    flat("nail", (0.93, 0.78, 0.73))
+    flat("nail", (0.78, 0.60, 0.54))
     wood("beech", (0.46, 0.22, 0.08), (0.80, 0.50, 0.22), rings=7.0)
 

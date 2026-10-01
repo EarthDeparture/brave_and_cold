@@ -13,15 +13,37 @@ from vmlib import *
 Z = Vector((0, 0, 1))
 
 
+_ROT = [0.0]  # degrees; hand geometry rotated about the wrist (about Z) so the palm lines up with the forearm (relaxed fists)
+
+
+def _rz(v, a):
+    c, s = math.cos(a), math.sin(a)
+    return Vector((v.x * c - v.y * s, v.x * s + v.y * c, v.z))
+
+
 def P(sx, x, y, z):
-    return Vector((sx * x, y, z))
+    v = Vector((sx * x, y, z))
+    if _ROT[0] != 0.0:
+        W0 = Vector((sx * 0.075, -0.05, 0.0))
+        a = math.radians(-_ROT[0] * sx)
+        r = _rz(v - W0, a)
+        v = Vector((W0.x + r.x, W0.y + r.y, v.z))
+    return v
+
+
+def RV(sx, x, y, z):
+    v = Vector((sx * x, y, z))
+    if _ROT[0] != 0.0:
+        v = _rz(v, math.radians(-_ROT[0] * sx))
+    return v
 
 
 def T(k):
     return (k, k, k)
 
 
-def build_hand(sx, name):
+def build_hand(sx, name, rot=0.0):
+    _ROT[0] = rot
     h = Part(name)
     W = Vector((sx * 0.075, -0.05, -0.005))
     d = Vector((sx * 0.25, -1, -0.12)).normalized()
@@ -37,8 +59,10 @@ def build_hand(sx, name):
     R0 = 0.0262
     FZ = [0.0250, 0.0085, -0.0085, -0.0250]
     FL = [165, 178, 168, 145]
-    FS = [1.0, 1.04, 0.98, 0.84]
-    prof = [0.0086, 0.0084, 0.0093, 0.0082, 0.0087, 0.0078, 0.0074, 0.0060]
+    FS = [1.08, 1.12, 1.06, 0.92]
+    # proximal fat -> tip; swell at each joint (idx 1,4 knuckle, 3 PIP, 5 DIP) with dark crease rings between
+    prof = [0.0098, 0.0096, 0.0104, 0.0088, 0.0092, 0.0080, 0.0076, 0.0064]
+    crease = {2: 0.74, 4: 0.72, 6: 0.78}
     nails = []
     for z0, L, s in zip(FZ, FL, FS):
         pts, rad, cols = [], [], []
@@ -47,25 +71,32 @@ def build_hand(sx, name):
             th = math.radians(-72 - L * t)
             R = R0 * (1 - 0.16 * t)
             pts.append(P(sx, R * math.cos(th), R * math.sin(th), z0 * (1 - 0.06 * t)))
-            rad.append(prof[i] * s)
-            cols.append(T(0.98 - 0.10 * t))
+            rad.append(prof[i] * s * (0.90 if i in crease else 1.0))
+            k = crease.get(i, 1.0) * (0.98 - 0.08 * t)
+            warm = 1.0 if i not in (1, 3, 5) else 0.96  # cold-reddened knuckles
+            cols.append((k, k * warm * 0.98 if warm < 1 else k, k * (0.93 if warm < 1 else 1.0)))
         limb(h, pts, rad, cols, sides=8, ref=Z, cap0=False, cap1=True)
         # nail on the back (outer) side near the tip
         tipc = pts[6] * 0.35 + pts[7] * 0.65
-        rad_dir = Vector((tipc.x, tipc.y, 0.0)).normalized()
+        ctr = P(sx, 0.0, 0.0, 0.0)
+        rad_dir = Vector((tipc.x - ctr.x, tipc.y - ctr.y, 0.0)).normalized()
         nails.append((tipc + rad_dir * 0.0058 * s + Vector((0, 0, 0)), s, rad_dir))
-    # knuckle bumps on the back of the hand
+    # knuckle bumps on the back of the hand + extensor tendons running to the wrist
     for z0 in FZ:
-        blob(h, P(sx, 0.011, -0.045, z0), 0.0088, 0.0072, 0.0095, T(1.0), sides=8, nrings=3)
+        blob(h, P(sx, 0.011, -0.045, z0), 0.0098, 0.0080, 0.0105, (1.0, 0.94, 0.92), sides=8, nrings=3)
+        limb(h, [P(sx, 0.014, -0.047, z0 * 0.9), P(sx, 0.040, -0.052, z0 * 0.7), P(sx, 0.070, -0.060, z0 * 0.55)],
+             [0.0042, 0.0046, 0.0040], [T(1.0), T(0.97), T(0.93)], sides=6, ref=Z, cap0=False, cap1=True)
     # thumb (two phalanges + thenar pad)
     th = [P(sx, 0.032, -0.034, 0.036), P(sx, 0.037, -0.016, 0.045), P(sx, 0.031, 0.009, 0.049), P(sx, 0.018, 0.028, 0.048), P(sx, 0.006, 0.037, 0.045)]
     limb(h, th, [0.0125, 0.0112, 0.0102, 0.0092, 0.0078], [T(0.95), T(1.0), T(0.95), T(0.92), T(0.88)], sides=8, ref=Z, cap0=False, cap1=True)
-    blob(h, P(sx, 0.034, -0.032, 0.033), 0.017, 0.013, 0.021, T(0.95), sides=8, nrings=4)
+    blob(h, P(sx, 0.040, -0.034, 0.030), 0.021, 0.016, 0.026, T(0.95), sides=8, nrings=4)
+    # thumb joint crease
+    blob(h, P(sx, 0.031, 0.009, 0.0495), 0.0120, 0.0115, 0.0070, (0.80, 0.74, 0.72), sides=8, nrings=3)
     # nails
     h.mat = "nail"
     for c, s, rd in nails:
         blob(h, c, 0.0036 * s, 0.0036 * s, 0.0052 * s, T(1.0), sides=6, nrings=3)
-    blob(h, P(sx, 0.006, 0.0372, 0.0485) + Vector((0, 0.0055, 0)), 0.0048, 0.0030, 0.0058, T(1.0), sides=6, nrings=3)
+    blob(h, P(sx, 0.006, 0.0372, 0.0485) + RV(sx, 0, 0.0055, 0) * 1.0, 0.0048, 0.0030, 0.0058, T(1.0), sides=6, nrings=3)
     # loose ribbed wool cuff
     h.mat = "wool"
     ts = [0.040, 0.058, 0.076, 0.094, 0.112, 0.130]
@@ -101,5 +132,6 @@ if __name__ == "__main__":
     for nm, sx in (("r", 1), ("l", -1)):
         objs.append(build_hand(sx, "vm_hand_" + nm))
         objs.append(build_sleeve(sx, "vm_sleeve_" + nm))
+        objs.append(build_hand(sx, "vm_fist_" + nm, 60.0))
     export_glb(objs, os.path.join(OUT, "vm_hands.glb"))
     print("VMHANDS tris", sum(tris(o) for o in objs), {o.name: tris(o) for o in objs})
