@@ -187,6 +187,11 @@ func _ready() -> void:
 	audio.weather = weather
 	pause_menu = PauseMenu.new()
 	add_child(pause_menu)
+	dev = DevMenu.new()
+	add_child(dev)
+	dev.setup(self)
+	if opts.has('devmenu'):
+		dev.open()
 	pause_menu.save_requested.connect(func() -> void: pause_menu.save_status(save_game()))
 	out_path = String(opts.get("out", ""))
 	_selftest = opts.has("selftest")
@@ -1315,6 +1320,7 @@ var _campfire_opt := false
 
 var audio: GameAudio
 var pause_menu: PauseMenu
+var dev: DevMenu
 
 var opts_pausetest := false
 var pause_shot := ''

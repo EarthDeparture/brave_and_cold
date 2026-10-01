@@ -44,6 +44,9 @@ var health := 100.0
 var dead := false
 var death_cause := ""
 var struggling := false
+var god := false
+var noclip := false
+var noclip_speed := 14.0
 var ui_open := false  # gear screen etc: no movement, world keeps running
 var struggle_by: Node = null
 var struggle_prog := 0.0
@@ -96,7 +99,7 @@ func setup(t: Terrain3D, s: SnowField, b: BodyTemperature, n: NoiseBus) -> void:
 
 
 func hurt(amount: float, cause: String = "Killed") -> void:
-	if dead:
+	if dead or god:
 		return
 	health = maxf(0.0, health - amount)
 	if health <= 0.0:
@@ -148,12 +151,34 @@ func _process(delta: float) -> void:
 	cam.rotation = Vector3(pitch, yaw, 0.0)
 	if struggling:
 		_struggle_update(delta)
+	if noclip and not dead:
+		_fly(delta)
+		return
 	if frozen or struggling or ui_open:
 		return
 	_move(delta)
 	_stamina(delta)
 	_footsteps(delta)
 
+
+## Dev noclip: free flight along the camera direction, ignores terrain, cabins and trees.
+func _fly(delta: float) -> void:
+	var b := cam.global_transform.basis
+	var dir := Vector3.ZERO
+	if Input.is_key_pressed(KEY_W): dir -= b.z
+	if Input.is_key_pressed(KEY_S): dir += b.z
+	if Input.is_key_pressed(KEY_D): dir += b.x
+	if Input.is_key_pressed(KEY_A): dir -= b.x
+	if Input.is_key_pressed(KEY_SPACE): dir += Vector3.UP
+	if Input.is_key_pressed(KEY_C) or Input.is_key_pressed(KEY_CTRL): dir -= Vector3.UP
+	var sp := noclip_speed * (4.0 if Input.is_key_pressed(KEY_SHIFT) else 1.0)
+	moving = false
+	sprinting = false
+	speed_now = 0.0
+	activity = 0
+	if dir.length() > 0.01:
+		position += dir.normalized() * sp * delta
+	_ready_ground = true
 
 func _move(delta: float) -> void:
 	var fwd := Vector3(-sin(yaw), 0.0, -cos(yaw))
