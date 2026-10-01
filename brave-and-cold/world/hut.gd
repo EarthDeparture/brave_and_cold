@@ -16,6 +16,7 @@ var floor_y := 0.0
 var door_open := true       # always open; zombies/wolves read this
 var crate_looted := false   # tackle box
 var _walls: Array[Rect2] = []
+var openings: Array[Opening] = []
 
 
 ## Candidate sites near the road: [{x, z, yaw}]. Terrain-only checks so it can run before the forest is built.
@@ -111,6 +112,7 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 		Rect2(-HX - t, -HZ - t, 2 * t, 2 * HZ + 2 * t),
 		Rect2(HX - t, -HZ - t, 2 * t, 2 * HZ + 2 * t),
 	]
+	openings.append(Opening.make(self, "window", 0.75, 0.7, Vector3(HX, 1.7, -0.275), 90.0))  # gen_hut.py WIN
 	return true
 
 

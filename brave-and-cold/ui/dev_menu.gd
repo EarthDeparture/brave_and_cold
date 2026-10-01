@@ -64,6 +64,8 @@ func setup(w: Node) -> void:
 		_p6test()
 	if "zperf=1" in ua:
 		_zperftest()
+	if "wintest=1" in ua:
+		_wintest()
 
 
 func _selftest() -> void:
@@ -1448,6 +1450,141 @@ func _zp_clear(zs: Array) -> void:
 			z.queue_free()
 	zs.clear()
 	await get_tree().process_frame
+
+
+func _wintest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	player.god = true
+	var cabs: Array = world.get("cabins")
+	var huts: Array = world.get("huts")
+	var cb: Cabin = cabs[0]
+	var ok: bool = cb.openings.size() == 3 and not huts.is_empty() and huts[0].openings.size() >= 1
+	print("WINTEST openings cabin=", cb.openings.size(), " hut=", huts[0].openings.size() if not huts.is_empty() else -1, " ok=", ok)
+	fails += 0 if ok else 1
+	var o: Opening = cb.openings[0]
+	ok = is_equal_approx(o.open_fraction(), 1.0) and not o.passable() and not o.blocks_sight()
+	print("WINTEST default open=", ok)
+	fails += 0 if ok else 1
+	# boards
+	o.add_board()
+	o.add_board()
+	ok = is_equal_approx(o.open_fraction(), 0.6) and not o.blocks_sight() and o.boards == 2
+	for i in 3:
+		o.add_board()
+	ok = ok and o.boards == 4 and is_equal_approx(o.open_fraction(), 0.2) and o.blocks_sight()
+	print("WINTEST boards fraction=", ok)
+	fails += 0 if ok else 1
+	o.remove_board()
+	o.remove_board()
+	o.remove_board()
+	o.remove_board()
+	o.remove_board()
+	ok = o.boards == 0 and is_equal_approx(o.open_fraction(), 1.0)
+	print("WINTEST unboard=", ok)
+	fails += 0 if ok else 1
+	# curtain
+	o.hang_curtain()
+	ok = is_equal_approx(o.open_fraction(), 0.0) and o.blocks_sight() and not o.hang_curtain()
+	o.remove_curtain()
+	ok = ok and is_equal_approx(o.open_fraction(), 1.0)
+	print("WINTEST curtain=", ok)
+	fails += 0 if ok else 1
+	# glass breaking, then boards behind it
+	var e1 := o.hit(4.0)
+	var e2 := o.hit(3.0)
+	ok = e1 == "glass_hit" and e2 == "glass_hit" and o.cracked and not o.glass_broken and not o.passable()
+	var e3 := o.hit(5.0)
+	ok = ok and e3 == "glass_break" and o.glass_broken and o.passable()
+	print("WINTEST glass hit/crack/break=", ok, " ", e1, e2, e3)
+	fails += 0 if ok else 1
+	o.add_board()
+	ok = not o.passable()
+	var e4 := o.hit(40.0)
+	ok = ok and e4 == "board_break" and o.boards == 0 and o.passable() and o.hit(1.0) == "open"
+	print("WINTEST board holds then breaks=", ok)
+	fails += 0 if ok else 1
+	# save round trip
+	o.add_board()
+	o.hang_curtain()
+	var d := o.to_dict()
+	var o2: Opening = cb.openings[1]
+	o2.from_dict(d)
+	ok = o2.glass_broken and o2.boards == 1 and o2.curtain
+	print("WINTEST save roundtrip=", ok)
+	fails += 0 if ok else 1
+	# light signal
+	for k in cb.openings:
+		k.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	cb.stove_fuel_s = 100000.0
+	var s0 := cb.light_signal()
+	for k in cb.openings:
+		k.hang_curtain()
+	var s1 := cb.light_signal()
+	cb.door_open = true
+	var s2 := cb.light_signal()
+	cb.door_open = false
+	for k in cb.openings:
+		k.remove_curtain()
+		for i in 4:
+			k.add_board()
+	var s3 := cb.light_signal()
+	cb.stove_fuel_s = 0.0
+	var s4 := cb.light_signal()
+	ok = is_equal_approx(s0, 1.0) and is_equal_approx(s1, 0.0) and absf(s2 - 1.0 / 3.0) < 0.01 and absf(s3 - 0.2) < 0.01 and s4 == 0.0
+	print("WINTEST light signal open=", s0, " curtained=", s1, " door only=", s2, " boarded=", s3, " cold=", s4, " ok=", ok)
+	fails += 0 if ok else 1
+	for k in cb.openings:
+		k.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	# glow reaches shader, scaled by what leaks out
+	o.set_glow(1.5)
+	var gl: float = o._gmat.get_shader_parameter("glow")
+	o.add_board()
+	var gl2: float = o._gmat.get_shader_parameter("glow")
+	ok = absf(gl - 1.5) < 0.01 and absf(gl2 - 1.5 * 0.8) < 0.01
+	print("WINTEST glow shader=", gl, " boarded=", gl2, " ok=", ok)
+	fails += 0 if ok else 1
+	o.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	# interaction: stand inside by the +X window facing it
+	inv.add("hammer")
+	inv.add("plank", 3)
+	inv.add("nails", 10)
+	inv.add("rag", 4)
+	var wp: Vector3 = cb.to_global(Vector3(Cabin.HX - 0.9, 0.0, -0.3))
+	player.place(wp.x, wp.z)
+	var dir: Vector3 = o.center_world() - player.position
+	player.yaw = atan2(-dir.x, -dir.z)
+	await get_tree().create_timer(0.3).timeout
+	world.call("_update_prompt")
+	var cands: Array = world.get("_cands_cache")
+	var board_c := {}
+	var curt_c := {}
+	for c in cands:
+		if String(c["text"]).begins_with("Board up window (0"):
+			board_c = c
+		if String(c["text"]).begins_with("Hang curtain"):
+			curt_c = c
+	ok = not board_c.is_empty() and not curt_c.is_empty() and float(board_c.get("noise", 0.0)) > 0.0
+	print("WINTEST prompts board=", not board_c.is_empty(), " curtain=", not curt_c.is_empty(), " ok=", ok)
+	fails += 0 if ok else 1
+	if ok:
+		var pl0 := inv.count("plank")
+		var n0 := inv.count("nails")
+		board_c["act"].call()
+		ok = o.boards == 1 and inv.count("plank") == pl0 - 1 and inv.count("nails") == n0 - 2
+		var r0 := inv.count("rag")
+		curt_c["act"].call()
+		ok = ok and o.curtain and inv.count("rag") == r0 - 2
+		print("WINTEST board+curtain act=", ok)
+		fails += 0 if ok else 1
+	# real glass shader compiled?
+	ok = o._glass.material_override is ShaderMaterial and (o._glass.material_override as ShaderMaterial).shader.code.length() > 100
+	print("WINTEST glass shader=", ok)
+	fails += 0 if ok else 1
+	print("WINTEST failures=", fails)
+	get_tree().quit()
 
 
 func _zperftest() -> void:

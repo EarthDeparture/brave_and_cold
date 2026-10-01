@@ -160,6 +160,16 @@ func _ready() -> void:
 			cabins[0].add_wood()
 		if opts.has("dooropen"):
 			cabins[0].toggle_door()
+		if opts.has("win"):  # screenshot helper: "0b2,1c,2k" = window 0 two boards, 1 curtain, 2 smashed
+			for tok in String(opts["win"]).split(","):
+				var wop: Opening = cabins[0].openings[int(tok.substr(0, 1))]
+				if "b" in tok:
+					for bi in int(tok.substr(tok.find("b") + 1, 1)):
+						wop.add_board()
+				if "c" in tok:
+					wop.hang_curtain()
+				if "k" in tok:
+					wop.hit(99.0)
 		if opts.has("cabinpos"):
 			var lp := String(opts["cabinpos"]).split(",")
 			var wp: Vector3 = cabins[0].to_global(Vector3(float(lp[0]), 0.0, float(lp[1])))
@@ -167,6 +177,9 @@ func _ready() -> void:
 			var st: Vector3 = cabins[0].stove_world_pos()
 			player.yaw = atan2(-(st.x - wp.x), -(st.z - wp.z))
 			player.pitch = deg_to_rad(-12.0)
+			if opts.has("cabinyaw"):
+				player.yaw = cabins[0].rotation.y + deg_to_rad(float(opts["cabinyaw"]))
+				player.pitch = deg_to_rad(float(opts.get("cabinpitch", -3.0)))
 	snow.interior_check = func(x: float, z: float) -> bool:
 		for cb in colliders:
 			if cb.contains_xz(x, z):
@@ -728,6 +741,52 @@ func _sim_drag(a: Vector2, b: Vector2) -> void:
 	await _sim_btn(b, MOUSE_BUTTON_LEFT, false)
 
 
+## Board / unboard / curtain actions for windows within reach, from the INSIDE of cabins and huts.
+func _opening_cands(cands: Array, fwd: Vector3) -> void:
+	var blds: Array = []
+	blds.append_array(cabins)
+	blds.append_array(huts)
+	for bld in blds:
+		if not bld.contains_xz(player.position.x, player.position.z):
+			continue
+		for op in bld.openings:
+			var o: Opening = op
+			var to: Vector3 = o.center_world() - player.position
+			var od := to.length()
+			if od > 2.4:
+				continue
+			var flat := Vector3(to.x, 0.0, to.z)
+			if flat.length() > 0.6 and flat.normalized().dot(fwd) < 0.4:
+				continue
+			if o.boards < Opening.MAX_BOARDS:
+				if inv.count("hammer") > 0 and inv.count("plank") > 0 and inv.count("nails") >= 2:
+					cands.append({"d": od, "text": "Board up window (%d/%d)" % [o.boards, Opening.MAX_BOARDS], "hold": 5.0, "kcal": 6.0, "noise": 22.0, "act": func() -> void:
+						if inv.remove("plank") and inv.remove("nails", 2):
+							o.add_board()
+							_say("Boarded: %d/%d" % [o.boards, Opening.MAX_BOARDS])})
+				else:
+					cands.append({"d": od + 0.05, "text": "Board up window (needs hammer, plank, 2 nails)", "act": func() -> void: _say("Need a hammer, a plank and 2 nails")})
+			if o.boards > 0:
+				cands.append({"d": od + 0.02, "text": "Pull off a plank", "hold": 3.0, "kcal": 4.0, "noise": 14.0, "act": func() -> void:
+					if o.remove_board():
+						inv.add("plank")
+						inv.add("nails", 1)
+						_say("Plank off (+1 plank, +1 nail)")})
+			if not o.curtain:
+				if inv.count("rag") >= 2:
+					cands.append({"d": od + 0.01, "text": "Hang curtain (2 rags)", "hold": 4.0, "kcal": 3.0, "act": func() -> void:
+						if inv.remove("rag", 2):
+							o.hang_curtain()
+							_say("Curtain hung: light and eyes blocked")})
+				else:
+					cands.append({"d": od + 0.06, "text": "Hang curtain (needs 2 rags)", "act": func() -> void: _say("Need 2 rags")})
+			else:
+				cands.append({"d": od + 0.01, "text": "Take down curtain", "hold": 2.0, "act": func() -> void:
+					if o.remove_curtain():
+						inv.add("rag", 2)
+						_say("+2 rags")})
+
+
 func _update_prompt() -> void:
 	if inv == null:
 		inv = Inventory.new(body)
@@ -795,7 +854,11 @@ func _update_prompt() -> void:
 				inv.add("rifle")
 				inv.add("ammo", 6)
 				inv.add("beans", 2)
-				_say("Found: hatchet, knife, rifle + 6 rounds, parka, sweater, toque, matches, beans")})
+				inv.add("hammer")
+				inv.add("nails", 20)
+				inv.add("plank", 3)
+				inv.add("rag", 4)
+				_say("Found: hatchet, knife, rifle + 6 rounds, parka, sweater, toque, matches, beans, hammer, nails, planks, rags")})
 		for it in items:
 			if it.get('hide', false):
 				continue
@@ -808,6 +871,7 @@ func _update_prompt() -> void:
 				continue
 			it["d"] = d
 			cands.append(it)
+	_opening_cands(cands, fwd)
 	for cf in campfires:
 		var cd: float = cf.global_position.distance_to(player.position)
 		if cd < 2.6:
@@ -1772,7 +1836,7 @@ func save_game() -> bool:
 		return false
 	var cabs: Array = []
 	for cb in cabins:
-		cabs.append({'stove': cb.stove_fuel_s, 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open})
+		cabs.append({'stove': cb.stove_fuel_s, 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
 	var fires: Array = []
 	for cf in campfires:
 		fires.append({'x': cf.global_position.x, 'y': cf.global_position.y, 'z': cf.global_position.z, 'fuel': cf.fuel_s, 'cook': cf.cooking})
@@ -1905,6 +1969,9 @@ func _apply_save(sv: Dictionary) -> void:
 		cb.stove_fuel_s = float(cabs[i]['stove'])
 		cb.wood_pile = int(cabs[i]['wood'])
 		cb.crate_looted = bool(cabs[i]['looted'])
+		if cabs[i].has('open'):
+			for k in range(mini(cb.openings.size(), cabs[i]['open'].size())):
+				cb.openings[k].from_dict(cabs[i]['open'][k])
 		if bool(cabs[i]['door_open']) != cb.door_open:
 			cb.toggle_door()
 	for f in sv['fires']:

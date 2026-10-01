@@ -30,6 +30,7 @@ var _door_rect := Rect2(-DOOR_HALF, HZ - 0.06, 2 * DOOR_HALF, 0.12)
 var _fire_glow: MeshInstance3D
 var _fire_mat: StandardMaterial3D
 var _fire_light: OmniLight3D
+var openings: Array[Opening] = []
 var _t := 0.0
 
 
@@ -65,6 +66,7 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 		var m := mi as MeshInstance3D
 		if m.name.begins_with("cabin_glass"):
 			m.material_override = glass_mat
+			m.visible = false  # replaced by per-window Opening nodes (real glass, boards, curtains)
 			m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		else:
 			m.material_override = mat
@@ -86,7 +88,26 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	]
 	_build_door()
 	_build_stove_fire()
+	_build_openings()
 	return true
+
+
+func _build_openings() -> void:
+	# positions from gen_cabin.py (WIN_SIDE / WIN_BACK); blender y -> godot -z
+	openings.append(Opening.make(self, "window", 1.2, 0.8, Vector3(HX, 1.75, -0.3), 90.0))
+	openings.append(Opening.make(self, "window", 1.2, 0.8, Vector3(-HX, 1.75, -0.3), -90.0))
+	openings.append(Opening.make(self, "window", 1.1, 0.8, Vector3(-1.15, 1.75, -HZ), 180.0))
+	_apply_glow()
+
+
+## 0..1 how much stove light escapes: sum of uncovered openings (+ open door), normalised to 3.
+func light_signal() -> float:
+	if not is_lit():
+		return 0.0
+	var sgn := 1.0 if door_open else 0.0
+	for o in openings:
+		sgn += o.open_fraction()
+	return clampf(sgn / 3.0, 0.0, 1.0)
 
 
 func _build_door() -> void:
@@ -231,6 +252,8 @@ func _apply_glow() -> void:
 	var lit := 1.0 if stove_fuel_s > 0.0 else 0.0
 	glass_mat.emission_energy_multiplier = 0.1 + 1.4 * _night + 1.1 * lit
 	light.light_energy = 0.1 + 0.9 * _night + 0.7 * lit
+	for o in openings:
+		o.set_glow(0.1 + 1.4 * _night + 1.1 * lit)
 
 
 func to_local_xz(x: float, z: float) -> Vector2:
