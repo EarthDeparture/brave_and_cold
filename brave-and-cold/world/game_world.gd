@@ -55,7 +55,7 @@ func _ready() -> void:
 	if road.points.size() > 40 and opts.get('huts', '1') == '1':
 		var wimg := MapIO.load_png('res://data/maps/valley_b/water_mask.png')
 		wimg.convert(Image.FORMAT_L8)
-		hut_sites = Hut.find_sites(terrain, road, wimg, int(opts.get('hutn', 3)))
+		hut_sites = Hut.find_sites(terrain, road, wimg, int(opts.get('hutn', 5)))
 		print('HUT_SITES ', hut_sites.size(), ' ', hut_sites)
 	if opts.get("trees", "1") == "1":
 		forest = ForestScatter.new()
@@ -444,7 +444,8 @@ func _build_huts() -> void:
 			print('HUT at ', Vector2(float(hs['x']), float(hs['z'])))
 		else:
 			h.queue_free()
-	colliders = cabins.duplicate()
+	colliders = []
+	colliders.append_array(cabins)
 	colliders.append_array(huts)
 
 

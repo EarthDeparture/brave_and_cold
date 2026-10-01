@@ -46,38 +46,24 @@ func plan(dir: String = "res://data/maps/valley_b") -> void:
 	water.convert(Image.FORMAT_L8)
 	_water = water
 	var n := size_m / CELL
-	var grid := AStarGrid2D.new()
-	grid.region = Rect2i(0, 0, n, n)
-	grid.cell_size = Vector2.ONE
-	grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ALWAYS
-	grid.default_compute_heuristic = AStarGrid2D.HEURISTIC_OCTILE
-	grid.default_estimate_heuristic = AStarGrid2D.HEURISTIC_OCTILE
-	grid.update()
-	for cy in range(n):
-		for cx in range(n):
-			var px := cx * CELL + CELL / 2
-			var py := cy * CELL + CELL / 2
-			var sd := slope.get_pixel(px, py).r * 90.0
-			var wet := false
-			for d in [Vector2i(0, 0), Vector2i(-4, 0), Vector2i(4, 0), Vector2i(0, -4), Vector2i(0, 4)]:
-				if water.get_pixel(clampi(px + d.x, 0, size_m - 1), clampi(py + d.y, 0, size_m - 1)).r > 0.5:
-					wet = true
-			if sd > 16.0:
-				grid.set_point_solid(Vector2i(cx, cy), true)
-				continue
-			if wet:
-				grid.set_point_weight_scale(Vector2i(cx, cy), 30.0)  # bridge only if there is no other way
-				continue
-			var w := 1.0 + pow(maxf(0.0, sd - 3.0), 2.0) * 0.18
-			if canopy.get_pixel(px, py).r * 40.0 > 6.0:
-				w += 1.2
-			grid.set_point_weight_scale(Vector2i(cx, cy), w)
+	var grid := _make_grid(16.0, slope, canopy, water, n, size_m)
+	var limits: Array[float] = [16.0, 22.0, 28.0, 34.0, 42.0]
+	var grids := {16.0: grid}
 	var cells: Array[Vector2i] = []
 	for wp in WAYPOINTS:
 		cells.append(_snap(grid, Vector2i(int((wp.x + half) / CELL), int((wp.y + half) / CELL)), n))
 	var path: Array[Vector2] = []
 	for i in range(cells.size() - 1):
-		var seg := grid.get_id_path(cells[i], cells[i + 1])
+		var seg: Array = []
+		for lim in limits:
+			if not grids.has(lim):
+				grids[lim] = _make_grid(lim, slope, canopy, water, n, size_m)
+			var g: AStarGrid2D = grids[lim]
+			seg = g.get_id_path(_snap(g, cells[i], n), _snap(g, cells[i + 1], n))
+			if not seg.is_empty():
+				if lim > 16.0:
+					print("ROAD_SEG ", i, " needed slope limit ", lim)
+				break
 		if seg.is_empty():
 			push_warning("RoadNet: no path %s -> %s" % [cells[i], cells[i + 1]])
 			continue
@@ -96,6 +82,35 @@ func plan(dir: String = "res://data/maps/valley_b") -> void:
 	_find_bridges()
 	print("ROAD_PLAN points ", points.size(), " length_m ", int(length_m), " bridges ", bridges)
 
+
+func _make_grid(limit: float, slope: Image, canopy: Image, water: Image, n: int, size_m: int) -> AStarGrid2D:
+	var grid := AStarGrid2D.new()
+	grid.region = Rect2i(0, 0, n, n)
+	grid.cell_size = Vector2.ONE
+	grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ALWAYS
+	grid.default_compute_heuristic = AStarGrid2D.HEURISTIC_OCTILE
+	grid.default_estimate_heuristic = AStarGrid2D.HEURISTIC_OCTILE
+	grid.update()
+	for cy in range(n):
+		for cx in range(n):
+			var px := cx * CELL + CELL / 2
+			var py := cy * CELL + CELL / 2
+			var sd := slope.get_pixel(px, py).r * 90.0
+			var wet := false
+			for d in [Vector2i(0, 0), Vector2i(-4, 0), Vector2i(4, 0), Vector2i(0, -4), Vector2i(0, 4)]:
+				if water.get_pixel(clampi(px + d.x, 0, size_m - 1), clampi(py + d.y, 0, size_m - 1)).r > 0.5:
+					wet = true
+			if sd > limit:
+				grid.set_point_solid(Vector2i(cx, cy), true)
+				continue
+			if wet:
+				grid.set_point_weight_scale(Vector2i(cx, cy), 30.0)  # bridge only if there is no other way
+				continue
+			var w := 1.0 + pow(maxf(0.0, sd - 3.0), 2.0) * 0.18
+			if canopy.get_pixel(px, py).r * 40.0 > 6.0:
+				w += 1.2
+			grid.set_point_weight_scale(Vector2i(cx, cy), w)
+	return grid
 
 func _is_wet(x: float, z: float) -> bool:
 	var px := clampi(int(x) + half, 0, _water.get_width() - 1)
