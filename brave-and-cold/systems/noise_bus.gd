@@ -11,6 +11,7 @@ const RADIUS_AXE := 45.0
 const RADIUS_GUNSHOT := 150.0
 
 var buildings: Array = []        # cabins/huts: walls muffle sound made inside them
+var _idx: Dictionary = {}        # instance id -> index in listeners (O(1) register/unregister: no spawn hitch)
 var listeners: Array = []        # zombies register here: one cheap loop instead of N signal callbacks
 var last_radius: float = 0.0
 var last_time_left: float = 0.0
@@ -39,16 +40,27 @@ func emit_noise(pos: Vector3, radius: float, source: Object = null) -> void:
 		if bld != null and leak2 < 1.0 and d2 > r2 * leak2 and not bld.contains_xz(zp.x, zp.z):
 			continue  # muffled by walls: outsiders only hear the leaked radius
 		z.on_noise(pos, radius, source)
-	noise.emit(pos, radius, source)
+	noise.emit(pos, radius * (1.0 if bld == null else sqrt(leak2)), source)   # wolves/deer also hear walls muffled
 
 
 func register(z: Object) -> void:
-	if not listeners.has(z):
-		listeners.append(z)
+	var id := z.get_instance_id()
+	if _idx.has(id):
+		return
+	_idx[id] = listeners.size()
+	listeners.append(z)
 
 
 func unregister(z: Object) -> void:
-	listeners.erase(z)
+	var id := z.get_instance_id()
+	if not _idx.has(id):
+		return
+	var i: int = _idx[id]
+	var last: Object = listeners[listeners.size() - 1]
+	listeners[i] = last
+	_idx[last.get_instance_id()] = i
+	listeners.pop_back()
+	_idx.erase(id)
 
 
 ## Light cue (lit windows at night): weak lure, idle zombies come and look.

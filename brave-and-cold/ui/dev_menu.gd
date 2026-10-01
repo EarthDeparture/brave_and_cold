@@ -1672,6 +1672,32 @@ func _breachtest() -> void:
 	ok = (not heard_closed) and heard_open
 	print("BREACHTEST noise muffled closed heard=", heard_closed, " broken window heard=", heard_open, " ok=", ok)
 	fails += 0 if ok else 1
+	# --- wolves/deer (signal path) also get muffled
+	var heard_r := [0.0]
+	var cbk := func(_p: Vector3, r: float, _s: Object) -> void: heard_r[0] = r
+	bus.noise.connect(cbk)
+	bus.emit_noise(player.position, 20.0, player)
+	var r_closed: float = heard_r[0]
+	o.hit(99.0)
+	bus.emit_noise(player.position, 20.0, player)
+	var r_open: float = heard_r[0]
+	o.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	bus.noise.disconnect(cbk)
+	ok = absf(r_closed - 7.0) < 0.1 and absf(r_open - 20.0) < 0.1
+	print("BREACHTEST signal muffle closed=", r_closed, " open=", r_open, " ok=", ok)
+	fails += 0 if ok else 1
+	# --- trunks occlude sight lines
+	var fs: ForestScatter = world.get("forest")
+	var tr := Vector3.ZERO
+	for ck in fs._trunks:
+		var arr: Array = fs._trunks[ck]
+		if arr.size() > 0 and Vector2(arr[0].x, arr[0].y).distance_to(Vector2(cb.position.x, cb.position.z)) > 40.0:
+			tr = arr[0]
+			break
+	var n_hit := fs.trunks_on_segment(tr.x - 6.0, tr.y, tr.x + 6.0, tr.y)
+	ok = n_hit >= 1 and fs.trunks_on_segment(0, 0, 0, 0) == 0
+	print("BREACHTEST trunk occlusion hit=", n_hit, " ok=", ok)
+	fails += 0 if ok else 1
 	# --- light cue
 	z.global_position = out_pt.call(25.0)
 	z._set_state(Zombie.State.IDLE)
@@ -1691,14 +1717,88 @@ func _breachtest() -> void:
 	ok = lure and not lure_c
 	print("BREACHTEST light lure open=", lure, " curtained=", lure_c, " ok=", ok)
 	fails += 0 if ok else 1
+	# --- door barricade
+	var devs: Array = [0]
+	var dcb := func(e: String, _p: Vector3) -> void:
+		if e == "board_break":
+			devs[0] += 1
+	cb.event.connect(dcb)
+	cb.door_open = false
+	for i in 3:
+		cb.add_door_board()
+	ok = cb.door_boards == 3 and not cb.add_door_board()
+	cb.bash_door(39.0)
+	ok = ok and cb.door_boards == 3 and cb.door_hp >= 99.9
+	cb.bash_door(2.0)
+	ok = ok and cb.door_boards == 2 and cb.door_hp >= 99.9 and devs[0] == 1
+	cb.toggle_door()
+	ok = ok and not cb.door_open
+	cb.remove_door_board()
+	cb.remove_door_board()
+	ok = ok and cb.door_boards == 0 and not cb.remove_door_board()
+	cb.toggle_door()
+	var was_open: bool = cb.door_open
+	cb.toggle_door()
+	ok = ok and was_open and not cb.door_open
+	cb.event.disconnect(dcb)
+	print("BREACHTEST door barricade=", ok)
+	fails += 0 if ok else 1
+	# --- player smashes, climbs out (cut), clears shards, climbs back (no cut)
+	var inv: Inventory = world.get("inv")
+	inv.add("axe")
+	player.god = false
+	player.health = 100.0
+	var wp: Vector3 = cb.to_global(Vector3(Cabin.HX - 0.9, 0.0, -0.3))
+	player.place(wp.x, wp.z)
+	await get_tree().create_timer(0.4).timeout
+	var dir: Vector3 = o.center_world() - player.position
+	player.yaw = atan2(-dir.x, -dir.z)
+	var find := func(prefix: String) -> Dictionary:
+		world.call("_update_prompt")
+		for c in world.get("_cands_cache"):
+			if String(c["text"]).begins_with(prefix):
+				return c
+		return {}
+	var c1: Dictionary = find.call("Smash window")
+	var smashed := false
+	if not c1.is_empty():
+		c1["act"].call()
+		smashed = o.glass_broken and o.shards and bus.last_radius == 38.0
+	var c2: Dictionary = find.call("Climb through")
+	var climbed_out := false
+	if not c2.is_empty():
+		c2["act"].call()
+		climbed_out = not cb.contains_xz(player.position.x, player.position.z) and absf(player.health - 97.0) < 0.01
+	var d2: Vector3 = o.center_world() - player.position
+	player.yaw = atan2(-d2.x, -d2.z)
+	var c3: Dictionary = find.call("Clear glass")
+	var cleared := false
+	if not c3.is_empty():
+		c3["act"].call()
+		cleared = not o.shards
+	var c4: Dictionary = find.call("Climb through")
+	var climbed_in := false
+	if not c4.is_empty():
+		c4["act"].call()
+		climbed_in = cb.contains_xz(player.position.x, player.position.z) and absf(player.health - 97.0) < 0.01
+	ok = smashed and climbed_out and cleared and climbed_in
+	print("BREACHTEST player smash=", smashed, " climb out+cut=", climbed_out, " clear=", cleared, " climb in clean=", climbed_in, " ok=", ok)
+	fails += 0 if ok else 1
+	player.god = true
+	o.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	player.place(inside.x, inside.z)
+	await get_tree().create_timer(0.5).timeout
 	# --- full breach: zombie outside window 0, chases player inside
 	z.global_position = out_pt.call(5.0)
 	z._set_state(Zombie.State.IDLE)
+	z._bo = null
+	z._bdoor = false
+	z._bpick_t = 99.0
 	z.hit(0.0001, player.position)
 	var t_glass := -1.0
 	var t_in := -1.0
 	var t := 0.0
-	while t < 40.0 and t_in < 0.0:
+	while t < 60.0 and t_in < 0.0:   # deep snow around the cabin slows zombies to ~0.5 m/s (x0.2 tier)
 		await get_tree().create_timer(0.25).timeout
 		t += 0.25
 		if t_glass < 0.0 and o.glass_broken:
@@ -1740,5 +1840,22 @@ func _zperftest() -> void:
 		var s1: Array = await _zp_sample(60)
 		var s2: Array = await _zp_sample(240)
 		print("ZPERF near n=", n, " approach mean=%.2f med=%.2f max=%.2f | piled mean=%.2f med=%.2f max=%.2f  us_per_zombie(approach)=%.1f" % [s1[0], s1[1], s1[3], s2[0], s2[1], s2[3], (s1[0] - b0) * 1000.0 / float(n)])
+	# attribution at 800: where does the time go?
+	await _zp_clear(zs)
+	_zp_spawn(zs, 800, 4.0, 46.0, base, 700)
+	await get_tree().create_timer(1.5).timeout
+	var a_full: Array = await _zp_sample(240)
+	for z in zs:
+		z.set_process(false)
+	var a_idle: Array = await _zp_sample(240)
+	var au = world.get("audio")
+	if au != null:
+		au.set_process(false)
+	var a_noaudio: Array = await _zp_sample(240)
+	if au != null:
+		au.set_process(true)
+	for z in zs:
+		z.set_process(true)
+	print("ZPERF attribution n=800 full=%.2f zombies_off=%.2f zombies_off+audio_off=%.2f (baseline %.2f)" % [a_full[0], a_idle[0], a_noaudio[0], b0])
 	print("ZPERF done")
 	get_tree().quit()

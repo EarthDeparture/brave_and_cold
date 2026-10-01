@@ -517,6 +517,10 @@ func _build_huts() -> void:
 	noise_bus.buildings = colliders
 	for cbx in cabins:
 		cbx.bus = noise_bus
+		cbx.event.connect(_on_opening_event)
+	for bx in colliders:
+		for opx in bx.openings:
+			opx.event.connect(_on_opening_event)
 	if not cabins.is_empty() and road.points.size() > 2:
 		var cyaw := deg_to_rad(cabins[0].rotation_degrees.y)
 		var cp := Vector2(cabins[0].position.x, cabins[0].position.z)
@@ -744,14 +748,54 @@ func _sim_drag(a: Vector2, b: Vector2) -> void:
 	await _sim_btn(b, MOUSE_BUTTON_LEFT, false)
 
 
+## Window/door events (from zombies or the player): sound + noise that draws the horde.
+func _on_opening_event(ev: String, pos: Vector3) -> void:
+	if ev == "glass_break":
+		noise_bus.emit_noise(pos, 38.0, null)
+		if audio != null:
+			audio.play_at("glass", pos, 6.0, randf_range(0.92, 1.08), 10.0, 180.0)
+	elif ev == "board_break":
+		noise_bus.emit_noise(pos, 22.0, null)
+		if audio != null:
+			audio.play_at("chop", pos, 2.0, randf_range(0.6, 0.75), 8.0, 100.0)
+
+
+func _door_cands(cands: Array, cb: Cabin, fwd: Vector3) -> void:
+	var dp: Vector3 = cb.door_inside_pos()
+	var to: Vector3 = dp - player.position
+	var dd := to.length()
+	if dd > 2.2 or cb.door_open or cb.door_broken:
+		return
+	var flat := Vector3(to.x, 0.0, to.z)
+	if flat.length() > 0.6 and flat.normalized().dot(fwd) < 0.4:
+		return
+	if cb.door_boards < 3:
+		if inv.count("hammer") > 0 and inv.count("plank") > 0 and inv.count("nails") >= 2:
+			cands.append({"d": dd + 0.04, "text": "Barricade door (%d/3)" % cb.door_boards, "hold": 6.0, "kcal": 8.0, "noise": 22.0, "act": func() -> void:
+				if inv.remove("plank") and inv.remove("nails", 2):
+					cb.add_door_board()
+					if audio != null:
+						audio.play_at("hammer", dp, 2.0, randf_range(0.9, 1.0), 6.0, 70.0)
+					_say("Door barricaded: %d/3" % cb.door_boards)})
+		else:
+			cands.append({"d": dd + 0.1, "text": "Barricade door (needs hammer, plank, 2 nails)", "act": func() -> void: _say("Need a hammer, a plank and 2 nails")})
+	if cb.door_boards > 0:
+		cands.append({"d": dd + 0.03, "text": "Pull off door plank", "hold": 3.0, "kcal": 4.0, "noise": 14.0, "act": func() -> void:
+			if cb.remove_door_board():
+				inv.add("plank")
+				inv.add("nails", 1)
+				_say("Door plank off")})
+
+
 ## Board / unboard / curtain actions for windows within reach, from the INSIDE of cabins and huts.
 func _opening_cands(cands: Array, fwd: Vector3) -> void:
 	var blds: Array = []
 	blds.append_array(cabins)
 	blds.append_array(huts)
 	for bld in blds:
-		if not bld.contains_xz(player.position.x, player.position.z):
-			continue
+		var inside: bool = bld.contains_xz(player.position.x, player.position.z)
+		if inside and bld is Cabin:
+			_door_cands(cands, bld, fwd)
 		for op in bld.openings:
 			var o: Opening = op
 			var to: Vector3 = o.center_world() - player.position
@@ -761,11 +805,30 @@ func _opening_cands(cands: Array, fwd: Vector3) -> void:
 			var flat := Vector3(to.x, 0.0, to.z)
 			if flat.length() > 0.6 and flat.normalized().dot(fwd) < 0.4:
 				continue
+			# either side: smash intact glass, climb through a clear gap, sweep up shards
+			if not o.glass_broken and inv.count("axe") > 0:
+				cands.append({"d": od + 0.08, "text": "Smash window (loud)", "hold": 1.0, "kcal": 3.0, "act": func() -> void: o.smash()})
+			if o.passable():
+				cands.append({"d": od - 0.05, "text": "Climb through window" + (" (glass!)" if o.shards else ""), "hold": 1.6, "kcal": 6.0, "noise": 8.0, "act": func() -> void:
+					var dest: Vector3 = o.outside_pos() if inside else o.inside_pos()
+					if o.shards:
+						player.hurt(3.0, "Bled out on broken glass")
+						_say("Cut on the glass")
+					player.position.x = dest.x
+					player.position.z = dest.z})
+			if o.shards:
+				cands.append({"d": od + 0.03, "text": "Clear glass shards", "hold": 3.0, "kcal": 3.0, "act": func() -> void:
+					if o.clear_shards():
+						_say("Sill cleared")})
+			if not inside:
+				continue
 			if o.boards < Opening.MAX_BOARDS:
 				if inv.count("hammer") > 0 and inv.count("plank") > 0 and inv.count("nails") >= 2:
 					cands.append({"d": od, "text": "Board up window (%d/%d)" % [o.boards, Opening.MAX_BOARDS], "hold": 5.0, "kcal": 6.0, "noise": 22.0, "act": func() -> void:
 						if inv.remove("plank") and inv.remove("nails", 2):
 							o.add_board()
+							if audio != null:
+								audio.play_at("hammer", o.center_world(), 2.0, randf_range(0.95, 1.05), 6.0, 70.0)
 							_say("Boarded: %d/%d" % [o.boards, Opening.MAX_BOARDS])})
 				else:
 					cands.append({"d": od + 0.05, "text": "Board up window (needs hammer, plank, 2 nails)", "act": func() -> void: _say("Need a hammer, a plank and 2 nails")})
@@ -1524,6 +1587,7 @@ func _zombietest_step(delta: float) -> void:
 			print("ZT t=%d state=%d dist=%.1f speed=%.2f hp=%.0f zhp=%.0f grabs=%d" % [_zt_last, z0.state, z0.global_position.distance_to(player.position), z0.speed_now, player.health, z0.hp, z0.grabs])
 	if _zt > 60.0 or player.dead or z0.state == Zombie.State.DEAD:
 		print("ZOMBIETEST done php=%.0f zombie_dead=%s grabs=%d" % [player.health, str(z0.state == Zombie.State.DEAD), z0.grabs])
+		print("ZOMBIETEST failures=", 0 if (z0.state == Zombie.State.DEAD and not player.dead) else 1)
 		get_tree().quit()
 
 
@@ -1643,9 +1707,11 @@ func _deertest_step(delta: float) -> void:
 		var cal0 := needs.calories
 		needs.calories = 500.0
 		print('DEERTEST eat: ', inv.use('venison_raw'), ' cal ', needs.calories)
+		print('DEERTEST failures=', 0 if (inv.count('venison_raw') >= 1 and inv.count('deer_hide') == 1 and inv.count('gut') == 1) else 1)
 		get_tree().quit()
 	elif _dt > 40.0:
 		print('DEERTEST timeout state=%d' % d0.state)
+		print('DEERTEST failures=1')
 		get_tree().quit()
 
 var campfires: Array[Campfire] = []
@@ -1839,7 +1905,7 @@ func save_game() -> bool:
 		return false
 	var cabs: Array = []
 	for cb in cabins:
-		cabs.append({'stove': cb.stove_fuel_s, 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
+		cabs.append({'stove': cb.stove_fuel_s, 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'dboards': cb.door_boards, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
 	var fires: Array = []
 	for cf in campfires:
 		fires.append({'x': cf.global_position.x, 'y': cf.global_position.y, 'z': cf.global_position.z, 'fuel': cf.fuel_s, 'cook': cf.cooking})
@@ -1972,6 +2038,8 @@ func _apply_save(sv: Dictionary) -> void:
 		cb.stove_fuel_s = float(cabs[i]['stove'])
 		cb.wood_pile = int(cabs[i]['wood'])
 		cb.crate_looted = bool(cabs[i]['looted'])
+		cb.door_boards = int(cabs[i].get('dboards', 0))
+		cb._build_door_planks()
 		if cabs[i].has('open'):
 			for k in range(mini(cb.openings.size(), cabs[i]['open'].size())):
 				cb.openings[k].from_dict(cabs[i]['open'][k])

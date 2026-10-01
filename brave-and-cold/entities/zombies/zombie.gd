@@ -19,10 +19,6 @@ const VAULT_S := 1.4
 const CORPSE_LIFE_S := 300.0
 
 static var night_factor := 0.0
-static var prof_on := false
-static var dbg_skip_anim := false
-static var dbg_skip_move := false
-static var prof: PackedFloat64Array = PackedFloat64Array([0, 0, 0, 0, 0, 0, 0, 0])
 static var _mats: Array[StandardMaterial3D] = []     # shared tints (batching) instead of one material per zombie
 static var _scw_frame := -1
 static var _scw_val = null
@@ -62,6 +58,8 @@ var _bo: Opening = null         # window being breached
 var _bdoor := false
 var _bpick_t := 99.0
 var _bbld = null
+var _sight_cd := 0.0
+var _sight_val := false
 var _vault_t := -1.0
 var _vault_from := Vector3.ZERO
 var _vault_to := Vector3.ZERO
@@ -170,12 +168,33 @@ func _can_see_player() -> bool:
 	var fwd := Vector3(-sin(rotation.y), 0.0, -cos(rotation.y))
 	if not (d < 4.0 or fwd.dot(to / maxf(d, 0.001)) > 0.3):
 		return false
-	# walls block sight except through uncovered windows / the open door
+	# walls block sight except through uncovered windows / the open door (either side of the wall)
+	var zeye := global_position + Vector3(0, 1.5, 0)
 	_scan_bld()
 	var pb = _scw_any
 	if pb != null and not pb.contains_xz(global_position.x, global_position.z):
-		return pb.sight_line_open(global_position + Vector3(0, 1.5, 0), player.position)   # player.position is already eye height
+		if not pb.sight_line_open(zeye, player.position):   # player.position is already eye height
+			return false
+	elif pb == null:
+		for cb in cabins:
+			if cb.contains_xz(global_position.x, global_position.z):
+				if not cb.sight_line_open(zeye, player.position):
+					return false
+				break
+	# trunks in between: each one cuts the range by a quarter (close range is exempt)
+	if forest != null and d > 4.0:
+		var n := forest.trunks_on_segment(global_position.x, global_position.z, player.position.x, player.position.z)
+		if n > 0 and d > rng_m * maxf(0.0, 1.0 - 0.25 * float(n)):
+			return false
 	return true
+
+
+func _sees_cached(delta: float) -> bool:
+	_sight_cd -= delta
+	if _sight_cd <= 0.0:
+		_sight_cd = 0.12
+		_sight_val = _can_see_player()
+	return _sight_val
 
 
 func hit(dmg: float, from: Vector3) -> void:
@@ -230,9 +249,8 @@ func _process(delta: float) -> void:
 	_cd = maxf(0.0, _cd - delta)
 	_stagger = maxf(0.0, _stagger - delta)
 	var dist := sqrt(d2)
-	var _t0 := Time.get_ticks_usec() if prof_on else 0
 	var want := 0.0
-	var sees := _can_see_player()
+	var sees := _sees_cached(delta)
 	if sees:
 		_target = pp
 		_last_seen_t = 0.0
@@ -240,9 +258,6 @@ func _process(delta: float) -> void:
 			_set_state(State.CHASE)
 	else:
 		_last_seen_t += delta
-	if prof_on:
-		prof[0] += float(Time.get_ticks_usec() - _t0)
-		_t0 = Time.get_ticks_usec()
 	match state:
 		State.IDLE:
 			var dd := Vector2(_target.x - global_position.x, _target.z - global_position.z).length()
@@ -279,19 +294,9 @@ func _process(delta: float) -> void:
 				_set_state(State.INVESTIGATE)
 	if _stagger > 0.0:
 		want = 0.0
-	if prof_on:
-		prof[1] += float(Time.get_ticks_usec() - _t0)
-		_t0 = Time.get_ticks_usec()
-	if not dbg_skip_move:
-		_move(want, delta)
-	if prof_on:
-		prof[2] += float(Time.get_ticks_usec() - _t0)
-		_t0 = Time.get_ticks_usec()
-	if _lod <= 1 and not dbg_skip_anim:
+	_move(want, delta)
+	if _lod <= 1:
 		_animate(delta)
-	if prof_on:
-		prof[3] += float(Time.get_ticks_usec() - _t0)
-		prof[4] += 1.0
 
 
 func _barrier(o: Opening) -> float:
@@ -314,7 +319,7 @@ func _pick_opening(bld) -> void:
 		if c < best:
 			best = c
 			_bo = o
-	var dc: float = pos.distance_to(bld.door_world_pos()) + (0.0 if bld.door_open else 20.0)
+	var dc: float = pos.distance_to(bld.door_world_pos()) + (0.0 if bld.door_open else 20.0 + 10.0 * float(bld.door_boards))
 	if dc <= best:
 		_bo = null
 		_bdoor = true
@@ -352,11 +357,7 @@ func _breach(bld, delta: float, want: float) -> float:
 		_vault_to = Vector3(ip.x, bld.floor_y, ip.z)
 		_vault_t = 0.0
 		return 0.0
-	var ev := _bo.hit(BREAK_DPS * delta)
-	if ev == "glass_break" and _bus != null:
-		_bus.emit_noise(_bo.global_position, 38.0, self)
-	elif ev == "board_break" and _bus != null:
-		_bus.emit_noise(_bo.global_position, 22.0, self)
+	_bo.hit(BREAK_DPS * delta)   # glass_break / board_break raise the noise via Opening.event
 	return 0.0
 
 
@@ -368,7 +369,12 @@ func _do_vault(delta: float) -> void:
 	global_position = p
 	_face(_vault_to, delta, 10.0)
 	_animate(delta)
+	_model.rotation.x = -0.35 * sin(t * PI)          # lean over the sill, arms grabbing ahead
+	for ar in _arms:
+		if ar != null:
+			ar.rotation.x = -1.2
 	if t >= 1.0:
+		_model.rotation.x = 0.0
 		_vault_t = -1.0
 		_release()
 		_bo = null
@@ -385,14 +391,11 @@ func _move(want: float, delta: float) -> void:
 	var mx := pos.x - _hx
 	var mz := pos.z - _hz
 	if mx * mx + mz * mz > 0.16:            # height + snow tier only re-sampled after 0.4 m of travel
-		var _th := Time.get_ticks_usec() if prof_on else 0
 		_hx = pos.x
 		_hz = pos.z
 		var hq: float = terrain.data.get_height(Vector3(pos.x, 0.0, pos.z))
 		_hcache = hq
 		_mcache = snow.zombie_speed_mult(pos.x, pos.z)
-		if prof_on:
-			prof[6] += float(Time.get_ticks_usec() - _th)
 	var mult := _mcache
 	speed_now = lerpf(speed_now, want * mult, minf(1.0, delta * 5.0))
 	if speed_now > 0.03:
@@ -400,22 +403,16 @@ func _move(want: float, delta: float) -> void:
 		var fwd := Vector3(-sin(rotation.y), 0.0, -cos(rotation.y))
 		var np := pos + fwd * speed_now * delta
 		np.y = pos.y
-		var _tm := Time.get_ticks_usec() if prof_on else 0
 		if forest != null:
 			var q := forest.resolve_trunks(np.x, np.z, 0.35)
 			np.x = q.x
 			np.z = q.y
-		if prof_on:
-			prof[5] += float(Time.get_ticks_usec() - _tm)
-			_tm = Time.get_ticks_usec()
 		for cb in cabins:
 			if absf(cb.position.x - np.x) > 9.0 or absf(cb.position.z - np.z) > 9.0:
 				continue
 			var q2: Vector2 = cb.resolve(np.x, np.z, 0.4)
 			np.x = q2.x
 			np.z = q2.y
-		if prof_on:
-			prof[7] += float(Time.get_ticks_usec() - _tm)
 		pos = np
 	var h: float = _hcache
 	for cb2 in cabins:

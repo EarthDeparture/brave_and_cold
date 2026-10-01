@@ -30,7 +30,11 @@ var _door_rect := Rect2(-DOOR_HALF, HZ - 0.06, 2 * DOOR_HALF, 0.12)
 var _fire_glow: MeshInstance3D
 var _fire_mat: StandardMaterial3D
 var _fire_light: OmniLight3D
+signal event(name: String, pos: Vector3)
 var openings: Array[Opening] = []
+var door_boards := 0
+var door_plank_hp := 40.0
+var _door_planks: Node3D
 var bus: NoiseBus
 var _lt := 0.0
 var _t := 0.0
@@ -206,6 +210,15 @@ func take_firewood() -> bool:
 func bash_door(dmg: float) -> void:
 	if door_broken or door_open:
 		return
+	if door_boards > 0:
+		door_plank_hp -= dmg
+		_door_pivot.rotation.y = sin(Time.get_ticks_msec() * 0.06) * 0.01
+		if door_plank_hp <= 0.0:
+			door_boards -= 1
+			door_plank_hp = 40.0
+			_build_door_planks()
+			event.emit("board_break", door_world_pos())
+		return
 	door_hp -= dmg
 	_door_pivot.rotation.y = sin(Time.get_ticks_msec() * 0.06) * 0.03 * (1.0 - door_hp / 100.0 + 0.3)
 	if door_hp <= 0.0:
@@ -215,8 +228,48 @@ func bash_door(dmg: float) -> void:
 		tw.tween_property(_door_pivot, "rotation:y", deg_to_rad(120.0), 0.25)
 
 
+func add_door_board() -> bool:
+	if door_boards >= 3 or door_open or door_broken:
+		return false
+	door_boards += 1
+	door_plank_hp = 40.0
+	_build_door_planks()
+	return true
+
+
+func remove_door_board() -> bool:
+	if door_boards <= 0:
+		return false
+	door_boards -= 1
+	door_plank_hp = 40.0
+	_build_door_planks()
+	return true
+
+
+func _build_door_planks() -> void:
+	if _door_planks == null:
+		_door_planks = Node3D.new()
+		add_child(_door_planks)
+	for c in _door_planks.get_children():
+		c.queue_free()
+	var wm := Opening.wood_material()
+	for i in door_boards:
+		var mi := MeshInstance3D.new()
+		var bm := BoxMesh.new()
+		bm.size = Vector3(1.5, 0.17, 0.045)
+		mi.mesh = bm
+		mi.material_override = wm
+		mi.position = Vector3(0.0, FLOOR_LOCAL_Y + 0.55 + 0.6 * float(i), HZ - 0.22)
+		mi.rotation.z = deg_to_rad(float((i * 5) % 7) - 3.0)
+		_door_planks.add_child(mi)
+
+
+func door_inside_pos() -> Vector3:
+	return to_global(Vector3(0.0, FLOOR_LOCAL_Y + 1.0, HZ - 0.9))
+
+
 func toggle_door() -> void:
-	if door_broken:
+	if door_broken or door_boards > 0:
 		return
 	door_open = not door_open
 	var tw := create_tween()

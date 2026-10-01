@@ -23,6 +23,8 @@ static func get_stream(id: String) -> AudioStreamWAV:
 		"crash": s = _wav(_crash())
 		"rustle": s = _wav(_rustle())
 		"slice": s = _wav(_slice())
+		"glass": s = _wav(_glass())
+		"hammer": s = _wav(_hammer())
 		_:
 			if id.begins_with("step"):
 				s = _wav(_step(int(id.substr(4, 1)), int(id.substr(5, 1))))
@@ -170,6 +172,48 @@ static func _gunshot() -> PackedFloat32Array:
 		var tail := lp2 * exp(-t / 0.7) * 5.0 * minf(1.0, t * 12.0)
 		s[i] = crack + boom + thump + tail
 	_norm(s, 0.95)
+	return s
+
+
+## Window smashing: sharp hiss burst then falling glass tinkles.
+static func _glass() -> PackedFloat32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 51
+	var s := _buf(0.95)
+	var lp := 0.0
+	var rf := 3000.0
+	var ra := 0.0
+	var rph := 0.0
+	for i in range(s.size()):
+		var t := float(i) / RATE
+		var x := rng.randf_range(-1.0, 1.0)
+		lp += 0.12 * (x - lp)
+		var hp := x - lp
+		if rng.randf() < 0.004 * exp(-t / 0.35):
+			rf = rng.randf_range(2400.0, 6800.0)
+			ra = rng.randf_range(0.3, 0.75)
+			rph = 0.0
+		rph += TAU * rf / RATE
+		ra *= 0.9986
+		s[i] = hp * exp(-t / 0.07) * 1.1 + sin(rph) * ra * 0.55 + lp * exp(-t / 0.03) * 0.6
+	_norm(s, 0.85)
+	return s
+
+
+## Hammering nails: three sharp taps with a metallic ring.
+static func _hammer() -> PackedFloat32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 53
+	var s := _buf(0.6)
+	var lp := 0.0
+	for i in range(s.size()):
+		var t := float(i) / RATE
+		var k := mini(int(t / 0.19), 2)
+		var lt := t - float(k) * 0.19
+		var x := rng.randf_range(-1.0, 1.0)
+		lp += 0.3 * (x - lp)
+		s[i] = (x - lp) * exp(-lt / 0.004) * 0.9 + sin(TAU * 1250.0 * lt) * exp(-lt / 0.025) * 0.7 + sin(TAU * 150.0 * lt) * exp(-lt / 0.05) * 0.8
+	_norm(s, 0.85)
 	return s
 
 

@@ -118,37 +118,72 @@ func apply_felled(keys: Array) -> Array:
 	return out
 
 
+## How many trunks stand on the xz segment a->b (capped at 6). Used for sight occlusion (each trunk ~ -25 % range).
+func trunks_on_segment(ax: float, az: float, bx: float, bz: float) -> int:
+	var dx := bx - ax
+	var dz := bz - az
+	var len := sqrt(dx * dx + dz * dz)
+	if len < 0.01:
+		return 0
+	var steps := int(ceil(len / 4.0))
+	var seen: Array[Vector2i] = []
+	var n := 0
+	var l2 := len * len
+	for i in range(steps + 1):
+		var t := float(i) / float(maxi(steps, 1))
+		var px := ax + dx * t
+		var pz := az + dz * t
+		var fx := px / TRUNK_CELL
+		var fz := pz / TRUNK_CELL
+		var cx := int(floor(fx))
+		var cz := int(floor(fz))
+		var cells: Array[Vector2i] = [Vector2i(cx, cz)]
+		var ex := fx - float(cx)
+		var ez := fz - float(cz)
+		if ex < 0.15:
+			cells.append(Vector2i(cx - 1, cz))
+		elif ex > 0.85:
+			cells.append(Vector2i(cx + 1, cz))
+		if ez < 0.15:
+			cells.append(Vector2i(cx, cz - 1))
+		elif ez > 0.85:
+			cells.append(Vector2i(cx, cz + 1))
+		for c in cells:
+			if seen.has(c):
+				continue
+			seen.append(c)
+			var arr = _trunks.get(c)
+			if arr == null:
+				continue
+			for tv: Vector3 in (arr as Array):
+				var u := clampf(((tv.x - ax) * dx + (tv.y - az) * dz) / l2, 0.0, 1.0)
+				var qx := ax + dx * u - tv.x
+				var qz := az + dz * u - tv.y
+				var rr: float = tv.z + 0.25
+				if qx * qx + qz * qz < rr * rr:
+					n += 1
+					if n >= 6:
+						return 6
+	return n
+
+
 ## Push a circle (x,z,r) out of any trunk it overlaps. Returns corrected xz.
 func resolve_trunks(x: float, z: float, r: float) -> Vector2:
-	var px := x
-	var pz := z
+	var p := Vector2(x, z)
 	var cx := int(floor(x / TRUNK_CELL))
 	var cz := int(floor(z / TRUNK_CELL))
-	var reach := r + 0.7                      # max trunk radius is ~0.6 m
-	var lx := x - float(cx) * TRUNK_CELL
-	var lz := z - float(cz) * TRUNK_CELL
-	var ox0 := -1 if lx < reach else 0
-	var ox1 := 1 if lx > TRUNK_CELL - reach else 0
-	var oz0 := -1 if lz < reach else 0
-	var oz1 := 1 if lz > TRUNK_CELL - reach else 0
-	for oz in range(oz0, oz1 + 1):
-		for ox in range(ox0, ox1 + 1):
+	for oz in range(-1, 2):
+		for ox in range(-1, 2):
 			var arr = _trunks.get(Vector2i(cx + ox, cz + oz))
 			if arr == null:
 				continue
 			for t: Vector3 in (arr as Array):
-				var dx := px - t.x
-				var dz := pz - t.y
+				var d := p - Vector2(t.x, t.y)
 				var minr: float = t.z + r
-				var d2 := dx * dx + dz * dz
-				if d2 < minr * minr:
-					var l := sqrt(d2)
-					if l > 0.0001:
-						px = t.x + dx / l * minr
-						pz = t.y + dz / l * minr
-					else:
-						px += minr
-	return Vector2(px, pz)
+				var l := d.length()
+				if l < minr:
+					p = Vector2(t.x, t.y) + (d / maxf(l, 0.0001)) * minr if l > 0.0001 else p + Vector2(minr, 0)
+	return p
 
 
 func build(t: Terrain3D, seed_value: int = 1337) -> void:

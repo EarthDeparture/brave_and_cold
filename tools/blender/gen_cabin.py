@@ -170,8 +170,10 @@ def build_cabin():
     eave = WALL_TOP
     ridge = eave + 1.35
     for sx in (-HX - 0.02, HX + 0.02):
-        m.poly([(sx, -HY - 0.15, eave), (sx, HY + 0.15, eave), (sx, 0, ridge)], col(WOOD, 0.05))
-        m.poly([(sx, 0, ridge), (sx, HY + 0.15, eave), (sx, -HY - 0.15, eave)], col(WOOD_DARK, 0.05))
+        m.poly([(sx, -HY - 0.15, eave - 0.3), (sx, HY + 0.15, eave - 0.3), (sx, HY + 0.15, eave), (sx, 0, ridge), (sx, -HY - 0.15, eave)], col(WOOD, 0.05))
+        m.poly([(sx, -HY - 0.15, eave), (sx, 0, ridge), (sx, HY + 0.15, eave), (sx, HY + 0.15, eave - 0.3), (sx, -HY - 0.15, eave - 0.3)], col(WOOD_DARK, 0.05))
+    for sy in (-HY, HY):  # top plate closes the slit between the last log course and the roof slab
+        m.box(0, sy, eave + 0.02, 2 * HX + 0.7, 0.42, 0.16, WOOD_DARK)
     ov = 0.75
     half = HY + ov
     slope_len = math.hypot(half, ridge - (eave - 0.15))
