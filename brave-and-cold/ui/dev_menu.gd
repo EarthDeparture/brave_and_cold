@@ -72,6 +72,8 @@ func setup(w: Node) -> void:
 		_poptest()
 	if "hordetest=1" in ua:
 		_hordetest()
+	if "variantstest=1" in ua:
+		_variantstest()
 	if "injurytest=1" in ua:
 		_injurytest()
 	if "popperf=1" in ua:
@@ -1875,7 +1877,7 @@ func _poptest() -> void:
 	player.god = true
 	var pop: Population = world.get("pop")
 	var p0 := Vector2(player.position.x, player.position.z)
-	var alive0 := pop.count_alive()
+	var alive0 := pop.count_alive() - pop.specials.size()   # sleepers in huts are saved separately
 	var ok := alive0 >= 600 and alive0 <= 700
 	var near_home := 0
 	for k in pop.cells:
@@ -1888,6 +1890,11 @@ func _poptest() -> void:
 	ok = ok and near_home == 0
 	print("POPTEST seed alive=", alive0, " within90mOfStart=", near_home, " ok=", ok)
 	fails += 0 if ok else 1
+	for z in pop.active.duplicate():
+		if is_instance_valid(z) and z.state == Zombie.State.SLEEP:
+			z.queue_free()
+			pop.active.erase(z)
+	pop.specials.clear()   # random hut sleepers would make the conservation counts vary
 	pop.dissolve_all()
 	# dense cell: teleport in, expect nearest materialised up to the cap, nothing virtual inside the spawn radius
 	var bk := -1
@@ -1997,7 +2004,7 @@ func _poptest() -> void:
 	print("POPTEST drag n=", dn, " mean dist ", snappedf(m0, 0.1), " -> ", snappedf(m1, 0.1), " ok=", ok)
 	fails += 0 if ok else 1
 	# save list covers everyone
-	ok = pop.all_alive().size() == pop.count_alive()
+	ok = pop.all_alive().size() == pop.count_alive() - pop.specials.size()
 	print("POPTEST save list=", pop.all_alive().size(), " ok=", ok)
 	fails += 0 if ok else 1
 	# cost
@@ -2276,3 +2283,91 @@ func _popperf() -> void:
 	print("POPPERF + 6 hordes x100 (active=", pop.active.size(), " proxies=", pop.proxy_n, ") mean=%.2f med=%.2f p95=%.2f max=%.2f" % [s2[0], s2[1], s2[2], s2[3]])
 	print("POPPERF done")
 	get_tree().quit()
+
+func _variantstest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var pop: Population = world.get("pop")
+	pop.dissolve_all()
+	var gp: Vector2 = Vector2(player.position.x + 30.0, player.position.z)
+	var gy: float = float(world.call("_ground", gp.x, gp.y).y)
+	pop.specials.clear()
+	pop.add_special(Vector3(gp.x, gy, gp.y))
+	var n_sp := pop.specials.size()
+	for i in 12:
+		pop.tick(0.5)
+	var sl: Zombie = null
+	for z in pop.active:
+		if is_instance_valid(z) and z.state == Zombie.State.SLEEP:
+			sl = z
+	var ok := n_sp == 1 and sl != null
+	print("VARIANTS sleeper materialised=", sl != null, " ok=", ok)
+	fails += 0 if ok else 1
+	if sl == null:
+		print("VARIANTSTEST failures=", fails + 1)
+		get_tree().quit()
+		return
+	var lst := pop.sleeper_list()
+	ok = lst.size() == 1
+	print("VARIANTS sleeper_list n=", lst.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	player.place(sl.global_position.x - 12.0, sl.global_position.z)
+	for i in 6:
+		await get_tree().create_timer(0.3).timeout
+	ok = sl.state == Zombie.State.SLEEP
+	print("VARIANTS sleeper stays at 12 m state=", sl.state, " ok=", ok)
+	fails += 0 if ok else 1
+	player.place(sl.global_position.x - 3.0, sl.global_position.z)
+	for i in 6:
+		await get_tree().create_timer(0.3).timeout
+	ok = sl.state != Zombie.State.SLEEP and sl.state != Zombie.State.DEAD
+	print("VARIANTS sleeper wakes at 3 m state=", sl.state, " ok=", ok)
+	fails += 0 if ok else 1
+	# sneak attack kills a second sleeper in one blow
+	var p2 := player.position + Vector3(40.0, 0.0, 0.0)
+	pop.add_special(Vector3(p2.x, float(world.call("_ground", p2.x, p2.z).y), p2.z))
+	for i in 12:
+		pop.tick(0.5)
+	var s2: Zombie = null
+	for z in pop.active:
+		if is_instance_valid(z) and z.state == Zombie.State.SLEEP:
+			s2 = z
+	ok = s2 != null
+	if s2 != null:
+		s2.hit(40.0, player.position)
+		ok = s2.state == Zombie.State.DEAD
+	print("VARIANTS sneak attack kills ok=", ok)
+	fails += 0 if ok else 1
+	# crawler: heavy hit leaves it low and slow
+	var c: Zombie = pop.acquire(player.position + Vector3(0.0, 0.0, 25.0))
+	if c != null:
+		c.hp = 30.0
+		var tries := 0
+		while not c.crawling and tries < 40 and c.state != Zombie.State.DEAD:
+			c.hp = 30.0
+			c.hit(1.0, player.position)
+			tries += 1
+		ok = c.crawling
+		print("VARIANTS crawler crawling=", c.crawling, " tries=", tries, " ok=", ok)
+		fails += 0 if ok else 1
+	else:
+		print("VARIANTS crawler acquire failed")
+		fails += 1
+	# cold: freezing air slows them
+	Zombie.ambient_c = -40.0
+	var cold: float = float(c.call("_cold_mult")) if c != null else 1.0
+	Zombie.ambient_c = 0.0
+	var warm: float = float(c.call("_cold_mult")) if c != null else 1.0
+	ok = cold < warm and warm >= 0.99
+	print("VARIANTS cold mult cold=", snappedf(cold, 0.01), " warm=", snappedf(warm, 0.01), " ok=", ok)
+	fails += 0 if ok else 1
+	# save/restore sleepers
+	pop.specials.clear()
+	pop.restore_sleepers([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+	ok = pop.specials.size() == 2
+	print("VARIANTS restore sleepers n=", pop.specials.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	print("VARIANTSTEST failures=", fails)
+	get_tree().quit()
+

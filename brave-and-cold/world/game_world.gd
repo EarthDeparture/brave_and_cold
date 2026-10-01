@@ -327,6 +327,7 @@ func _process(delta: float) -> void:
 	sky_rig.apply_hour(clock.hour)
 	var night := clampf(1.0 - sun.light_energy / 0.7, 0.0, 1.0)
 	Zombie.night_factor = night
+	Zombie.ambient_c = clock.ambient_c()
 	pop.tick(delta)
 	_attack_cd = maxf(0.0, _attack_cd - delta)
 	Carcass.wind_dir = weather.wind_dir
@@ -1542,6 +1543,9 @@ func _populate(n: int, center: Vector2) -> void:
 			rp.append(road.points[i])
 	pop.generate(n, center, anchors, rp, water)
 	pop.prewarm(16)
+	for hu in huts:
+		if randf() < 0.7:
+			pop.add_special(hu.to_global(Vector3(randf_range(-0.9, 0.9), Hut.FLOOR_LOCAL_Y, randf_range(-0.7, 0.7))))
 
 
 func _new_zombie(p: Vector3, idx: int) -> Zombie:
@@ -1959,6 +1963,7 @@ func save_game() -> bool:
 		'bears': _alive_list(bears),
 		'zombies': pop.all_alive(),
 		'hordes': pop.horde_list(),
+		'sleepers': pop.sleeper_list(),
 		'injury': player.injury.to_dict(),
 		'deer': _alive_list(deer),
 		'felled': forest.felled.keys() if forest != null else [],
@@ -2027,6 +2032,7 @@ func _restore_creatures(sv: Dictionary) -> void:
 	i = 0
 	player.injury.from_dict(sv.get('injury', {}))
 	pop.restore_hordes(sv.get('hordes', []))
+	pop.restore_sleepers(sv.get('sleepers', []))
 	for e in sv.get('zombies', []):
 		pop.add_virtual(_ground(float(e['x']), float(e['z'])))   # materialises by distance within a few ticks
 		i += 1

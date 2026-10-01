@@ -36,6 +36,7 @@ const H_WANDER := 0.9
 const H_RESPOND := 1.4
 
 var hordes: Array = []
+var specials: Array = []          # sleepers: fixed Vector3 spots (inside huts); wake on proximity/noise, else stay put
 var road_pts: Array = []
 var terrain: Terrain3D
 var player: Player
@@ -84,7 +85,7 @@ func count_virtual() -> int:
 		n += (cells[k] as PackedVector3Array).size()
 	for h in hordes:
 		n += (h as Horde).pts.size()
-	return n
+	return n + specials.size()
 
 
 func count_alive() -> int:
@@ -166,7 +167,7 @@ func generate(n: int, home: Vector2, anchors: Array, road_pts_in: Array, water: 
 
 
 # ------------------------------------------------------------------ pool
-func acquire(p: Vector3, id: int = -1) -> Zombie:
+func acquire(p: Vector3, id: int = -1, kind: int = 0) -> Zombie:
 	var sid := id if id >= 0 else _next_id
 	if id < 0:
 		_next_id += 1
@@ -176,9 +177,11 @@ func acquire(p: Vector3, id: int = -1) -> Zombie:
 		if is_instance_valid(c):
 			z = c
 	if z != null:
-		z.activate(p, sid)
+		z.activate(p, sid, kind)
 	else:
 		z = make_zombie.call(p, sid)
+		if kind != 0:
+			z.activate(p, sid, kind)
 	return z
 
 
@@ -247,6 +250,14 @@ func _spawn_step() -> void:
 						best = d2
 						bk = k
 						bi = i
+		var bsp := -1
+		for si in specials.size():
+			var sv: Vector3 = specials[si]
+			var ds := (sv.x - pp.x) * (sv.x - pp.x) + (sv.z - pp.z) * (sv.z - pp.z)
+			if ds < best:
+				best = ds
+				bsp = si
+				bk = -1
 		var bh: Horde = null
 		var bhi := -1
 		for h in hordes:
@@ -261,6 +272,11 @@ func _spawn_step() -> void:
 					bh = hh
 					bhi = i
 					bk = -1
+		if bsp >= 0:
+			var spv: Vector3 = specials[bsp]
+			specials.remove_at(bsp)
+			_materialize(spv, null, Zombie.Kind.SLEEPER)
+			continue
 		if bh != null:
 			var vh := bh.pts[bhi]
 			bh.pts.remove_at(bhi)
@@ -278,8 +294,10 @@ func _spawn_step() -> void:
 		_materialize(v2)
 
 
-func _materialize(v: Vector3, from_horde: Horde = null) -> void:
-	var z := acquire(v)
+func _materialize(v: Vector3, from_horde: Horde = null, kind: int = -1) -> void:
+	if kind < 0:
+		kind = Zombie.Kind.HEAVY if int(absf(v.x * 7.0 + v.z * 13.0)) % 9 == 0 else Zombie.Kind.SHAMBLER   # ~11 % heavies (position-hashed)
+	var z := acquire(v, -1, kind)
 	z.from_pop = true
 	active.append(z)
 	world_list.append(z)
@@ -306,7 +324,10 @@ func _despawn_step() -> void:
 		var dx: float = z.global_position.x - pp.x
 		var dz: float = z.global_position.z - pp.z
 		if dx * dx + dz * dz > lim and z.can_park():
-			add_virtual(z.global_position)
+			if z.state == Zombie.State.SLEEP:
+				specials.append(z.global_position)
+			else:
+				add_virtual(z.global_position)
 			active.remove_at(i)
 			world_list.erase(z)
 			park(z)
@@ -696,3 +717,21 @@ func on_light(pos: Vector3, radius: float, _source: Object) -> void:
 	events.append([pos.x, pos.z, radius * 3.5, clock + 60.0])
 	if events.size() > 8:
 		events.pop_front()
+
+func add_special(p: Vector3) -> void:
+	specials.append(p)
+
+
+func sleeper_list() -> Array:
+	var out: Array = []
+	for s in specials:
+		out.append([(s as Vector3).x, (s as Vector3).y, (s as Vector3).z])
+	for z in active:
+		if is_instance_valid(z) and z.state == Zombie.State.SLEEP:
+			out.append([z.global_position.x, z.global_position.y, z.global_position.z])
+	return out
+
+
+func restore_sleepers(lst: Array) -> void:
+	for q in lst:
+		specials.append(Vector3(float(q[0]), float(q[1]), float(q[2])))

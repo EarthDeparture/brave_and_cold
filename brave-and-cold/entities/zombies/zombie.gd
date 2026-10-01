@@ -3,7 +3,8 @@ extends Node3D
 ## Shambler: idle wander -> hears noise / sees player -> investigate -> chase -> grab/bite. Slow by design; deep snow makes it slower still
 ## (SnowField.zombie_speed_mult: 100/95/75/50/30/20 %). Bashes closed cabin doors while the player is inside. Dies to melee.
 
-enum State { IDLE, INVESTIGATE, CHASE, DEAD }
+enum State { IDLE, INVESTIGATE, CHASE, DEAD, SLEEP }
+enum Kind { SHAMBLER, HEAVY, SLEEPER }
 
 const MODEL := "res://assets/models/animals/zombie.glb"
 const IDLE_SPEED := 0.8
@@ -19,6 +20,7 @@ const VAULT_S := 1.4
 const CORPSE_LIFE_S := 300.0
 
 static var night_factor := 0.0
+static var ambient_c := 0.0       # cold stiffens them: slower below -24 C, idle ones freeze solid below -32 C
 static var _mats: Array[StandardMaterial3D] = []     # shared tints (batching) instead of one material per zombie
 static var _scw_frame := -1
 static var _scw_val = null
@@ -34,6 +36,10 @@ var cabins: Array = []
 var state: State = State.IDLE
 var hp := 100.0
 var from_pop := false           # owned by Population (may be parked when far)
+var kind := 0                   # Kind: heavy = 160 hp, bigger, breaks barriers twice as fast, slower
+var crawling := false           # legs gone after a heavy hit: slow, low, small sight
+var _base_scale := 1.0
+var _wake_cd := 0.0
 var speed_now := 0.0
 var grabs := 0
 var _target := Vector3.ZERO
@@ -95,14 +101,15 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	for n in ["l", "r"]:
 		_arms.append(_model.find_child("zombie_arm_" + n, true, false))
 		_legs.append(_model.find_child("zombie_leg_" + n, true, false))
-	_model.scale = Vector3.ONE * _rng.randf_range(0.94, 1.06)
+	_base_scale = _rng.randf_range(0.94, 1.06)
+	_model.scale = Vector3.ONE * _base_scale
 	_phase = _rng.randf() * TAU
 	add_to_group("hostile")
 	_pick_wander()
 
 
 ## Pool reuse (Population): reset everything per-life, no instantiate cost.
-func activate(p: Vector3, seed_value: int) -> void:
+func activate(p: Vector3, seed_value: int, k: int = 0) -> void:
 	global_position = p
 	rotation.y = randf() * TAU
 	_rng.seed = seed_value
@@ -127,6 +134,19 @@ func activate(p: Vector3, seed_value: int) -> void:
 	_last_seen_t = 0.0
 	_model.rotation = Vector3.ZERO
 	_model.position = Vector3.ZERO
+	kind = k
+	crawling = false
+	for lg in _legs:
+		if lg != null:
+			lg.visible = true
+	_model.scale = Vector3.ONE * _base_scale * (1.15 if k == Kind.HEAVY else 1.0)
+	if k == Kind.HEAVY:
+		hp = 160.0
+	if k == Kind.SLEEPER:
+		state = State.SLEEP
+		_model.rotation.x = -PI / 2.0
+		_model.position.y = 0.12
+		_wake_cd = randf() * 0.25
 	visible = true
 	set_process(true)
 	add_to_group("hostile")
@@ -157,8 +177,15 @@ func _exit_tree() -> void:
 
 
 ## Called by NoiseBus.emit_noise for listeners already inside the radius.
-func on_noise(pos: Vector3, _radius: float, _source: Object) -> void:
+func on_noise(pos: Vector3, _radius_in: float, _source: Object) -> void:
+	var _radius := _radius_in
 	if state == State.DEAD:
+		return
+	if state == State.SLEEP:
+		var dd := Vector2(pos.x - global_position.x, pos.z - global_position.z).length()
+		if dd < maxf(12.0, _radius * 0.25):
+			_target = pos
+			_wake()
 		return
 	_target = pos
 	if state != State.CHASE:
@@ -212,7 +239,7 @@ func _can_see_player() -> bool:
 	var to := player.position - global_position
 	to.y = 0.0
 	var d := to.length()
-	var rng_m := SIGHT_RANGE * (0.55 if player.crouching else 1.0) * (1.0 - 0.45 * night_factor)
+	var rng_m := SIGHT_RANGE * (0.55 if player.crouching else 1.0) * (1.0 - 0.45 * night_factor) * (0.5 if crawling else 1.0)
 	if d > rng_m:
 		return false
 	var fwd := Vector3(-sin(rotation.y), 0.0, -cos(rotation.y))
@@ -250,11 +277,17 @@ func _sees_cached(delta: float) -> bool:
 func hit(dmg: float, from: Vector3) -> void:
 	if state == State.DEAD:
 		return
+	if state == State.SLEEP:
+		dmg *= 3.0   # a sleeper dies to a sneak attack
 	hp -= dmg
 	_stagger = 0.5
 	if hp <= 0.0:
 		_die()
 	else:
+		if state == State.SLEEP:
+			_wake()
+		if not crawling and hp < 40.0 and randf() < 0.5:
+			_make_crawler()
 		_target = from
 		_set_state(State.CHASE)
 		_last_seen_t = 0.0
@@ -279,6 +312,17 @@ func _process(delta: float) -> void:
 		_dead_t += delta
 		if _dead_t > CORPSE_LIFE_S:
 			queue_free()
+		return
+	if state == State.SLEEP:
+		_wake_cd -= delta
+		if _wake_cd <= 0.0:
+			_wake_cd = 0.25
+			var sx := player.position.x - global_position.x
+			var sz := player.position.z - global_position.z
+			var near := 3.0 if player.crouching else 6.0
+			if sx * sx + sz * sz < near * near:
+				_target = player.position
+				_wake()
 		return
 	if _vault_t >= 0.0:
 		_do_vault(delta)
@@ -390,7 +434,7 @@ func _breach(bld, delta: float, want: float) -> float:
 		_target = bld.door_world_pos()
 		if Vector2(_target.x - gp.x, _target.z - gp.z).length() < 2.3:
 			_face(_target, delta, 8.0)
-			bld.bash_door(DOOR_BASH_DPS * delta)
+			bld.bash_door(DOOR_BASH_DPS * delta * (2.0 if kind == Kind.HEAVY else 1.0))
 			return 0.0
 		return CHASE_SPEED
 	var slot := _bo.reserve(self)
@@ -408,7 +452,7 @@ func _breach(bld, delta: float, want: float) -> float:
 		_vault_to = Vector3(ip.x, bld.floor_y, ip.z)
 		_vault_t = 0.0
 		return 0.0
-	_bo.hit(BREAK_DPS * delta)   # glass_break / board_break raise the noise via Opening.event
+	_bo.hit(BREAK_DPS * delta * (2.0 if kind == Kind.HEAVY else 1.0))   # glass_break / board_break raise the noise via Opening.event
 	return 0.0
 
 
@@ -447,7 +491,7 @@ func _move(want: float, delta: float) -> void:
 		var hq: float = terrain.data.get_height(Vector3(pos.x, 0.0, pos.z))
 		_hcache = hq
 		_mcache = snow.zombie_speed_mult(pos.x, pos.z)
-	var mult := _mcache
+	var mult := _mcache * _cold_mult() * (0.35 if crawling else 1.0) * (0.9 if kind == Kind.HEAVY else 1.0)
 	speed_now = lerpf(speed_now, want * mult, minf(1.0, delta * 5.0))
 	if speed_now > 0.03:
 		_face(_target, delta, 4.0)
@@ -493,3 +537,32 @@ func _animate(delta: float) -> void:
 
 func is_dead() -> bool:
 	return state == State.DEAD
+
+
+func _wake() -> void:
+	if state != State.SLEEP:
+		return
+	state = State.INVESTIGATE
+	_state_t = 0.0
+	_stagger = 1.2
+	var tw := create_tween()
+	tw.tween_property(_model, "rotation:x", 0.0, 1.0).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(_model, "position:y", 0.0, 1.0)
+
+
+func _make_crawler() -> void:
+	crawling = true
+	for lg in _legs:
+		if lg != null:
+			lg.visible = false
+	_model.position.y = -0.55
+	_model.rotation.x = 0.35
+
+
+## 1.0 above -24 C; stiffening to 0.5 at -32 C; idle zombies stand frozen below -32 C.
+func _cold_mult() -> float:
+	if ambient_c > -24.0:
+		return 1.0
+	if ambient_c < -32.0 and state == State.IDLE:
+		return 0.0
+	return lerpf(1.0, 0.5, clampf((-24.0 - ambient_c) / 8.0, 0.0, 1.0))
