@@ -271,6 +271,7 @@ func _process(delta: float) -> void:
 	var night := clampf(1.0 - sun.light_energy / 0.7, 0.0, 1.0)
 	Zombie.night_factor = night
 	_attack_cd = maxf(0.0, _attack_cd - delta)
+	Carcass.wind_dir = weather.wind_dir
 	_autosave_t += delta
 	if _autosave_t > 120.0 and out_path == '' and walk_secs == 0.0 and not _selftest and not _wolftest and not _zombietest and not _deertest:
 		_autosave_t = 0.0
@@ -1059,6 +1060,19 @@ func _search_body(bz: Node3D) -> void:
 	_say('Found: ' + ', '.join(parts))
 
 
+func _carcass_list() -> Array:
+	var out: Array = []
+	for cn in get_tree().get_nodes_in_group('carcasses'):
+		var c := cn as Node3D
+		if c == null or c.is_queued_for_deletion():
+			continue
+		var sp := Carcass.species_of(c)
+		if sp == '':
+			continue
+		out.append({'sp': sp, 'x': c.global_position.x, 'z': c.global_position.z, 'done': c.get_meta('done', {})})
+	return out
+
+
 func _log_list() -> Array:
 	var out: Array = []
 	for lg in get_tree().get_nodes_in_group('logs'):
@@ -1447,26 +1461,24 @@ func _shoot() -> void:
 	var eye := player.position + Vector3(0, 1.6, 0)
 	var dir := Vector3(-sin(player.yaw) * cos(player.pitch), sin(player.pitch), -cos(player.yaw) * cos(player.pitch)).normalized()
 	var best: Node3D = null
-	var bt := 120.0
-	var groups := ['hostile', 'prey']
-	for g in groups:
+	var bt := 150.0
+	var bz := {}
+	for g in ['hostile', 'prey']:
 		for h in get_tree().get_nodes_in_group(g):
 			var n := h as Node3D
 			if n == null:
 				continue
 			if n.has_method('is_dead') and n.call('is_dead'):
 				continue
-			var c := n.global_position + Vector3(0, 0.9, 0)
-			var t := (c - eye).dot(dir)
-			if t < 1.0 or t > bt:
-				continue
-			if (eye + dir * t).distance_to(c) < 0.8:
-				bt = t
+			var zr := HitZones.ray(n, eye, dir, bt)
+			if not zr.is_empty() and float(zr["t"]) < bt:
+				bt = float(zr["t"])
 				best = n
+				bz = zr
 	if best != null:
-		best.call('hit', RIFLE_DAMAGE, player.position)
+		best.call('hit', RIFLE_DAMAGE * float(bz["mult"]), player.position)
 		audio.hit(best.global_position + Vector3(0, 1.0, 0))
-		_say('Shot hit')
+		_say('Headshot!' if String(bz["zone"]) == 'head' else 'Shot hit (%s)' % String(bz["zone"]))
 	else:
 		_say('Bang. Miss')
 
@@ -1596,6 +1608,7 @@ func save_game() -> bool:
 		'deer': _alive_list(deer),
 		'felled': forest.felled.keys() if forest != null else [],
 		'logs': _log_list(),
+		'carcasses': _carcass_list(),
 	}
 	return SaveGame.write(d)
 
@@ -1618,6 +1631,21 @@ func _alive_list(arr: Array) -> Array:
 
 
 func _restore_creatures(sv: Dictionary) -> void:
+	var ci := 0
+	for e in sv.get('carcasses', []):
+		var cp := _ground(float(e['x']), float(e['z']))
+		var cn: Node3D = null
+		match String(e['sp']):
+			'deer':
+				cn = _add_deer(cp, 800 + ci)
+			'wolf':
+				cn = _add_wolf(cp, 800 + ci, false)
+			'bear':
+				cn = _add_wolf(cp, 800 + ci, true)
+		if cn != null:
+			cn.call('hit', 99999.0, cp)
+			cn.set_meta('done', e.get('done', {}))
+		ci += 1
 	if forest != null:
 		for info in forest.apply_felled(sv.get('felled', [])):
 			WoodLog.make_stump(self, terrain, float(info['x']), float(info['z']), float(info['r']))

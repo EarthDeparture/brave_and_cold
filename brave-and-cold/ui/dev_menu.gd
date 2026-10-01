@@ -52,6 +52,8 @@ func setup(w: Node) -> void:
 		_choptest()
 	if "carcasstest=1" in ua:
 		_carcasstest()
+	if "huntest=1" in ua:
+		_huntest()
 
 
 func _selftest() -> void:
@@ -841,4 +843,80 @@ func _carcasstest() -> void:
 	print("CARCASSTEST zombie nonempty loot=", ok2, " ", ex2)
 	fails += 0 if ok2 else 1
 	print("CARCASSTEST failures=", fails)
+	get_tree().quit()
+
+
+func _huntest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var tg: Terrain3D = world.get("terrain")
+	var pp: Vector3 = player.position
+	player.god = true
+	# --- hit zones (deer faces -Z at yaw 0)
+	var base := Vector3(pp.x + 12.0, tg.data.get_height(Vector3(pp.x + 12.0, 0, pp.z)), pp.z)
+	var d1: Deer = world.call("_add_deer", base, 41)
+	d1.rotation.y = 0.0
+	var want := {"head": 2.5, "chest": 1.0, "hind": 0.35}
+	for row: Array in HitZones.SPECS["deer"]:
+		var c := HitZones.center_of(d1, row)
+		var r := HitZones.ray(d1, c + Vector3(6, 0, 0), Vector3(-1, 0, 0), 50.0)
+		var ok: bool = not r.is_empty() and r["zone"] == row[0] and absf(float(r["mult"]) - float(want[row[0]])) < 0.01
+		print("HUNTEST zone ", row[0], "=", ok, " ", r)
+		fails += 0 if ok else 1
+	var miss := HitZones.ray(d1, d1.global_position + Vector3(6, 4.5, 0), Vector3(-1, 0, 0), 50.0)
+	print("HUNTEST over-the-top miss=", miss.is_empty())
+	fails += 0 if miss.is_empty() else 1
+	d1.hit(9999.0, pp)
+	# --- wounded deer bleeds out, leaves trail
+	var b0 := get_tree().get_nodes_in_group("blood").size()
+	var p2 := Vector3(pp.x - 20.0, tg.data.get_height(Vector3(pp.x - 20.0, 0, pp.z)), pp.z)
+	var d2: Deer = world.call("_add_deer", p2, 42)
+	d2.hit(35.0, Vector3(pp.x, 0, pp.z))
+	var okb: bool = d2.bleed and d2.state == Deer.State.FLEE and d2.hp > 0.0
+	print("HUNTEST wound bleeds=", okb)
+	fails += 0 if okb else 1
+	for i in range(30):
+		await get_tree().create_timer(1.0).timeout
+		if d2.is_dead():
+			break
+	var trail := get_tree().get_nodes_in_group("blood").size() - b0
+	okb = d2.is_dead() and trail >= 4 and d2.is_in_group("carcasses")
+	print("HUNTEST bleeds out dead=", d2.is_dead(), " blood decals=", trail)
+	fails += 0 if okb else 1
+	# --- scent
+	var far := Vector3(pp.x + 150.0, 0, pp.z + 150.0)
+	_tp(far.x, far.z)
+	await get_tree().create_timer(1.0).timeout
+	var cpos := Vector3(far.x + 40.0, tg.data.get_height(Vector3(far.x + 40.0, 0, far.z)), far.z)
+	var carc: Deer = world.call("_add_deer", cpos, 43)
+	carc.hit(9999.0, cpos)
+	var wx := Vector3(cpos.x + 18.0, tg.data.get_height(Vector3(cpos.x + 18.0, 0, cpos.z)), cpos.z)
+	var wu := Vector3(cpos.x - 30.0, tg.data.get_height(Vector3(cpos.x - 30.0, 0, cpos.z)), cpos.z)
+	var w_down: Wolf = world.call("_add_wolf", wx, 50, false)
+	var w_up: Wolf = world.call("_add_wolf", wu, 51, false)
+	for i in range(5):
+		Carcass.wind_dir = Vector2(1, 0)
+		await get_tree().create_timer(1.0).timeout
+	var ok2: bool = w_down._carcass == carc and w_down.state == Wolf.State.INVESTIGATE
+	print("HUNTEST downwind wolf smells carcass=", ok2)
+	fails += 0 if ok2 else 1
+	ok2 = w_up._carcass == null
+	print("HUNTEST upwind wolf does not=", ok2)
+	fails += 0 if ok2 else 1
+	var saved: Array = world.call("_carcass_list")
+	var found := false
+	for e in saved:
+		if String(e["sp"]) == "deer" and absf(float(e["x"]) - cpos.x) < 1.0:
+			found = true
+	print("HUNTEST carcass in save list=", found)
+	fails += 0 if found else 1
+	for i in range(30):
+		Carcass.wind_dir = Vector2(1, 0)
+		await get_tree().create_timer(1.0).timeout
+		if not is_instance_valid(carc) or not Carcass.has_meat(carc):
+			break
+	ok2 = not is_instance_valid(carc) or not Carcass.has_meat(carc)
+	print("HUNTEST wolf scavenged meat=", ok2)
+	fails += 0 if ok2 else 1
+	print("HUNTEST failures=", fails)
 	get_tree().quit()

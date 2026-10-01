@@ -34,6 +34,9 @@ var bites := 0
 var hp := 40.0
 var dead := false
 var _dead_t := 0.0
+var _carcass: Node3D = null
+var _feed_t := 0.0
+var _scent_t := 0.0
 var _target := Vector3.ZERO
 var _state_t := 0.0
 var _bite_cd := 0.0
@@ -77,6 +80,8 @@ func hit(dmg: float, from: Vector3) -> void:
 		dead = true
 		remove_from_group("hostile")
 		add_to_group("carcasses")
+		set_meta("born", Time.get_ticks_msec())
+		Carcass.blood(get_parent(), global_position, 0.9)
 		speed_now = 0.0
 		var tw := create_tween()
 		tw.tween_property(self, "rotation:z", PI / 2.0, 0.5)
@@ -110,6 +115,7 @@ func _on_noise(pos: Vector3, radius: float, source: Object) -> void:
 	if source == self or state == State.CHASE or state == State.ALERT:
 		return
 	if global_position.distance_to(pos) <= radius:
+		_carcass = null
 		_target = pos
 		_set_state(State.INVESTIGATE)
 
@@ -141,6 +147,36 @@ func _can_see_player() -> bool:
 		return false
 	var fwd := Vector3(-sin(rotation.y), 0.0, -cos(rotation.y))
 	return d < 6.0 or fwd.dot(to / maxf(d, 0.001)) > SIGHT_FOV_DOT
+
+
+## Nearest carcass with meat left whose scent reaches us.
+func _smell_carcass() -> Node3D:
+	var best: Node3D = null
+	var bd := 1e9
+	for cn in get_tree().get_nodes_in_group("carcasses"):
+		var c := cn as Node3D
+		if c == null or c == self or c.is_queued_for_deletion() or not Carcass.has_meat(c):
+			continue
+		if not Carcass.smelled_by(c, global_position):
+			continue
+		var d := c.global_position.distance_to(global_position)
+		if d < bd:
+			bd = d
+			best = c
+	return best
+
+
+func _eat_carcass() -> void:
+	if _carcass != null and is_instance_valid(_carcass):
+		var done: Dictionary = _carcass.get_meta("done", {})
+		done["meat"] = true
+		_carcass.set_meta("done", done)
+		if Carcass.open_steps(Carcass.species_of(_carcass), done).is_empty():
+			_carcass.queue_free()
+	_carcass = null
+	_feed_t = 0.0
+	_set_state(State.WANDER)
+	_pick_wander()
 
 
 func animal_snow_mult(x: float, z: float) -> float:
@@ -176,6 +212,15 @@ func _process(delta: float) -> void:
 			if _can_see_player():
 				_set_state(State.ALERT)
 			else:
+				_scent_t -= delta
+				if _scent_t <= 0.0:
+					_scent_t = 1.5
+					var sc := _smell_carcass()
+					if sc != null:
+						_carcass = sc
+						_feed_t = 0.0
+						_target = sc.global_position
+						_set_state(State.INVESTIGATE)
 				var dd := Vector2(_target.x - global_position.x, _target.z - global_position.z).length()
 				if dd < 1.5 or _state_t > 14.0:
 					if _state_t > 4.0:
@@ -187,7 +232,21 @@ func _process(delta: float) -> void:
 		State.INVESTIGATE:
 			if _can_see_player():
 				_set_state(State.ALERT)
+			elif _carcass != null and is_instance_valid(_carcass) and not _carcass.is_queued_for_deletion() and Carcass.has_meat(_carcass):
+				var cd := Vector2(_carcass.global_position.x - global_position.x, _carcass.global_position.z - global_position.z).length()
+				if cd < 2.5:
+					want_speed = 0.0
+					_feed_t += delta
+					if _feed_t > 14.0:
+						_eat_carcass()
+				else:
+					want_speed = TROT_SPEED
+					if _state_t > 40.0:
+						_carcass = null
+						_set_state(State.WANDER)
+						_pick_wander()
 			else:
+				_carcass = null
 				var dd := Vector2(_target.x - global_position.x, _target.z - global_position.z).length()
 				want_speed = TROT_SPEED
 				if dd < 3.0 or _state_t > 12.0:

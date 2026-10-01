@@ -61,3 +61,48 @@ static func body_loot(seed_value: int) -> Dictionary:
 	if rng.randf() < 0.1:
 		out["sweater"] = 1
 	return out
+
+
+# ---- scent: fresh carcasses draw predators. Radius grows with age, longer downwind.
+static var wind_dir := Vector2(0.8, 0.6)  # xz direction the wind blows toward (set by the world each frame)
+
+
+static func age_s(n: Node) -> float:
+	return (Time.get_ticks_msec() - int(n.get_meta("born", Time.get_ticks_msec()))) / 1000.0
+
+
+static func scent_radius(age: float) -> float:
+	return 25.0 + 75.0 * clampf(age / 600.0, 0.0, 1.0)
+
+
+static func smelled_by(carcass: Node3D, listener: Vector3) -> bool:
+	var to := Vector2(listener.x - carcass.global_position.x, listener.z - carcass.global_position.z)
+	var d := to.length()
+	var k := 1.0 + 0.6 * (to / maxf(d, 0.001)).dot(wind_dir)
+	return d < scent_radius(age_s(carcass)) * k
+
+
+static func has_meat(n: Node) -> bool:
+	return not (n.get_meta("done", {}) as Dictionary).get("meat", false)
+
+
+# ---- blood decals on the snow
+static func blood(parent: Node, pos: Vector3, size: float) -> void:
+	var tree := parent.get_tree()
+	var all := tree.get_nodes_in_group("blood")
+	if all.size() > 250:
+		(all[0] as Node).queue_free()
+	var mi := MeshInstance3D.new()
+	var q := QuadMesh.new()
+	q.size = Vector2(size, size * randf_range(0.7, 1.2))
+	mi.mesh = q
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.32, 0.02, 0.03)
+	m.roughness = 0.35
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.add_to_group("blood")
+	parent.add_child(mi)
+	mi.global_position = pos + Vector3(0, 0.07, 0)
+	mi.rotation = Vector3(-PI / 2.0, randf() * TAU, 0.0)

@@ -19,6 +19,8 @@ var state: State = State.GRAZE
 var hp := 60.0
 var speed_now := 0.0
 var harvested := false
+var bleed := false  # wounded: loses hp and leaves a blood trail
+var _blood_d := 0.0
 var _target := Vector3.ZERO
 var _state_t := 0.0
 var _threat := Vector3.ZERO
@@ -77,14 +79,22 @@ func hit(dmg: float, from: Vector3) -> void:
 	hp -= dmg
 	_threat = from
 	if hp <= 0.0:
-		state = State.DEAD
-		remove_from_group("prey")
-		add_to_group("carcasses")
-		speed_now = 0.0
-		var tw := create_tween()
-		tw.tween_property(self, "rotation:z", PI / 2.0, 0.45)
+		_die()
 	else:
+		if dmg >= 15.0:
+			bleed = true
 		_set_state(State.FLEE)
+
+
+func _die() -> void:
+	state = State.DEAD
+	remove_from_group("prey")
+	add_to_group("carcasses")
+	set_meta("born", Time.get_ticks_msec())
+	speed_now = 0.0
+	var tw := create_tween()
+	tw.tween_property(self, "rotation:z", PI / 2.0, 0.45)
+	Carcass.blood(get_parent(), global_position, 1.1)
 
 
 func _sees_player() -> bool:
@@ -100,6 +110,15 @@ func _process(delta: float) -> void:
 		return
 	if state == State.DEAD:
 		return
+	if bleed:
+		hp -= 1.6 * delta
+		_blood_d += speed_now * delta
+		if _blood_d > 2.0:
+			_blood_d = 0.0
+			Carcass.blood(get_parent(), global_position, randf_range(0.22, 0.4))
+		if hp <= 0.0:
+			_die()
+			return
 	_state_t += delta
 	var want := 0.0
 	if state == State.GRAZE and _sees_player():
