@@ -1,60 +1,83 @@
 """
 Run: blender.exe --background --factory-startup --python gen_vm_hands.py -- <out_dir>
-vm_hands.glb: first-person gloved hands + parka sleeves. Budget <= 1400 tris.
-Hand = fist whose grip axis is local Z (handle passes through origin). Palm on -Y side (toward camera),
-fingers wrap round via -X (right hand), thumb over +X. Wrist sits at (sx*0.075,-0.05,0).
-Parts: vm_hand_r, vm_hand_l, vm_sleeve_r, vm_sleeve_l (sleeve origin = wrist, extends along -Y = Godot +Z).
+vm_hands.glb v2: first-person leather gloves with ribbed wool cuffs + quilted parka sleeves. Textured (UV), budget <= 3200 tris.
+Hand = fist whose grip axis is local Z (handle passes through origin). Palm on -Y (toward camera), fingers wrap round via -X
+(right hand), thumb over +X side. Wrist at (sx*0.075,-0.05,-0.005). Sleeve parts have their origin at the wrist and extend along
+d = (sx*0.25,-1,-0.12) (Blender) = Godot (sx*.25,-.12,+1).
+Parts: vm_hand_r, vm_hand_l, vm_sleeve_r, vm_sleeve_l.
 """
 import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from vmlib import *
 
-LEATHER = (0.44, 0.31, 0.17)
-LEATHER_D = (0.27, 0.18, 0.10)
-WOOL = (0.17, 0.155, 0.13)
-PARKA = (0.22, 0.26, 0.20)
-PARKA_D = (0.13, 0.16, 0.12)
-WRIST = Vector((0.075, -0.05, -0.005))
+Z = Vector((0, 0, 1))
 
 
-def mir(sx, p):
-    return Vector((p[0] * sx * -1.0 if False else p[0] * sx, p[1], p[2]))
+def P(sx, x, y, z):
+    return Vector((sx * x, y, z))
+
+
+def T(k):
+    return (k, k, k)
 
 
 def build_hand(sx, name):
     h = Part(name)
-    # palm / back of hand
-    blob(h, (sx * 0.012, -0.031, 0.0), 0.036, 0.019, 0.042, LEATHER, sides=10, nrings=5, col2=LEATHER)
-    R = 0.030
-    angs = [-70, -105, -145, -185, -225]
-    for z in (0.030, 0.010, -0.010, -0.030):
+    W = Vector((sx * 0.075, -0.05, -0.005))
+    d = Vector((sx * 0.25, -1, -0.12)).normalized()
+    h.mat = "leather"
+    # back of hand / palm slab, wrist -> knuckle line
+    pp = [P(sx, 0.080, -0.052, 0.0), P(sx, 0.058, -0.045, 0.0), P(sx, 0.034, -0.038, 0.0), P(sx, 0.010, -0.032, 0.0)]
+    pr = [(0.020, 0.031), (0.0225, 0.037), (0.0235, 0.041), (0.0205, 0.0425)]
+    limb(h, pp, pr, [T(0.8), T(0.92), T(1.0), T(1.0)], sides=12, ref=Z, cap0=True, cap1=False, n=2.6)
+    # four fingers, three phalanges each, wrapping ~165deg round the handle
+    R0 = 0.0285
+    FZ = [0.0295, 0.0100, -0.0100, -0.0295]
+    FL = [163, 175, 165, 140]
+    FS = [1.0, 1.04, 0.98, 0.82]
+    prof = [0.0100, 0.0098, 0.0108, 0.0096, 0.0101, 0.0092, 0.0088, 0.0072]
+    for z0, L, s in zip(FZ, FL, FS):
         pts, rad, cols = [], [], []
-        for i, a in enumerate(angs):
-            t = math.radians(a)
-            pts.append(Vector((sx * R * math.cos(t), R * math.sin(t), z)))
-            rad.append(0.0105 - i * 0.0013)
-            cols.append(LEATHER if i < 3 else LEATHER_D)
-        limb(h, pts, rad, cols, sides=6, ref=Vector((0, 0, 1)), cap0=False, cap1=True)
-    # thumb along the +X side, wrapping toward the far side
-    th = [Vector((sx * 0.03, -0.034, 0.040)), Vector((sx * 0.036, -0.008, 0.050)), Vector((sx * 0.026, 0.026, 0.052)),
-          Vector((sx * 0.010, 0.040, 0.050))]
-    limb(h, th, [0.014, 0.0125, 0.011, 0.009], [LEATHER, LEATHER, LEATHER, LEATHER_D], sides=6, ref=Vector((0, 0, 1)), cap0=False, cap1=True)
-    # wrist cuff stub
-    wr = Vector((sx * WRIST.x, WRIST.y, WRIST.z))
-    limb(h, [Vector((sx * 0.03, -0.04, 0.0)), wr], [(0.034, 0.040), (0.036, 0.040)], [LEATHER, WOOL], sides=8, ref=Vector((0, 0, 1)), cap0=False, cap1=False)
-    stain(h, mix=0.0, scale=4.0, thresh=2.0, seed=3.0 + sx)
+        for i in range(8):
+            t = i / 7.0
+            th = math.radians(-72 - L * t)
+            R = R0 * (1 - 0.16 * t)
+            pts.append(P(sx, R * math.cos(th), R * math.sin(th), z0 * (1 - 0.06 * t)))
+            rad.append(prof[i] * s)
+            cols.append(T(0.98 - 0.16 * t))
+        limb(h, pts, rad, cols, sides=8, ref=Z, cap0=False, cap1=True)
+    # knuckle bumps on the back of the hand
+    for z0 in FZ:
+        blob(h, P(sx, 0.011, -0.045, z0), 0.0105, 0.0085, 0.0108, T(1.0), sides=8, nrings=3)
+    # thumb (two phalanges + thenar pad)
+    th = [P(sx, 0.034, -0.036, 0.040), P(sx, 0.039, -0.016, 0.050), P(sx, 0.032, 0.010, 0.055), P(sx, 0.018, 0.030, 0.054), P(sx, 0.005, 0.040, 0.050)]
+    limb(h, th, [0.0150, 0.0138, 0.0126, 0.0112, 0.0094], [T(0.95), T(1.0), T(0.95), T(0.9), T(0.82)], sides=8, ref=Z, cap0=False, cap1=True)
+    blob(h, P(sx, 0.036, -0.034, 0.036), 0.020, 0.015, 0.024, T(0.95), sides=8, nrings=4)
+    # ribbed wool cuff pulled over the sleeve end
+    h.mat = "wool"
+    ts = [-0.012, 0.012, 0.030, 0.048, 0.066, 0.086]
+    cr = [0.0345, 0.0380, 0.0360, 0.0392, 0.0368, 0.0402]
+    ct = [0.7, 0.9, 0.78, 0.95, 0.84, 0.9]
+    limb(h, [W + d * t for t in ts], cr, [T(c) for c in ct], sides=14, ref=Z, cap0=False, cap1=False)
+    h.tint_noise(0.10, 18.0, 3.0 + sx)
     return h.finish()
 
 
 def build_sleeve(sx, name):
-    wr = Vector((sx * WRIST.x, WRIST.y, WRIST.z))
-    s = Part(name, origin=wr)
-    d = Vector((sx * 0.25, -1.0, -0.12)).normalized()
-    pts = [wr + d * t for t in (0.0, 0.05, 0.2, 0.45, 0.8)]
-    rad = [0.034, 0.038, 0.043, 0.048, 0.052]
-    cols = [WOOL, PARKA_D, PARKA, PARKA, PARKA]
-    limb(s, pts, rad, cols, sides=9, ref=Vector((0, 0, 1)), cap0=False, cap1=True)
-    stain(s, mix=0.0, scale=3.0, thresh=2.0, seed=5.0 + sx)
+    W = Vector((sx * 0.075, -0.05, -0.005))
+    s = Part(name, origin=W)
+    d = Vector((sx * 0.25, -1, -0.12)).normalized()
+    s.mat = "fabric"
+    ts = [0.07, 0.09, 0.12, 0.15, 0.19, 0.24, 0.30, 0.37, 0.45, 0.54, 0.64, 0.75, 0.85]
+    mod = [1.0, 1.16, 1.10, 1.0, 1.12, 0.96, 1.10, 0.96, 1.08, 0.96, 1.07, 0.97, 1.04]
+    pts, rad, cols = [], [], []
+    for t, m in zip(ts, mod):
+        base = 0.036 + 0.026 * (t - 0.07) / 0.78
+        pts.append(W + d * t)
+        rad.append(base * m)
+        cols.append(T(0.72 + 0.28 * (m - 0.95) / 0.21))
+    limb(s, pts, rad, cols, sides=12, ref=Z, cap0=False, cap1=True, n=2.2)
+    s.tint_noise(0.12, 9.0, 5.0 + sx)
     return s.finish()
 
 
@@ -65,12 +88,5 @@ if __name__ == "__main__":
     for nm, sx in (("r", 1), ("l", -1)):
         objs.append(build_hand(sx, "vm_hand_" + nm))
         objs.append(build_sleeve(sx, "vm_sleeve_" + nm))
-    tris = {o.name: sum(len(p.vertices) - 2 for p in o.data.polygons) for o in objs}
-    bpy.ops.object.select_all(action="DESELECT")
-    for o in objs:
-        o.select_set(True)
-    bpy.context.view_layer.objects.active = objs[0]
-    os.makedirs(OUT, exist_ok=True)
-    bpy.ops.export_scene.gltf(filepath=f"{OUT}/vm_hands.glb", export_format="GLB", use_selection=True, export_yup=True,
-                              export_vertex_color="ACTIVE", export_all_vertex_colors=False)
-    print("VMHANDS tris", sum(tris.values()), tris)
+    export_glb(objs, os.path.join(OUT, "vm_hands.glb"))
+    print("VMHANDS tris", sum(tris(o) for o in objs), {o.name: tris(o) for o in objs})

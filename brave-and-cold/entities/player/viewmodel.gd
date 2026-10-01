@@ -13,7 +13,7 @@ const WRIST_R := Vector3(0.075, -0.005, 0.05)
 const WRIST_L := Vector3(-0.075, -0.005, 0.05)
 const SLEEVE_R := Vector3(0.25, -0.12, 1.0)
 const SLEEVE_L := Vector3(-0.25, -0.12, 1.0)
-const BOLT_ORIGIN := Vector3(0.0, 0.036, 0.06)
+const BOLT_ORIGIN := Vector3(0.0, 0.034, 0.06)
 
 var player: Player
 var mode := "fists"  # fists | axe | rifle
@@ -59,7 +59,11 @@ func _pick(path: String, node_name: String) -> MeshInstance3D:
 	var found := root.find_child(node_name, true, false) as MeshInstance3D
 	found.get_parent().remove_child(found)
 	root.free()
-	found.material_override = _mat
+	for i in found.mesh.get_surface_count():
+		var m := found.mesh.surface_get_material(i) as StandardMaterial3D
+		if m != null:
+			m.vertex_color_use_as_albedo = true  # vertex colour = AO / wear tint over the texture
+			m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	found.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(found)
 	return found
@@ -161,9 +165,9 @@ func _process(delta: float) -> void:
 	_rifle.visible = shown == "rifle"
 	_bolt.visible = shown == "rifle"
 	_hand_r.visible = shown != ""
-	_hand_l.visible = shown != ""
+	_hand_l.visible = shown != "" and shown != "axe"
 	_sl_r.visible = shown != ""
-	_sl_l.visible = shown != ""
+	_sl_l.visible = shown != "" and shown != "axe"
 	if shown == "axe":
 		_pose_axe(base)
 	elif shown == "rifle":
@@ -178,6 +182,15 @@ func _aim_sleeve(sl: MeshInstance3D, hand: Transform3D, wrist: Vector3, native: 
 	sl.transform = Transform3D(Basis(q), wp)
 
 
+## Hand whose forearm axis points at a hidden elbow (so cuff and sleeve always line up), twisted about that axis.
+func _free_hand(sx: float, wrist_t: Vector3, elbow: Vector3, twist: float, base: Transform3D) -> Transform3D:
+	var nat := (SLEEVE_R if sx > 0.0 else SLEEVE_L).normalized()
+	var wn := WRIST_R if sx > 0.0 else WRIST_L
+	var dir := (elbow - wrist_t).normalized()
+	var b := Basis(dir, deg_to_rad(twist)) * Basis(Quaternion(nat, dir))
+	return base * Transform3D(b, wrist_t - b * wn)
+
+
 func _pose_axe(base: Transform3D) -> void:
 	var a := Vector2.ZERO if _swing_t < 0.0 else _swing_curve(_swing_t)
 	var rest := Basis(Vector3.BACK, deg_to_rad(10.0)) * Basis(Vector3.RIGHT, deg_to_rad(-30.0 + a.x * 0.9))
@@ -186,10 +199,12 @@ func _pose_axe(base: Transform3D) -> void:
 	var w := base * _about(shoulder, rot) * Transform3D(rest, Vector3(0.24, -0.13, -0.40))
 	_axe.transform = w.scaled_local(Vector3.ONE * 1.2)
 	_hand_r.transform = w
-	var tl := base * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(-55.0)) * Basis(Vector3.BACK, deg_to_rad(-15.0)), Vector3(-0.26, -0.34, -0.42))
+	var el := Vector3(-0.45, -0.85, 0.45)
+	var tl := _free_hand(-1.0, Vector3(-0.24, -0.33, -0.36), el, 40.0, base)
 	_hand_l.transform = tl
-	_aim_sleeve(_sl_r, w, WRIST_R, SLEEVE_R, Vector3(0.42, -0.75, 0.45))
-	_aim_sleeve(_sl_l, tl, WRIST_L, SLEEVE_L, Vector3(-0.45, -0.80, 0.45))
+	var arm := base * _about(shoulder, rot)
+	_sl_r.transform = w * Transform3D(Basis.IDENTITY, WRIST_R)
+	_sl_l.transform = tl * Transform3D(Basis.IDENTITY, WRIST_L)
 
 
 func _pose_rifle(base: Transform3D) -> void:
@@ -218,21 +233,24 @@ func _pose_rifle(base: Transform3D) -> void:
 	var w := base * _about(butt, kb) * Transform3D(rb, rpos + Vector3(0.0, 0.01 * kick, 0.0))
 	_rifle.transform = w
 	_bolt.transform = w * Transform3D(Basis(Vector3.BACK, deg_to_rad(bolt_roll)), BOLT_ORIGIN + Vector3(0.0, 0.0, bolt_slide))
-	var tr := w * Transform3D(Basis.IDENTITY, Vector3(0.0, -0.052, 0.01))
-	var tl := w * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(90.0)), Vector3(0.0, 0.01, -0.22))
+	var tr := w * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(-22.0)), Vector3(0.0, -0.058, 0.022))
+	var tl := w * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(90.0)), Vector3(0.0, 0.010, -0.17))
 	_hand_r.transform = tr
 	_hand_l.transform = tl
-	_aim_sleeve(_sl_r, tr, WRIST_R, SLEEVE_R, Vector3(0.40, -0.85, 0.40))
-	_aim_sleeve(_sl_l, tl, WRIST_L, SLEEVE_L, Vector3(-0.50, -0.85, 0.30))
+	var arm := base * _about(butt, kb)
+	_sl_r.transform = tr * Transform3D(Basis.IDENTITY, WRIST_R)
+	_sl_l.transform = tl * Transform3D(Basis.IDENTITY, WRIST_L)
 
 
 func _pose_fists(base: Transform3D) -> void:
 	var jab := 0.0
 	if _swing_t >= 0.0 and not _swing_axe:
 		jab = sin(clampf(_swing_t / 0.38, 0.0, 1.0) * PI)
-	var tr := base * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(-70.0)) * Basis(Vector3.BACK, deg_to_rad(8.0)), Vector3(0.20, -0.26 + 0.04 * jab, -0.42 - 0.24 * jab))
-	var tl := base * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(-70.0)) * Basis(Vector3.BACK, deg_to_rad(-8.0)), Vector3(-0.22, -0.27, -0.42))
+	var er := Vector3(0.45, -0.85, 0.45)
+	var el := Vector3(-0.45, -0.85, 0.45)
+	var tr := _free_hand(1.0, Vector3(0.20, -0.20 + 0.04 * jab, -0.38 - 0.24 * jab), er, 0.0, base)
+	var tl := _free_hand(-1.0, Vector3(-0.20, -0.21, -0.38), el, 0.0, base)
 	_hand_r.transform = tr
 	_hand_l.transform = tl
-	_aim_sleeve(_sl_r, tr, WRIST_R, SLEEVE_R, Vector3(0.42, -0.75, 0.45))
-	_aim_sleeve(_sl_l, tl, WRIST_L, SLEEVE_L, Vector3(-0.45, -0.75, 0.45))
+	_sl_r.transform = tr * Transform3D(Basis.IDENTITY, WRIST_R)
+	_sl_l.transform = tl * Transform3D(Basis.IDENTITY, WRIST_L)
