@@ -28,6 +28,7 @@ var _dragging := false
 var _info_t := 0.0
 var _look := false
 var _wx_btns: Array[Button] = []
+var _item_opt: OptionButton
 
 
 func _init() -> void:
@@ -118,6 +119,58 @@ func _selftest() -> void:
 	ok = inv != null and inv.count("rifle") > 0
 	print("DEVTEST kit=", ok)
 	fails += 0 if ok else 1
+	# --- ActionRunner
+	var done := [false]
+	var cand := {"text": "Test", "hold": 0.5, "act": func() -> void: done[0] = true}
+	world.call("_act_begin", cand)
+	for i in range(10):
+		world.call("_act_update", 0.1, true)
+	ok = done[0]
+	print("DEVTEST action completes=", ok)
+	fails += 0 if ok else 1
+	done[0] = false
+	world.call("_act_begin", cand)
+	world.call("_act_update", 0.2, true)
+	world.call("_act_update", 0.1, false)
+	ok = (not done[0]) and (world.get("_act") as Dictionary).is_empty()
+	print("DEVTEST action cancels on release=", ok)
+	fails += 0 if ok else 1
+	world.call("_act_begin", cand)
+	world.call("_act_update", 0.1, true)
+	player.position.x += 2.0
+	world.call("_act_update", 0.1, true)
+	ok = (not done[0]) and (world.get("_act") as Dictionary).is_empty()
+	print("DEVTEST action cancels on move=", ok)
+	fails += 0 if ok else 1
+	var hp0 := player.health
+	var god0 := player.god
+	player.god = false
+	world.call("_act_begin", cand)
+	world.call("_act_update", 0.1, true)
+	player.hurt(5.0, "test")
+	world.call("_act_update", 0.1, true)
+	ok = (not done[0]) and (world.get("_act") as Dictionary).is_empty()
+	player.health = hp0
+	player.god = god0
+	print("DEVTEST action cancels on damage=", ok)
+	fails += 0 if ok else 1
+	# --- weight + condition
+	var iv2 := Inventory.new()
+	iv2.add("rifle", 1)
+	iv2.add("wood", 20)
+	var w_ok := absf(iv2.total_weight() - (3.6 + 24.0)) < 0.01 and iv2.speed_mult() == 1.0
+	iv2.add("wood", 10)
+	w_ok = w_ok and iv2.speed_mult() < 1.0 and iv2.speed_mult() > 0.6
+	iv2.add("wood", 20)
+	w_ok = w_ok and not iv2.can_add("wood", 1) and iv2.can_add("rifle", 1)
+	print("DEVTEST weight/encumbrance=", w_ok, " w=", iv2.total_weight(), " mult=", iv2.speed_mult())
+	fails += 0 if w_ok else 1
+	iv2.add("axe", 1)
+	var c_ok := iv2.condition("axe") == 1.0 and absf(iv2.wear("axe", 0.4) - 0.6) < 0.001 and absf(iv2.condition("axe") - 0.6) < 0.001
+	iv2.remove("axe", 1)
+	c_ok = c_ok and iv2.condition("axe") == 1.0
+	print("DEVTEST condition=", c_ok)
+	fails += 0 if c_ok else 1
 	print("DEVTEST failures=", fails)
 	get_tree().quit()
 
@@ -278,6 +331,22 @@ func _build() -> void:
 	_btn(irow, "+10 wood", func() -> void: _give("wood", 10))
 	_btn(irow, "+30 ammo", func() -> void: _give("ammo", 30))
 	_btn(irow, "+Matches", func() -> void: _give("matches", 6))
+	var irow2 := _flow(box)
+	_item_opt = OptionButton.new()
+	_item_opt.focus_mode = Control.FOCUS_NONE
+	_item_opt.add_theme_font_override("font", DZ.font())
+	_item_opt.add_theme_font_size_override("font_size", 13)
+	var ids: Array = Inventory.ITEMS.keys()
+	ids.sort()
+	for id in ids:
+		_item_opt.add_item(String(id))
+	irow2.add_child(_item_opt)
+	_btn(irow2, "Give +1", func() -> void: _give(_item_opt.get_item_text(_item_opt.selected), 1))
+	_btn(irow2, "+5", func() -> void: _give(_item_opt.get_item_text(_item_opt.selected), 5))
+	_btn(irow2, "Dull axe", func() -> void:
+		var iv: Inventory = world.get("inv")
+		if iv != null:
+			iv.wear("axe", 0.25))
 
 	_head(box, "RENDER / DEBUG")
 	var rrow := _flow(box)
@@ -388,6 +457,9 @@ func _refresh_info() -> void:
 	s += "Air %.1f C  feels %.1f C  core %.1f C\n" % [clock.ambient_c(), body.feels_like, body.core]
 	s += "Weather %s  wind %.1f m/s  precip %.2f\n" % [weather.state_name(), weather.wind, weather.precip]
 	s += "Health %.0f  Cal %d  Water %d%%  Stamina %d\n" % [player.health, int(needs.calories), int(needs.water), int(player.stamina)]
+	var iv: Inventory = world.get("inv")
+	if iv != null:
+		s += "Weight %.1f / %d kg (max %d)  axe cond %d%%\n" % [iv.total_weight(), int(Inventory.WEIGHT_SOFT), int(Inventory.WEIGHT_HARD), int(iv.condition("axe") * 100.0)]
 	s += "Hostile alive %d   god %s  noclip %s" % [hostile, "ON" if player.god else "off", "ON" if player.noclip else "off"]
 	_info.text = s
 	_wx_lbl.text = "%s%s" % [weather.state_name(), "  (locked)" if weather.locked else "  (auto)"]

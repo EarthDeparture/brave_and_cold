@@ -37,6 +37,8 @@ var needs: Needs
 var inv: Inventory
 var actions: Array = []   # action-menu lines
 var action_sel := 0
+var action_t := -1.0       # hold-to-act progress 0..1, -1 = none
+var action_label := ""
 var rifle_up := false
 var kills := 0
 var show_monitor := true
@@ -140,6 +142,7 @@ func _draw_ui() -> void:
 	_draw_messages(sz, k)
 	_draw_actions(sz, k)
 	_draw_crosshair(sz, k)
+	_draw_action(sz, k)
 	if player.struggling:
 		_draw_struggle(sz, k)
 	if show_dev:
@@ -252,6 +255,16 @@ func _draw_crosshair(sz: Vector2, k: float) -> void:
 		_ui.draw_circle(c, 1.5, col)
 	else:
 		_ui.draw_circle(c, 1.6 * maxf(k, 1.0), col)
+
+
+func _draw_action(sz: Vector2, k: float) -> void:
+	if action_t < 0.0:
+		return
+	var c := sz * 0.5
+	var r := 30.0 * k
+	_ui.draw_arc(c, r, 0.0, TAU, 48, Color(0, 0, 0, 0.55), 7.0 * k, true)
+	_ui.draw_arc(c, r, -PI * 0.5, -PI * 0.5 + TAU * clampf(action_t, 0.0, 1.0), 48, DZ.ACCENT, 5.0 * k, true)
+	DZ.text(_ui, action_label, Vector2(c.x - 160.0 * k, c.y + r + 26.0 * k), int(20.0 * k), DZ.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 320.0 * k)
 
 
 func _draw_struggle(sz: Vector2, k: float) -> void:

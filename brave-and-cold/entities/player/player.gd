@@ -44,6 +44,7 @@ var health := 100.0
 var dead := false
 var death_cause := ""
 var struggling := false
+var speed_mult := 1.0  # encumbrance, set by GameWorld from Inventory.speed_mult()
 var god := false
 var noclip := false
 var noclip_speed := 14.0
@@ -194,7 +195,7 @@ func _move(delta: float) -> void:
 	sprinting = want_sprint and moving
 	var base := CROUCH if crouching else (SPRINT if sprinting else WALK)
 	var tier: int = snow.tier_at(position.x, position.z)
-	speed_now = base * SnowField.PLAYER_SPEED[tier] if moving else 0.0
+	speed_now = base * SnowField.PLAYER_SPEED[tier] * speed_mult if moving else 0.0
 	if moving:
 		var step := dir.normalized() * speed_now * delta
 		var np := position + step

@@ -289,6 +289,7 @@ func _process(delta: float) -> void:
 	body.metabolism_mult = needs.metabolism_mult()
 	body.update(gs, clock.ambient_c(), wind, player.is_sheltered(), fw, player.activity, 0.0 if player.is_sheltered() else weather.precip * 0.05, false)
 	needs.update(gs, player.activity, body.core)
+	_act_update(delta, Input.is_key_pressed(KEY_E))
 	var sd := needs.damage_per_s()
 	if sd > 0.0 and not player.dead:
 		player.hurt(sd * delta, 'Died of thirst' if needs.water <= 0.0 else 'Starved to death')
@@ -711,7 +712,7 @@ func _update_prompt() -> void:
 			var hh: Hut = hu
 			var hd: float = hh.tackle_world_pos().distance_to(player.position)
 			if hd < 1.8:
-				cands.append({'d': hd, 'text': 'Search tackle box', 'act': func() -> void:
+				cands.append({'d': hd, 'text': 'Search tackle box', 'hold': 2.0, 'act': func() -> void:
 					hh.crate_looted = true
 					inv.add('matches', 2)
 					inv.add('beans', 1)
@@ -739,10 +740,10 @@ func _update_prompt() -> void:
 					inv.remove("wood")
 					cb.add_wood()
 					_say("Added firewood")},
-			{"pos": cb.stove_world_pos(), "r": 1.7, "text": "Cook meat", "hide": not (cb.is_lit() and inv.count('venison_raw') > 0), "act": func() -> void:
+			{"pos": cb.stove_world_pos(), "r": 1.7, "text": "Cook meat", "hold": 3.0, "hide": not (cb.is_lit() and inv.count('venison_raw') > 0), "act": func() -> void:
 				var n := inv.cook_all()
 				_say('Cooked %d venison' % n)},
-			{"pos": cb.stove_world_pos(), "r": 1.7, "text": "Drink melted snow", "hide": not cb.is_lit() or needs.water > 95.0, "act": func() -> void:
+			{"pos": cb.stove_world_pos(), "r": 1.7, "text": "Drink melted snow", "hold": 4.0, "hide": not cb.is_lit() or needs.water > 95.0, "act": func() -> void:
 				needs.drink(35.0)
 				_say('Drank melted snow (+35 water)')},
 			{"pos": cb.woodpile_world_pos(), "r": 1.9, "text": "Take firewood (%d left)" % cb.wood_pile, "act": func() -> void:
@@ -751,7 +752,7 @@ func _update_prompt() -> void:
 					_say("+1 firewood")},
 		]
 		if not cb.crate_looted:
-			items.append({"pos": cb.crate_world_pos(), "r": 1.7, "text": "Search crate", "act": func() -> void:
+			items.append({"pos": cb.crate_world_pos(), "r": 1.7, "text": "Search crate", "hold": 3.0, "act": func() -> void:
 				cb.crate_looted = true
 				inv.add("matches", 4)
 				inv.add("flare", 1)
@@ -788,17 +789,17 @@ func _update_prompt() -> void:
 				else:
 					_say('No firewood')})
 			if cfire.is_lit() and inv.count('venison_raw') > 0 and cd < 1.8:
-				cands.append({"d": cd - 0.01, "text": "Cook meat over fire", "act": func() -> void:
+				cands.append({"d": cd - 0.01, "text": "Cook meat over fire", "hold": 3.0, "act": func() -> void:
 					_say('Cooked %d venison' % inv.cook_all())})
 			if cfire.is_lit() and needs.water < 90.0 and cd < 1.8:
-				cands.append({"d": cd + 0.01, "text": "Melt snow and drink", "act": func() -> void:
+				cands.append({"d": cd + 0.01, "text": "Melt snow and drink", "hold": 4.0, "act": func() -> void:
 					needs.drink(35.0)
 					_say('Drank melted snow (+35 water)')})
 	for dr in deer:
 		if is_instance_valid(dr) and dr.state == Deer.State.DEAD and not dr.harvested:
 			var dd: float = dr.global_position.distance_to(player.position)
 			if dd < 2.4:
-				cands.append({"d": dd, "text": "Harvest deer (+%d venison)" % Deer.MEAT_YIELD, "act": func() -> void:
+				cands.append({"d": dd, "text": "Harvest deer (+%d venison)" % Deer.MEAT_YIELD, "hold": 6.0, "kcal": 40.0, "act": func() -> void:
 					dr.harvested = true
 					inv.add('venison_raw', Deer.MEAT_YIELD)
 					dr.queue_free()
@@ -842,9 +843,67 @@ func _update_prompt() -> void:
 	info += '   Cal %d (%s)  Water %d%% (%s)' % [int(needs.calories), needs.hunger_state(), int(needs.water), needs.thirst_state()]
 	if inv.count('rifle') > 0:
 		info += '   [%s] ammo %d' % ['RIFLE' if rifle_up else 'hatchet', inv.count('ammo')]
+	info += '   Wt %.1f/%d kg' % [inv.total_weight(), int(Inventory.WEIGHT_SOFT)]
 	hud.info = info
 	hud.rifle_up = rifle_up
+	player.speed_mult = inv.speed_mult()
 	hud.kills = _count_kills()
+
+
+# ---- ActionRunner: hold-to-act with progress ring. Candidates may carry "hold" (s), "kcal", "noise" (m), "label".
+var _act: Dictionary = {}
+var _act_t := 0.0
+var _act_hold := 0.0
+var _act_pos := Vector3.ZERO
+var _act_hp := 100.0
+
+
+func _act_begin(c: Dictionary) -> void:
+	var hold := float(c.get("hold", 0.0))
+	if hold <= 0.0:
+		(c["act"] as Callable).call()
+		return
+	_act = c
+	_act_t = 0.0
+	_act_hold = hold
+	_act_pos = player.position
+	_act_hp = player.health
+	if float(c.get("noise", 0.0)) > 0.0:
+		noise_bus.emit_noise(player.position, float(c["noise"]), player)
+
+
+func _act_cancel(msg := "") -> void:
+	_act = {}
+	_act_t = 0.0
+	if hud != null:
+		hud.action_t = -1.0
+	if msg != "":
+		_say(msg)
+
+
+## Advance the running action. held = action key still down. Cancels on release, movement, damage, struggle.
+func _act_update(delta: float, held: bool) -> void:
+	if _act.is_empty():
+		if hud != null:
+			hud.action_t = -1.0
+		return
+	var moved := Vector2(player.position.x - _act_pos.x, player.position.z - _act_pos.z).length() > 0.6
+	if not held:
+		_act_cancel("Hold E to finish")
+		return
+	if moved or player.dead or player.struggling or player.ui_open or player.health < _act_hp - 0.01:
+		_act_cancel("Interrupted")
+		return
+	_act_t += delta
+	hud.action_t = _act_t / _act_hold
+	hud.action_label = String(_act.get("label", String(_act.get("text", "")).split(" (")[0]))
+	if _act_t >= _act_hold:
+		var c := _act
+		_act_cancel()
+		var kc := float(c.get("kcal", 0.0))
+		if kc > 0.0:
+			needs.calories = maxf(0.0, needs.calories - kc)
+		(c["act"] as Callable).call()
 
 
 func _unhandled_input(e: InputEvent) -> void:
@@ -877,7 +936,7 @@ func _unhandled_input(e: InputEvent) -> void:
 	if not (e is InputEventKey and e.pressed and not e.echo):
 		return
 	if e.keycode == KEY_E and not _cur.is_empty():
-		(_cur["act"] as Callable).call()
+		_act_begin(_cur)
 	elif e.keycode == KEY_V and inv != null:
 		_throw_flare()
 	elif e.keycode == KEY_B and inv != null:
@@ -1116,7 +1175,7 @@ func _attack() -> void:
 	var axe := inv.count("axe") > 0
 	_attack_cd = 0.9 if axe else 0.7
 	viewmodel.swing(axe)
-	var dmg := AXE_DAMAGE if axe else FIST_DAMAGE
+	var dmg := (AXE_DAMAGE * lerpf(0.5, 1.0, inv.condition("axe")) if axe else FIST_DAMAGE)
 	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_AXE if axe else 10.0, player)
 	await get_tree().create_timer(0.27 if axe else 0.14).timeout  # damage lands at swing impact, not at click
 	if player.dead:
@@ -1134,6 +1193,8 @@ func _attack() -> void:
 			best = n
 	if best != null:
 		best.call("hit", dmg, player.position)
+		if axe:
+			inv.wear("axe", 0.004)
 		audio.hit(best.global_position + Vector3(0, 1.0, 0))
 		_say("Hit!")
 	else:
@@ -1353,7 +1414,7 @@ func save_game() -> bool:
 		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
 		'body': {'core': body.core, 'wet': body.wetness},
 		'needs': {'cal': needs.calories, 'water': needs.water},
-		'inv': {'counts': inv.counts, 'worn': inv.equipped_body, 'rifle_up': rifle_up},
+		'inv': {'counts': inv.counts, 'worn': inv.equipped_body, 'rifle_up': rifle_up, 'cond': inv.cond},
 		'cabins': cabs,
 		'fires': fires,
 		'wolves': _alive_list(wolves),
@@ -1431,6 +1492,8 @@ func _apply_save(sv: Dictionary) -> void:
 	inv.needs = needs
 	for k in sv['inv']['counts']:
 		inv.add(String(k), int(sv['inv']['counts'][k]))
+	for k in sv['inv'].get('cond', {}):
+		inv.cond[String(k)] = float(sv['inv']['cond'][k])
 	if String(sv['inv']['worn']) != '':
 		inv.use(String(sv['inv']['worn']))
 	rifle_up = bool(sv['inv']['rifle_up']) and inv.count('rifle') > 0

@@ -18,11 +18,15 @@ const ITEMS := {
 const KIND_ORDER := ["weapon", "tool", "ammo", "clothing", "food", "fuel", "misc"]
 const CAPACITY := 24          # backpack cells
 const EQUIP_ITEMS := ["rifle", "axe"]   # live in equipment slots, not backpack cells
+const WEIGHTS := {"wood": 1.2, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6}
+const WEIGHT_SOFT := 30.0   # kg carried before you slow down
+const WEIGHT_HARD := 45.0   # kg hard cap (cannot pick up more)
 const BASE_WARMTH := 0.25
 const BASE_WINDPROOF := 0.1
 const BASE_WATERPROOF := 0.1
 
 var counts: Dictionary = {}
+var cond: Dictionary = {}       # id -> 0..1 condition for tools/weapons (missing = 1.0)
 var equipped_body: String = ""
 var body: BodyTemperature
 var needs: Needs
@@ -34,6 +38,34 @@ func _init(b: BodyTemperature = null) -> void:
 
 static func stack_max(id: String) -> int:
 	return int(ITEMS[id].get("stack", 1)) if ITEMS.has(id) else 1
+
+
+static func weight_of(id: String) -> float:
+	return float(WEIGHTS.get(id, 0.5))
+
+
+## Total carried weight in kg (backpack + worn + equipment slots).
+func total_weight() -> float:
+	var w := 0.0
+	for id in counts.keys():
+		w += weight_of(String(id)) * float(counts[id])
+	return w
+
+
+## Movement multiplier from encumbrance: 1.0 up to WEIGHT_SOFT, easing to 0.6 at WEIGHT_HARD.
+func speed_mult() -> float:
+	return clampf(remap(total_weight(), WEIGHT_SOFT, WEIGHT_HARD, 1.0, 0.6), 0.6, 1.0)
+
+
+func condition(id: String) -> float:
+	return float(cond.get(id, 1.0))
+
+
+## Wear a tool by amt (0..1 fraction). Returns remaining condition.
+func wear(id: String, amt: float) -> float:
+	var c := clampf(condition(id) - amt, 0.0, 1.0)
+	cond[id] = c
+	return c
 
 
 static func kind_of(id: String) -> String:
@@ -73,6 +105,8 @@ func slots_used() -> int:
 func can_add(id: String, n: int = 1) -> bool:
 	if EQUIP_ITEMS.has(id):
 		return true
+	if total_weight() + weight_of(id) * float(n) > WEIGHT_HARD:
+		return false
 	var c := counts.duplicate()
 	c[id] = int(c.get(id, 0)) + n
 	return stacks_for(c, equipped_body).size() <= CAPACITY
@@ -92,6 +126,7 @@ func remove(id: String, n: int = 1) -> bool:
 	counts[id] = count(id) - n
 	if counts[id] <= 0:
 		counts.erase(id)
+		cond.erase(id)
 		if equipped_body == id:
 			_apply("")
 	return true
