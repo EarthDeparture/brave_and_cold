@@ -120,21 +120,35 @@ func apply_felled(keys: Array) -> Array:
 
 ## Push a circle (x,z,r) out of any trunk it overlaps. Returns corrected xz.
 func resolve_trunks(x: float, z: float, r: float) -> Vector2:
-	var p := Vector2(x, z)
+	var px := x
+	var pz := z
 	var cx := int(floor(x / TRUNK_CELL))
 	var cz := int(floor(z / TRUNK_CELL))
-	for oz in range(-1, 2):
-		for ox in range(-1, 2):
+	var reach := r + 0.7                      # max trunk radius is ~0.6 m
+	var lx := x - float(cx) * TRUNK_CELL
+	var lz := z - float(cz) * TRUNK_CELL
+	var ox0 := -1 if lx < reach else 0
+	var ox1 := 1 if lx > TRUNK_CELL - reach else 0
+	var oz0 := -1 if lz < reach else 0
+	var oz1 := 1 if lz > TRUNK_CELL - reach else 0
+	for oz in range(oz0, oz1 + 1):
+		for ox in range(ox0, ox1 + 1):
 			var arr = _trunks.get(Vector2i(cx + ox, cz + oz))
 			if arr == null:
 				continue
 			for t: Vector3 in (arr as Array):
-				var d := p - Vector2(t.x, t.y)
+				var dx := px - t.x
+				var dz := pz - t.y
 				var minr: float = t.z + r
-				var l := d.length()
-				if l < minr:
-					p = Vector2(t.x, t.y) + (d / maxf(l, 0.0001)) * minr if l > 0.0001 else p + Vector2(minr, 0)
-	return p
+				var d2 := dx * dx + dz * dz
+				if d2 < minr * minr:
+					var l := sqrt(d2)
+					if l > 0.0001:
+						px = t.x + dx / l * minr
+						pz = t.y + dz / l * minr
+					else:
+						px += minr
+	return Vector2(px, pz)
 
 
 func build(t: Terrain3D, seed_value: int = 1337) -> void:

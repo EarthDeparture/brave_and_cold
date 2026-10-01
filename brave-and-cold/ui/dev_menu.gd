@@ -62,6 +62,8 @@ func setup(w: Node) -> void:
 		_weartest()
 	if "p6test=1" in ua:
 		_p6test()
+	if "zperf=1" in ua:
+		_zperftest()
 
 
 func _selftest() -> void:
@@ -1404,4 +1406,71 @@ func _p6test() -> void:
 	print("P6TEST weight=", inv.total_weight(), " ", ok2)
 	fails += 0 if ok2 else 1
 	print("P6TEST failures=", fails)
+	get_tree().quit()
+
+
+## Benchmark: wall-clock frame times (Performance.TIME_PROCESS only refreshes ~1 Hz, so it is useless per frame).
+## Engine.max_fps is lifted so the loop runs as fast as the work allows. Returns [mean, median, p95, max] ms.
+func _zp_sample(frames: int) -> Array:
+	var v: Array = []
+	await get_tree().process_frame
+	var last := Time.get_ticks_usec()
+	for k in range(frames):
+		await get_tree().process_frame
+		var now := Time.get_ticks_usec()
+		v.append(float(now - last) / 1000.0)
+		last = now
+	var sum := 0.0
+	for x in v:
+		sum += float(x)
+	v.sort()
+	return [sum / float(v.size()), float(v[v.size() / 2]), float(v[int(v.size() * 0.95)]), float(v[v.size() - 1])]
+
+
+func _zp_spawn(zs: Array, n: int, rmin: float, rspan: float, base: Vector3, seed0: int) -> void:
+	var terr: Terrain3D = world.get("terrain")
+	while zs.size() < n:
+		var i := zs.size()
+		var a := float(i) * 2.399963
+		var r := rmin + rspan * sqrt(float(i + 1) / float(maxi(n, 1)))
+		var x := base.x + cos(a) * r
+		var zz := base.z + sin(a) * r
+		var h: float = terr.data.get_height(Vector3(x, 0.0, zz))
+		if is_nan(h):
+			h = base.y - 1.6
+		var nz: Zombie = world.call("_add_zombie", Vector3(x, h, zz), seed0 + i)
+		nz.hit(0.0001, base)
+
+
+func _zp_clear(zs: Array) -> void:
+	for z in zs:
+		if is_instance_valid(z):
+			z.queue_free()
+	zs.clear()
+	await get_tree().process_frame
+
+
+func _zperftest() -> void:
+	await get_tree().create_timer(3.0).timeout
+	Engine.max_fps = 0
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	player.god = true
+	var zs: Array = world.get("zombies")
+	await _zp_clear(zs)
+	var base: Vector3 = player.position
+	var s0: Array = await _zp_sample(300)
+	var b0: float = s0[0]
+	print("ZPERF baseline n=0 mean=%.2f med=%.2f p95=%.2f max=%.2f" % [s0[0], s0[1], s0[2], s0[3]])
+	for n: int in [100, 400, 800, 1600]:
+		_zp_spawn(zs, n, 4.0, 46.0, base, 700)
+		await get_tree().create_timer(1.5).timeout
+		var s: Array = await _zp_sample(300)
+		print("ZPERF spread n=", n, " mean=%.2f med=%.2f p95=%.2f max=%.2f  us_per_zombie=%.1f" % [s[0], s[1], s[2], s[3], (s[0] - b0) * 1000.0 / float(n)])
+	for n: int in [40, 160, 400]:
+		await _zp_clear(zs)
+		_zp_spawn(zs, n, 6.0, 9.0, base, 800)
+		var s1: Array = await _zp_sample(60)
+		var s2: Array = await _zp_sample(240)
+		print("ZPERF near n=", n, " approach mean=%.2f med=%.2f max=%.2f | piled mean=%.2f med=%.2f max=%.2f  us_per_zombie(approach)=%.1f" % [s1[0], s1[1], s1[3], s2[0], s2[1], s2[3], (s1[0] - b0) * 1000.0 / float(n)])
+	print("ZPERF done")
 	get_tree().quit()

@@ -17,6 +17,15 @@ const DOOR_BASH_DPS := 10.0
 const CORPSE_LIFE_S := 300.0
 
 static var night_factor := 0.0
+static var prof_on := false
+static var dbg_skip_anim := false
+static var dbg_skip_move := false
+static var prof: PackedFloat64Array = PackedFloat64Array([0, 0, 0, 0, 0, 0, 0, 0])
+static var _mats: Array[StandardMaterial3D] = []     # shared tints (batching) instead of one material per zombie
+static var _scw_frame := -1
+static var _scw_val: Node3D = null
+const AI_EVERY_NEAR := 2                              # 20-60 m: brain+move every 2nd frame
+const AI_EVERY_FAR := 6                               # > 60 m: every 6th frame
 
 var terrain: Terrain3D
 var snow: SnowField
@@ -38,6 +47,14 @@ var _legs: Array[Node3D] = []
 var _model: Node3D
 var _rng := RandomNumberGenerator.new()
 var _dead_t := 0.0
+var _id := 0
+var _bus: NoiseBus
+var _acc := 0.0
+var _lod := 0
+var _hx := 1e9
+var _hz := 1e9
+var _hcache := 0.0
+var _mcache := 1.0
 
 
 func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, bus: NoiseBus, seed_value: int) -> void:
@@ -47,15 +64,23 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	forest = f
 	cabins = cbs
 	_rng.seed = seed_value
-	bus.noise.connect(_on_noise)
+	_id = seed_value
+	_bus = bus
+	bus.register(self)
 	_model = (load(MODEL) as PackedScene).instantiate()
 	add_child(_model)
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.roughness = 1.0
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	var k := _rng.randf_range(0.75, 1.15)
-	mat.albedo_color = Color(k, k * _rng.randf_range(0.92, 1.05), k * _rng.randf_range(0.9, 1.08))
+	if _mats.is_empty():
+		var mr := RandomNumberGenerator.new()
+		mr.seed = 4242
+		for q in 6:
+			var m := StandardMaterial3D.new()
+			m.vertex_color_use_as_albedo = true
+			m.roughness = 1.0
+			m.cull_mode = BaseMaterial3D.CULL_DISABLED
+			var kk := 0.75 + 0.4 * float(q) / 5.0
+			m.albedo_color = Color(kk, kk * mr.randf_range(0.92, 1.05), kk * mr.randf_range(0.9, 1.08))
+			_mats.append(m)
+	var mat: StandardMaterial3D = _mats[_rng.randi() % _mats.size()]
 	for mi in _model.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).material_override = mat
 	for n in ["l", "r"]:
@@ -67,13 +92,18 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	_pick_wander()
 
 
-func _on_noise(pos: Vector3, radius: float, _source: Object) -> void:
+func _exit_tree() -> void:
+	if _bus != null:
+		_bus.unregister(self)
+
+
+## Called by NoiseBus.emit_noise for listeners already inside the radius.
+func on_noise(pos: Vector3, _radius: float, _source: Object) -> void:
 	if state == State.DEAD:
 		return
-	if global_position.distance_to(pos) <= radius:
-		_target = pos
-		if state != State.CHASE:
-			_set_state(State.INVESTIGATE)
+	_target = pos
+	if state != State.CHASE:
+		_set_state(State.INVESTIGATE)
 
 
 func _set_state(s: State) -> void:
@@ -87,11 +117,17 @@ func _pick_wander() -> void:
 	_target = global_position + Vector3(cos(a) * r, 0.0, sin(a) * r)
 
 
+## Which closed building holds the player. Computed once per frame for all zombies.
 func _shut_cabin_with_player() -> Cabin:
-	for cb in cabins:
-		if cb.contains_xz(player.position.x, player.position.z) and not cb.door_open:
-			return cb
-	return null
+	var f := Engine.get_process_frames()
+	if f != _scw_frame:
+		_scw_frame = f
+		_scw_val = null
+		for cb in cabins:
+			if cb.contains_xz(player.position.x, player.position.z) and not cb.door_open:
+				_scw_val = cb
+				break
+	return _scw_val as Cabin
 
 
 func _can_see_player() -> bool:
@@ -138,11 +174,23 @@ func _process(delta: float) -> void:
 		if _dead_t > CORPSE_LIFE_S:
 			queue_free()
 		return
+	var pp := player.position
+	var gx := pp.x - position.x
+	var gz := pp.z - position.z
+	var d2 := gx * gx + gz * gz
+	_lod = 0 if d2 < 400.0 else (1 if d2 < 3600.0 else 2)
+	if _lod > 0:
+		_acc += delta
+		var every := AI_EVERY_NEAR if _lod == 1 else AI_EVERY_FAR
+		if (Engine.get_process_frames() + _id) % every != 0:
+			return
+		delta = _acc
+		_acc = 0.0
 	_state_t += delta
 	_cd = maxf(0.0, _cd - delta)
 	_stagger = maxf(0.0, _stagger - delta)
-	var pp := player.position
-	var dist := Vector2(pp.x - global_position.x, pp.z - global_position.z).length()
+	var dist := sqrt(d2)
+	var _t0 := Time.get_ticks_usec() if prof_on else 0
 	var want := 0.0
 	var sees := _can_see_player()
 	if sees:
@@ -152,6 +200,9 @@ func _process(delta: float) -> void:
 			_set_state(State.CHASE)
 	else:
 		_last_seen_t += delta
+	if prof_on:
+		prof[0] += float(Time.get_ticks_usec() - _t0)
+		_t0 = Time.get_ticks_usec()
 	match state:
 		State.IDLE:
 			var dd := Vector2(_target.x - global_position.x, _target.z - global_position.z).length()
@@ -188,8 +239,19 @@ func _process(delta: float) -> void:
 				_set_state(State.INVESTIGATE)
 	if _stagger > 0.0:
 		want = 0.0
-	_move(want, delta)
-	_animate(delta)
+	if prof_on:
+		prof[1] += float(Time.get_ticks_usec() - _t0)
+		_t0 = Time.get_ticks_usec()
+	if not dbg_skip_move:
+		_move(want, delta)
+	if prof_on:
+		prof[2] += float(Time.get_ticks_usec() - _t0)
+		_t0 = Time.get_ticks_usec()
+	if _lod <= 1 and not dbg_skip_anim:
+		_animate(delta)
+	if prof_on:
+		prof[3] += float(Time.get_ticks_usec() - _t0)
+		prof[4] += 1.0
 
 
 func _face(p: Vector3, delta: float, rate: float) -> void:
@@ -199,23 +261,42 @@ func _face(p: Vector3, delta: float, rate: float) -> void:
 
 func _move(want: float, delta: float) -> void:
 	var pos := global_position
-	var mult := snow.zombie_speed_mult(pos.x, pos.z)
+	var mx := pos.x - _hx
+	var mz := pos.z - _hz
+	if mx * mx + mz * mz > 0.16:            # height + snow tier only re-sampled after 0.4 m of travel
+		var _th := Time.get_ticks_usec() if prof_on else 0
+		_hx = pos.x
+		_hz = pos.z
+		var hq: float = terrain.data.get_height(Vector3(pos.x, 0.0, pos.z))
+		_hcache = hq
+		_mcache = snow.zombie_speed_mult(pos.x, pos.z)
+		if prof_on:
+			prof[6] += float(Time.get_ticks_usec() - _th)
+	var mult := _mcache
 	speed_now = lerpf(speed_now, want * mult, minf(1.0, delta * 5.0))
 	if speed_now > 0.03:
 		_face(_target, delta, 4.0)
 		var fwd := Vector3(-sin(rotation.y), 0.0, -cos(rotation.y))
 		var np := pos + fwd * speed_now * delta
 		np.y = pos.y
+		var _tm := Time.get_ticks_usec() if prof_on else 0
 		if forest != null:
 			var q := forest.resolve_trunks(np.x, np.z, 0.35)
 			np.x = q.x
 			np.z = q.y
+		if prof_on:
+			prof[5] += float(Time.get_ticks_usec() - _tm)
+			_tm = Time.get_ticks_usec()
 		for cb in cabins:
+			if absf(cb.position.x - np.x) > 9.0 or absf(cb.position.z - np.z) > 9.0:
+				continue
 			var q2: Vector2 = cb.resolve(np.x, np.z, 0.4)
 			np.x = q2.x
 			np.z = q2.y
+		if prof_on:
+			prof[7] += float(Time.get_ticks_usec() - _tm)
 		pos = np
-	var h: float = terrain.data.get_height(Vector3(pos.x, 0.0, pos.z))
+	var h: float = _hcache
 	if not is_nan(h):
 		pos.y = lerpf(pos.y, h, minf(1.0, delta * 14.0))
 	global_position = pos
