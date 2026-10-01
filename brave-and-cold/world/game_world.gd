@@ -14,6 +14,9 @@ var clock := GameClock.new()
 var weather := Weather.new()
 var snowfall: SnowFall
 var road: RoadNet
+var huts: Array = []
+var colliders: Array = []
+var hut_sites: Array = []
 var body := BodyTemperature.new()
 var snow := SnowField.new()
 var noise_bus := NoiseBus.new()
@@ -49,10 +52,19 @@ func _ready() -> void:
 	add_child(road)
 	if opts.get('road', '1') == '1':
 		road.plan()
+	if road.points.size() > 40 and opts.get('huts', '1') == '1':
+		var wimg := MapIO.load_png('res://data/maps/valley_b/water_mask.png')
+		wimg.convert(Image.FORMAT_L8)
+		hut_sites = Hut.find_sites(terrain, road, wimg, int(opts.get('hutn', 3)))
+		print('HUT_SITES ', hut_sites.size(), ' ', hut_sites)
 	if opts.get("trees", "1") == "1":
 		forest = ForestScatter.new()
 		add_child(forest)
-		forest.exclude = func(x: float, z: float) -> bool: return road.is_near(x, z)
+		forest.exclude = func(x: float, z: float) -> bool:
+			for hs in hut_sites:
+				if absf(x - float(hs['x'])) < 7.0 and absf(z - float(hs['z'])) < 7.0:
+					return true
+			return road.is_near(x, z)
 		forest.build(terrain)
 	road.build_mesh(terrain)
 	road.build_props(terrain)
@@ -108,6 +120,7 @@ func _ready() -> void:
 		sp = Vector2(float(sv['player']['x']), float(sv['player']['z']))
 	player.place(sp.x, sp.y)
 	_place_cabin(home)
+	_build_huts()
 	if not opts.has("wolftest") and not opts.has("zombietest") and not opts.has("deertest"):
 		if loading:
 			_restore_creatures(sv)
@@ -117,7 +130,14 @@ func _ready() -> void:
 		if not loading:
 			_spawn_zombies(int(opts.get("zombies", 10)), home)
 			_spawn_deer(int(opts.get("deer", 6)), home)
-	player.cabins = cabins
+	player.cabins = colliders
+	if opts.has('hutpos') and not huts.is_empty():
+		var hu0: Hut = huts[clampi(int(opts['hutpos']), 0, huts.size() - 1)]
+		var hwp: Vector3 = hu0.to_global(Vector3(float(opts.get('hutx', 0.0)), 0.0, float(opts.get('hutd', 6.0))))
+		player.place(hwp.x, hwp.z)
+		var hdir: Vector3 = hu0.global_position - hwp
+		opts['yaw'] = rad_to_deg(atan2(-hdir.x, -hdir.z))
+		opts['pitch'] = -4.0
 	if not cabins.is_empty():
 		if opts.has("stove"):
 			cabins[0].add_wood()
@@ -131,7 +151,7 @@ func _ready() -> void:
 			player.yaw = atan2(-(st.x - wp.x), -(st.z - wp.z))
 			player.pitch = deg_to_rad(-12.0)
 	snow.interior_check = func(x: float, z: float) -> bool:
-		for cb in cabins:
+		for cb in colliders:
 			if cb.contains_xz(x, z):
 				return true
 		return false
@@ -415,6 +435,19 @@ func _place_cabin(spawn: Vector2) -> void:
 	print("CABIN no site found")
 
 
+func _build_huts() -> void:
+	for hs in hut_sites:
+		var h := Hut.new()
+		add_child(h)
+		if h.setup(terrain, float(hs['x']), float(hs['z']), float(hs['yaw'])):
+			huts.append(h)
+			print('HUT at ', Vector2(float(hs['x']), float(hs['z'])))
+		else:
+			h.queue_free()
+	colliders = cabins.duplicate()
+	colliders.append_array(huts)
+
+
 func _site_ok(x: float, z: float, water: Image) -> bool:
 	var hs: Array[float] = []
 	for ox in [-5.0, 0.0, 5.0]:
@@ -642,6 +675,17 @@ func _update_prompt() -> void:
 	_ensure_gear()
 	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
 	var cands: Array = []
+	for hu in huts:
+		if not hu.crate_looted:
+			var hh: Hut = hu
+			var hd: float = hh.tackle_world_pos().distance_to(player.position)
+			if hd < 1.8:
+				cands.append({'d': hd, 'text': 'Search tackle box', 'act': func() -> void:
+					hh.crate_looted = true
+					inv.add('matches', 2)
+					inv.add('beans', 1)
+					inv.add('flare', 1)
+					_say('Found: 2 matches, beans, flare')})
 	for cb in cabins:
 		var stove_text := "Add wood to stove (%d)" % inv.count("wood")
 		if not cb.is_lit():
@@ -933,7 +977,7 @@ func _add_wolf(p: Vector3, idx: int, bear := false) -> Wolf:
 	var w: Wolf = Bear.new() if bear else Wolf.new()
 	add_child(w)
 	w.global_position = p
-	w.setup(terrain, snow, player, forest, cabins, noise_bus, 1000 + idx)
+	w.setup(terrain, snow, player, forest, colliders, noise_bus, 1000 + idx)
 	if bear:
 		bears.append(w)
 	else:
@@ -1027,7 +1071,7 @@ func _add_zombie(p: Vector3, idx: int) -> Zombie:
 	add_child(z)
 	z.global_position = p
 	z.rotation.y = randf() * TAU
-	z.setup(terrain, snow, player, forest, cabins, noise_bus, idx)
+	z.setup(terrain, snow, player, forest, colliders, noise_bus, idx)
 	zombies.append(z)
 	return z
 
