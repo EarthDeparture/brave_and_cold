@@ -56,6 +56,8 @@ func setup(w: Node) -> void:
 		_huntest()
 	if "gathertest=1" in ua:
 		_gathertest()
+	if "crafttest=1" in ua:
+		_crafttest()
 
 
 func _selftest() -> void:
@@ -627,7 +629,7 @@ func _kit() -> void:
 	var inv: Inventory = world.get("inv")
 	if inv == null:
 		return
-	for pr in [["rifle", 1], ["ammo", 40], ["axe", 1], ["knife", 1], ["parka", 1], ["sweater", 1], ["matches", 8], ["wood", 10], ["beans", 4], ["flare", 3]]:
+	for pr in [["rifle", 1], ["ammo", 40], ["axe", 1], ["knife", 1], ["bow_drill", 1], ["tinder", 3], ["kindling", 4], ["parka", 1], ["sweater", 1], ["matches", 8], ["wood", 10], ["beans", 4], ["flare", 3]]:
 		inv.add(pr[0], pr[1])
 	world.call("_say", "Dev kit added")
 
@@ -1009,4 +1011,167 @@ func _gathertest() -> void:
 	print("GATHERTEST save/restore picked=", okr)
 	fails += 0 if okr else 1
 	print("GATHERTEST failures=", fails)
+	get_tree().quit()
+
+
+func _craft_run(secs: float) -> void:
+	var t := 0.0
+	while t < secs + 0.2:
+		world.call("_craft_update", 0.1)
+		t += 0.1
+
+
+func _crafttest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	player.god = false
+	var bad := RecipeDB.validate()
+	var ok: bool = RecipeDB.all().size() >= 8 and bad.is_empty()
+	print("CRAFTTEST recipes=", RecipeDB.all().size(), " bad refs=", bad, " ok=", ok)
+	fails += 0 if ok else 1
+	# insufficient inputs
+	inv.counts.erase("reed")
+	inv.add("reed", 2)
+	var why: String = world.call("craft_start", "cordage_reed")
+	ok = why != "" and (world.get("craft_job") as Dictionary).is_empty()
+	print("CRAFTTEST blocked w/o inputs=", ok, " ", why)
+	fails += 0 if ok else 1
+	inv.add("reed", 1)
+	why = world.call("craft_start", "cordage_reed")
+	ok = why == "" and not (world.get("craft_job") as Dictionary).is_empty()
+	fails += 0 if ok else 1
+	var c0 := inv.count("cordage")
+	_craft_run(7.0)
+	ok = inv.count("cordage") == c0 and not (world.get("craft_job") as Dictionary).is_empty()
+	print("CRAFTTEST not done early=", ok)
+	fails += 0 if ok else 1
+	_craft_run(2.0)
+	ok = inv.count("cordage") == c0 + 1 and inv.count("reed") == 0 and (world.get("craft_job") as Dictionary).is_empty()
+	print("CRAFTTEST cordage from reed=", ok)
+	fails += 0 if ok else 1
+	# tool requirement + wear
+	inv.counts.erase("knife")
+	inv.cond.erase("knife")
+	inv.add("gut", 1)
+	why = world.call("craft_start", "cordage_gut")
+	ok = why.contains("Knife")
+	print("CRAFTTEST tool required=", ok, " ", why)
+	fails += 0 if ok else 1
+	inv.add("knife", 1)
+	c0 = inv.count("cordage")
+	world.call("craft_start", "cordage_gut")
+	_craft_run(7.0)
+	ok = inv.count("cordage") == c0 + 2 and inv.condition("knife") < 1.0
+	print("CRAFTTEST gut cordage + knife wear=", ok)
+	fails += 0 if ok else 1
+	# interruption by damage keeps inputs
+	inv.add("reed", 3)
+	world.call("craft_start", "cordage_reed")
+	_craft_run(1.0)
+	var god0 := player.god
+	player.god = false
+	player.hurt(4.0, "test")
+	_craft_run(0.3)
+	ok = (world.get("craft_job") as Dictionary).is_empty() and inv.count("reed") == 3
+	player.god = god0
+	print("CRAFTTEST interrupt keeps inputs=", ok)
+	fails += 0 if ok else 1
+	# station recipe
+	inv.add("venison_raw", 2)
+	why = world.call("craft_start", "dry_meat")
+	ok = why.contains("fire")
+	print("CRAFTTEST fire station required=", ok, " ", why)
+	fails += 0 if ok else 1
+	# kindling + sticks
+	inv.counts.erase("stick")
+	inv.counts.erase("thatch")
+	inv.counts.erase("kindling")
+	inv.add("stick", 3)
+	inv.add("thatch", 1)
+	world.call("craft_start", "kindling")
+	_craft_run(5.5)
+	ok = inv.count("kindling") == 2 and inv.count("stick") == 0 and inv.count("thatch") == 0
+	print("CRAFTTEST kindling=", ok)
+	fails += 0 if ok else 1
+	# campfire: kindling variant with a match
+	inv.counts.erase("wood")
+	inv.counts.erase("matches")
+	inv.add("wood", 1)
+	inv.add("matches", 1)
+	var fires: Array = world.get("campfires")
+	var f0 := fires.size()
+	world.call("_build_campfire")
+	ok = fires.size() == f0 + 1 and inv.count("wood") == 0 and inv.count("kindling") == 0 and inv.count("matches") == 0
+	var cf: Campfire = fires[fires.size() - 1]
+	ok = ok and absf(cf.fuel_s - Campfire.LOG_BURN_S * 2.0) < 1.0
+	print("CRAFTTEST campfire 1 wood + 2 kindling + match=", ok, " fuel ", cf.fuel_s)
+	fails += 0 if ok else 1
+	# bow drill: success + failure (move so the site is free)
+	for attempt in ["fail", "ok"]:
+		_tp(player.position.x + 6.0, player.position.z, Vector3.INF)
+		await get_tree().create_timer(0.8).timeout
+		inv.counts.erase("wood")
+		inv.counts.erase("matches")
+		inv.counts.erase("tinder")
+		inv.add("wood", 2)
+		inv.add("tinder", 1)
+		inv.counts.erase("bow_drill")
+		inv.cond.erase("bow_drill")
+		inv.add("bow_drill", 1)
+		world.set("drill_chance", 0.0 if attempt == "fail" else 1.0)
+		var n0 := fires.size()
+		world.call("_build_campfire")
+		for i in range(130):
+			world.call("_act_update", 0.1, true)
+		var built := fires.size() - n0
+		if attempt == "fail":
+			ok = built == 0 and inv.count("tinder") == 0 and inv.count("wood") == 2 and inv.condition("bow_drill") < 1.0
+		else:
+			ok = built == 1 and inv.count("tinder") == 0 and inv.count("wood") == 0 and inv.condition("bow_drill") < 1.0
+		print("CRAFTTEST bow drill ", attempt, "=", ok)
+		fails += 0 if ok else 1
+	world.set("drill_chance", 0.7)
+	# timed cooking at the fire just built
+	var cf2: Campfire = fires[fires.size() - 1]
+	_tp(cf2.global_position.x + 1.0, cf2.global_position.z, cf2.global_position)
+	await get_tree().create_timer(0.8).timeout
+	inv.counts.erase("venison_raw")
+	inv.counts.erase("venison_cooked")
+	inv.add("venison_raw", 2)
+	var started: int = world.call("_cook_start", cf2)
+	ok = started == 2 and inv.count("venison_raw") == 0 and cf2.cooking_count() == 2
+	print("CRAFTTEST cook starts=", ok)
+	fails += 0 if ok else 1
+	cf2.advance(600.0)
+	ok = cf2.cooking_count() == 2 and cf2.done_count() == 0
+	cf2.advance(700.0)
+	ok = ok and cf2.done_count() == 2
+	print("CRAFTTEST cook timing=", ok)
+	fails += 0 if ok else 1
+	world.call("_take_cooked", cf2)
+	ok = inv.count("venison_cooked") == 2 and cf2.cooking.is_empty()
+	print("CRAFTTEST take cooked=", ok)
+	fails += 0 if ok else 1
+	# dry meat with fire nearby (fire still lit? relight)
+	cf2.fuel_s = 3000.0
+	inv.add("venison_raw", 2)
+	world.call("_update_prompt")
+	var jr: String = world.call("craft_start", "dry_meat")
+	_craft_run(21.0)
+	ok = jr == "" and inv.count("jerky") == 2 and inv.count("venison_raw") == 0
+	print("CRAFTTEST dry meat at fire=", ok, " ", jr)
+	fails += 0 if ok else 1
+	# save list includes cooking
+	cf2.start_cook("venison_cooked")
+	var found := false
+	var gw = world
+	var data: Array = []
+	for cfx in fires:
+		data.append({"cook": cfx.cooking})
+	found = (data[data.size() - 1]["cook"] as Array).size() == 1
+	print("CRAFTTEST cooking state present for save=", found)
+	fails += 0 if found else 1
+	print("CRAFTTEST failures=", fails)
 	get_tree().quit()

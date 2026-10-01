@@ -7,7 +7,11 @@ const MAX_FUEL_S := 4.0 * 3600.0
 const HEAT_W := 480.0
 const HEAT_RADIUS := 7.0
 
+const COOK_S := 1200.0   # 20 game-minutes per piece of meat
+const SLOTS := 4
+
 var fuel_s := 0.0
+var cooking: Array = []  # [{id: cooked item id, t: game seconds left}]
 var _light: OmniLight3D
 var _flames: CPUParticles3D
 var _embers: CPUParticles3D
@@ -133,8 +137,54 @@ func heat_at(x: float, z: float) -> float:
 	return HEAT_W * f * f * (0.6 + 0.4 * minf(1.0, fuel_s / 900.0))
 
 
+func free_slots() -> int:
+	return SLOTS - cooking.size()
+
+
+func start_cook(cooked_id: String) -> bool:
+	if free_slots() <= 0:
+		return false
+	cooking.append({"id": cooked_id, "t": COOK_S})
+	return true
+
+
+func cooking_count() -> int:
+	var n := 0
+	for c in cooking:
+		if float(c["t"]) > 0.0:
+			n += 1
+	return n
+
+
+func done_count() -> int:
+	return cooking.size() - cooking_count()
+
+
+func min_left() -> float:
+	var m := 1e9
+	for c in cooking:
+		if float(c["t"]) > 0.0:
+			m = minf(m, float(c["t"]))
+	return m
+
+
+## Remove finished pieces. Returns {item id: count}.
+func take_done() -> Dictionary:
+	var out := {}
+	var keep: Array = []
+	for c in cooking:
+		if float(c["t"]) <= 0.0:
+			out[String(c["id"])] = int(out.get(String(c["id"]), 0)) + 1
+		else:
+			keep.append(c)
+	cooking = keep
+	return out
+
+
 func advance(game_s: float) -> void:
 	if fuel_s > 0.0:
+		for c in cooking:
+			c["t"] = maxf(0.0, float(c["t"]) - game_s)
 		fuel_s = maxf(0.0, fuel_s - game_s)
 		if fuel_s == 0.0:
 			_set_visual(false)

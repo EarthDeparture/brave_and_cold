@@ -62,6 +62,24 @@ static func item_color(id: String) -> Color:
 		"venison_cooked": return Color(0.52, 0.30, 0.16)
 		"sweater": return Color(0.40, 0.46, 0.52)
 		"parka": return Color(0.28, 0.40, 0.30)
+		"stick": return Color(0.45, 0.32, 0.20)
+		"kindling": return Color(0.62, 0.48, 0.28)
+		"thatch": return Color(0.72, 0.62, 0.36)
+		"tinder": return Color(0.66, 0.70, 0.52)
+		"reed": return Color(0.48, 0.44, 0.26)
+		"cordage": return Color(0.70, 0.62, 0.45)
+		"knife": return Color(0.70, 0.72, 0.74)
+		"bow_drill": return Color(0.52, 0.38, 0.22)
+		"wolf_meat_raw": return Color(0.62, 0.24, 0.24)
+		"wolf_meat_cooked": return Color(0.46, 0.28, 0.16)
+		"bear_meat_raw": return Color(0.58, 0.20, 0.22)
+		"bear_meat_cooked": return Color(0.44, 0.26, 0.14)
+		"jerky": return Color(0.40, 0.22, 0.14)
+		"fat": return Color(0.92, 0.88, 0.76)
+		"gut": return Color(0.80, 0.62, 0.60)
+		"deer_hide": return Color(0.60, 0.46, 0.30)
+		"wolf_pelt": return Color(0.52, 0.52, 0.54)
+		"bear_pelt": return Color(0.30, 0.20, 0.14)
 	return Color(0.6, 0.6, 0.6)
 
 
@@ -119,7 +137,7 @@ static func item_icon(ci: CanvasItem, id: String, r: Rect2, dim: float = 1.0) ->
 			_quad(ci, c, u * 0.95, u * 1.25, 0.0, Color(0.62, 0.64, 0.66) * Color(dim, dim, dim, 1))
 			_quad(ci, c + Vector2(0, u * 0.05), u * 0.95, u * 0.6, 0.0, col)
 			ci.draw_line(c + Vector2(-u * 0.47, -u * 0.62), c + Vector2(u * 0.47, -u * 0.62), lite, 2.0)
-		"venison_raw", "venison_cooked":
+		"venison_raw", "venison_cooked", "wolf_meat_raw", "wolf_meat_cooked", "bear_meat_raw", "bear_meat_cooked", "jerky":
 			var pts := PackedVector2Array()
 			for k in 14:
 				var a := TAU * k / 14.0
@@ -135,6 +153,47 @@ static func item_icon(ci: CanvasItem, id: String, r: Rect2, dim: float = 1.0) ->
 				c + Vector2(-u * 0.5, u * 0.85), c + Vector2(-u * 0.5, -u * 0.05), c + Vector2(-u * 0.85 * w, u * 0.15), c + Vector2(-u * 1.0 * w, -u * 0.3)]), col)
 			ci.draw_line(c + Vector2(0, -u * 0.8), c + Vector2(0, u * 0.85), dark, 2.0 if id == "parka" else 1.0)
 			ci.draw_arc(c + Vector2(0, -u * 0.8), u * 0.25, 0.0, PI, 10, dark, 3.0)
+		"stick", "kindling":
+			for k in (4 if id == "kindling" else 3):
+				var a2 := -0.5 + k * 0.28
+				var b0 := c + Vector2(-u * 0.5 + k * u * 0.3, u * 0.8)
+				ci.draw_line(b0, b0 + Vector2(sin(a2), -cos(a2)) * u * (1.5 if id == "stick" else 1.1), col, 4.0 if id == "stick" else 3.0)
+		"thatch", "reed", "tinder":
+			for k in 7:
+				var a3 := -0.5 + k * 0.17
+				var b1 := c + Vector2(-u * 0.5 + k * u * 0.17, u * 0.85)
+				var tip2 := b1 + Vector2(sin(a3), -cos(a3)) * u * (1.4 - 0.15 * (k % 3))
+				ci.draw_line(b1, tip2, col if k % 2 == 0 else dark, 2.5)
+				if id == "reed" and k % 3 == 0:
+					ci.draw_line(tip2 - Vector2(0, u * 0.1), tip2 + Vector2(0, u * 0.3), Color(0.3, 0.17, 0.08), 6.0)
+			if id == "tinder":
+				ci.draw_circle(c + Vector2(0, u * 0.2), u * 0.45, lite)
+		"cordage":
+			for k in 3:
+				ci.draw_arc(c, u * (0.35 + k * 0.17), 0.0, TAU, 20, col if k % 2 == 0 else dark, 3.0)
+		"knife":
+			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-u * 0.2, -u * 0.95), c + Vector2(u * 0.25, -u * 0.3), c + Vector2(u * 0.1, u * 0.2), c + Vector2(-u * 0.2, u * 0.2)]), col)
+			_quad(ci, c + Vector2(-u * 0.05, u * 0.6), u * 0.3, u * 0.75, 0.0, Color(0.40, 0.26, 0.16))
+		"bow_drill":
+			ci.draw_arc(c + Vector2(-u * 0.2, 0), u * 0.9, -1.2, 1.2, 14, col, 4.0)
+			ci.draw_line(c + Vector2(u * 0.3, -u * 0.8), c + Vector2(u * 0.3, u * 0.8), dark, 2.0)
+			ci.draw_line(c + Vector2(u * 0.0, u * 0.9), c + Vector2(u * 0.0, -u * 0.9), lite, 3.0)
+		"fat", "gut":
+			var pts2 := PackedVector2Array()
+			for k in 12:
+				var a4 := TAU * k / 12.0
+				pts2.append(c + Vector2(cos(a4) * u * (0.7 + 0.15 * sin(a4 * 2.0)), sin(a4) * u * (0.55 + 0.12 * cos(a4 * 3.0))))
+			ci.draw_colored_polygon(pts2, col)
+			if id == "gut":
+				ci.draw_arc(c, u * 0.35, 0.0, TAU, 12, dark, 3.0)
+		"deer_hide", "wolf_pelt", "bear_pelt":
+			var pts3 := PackedVector2Array()
+			for k in 16:
+				var a5 := TAU * k / 16.0
+				var rr := 0.95 if k % 2 == 0 else 0.78
+				pts3.append(c + Vector2(cos(a5) * u * rr, sin(a5) * u * rr * 0.8))
+			ci.draw_colored_polygon(pts3, col)
+			ci.draw_arc(c, u * 0.5, 0.2, 3.0, 10, lite, 2.0)
 		_:
 			ci.draw_rect(Rect2(c - Vector2(u, u) * 0.6, Vector2(u, u) * 1.2), col)
 

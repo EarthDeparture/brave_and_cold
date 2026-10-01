@@ -40,6 +40,7 @@ var _last_click_t := -10.0
 var _last_click_key := ""
 var _prev_mouse_mode := Input.MOUSE_MODE_CAPTURED
 var _time := 0.0
+var _craft_mode := false
 
 
 func setup(w: Node, i: Inventory, p: Player, n: Needs, b: BodyTemperature, c: GameClock, h: Hud) -> void:
@@ -366,8 +367,12 @@ func _draw_all() -> void:
 	_draw_equipment()
 	_draw_condition()
 	_draw_pack()
-	_draw_ground()
-	_draw_info()
+	_draw_tab_button()
+	if _craft_mode:
+		_draw_craft()
+	else:
+		_draw_ground()
+		_draw_info()
 	if _dragging:
 		_draw_drag()
 	elif not _menu.is_empty():
@@ -375,6 +380,68 @@ func _draw_all() -> void:
 	else:
 		_draw_tooltip()
 	_c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_tab_button() -> void:
+	var br := Rect2(Vector2(1230, 84), Vector2(230, 40))
+	var hv := br.has_point(_mouse)
+	_c.draw_rect(br, Color(0.16, 0.18, 0.14, 0.95) if hv else Color(0.09, 0.10, 0.09, 0.95))
+	_c.draw_rect(br, DZ.ACCENT if hv else DZ.EDGE, false, 1.5)
+	DZ.text(_c, "BACK TO GEAR" if _craft_mode else "CRAFTING", br.position + Vector2(0, 26), 16, DZ.ACCENT if hv else DZ.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 230.0)
+	_hits.append({"k": "btn", "r": br, "act": func() -> void:
+		_craft_mode = not _craft_mode
+		_sel = {}})
+
+
+func _draw_craft() -> void:
+	var recs := RecipeDB.all()
+	var near: bool = world._near_fire()
+	var job: Dictionary = world.craft_job
+	DZ.text(_c, "CRAFTING   (click a recipe)", Vector2(PACK_O.x, 548), 16, DZ.DIM)
+	var col_w := 408.0
+	var hover_r := {}
+	var hover_why := ""
+	for i in recs.size():
+		var r: Dictionary = recs[i]
+		var rr := Rect2(Vector2(PACK_O.x + (i / 6) * (col_w + 8.0), 560 + (i % 6) * 34), Vector2(col_w, 30))
+		var why := RecipeDB.blocked(inv, r, near)
+		var ok := why == "" and job.is_empty()
+		var hv := rr.has_point(_mouse)
+		_c.draw_rect(rr, Color(0.16, 0.18, 0.14, 0.95) if (hv and ok) else Color(0.09, 0.10, 0.09, 0.92))
+		_c.draw_rect(rr, DZ.ACCENT if ok else Color(0.30, 0.32, 0.27, 0.9), false, 1.0)
+		DZ.text(_c, String(r["name"]), rr.position + Vector2(10, 21), 16, DZ.TEXT if ok else DZ.DIM)
+		var tm := "%ds" % int(r["time_s"])
+		DZ.text(_c, tm, rr.position + Vector2(col_w - 10 - DZ.text_w(tm, 14), 21), 14, DZ.DIM)
+		if hv:
+			hover_r = r
+			hover_why = why
+		var rid: String = r["id"]
+		_hits.append({"k": "btn", "r": rr, "act": func() -> void: world.craft_start(rid)})
+	var dr := Rect2(Vector2(PACK_O.x, 768), Vector2(824, 38))
+	if not job.is_empty():
+		var jr: Dictionary = job["r"]
+		var f := clampf(float(job["t"]) / float(jr["time_s"]), 0.0, 1.0)
+		_c.draw_rect(dr, Color(0, 0, 0, 0.6))
+		_c.draw_rect(Rect2(dr.position, Vector2(dr.size.x * f, dr.size.y)), Color(0.45, 0.40, 0.18, 0.9))
+		_c.draw_rect(dr, DZ.EDGE, false, 1.0)
+		DZ.text(_c, "Crafting: %s   (click to cancel)" % String(jr["name"]), dr.position + Vector2(12, 25), 17, DZ.TEXT)
+		_hits.append({"k": "btn", "r": dr, "act": func() -> void: world.craft_cancel("Cancelled")})
+	elif not hover_r.is_empty():
+		var ins: Array = []
+		for id in hover_r["inputs"].keys():
+			ins.append("%s x%d" % [inv.name_of(String(id)), int(hover_r["inputs"][id])])
+		var outs: Array = []
+		for id in hover_r["out"].keys():
+			outs.append("%s x%d" % [inv.name_of(String(id)), int(hover_r["out"][id])])
+		var tl := ""
+		for t in hover_r.get("tools", []):
+			tl += "   Tool: " + inv.name_of(String(t))
+		if String(hover_r.get("station", "")) == "fire":
+			tl += "   Near fire"
+		DZ.text(_c, String(hover_r["desc"]), dr.position + Vector2(0, 14), 14, DZ.TEXT, HORIZONTAL_ALIGNMENT_LEFT, 824.0)
+		DZ.text(_c, "%s  ->  %s%s" % [", ".join(ins), ", ".join(outs), tl], dr.position + Vector2(0, 34), 14, DZ.ACCENT if hover_why == "" else DZ.WARN, HORIZONTAL_ALIGNMENT_LEFT, 824.0)
+		if hover_why != "":
+			DZ.text(_c, hover_why, dr.position + Vector2(824 - DZ.text_w(hover_why, 14), 14), 14, DZ.WARN)
 
 
 func _cell_bg(r: Rect2, hover: bool, selected: bool, dim_fill: bool = false) -> void:
