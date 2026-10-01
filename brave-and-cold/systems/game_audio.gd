@@ -23,7 +23,7 @@ var _step_player: AudioStreamPlayer
 
 func setup(p: Player, w: Node, wind: float) -> void:
 	var t0 := Time.get_ticks_msec()
-	for id in ['wind', 'fire', 'gunshot', 'thud', 'groan', 'howl', 'growl', 'step00', 'step01', 'step02', 'step10', 'step11', 'step12', 'step20', 'step21', 'step22']:
+	for id in ['wind', 'fire', 'gunshot', 'thud', 'groan', 'howl', 'growl', 'chop', 'crash', 'rustle', 'slice', 'step00', 'step01', 'step02', 'step10', 'step11', 'step12', 'step20', 'step21', 'step22']:
 		Sfx.get_stream(id)
 	print('AUDIO_INIT ms=', Time.get_ticks_msec() - t0)
 	player = p

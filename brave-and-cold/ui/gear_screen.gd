@@ -556,6 +556,13 @@ func _draw_pack() -> void:
 	var used := stacks.size()
 	var cap := "%d / %d" % [used, Inventory.CAPACITY]
 	DZ.text(_c, cap, Vector2(PACK_O.x + COLS * (CELL + GAP) - GAP - DZ.text_w(cap, 16), PACK_O.y - 18), 16, DZ.WARN if used >= Inventory.CAPACITY else DZ.DIM)
+	var tw := inv.total_weight()
+	var wtxt := "Weight %.1f kg   (slow over %d, max %d)" % [tw, int(Inventory.WEIGHT_SOFT), int(Inventory.WEIGHT_HARD)]
+	DZ.text(_c, wtxt, Vector2(PACK_O.x + 130, PACK_O.y - 18), 14, DZ.WARN if tw > Inventory.WEIGHT_SOFT else DZ.DIM)
+	var wbar := Rect2(Vector2(PACK_O.x + 130, PACK_O.y - 12), Vector2(300, 4))
+	_c.draw_rect(wbar, Color(0, 0, 0, 0.6))
+	_c.draw_rect(Rect2(wbar.position, Vector2(wbar.size.x * clampf(tw / Inventory.WEIGHT_HARD, 0.0, 1.0), wbar.size.y)), DZ.WARN if tw > Inventory.WEIGHT_SOFT else DZ.status_color(1.0))
+	_c.draw_rect(Rect2(wbar.position.x + wbar.size.x * Inventory.WEIGHT_SOFT / Inventory.WEIGHT_HARD, wbar.position.y - 2, 1, 8), DZ.EDGE)
 	for i in Inventory.CAPACITY:
 		var r := _pack_rect(i)
 		if i < stacks.size():
@@ -594,6 +601,9 @@ func _draw_info() -> void:
 		sub += "   (%d kcal)" % int(d["kcal"])
 	DZ.text(_c, sub, r.position + Vector2(16, 58), 14, DZ.TEXT, HORIZONTAL_ALIGNMENT_LEFT, 560.0)
 	DZ.text(_c, "Type: %s" % String(d.get("kind", "misc")).capitalize(), r.position + Vector2(16, 82), 13, DZ.DIM)
+	if d.has("shelf_h") and _sel["from"] == "pack":
+		var fr := inv.freshness(id)
+		DZ.text(_c, "Freshness %d%%" % int(fr * 100.0), r.position + Vector2(200, 82), 13, DZ.status_color(fr))
 	# buttons
 	var entries := _entries(id, _sel["from"], n, _sel.get("node"))
 	var bx := r.end.x - 12.0

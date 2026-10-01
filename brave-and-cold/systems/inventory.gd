@@ -18,13 +18,13 @@ const ITEMS := {
 	"rifle": {"name": "Hunting Rifle", "kind": "weapon", "stack": 1, "desc": "Bolt-action hunting rifle. Loud: everything for a kilometre hears it."},
 	"ammo": {"name": "Rifle Rounds", "kind": "ammo", "stack": 10, "desc": "Soft-point hunting rounds."},
 	"beans": {"name": "Canned Beans", "kind": "food", "stack": 4, "kcal": 650.0, "desc": "Tinned beans. Safe to eat cold."},
-	"venison_raw": {"name": "Raw Venison", "kind": "food", "stack": 4, "kcal": 350.0, "raw": true, "cooked": "venison_cooked", "desc": "Fresh meat. Cook it over a fire for more calories."},
-	"venison_cooked": {"name": "Cooked Venison", "kind": "food", "stack": 4, "kcal": 900.0, "desc": "Seared venison steak."},
+	"venison_raw": {"shelf_h": 30.0, "name": "Raw Venison", "kind": "food", "stack": 4, "kcal": 350.0, "raw": true, "cooked": "venison_cooked", "desc": "Fresh meat. Cook it over a fire for more calories."},
+	"venison_cooked": {"shelf_h": 72.0, "name": "Cooked Venison", "kind": "food", "stack": 4, "kcal": 900.0, "desc": "Seared venison steak."},
 	"knife": {"name": "Hunting Knife", "kind": "tool", "stack": 1, "desc": "Sharp skinning knife. Needed to skin, gut and fully butcher animals."},
-	"wolf_meat_raw": {"name": "Raw Wolf Meat", "kind": "food", "stack": 4, "kcal": 250.0, "raw": true, "cooked": "wolf_meat_cooked", "desc": "Gamey, lean. Cook it."},
-	"wolf_meat_cooked": {"name": "Cooked Wolf Meat", "kind": "food", "stack": 4, "kcal": 650.0, "desc": "Tough but filling."},
-	"bear_meat_raw": {"name": "Raw Bear Meat", "kind": "food", "stack": 4, "kcal": 300.0, "raw": true, "cooked": "bear_meat_cooked", "desc": "Rich, fatty meat. Cook it."},
-	"bear_meat_cooked": {"name": "Cooked Bear Meat", "kind": "food", "stack": 4, "kcal": 800.0, "desc": "Fatty and calorie dense."},
+	"wolf_meat_raw": {"shelf_h": 30.0, "name": "Raw Wolf Meat", "kind": "food", "stack": 4, "kcal": 250.0, "raw": true, "cooked": "wolf_meat_cooked", "desc": "Gamey, lean. Cook it."},
+	"wolf_meat_cooked": {"shelf_h": 72.0, "name": "Cooked Wolf Meat", "kind": "food", "stack": 4, "kcal": 650.0, "desc": "Tough but filling."},
+	"bear_meat_raw": {"shelf_h": 30.0, "name": "Raw Bear Meat", "kind": "food", "stack": 4, "kcal": 300.0, "raw": true, "cooked": "bear_meat_cooked", "desc": "Rich, fatty meat. Cook it."},
+	"bear_meat_cooked": {"shelf_h": 72.0, "name": "Cooked Bear Meat", "kind": "food", "stack": 4, "kcal": 800.0, "desc": "Fatty and calorie dense."},
 	"fat": {"name": "Animal Fat", "kind": "misc", "stack": 4, "desc": "Rendered fat. Future: candles, waterproofing, tinder."},
 	"gut": {"name": "Gut", "kind": "misc", "stack": 4, "desc": "Cleaned animal gut. Future: cordage, sewing."},
 	"deer_hide": {"name": "Deer Hide", "kind": "misc", "stack": 2, "desc": "Raw hide. Cure it by a fire, then sew it into clothing."},
@@ -41,13 +41,14 @@ const ITEMS := {
 	"hide_boots": {"name": "Hide Boots", "kind": "clothing", "stack": 1, "slot": "feet", "warmth": 0.08, "windproof": 0.10, "waterproof": 0.10, "desc": "Laced leather boots. Not pretty, dry-ish."},
 	"hide_leggings": {"name": "Hide Leggings", "kind": "clothing", "stack": 1, "slot": "legs", "warmth": 0.10, "windproof": 0.10, "waterproof": 0.05, "desc": "Leather leggings tied at the knee."},
 	"bear_coat": {"name": "Bear Fur Coat", "kind": "clothing", "stack": 1, "slot": "body", "warmth": 0.95, "windproof": 0.75, "waterproof": 0.45, "desc": "Heavy as sin, warmest thing you can wear. Weaker against rain than the parka."},
+	"rotten_meat": {"name": "Rotten Meat", "kind": "misc", "stack": 4, "desc": "Spoiled. Slimy and green. Do not eat it; drop it before wolves smell it on you."},
 	"sweater": {"name": "Wool Sweater", "kind": "clothing", "stack": 1, "slot": "body", "warmth": 0.55, "windproof": 0.2, "waterproof": 0.1, "desc": "Warm but lets the wind straight through."},
 	"parka": {"name": "Down Parka", "kind": "clothing", "stack": 1, "slot": "body", "warmth": 0.85, "windproof": 0.8, "waterproof": 0.6, "desc": "Heavy insulated parka. Wind and water resistant."},
 }
 const KIND_ORDER := ["weapon", "tool", "ammo", "clothing", "food", "fuel", "misc"]
 const CAPACITY := 24          # backpack cells
 const EQUIP_ITEMS := ["rifle", "axe"]   # live in equipment slots, not backpack cells
-const WEIGHTS := {"wood": 1.2, "stick": 0.15, "thatch": 0.05, "cordage": 0.05, "kindling": 0.1, "bow_drill": 0.4, "jerky": 0.2, "reed": 0.06, "tinder": 0.02, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6, "cured_hide": 1.0, "wolf_fur": 0.7, "bear_fur": 3.0, "toque": 0.1, "hide_cap": 0.3, "wolf_hat": 0.3, "hide_mitts": 0.3, "wolf_mitts": 0.3, "hide_boots": 0.8, "hide_leggings": 0.8, "bear_coat": 4.5}
+const WEIGHTS := {"wood": 1.2, "stick": 0.15, "thatch": 0.05, "cordage": 0.05, "kindling": 0.1, "bow_drill": 0.4, "jerky": 0.2, "reed": 0.06, "tinder": 0.02, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6, "cured_hide": 1.0, "wolf_fur": 0.7, "bear_fur": 3.0, "toque": 0.1, "hide_cap": 0.3, "wolf_hat": 0.3, "hide_mitts": 0.3, "wolf_mitts": 0.3, "hide_boots": 0.8, "hide_leggings": 0.8, "bear_coat": 4.5, "rotten_meat": 0.5}
 const WEIGHT_SOFT := 30.0   # kg carried before you slow down
 const WEIGHT_HARD := 45.0   # kg hard cap (cannot pick up more)
 const BASE_WARMTH := 0.25
@@ -59,6 +60,7 @@ const EXTRA_SLOTS := ["head", "legs", "hands", "feet"]
 
 var counts: Dictionary = {}
 var cond: Dictionary = {}       # id -> 0..1 condition for tools/weapons (missing = 1.0)
+var age: Dictionary = {}           # perishable id -> average age of the stack, game seconds
 var equipped_body: String = ""      # torso slot (also the one that sets the base insulation)
 var extra: Dictionary = {}          # slot (head/legs/hands/feet) -> id, adds to the torso insulation
 var body: BodyTemperature
@@ -67,6 +69,39 @@ var needs: Needs
 
 func _init(b: BodyTemperature = null) -> void:
 	body = b
+
+
+static func shelf_s(id: String) -> float:
+	return float(ITEMS[id].get("shelf_h", 0.0)) * 3600.0 if ITEMS.has(id) else 0.0
+
+
+## 1.0 fresh .. 0.0 about to spoil (always 1.0 for non-perishables).
+func freshness(id: String) -> float:
+	var s := shelf_s(id)
+	if s <= 0.0:
+		return 1.0
+	return clampf(1.0 - float(age.get(id, 0.0)) / s, 0.0, 1.0)
+
+
+## Age perishables by game seconds. A whole stack spoils at once into Rotten Meat. Returns names of spoiled items.
+func tick(game_s: float) -> Array:
+	var spoiled: Array = []
+	for id in counts.keys():
+		var s := shelf_s(String(id))
+		if s <= 0.0:
+			continue
+		age[id] = float(age.get(id, 0.0)) + game_s
+		if float(age[id]) >= s:
+			spoiled.append(String(id))
+	var names: Array = []
+	for id in spoiled:
+		var n: int = count(id)
+		names.append(name_of(id))
+		counts.erase(id)
+		cond.erase(id)
+		age.erase(id)
+		add("rotten_meat", n)
+	return names
 
 
 static func slot_of(id: String) -> String:
@@ -169,6 +204,9 @@ func count(id: String) -> int:
 
 
 func add(id: String, n: int = 1) -> void:
+	if shelf_s(id) > 0.0:
+		var old := count(id)
+		age[id] = float(age.get(id, 0.0)) * float(old) / float(old + n)   # new items are fresh: stack age averages down
 	counts[id] = count(id) + n
 
 
@@ -179,6 +217,7 @@ func remove(id: String, n: int = 1) -> bool:
 	if counts[id] <= 0:
 		counts.erase(id)
 		cond.erase(id)
+		age.erase(id)
 		if equipped_body == id:
 			_apply("")
 		else:
@@ -205,6 +244,7 @@ func cook_all() -> int:
 			var c: int = count(id)
 			var out: String = ITEMS[id]["cooked"]
 			counts.erase(id)
+			age.erase(id)
 			add(out, c)
 			n += c
 	return n

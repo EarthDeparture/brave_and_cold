@@ -63,6 +63,7 @@ static func item_color(id: String) -> Color:
 		"sweater": return Color(0.40, 0.46, 0.52)
 		"parka": return Color(0.28, 0.40, 0.30)
 		"cured_hide": return Color(0.70, 0.52, 0.30)
+		"rotten_meat": return Color(0.38, 0.46, 0.22)
 		"wolf_fur": return Color(0.62, 0.62, 0.64)
 		"bear_fur": return Color(0.30, 0.20, 0.14)
 		"toque": return Color(0.55, 0.20, 0.18)
@@ -148,7 +149,7 @@ static func item_icon(ci: CanvasItem, id: String, r: Rect2, dim: float = 1.0) ->
 			_quad(ci, c, u * 0.95, u * 1.25, 0.0, Color(0.62, 0.64, 0.66) * Color(dim, dim, dim, 1))
 			_quad(ci, c + Vector2(0, u * 0.05), u * 0.95, u * 0.6, 0.0, col)
 			ci.draw_line(c + Vector2(-u * 0.47, -u * 0.62), c + Vector2(u * 0.47, -u * 0.62), lite, 2.0)
-		"venison_raw", "venison_cooked", "wolf_meat_raw", "wolf_meat_cooked", "bear_meat_raw", "bear_meat_cooked", "jerky":
+		"venison_raw", "venison_cooked", "wolf_meat_raw", "wolf_meat_cooked", "bear_meat_raw", "bear_meat_cooked", "jerky", "rotten_meat":
 			var pts := PackedVector2Array()
 			for k in 14:
 				var a := TAU * k / 14.0

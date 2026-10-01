@@ -60,6 +60,8 @@ func setup(w: Node) -> void:
 		_crafttest()
 	if "weartest=1" in ua:
 		_weartest()
+	if "p6test=1" in ua:
+		_p6test()
 
 
 func _selftest() -> void:
@@ -1329,4 +1331,77 @@ func _weartest() -> void:
 	print("WEARTEST extra snapshot=", ok)
 	fails += 0 if ok else 1
 	print("WEARTEST failures=", fails)
+	get_tree().quit()
+
+
+func _p6test() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	var needs: Needs = world.get("needs")
+	player.god = false
+	for id in ["chop", "crash", "rustle", "slice"]:
+		var st: AudioStreamWAV = Sfx.get_stream(id)
+		var ok: bool = st != null and st.data.size() > 2000
+		print("P6TEST sfx ", id, "=", ok, " bytes=", st.data.size())
+		fails += 0 if ok else 1
+	var ok2: bool = inv.freshness("beans") == 1.0 and Inventory.shelf_s("jerky") == 0.0 and Inventory.shelf_s("venison_raw") > 0.0
+	print("P6TEST perishable table=", ok2)
+	fails += 0 if ok2 else 1
+	# raw meat: fresh at 29 h, rotten after 31 h
+	inv.counts.erase("venison_raw")
+	inv.age.erase("venison_raw")
+	inv.add("venison_raw", 2)
+	var sp: Array = inv.tick(29.0 * 3600.0)
+	ok2 = sp.is_empty() and inv.count("venison_raw") == 2 and inv.freshness("venison_raw") < 0.1
+	print("P6TEST raw fresh at 29h=", ok2, " fr=", inv.freshness("venison_raw"))
+	fails += 0 if ok2 else 1
+	sp = inv.tick(2.0 * 3600.0)
+	ok2 = sp.size() == 1 and inv.count("venison_raw") == 0 and inv.count("rotten_meat") >= 2 and not inv.age.has("venison_raw")
+	print("P6TEST raw rots at 31h=", ok2, " ", sp)
+	fails += 0 if ok2 else 1
+	# mixed stack averages age
+	inv.counts.erase("wolf_meat_raw")
+	inv.age.erase("wolf_meat_raw")
+	inv.add("wolf_meat_raw", 1)
+	inv.tick(10.0 * 3600.0)
+	inv.add("wolf_meat_raw", 1)
+	ok2 = absf(float(inv.age["wolf_meat_raw"]) - 5.0 * 3600.0) < 900.0
+	print("P6TEST stack age average=", ok2, " age_h=", float(inv.age["wolf_meat_raw"]) / 3600.0)
+	fails += 0 if ok2 else 1
+	# cooked lasts longer; jerky never rots
+	inv.counts.erase("bear_meat_cooked")
+	inv.age.erase("bear_meat_cooked")
+	inv.add("bear_meat_cooked", 1)
+	inv.add("jerky", 2)
+	sp = inv.tick(71.0 * 3600.0)
+	ok2 = inv.count("bear_meat_cooked") == 1 and inv.count("jerky") == 2
+	print("P6TEST cooked fine at 71h, jerky fine=", ok2)
+	fails += 0 if ok2 else 1
+	sp = inv.tick(2.0 * 3600.0)
+	ok2 = inv.count("bear_meat_cooked") == 0 and inv.count("jerky") == 2 and not inv.age.has("jerky")
+	print("P6TEST cooked rots at 73h, jerky still fine=", ok2)
+	fails += 0 if ok2 else 1
+	# rotten meat is not food
+	var k0 := needs.calories
+	var msg := inv.use("rotten_meat")
+	ok2 = needs.calories <= k0 + 1.0 and inv.count("rotten_meat") > 0 and not msg.begins_with("Ate")
+	print("P6TEST rotten not edible=", ok2, " ", msg)
+	fails += 0 if ok2 else 1
+	# cooking resets age (cooked is a new item)
+	inv.counts.erase("venison_raw")
+	inv.counts.erase("venison_cooked")
+	inv.age.erase("venison_raw")
+	inv.add("venison_raw", 1)
+	inv.tick(20.0 * 3600.0)
+	inv.cook_all()
+	ok2 = inv.count("venison_cooked") == 1 and not inv.age.has("venison_raw") and inv.freshness("venison_cooked") > 0.95
+	print("P6TEST cook resets=", ok2)
+	fails += 0 if ok2 else 1
+	# weight readout inputs sane
+	ok2 = inv.total_weight() > 0.0 and inv.total_weight() < Inventory.WEIGHT_HARD + 20.0
+	print("P6TEST weight=", inv.total_weight(), " ", ok2)
+	fails += 0 if ok2 else 1
+	print("P6TEST failures=", fails)
 	get_tree().quit()

@@ -19,6 +19,10 @@ static func get_stream(id: String) -> AudioStreamWAV:
 		"groan": s = _wav(_groan())
 		"howl": s = _wav(_howl())
 		"growl": s = _wav(_growl())
+		"chop": s = _wav(_chop())
+		"crash": s = _wav(_crash())
+		"rustle": s = _wav(_rustle())
+		"slice": s = _wav(_slice())
 		_:
 			if id.begins_with("step"):
 				s = _wav(_step(int(id.substr(4, 1)), int(id.substr(5, 1))))
@@ -181,6 +185,80 @@ static func _thud() -> PackedFloat32Array:
 		ph += TAU * (60.0 + 70.0 * exp(-t / 0.05)) / RATE
 		s[i] = sin(ph) * exp(-t / 0.07) + lp * exp(-t / 0.025) * 1.2
 	_norm(s, 0.85)
+	return s
+
+
+static func _chop() -> PackedFloat32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 41
+	var s := _buf(0.28)
+	var lp := 0.0
+	var ph := 0.0
+	for i in range(s.size()):
+		var t := float(i) / RATE
+		lp += 0.45 * (rng.randf_range(-1.0, 1.0) - lp)
+		ph += TAU * (190.0 + 120.0 * exp(-t / 0.02)) / RATE
+		s[i] = lp * exp(-t / 0.012) * 1.1 + sin(ph) * exp(-t / 0.06) * 0.8
+	_norm(s, 0.85)
+	return s
+
+
+## Tree going over: wood crack impulses, then a swelling low rumble of branches.
+static func _crash() -> PackedFloat32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 43
+	var s := _buf(1.5)
+	var lp := 0.0
+	var lp2 := 0.0
+	var imp := 0.0
+	for i in range(s.size()):
+		var t := float(i) / RATE
+		var x := rng.randf_range(-1.0, 1.0)
+		lp += 0.5 * (x - lp)
+		lp2 += 0.05 * (x - lp2)
+		if rng.randf() < 0.004 * exp(-t / 0.6):
+			imp = rng.randf_range(0.5, 1.0)
+		imp *= 0.93
+		var swell := sin(PI * clampf(t / 1.4, 0.0, 1.0))
+		s[i] = imp * rng.randf_range(-1.0, 1.0) * 0.9 + lp2 * swell * 5.0 + lp * swell * exp(-t / 0.5) * 0.2
+	_norm(s, 0.8)
+	return s
+
+
+## Dry plants / cloth / leather: band-passed noise with a ragged envelope.
+static func _rustle() -> PackedFloat32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 47
+	var s := _buf(0.6)
+	var y1 := 0.0
+	var y2 := 0.0
+	for i in range(s.size()):
+		var t := float(i) / RATE
+		var x := rng.randf_range(-1.0, 1.0)
+		y1 += 0.25 * (x - y1)
+		y2 += 0.05 * (x - y2)
+		var env := (0.55 + 0.45 * sin(TAU * 14.0 * t + sin(TAU * 3.0 * t) * 2.0)) * sin(PI * clampf(t / 0.6, 0.0, 1.0))
+		s[i] = (y1 - y2) * env * 3.0
+	_norm(s, 0.5)
+	return s
+
+
+## Knife through hide and meat: short swish plus a wet low click.
+static func _slice() -> PackedFloat32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 53
+	var s := _buf(0.4)
+	var lp := 0.0
+	var wet := 0.0
+	for i in range(s.size()):
+		var t := float(i) / RATE
+		var x := rng.randf_range(-1.0, 1.0)
+		lp += 0.3 * (x - lp)
+		wet += 0.08 * (x - wet)
+		var swish := (x - lp) * exp(-t / 0.1) * 0.5
+		var click := wet * exp(-pow((t - 0.13) / 0.02, 2.0)) * 3.0
+		s[i] = swish + click
+	_norm(s, 0.6)
 	return s
 
 

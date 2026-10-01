@@ -276,6 +276,9 @@ func _process(delta: float) -> void:
 	_t += delta
 	# time / lighting
 	var gs := clock.advance(delta)
+	if inv != null:
+		for sn in inv.tick(gs):
+			_say("%s spoiled" % sn)
 	weather.advance(delta, gs)
 	wind = weather.wind
 	clock.weather_offset_c = weather.temp_off
@@ -880,6 +883,7 @@ func _update_prompt() -> void:
 			var pkey: String = pl["key"]
 			cands.append({"d": float(pl["d"]) + 0.2, "text": "Gather %s (+%d %s)" % [kd["label"], pn, inv.name_of(iid)], "hold": phold, "kcal": 3.0, "act": func() -> void:
 				if plants.pick(pkey, clock.total_game_s):
+					audio.play_at("rustle", player.position, -4.0, randf_range(0.85, 1.2), 4.0, 40.0)
 					_give_or_drop(iid, pn, player.position + fwd * 0.8)})
 	var axe_up := inv.count('axe') > 0 and not rifle_up
 	if forest != null and axe_up:
@@ -1016,7 +1020,7 @@ func _chop_hit(tr: Dictionary) -> void:
 	needs.calories = maxf(0.0, needs.calories - 9.0)
 	noise_bus.emit_noise(player.position, 38.0, player)
 	var at := Vector3(x, player.position.y - 0.4, z)
-	audio.play_at("thud", at, 4.0, randf_range(0.55, 0.7), 8.0, 120.0)
+	audio.play_at("chop", at, 4.0, randf_range(0.9, 1.1), 8.0, 120.0)
 	FallingTree.burst(self, at + Vector3(0, 0.3, 0), 6, 1.5)
 	if left <= 0.0:
 		forest.chop_hp.erase(tk)
@@ -1038,6 +1042,7 @@ func _fell_tree(x: float, z: float) -> void:
 	add_child(ft)
 	ft.setup(forest.tree_mesh(int(info["vi"])), forest.tree_mat(), info["origin"], info["basis"], away, h, func() -> void: _land_tree(x, z, away, h, r))
 	noise_bus.emit_noise(player.position, 55.0, player)
+	audio.play_at("crash", Vector3(x, player.position.y, z), 6.0, randf_range(0.9, 1.05), 14.0, 200.0)
 	_say('Timber!')
 
 
@@ -1082,6 +1087,7 @@ func _carcass_step(cn: Node3D, sp: String, step: String, id: String, n: int) -> 
 	done[step] = true
 	cn.set_meta("done", done)
 	_give_or_drop(id, n, cn.global_position)
+	audio.play_at("slice", cn.global_position, 0.0, randf_range(0.9, 1.1), 6.0, 60.0)
 	if inv.count('knife') > 0:
 		inv.wear('knife', 0.01)
 	elif step == "meat":
@@ -1733,6 +1739,7 @@ func _craft_update(delta: float) -> void:
 	for id in r['out'].keys():
 		_give_or_drop(String(id), int(r['out'][id]), player.position)
 		parts.append('%d %s' % [int(r['out'][id]), inv.name_of(String(id))])
+	audio.play_at("rustle", player.position, -6.0, 1.0, 4.0, 40.0)
 	_say('Crafted: ' + ', '.join(parts))
 
 
@@ -1774,7 +1781,7 @@ func save_game() -> bool:
 		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
 		'body': {'core': body.core, 'wet': body.wetness},
 		'needs': {'cal': needs.calories, 'water': needs.water},
-		'inv': {'counts': inv.counts, 'worn': inv.equipped_body, 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond},
+		'inv': {'counts': inv.counts, 'worn': inv.equipped_body, 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age},
 		'cabins': cabs,
 		'fires': fires,
 		'wolves': _alive_list(wolves),
@@ -1880,6 +1887,8 @@ func _apply_save(sv: Dictionary) -> void:
 	inv.needs = needs
 	for k in sv['inv']['counts']:
 		inv.add(String(k), int(sv['inv']['counts'][k]))
+	for k in sv['inv'].get('age', {}):
+		inv.age[String(k)] = float(sv['inv']['age'][k])
 	for k in sv['inv'].get('cond', {}):
 		inv.cond[String(k)] = float(sv['inv']['cond'][k])
 	if String(sv['inv']['worn']) != '':
