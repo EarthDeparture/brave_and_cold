@@ -68,6 +68,8 @@ func setup(w: Node) -> void:
 		_wintest()
 	if "breachtest=1" in ua:
 		_breachtest()
+	if "poptest=1" in ua:
+		_poptest()
 
 
 func _selftest() -> void:
@@ -1858,4 +1860,146 @@ func _zperftest() -> void:
 		z.set_process(true)
 	print("ZPERF attribution n=800 full=%.2f zombies_off=%.2f zombies_off+audio_off=%.2f (baseline %.2f)" % [a_full[0], a_idle[0], a_noaudio[0], b0])
 	print("ZPERF done")
+	get_tree().quit()
+
+
+func _poptest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var pop: Population = world.get("pop")
+	var p0 := Vector2(player.position.x, player.position.z)
+	var alive0 := pop.count_alive()
+	var ok := alive0 >= 600 and alive0 <= 700
+	var near_home := 0
+	for k in pop.cells:
+		for v in (pop.cells[k] as PackedVector3Array):
+			if Vector2(v.x - p0.x, v.z - p0.y).length() < 90.0:
+				near_home += 1
+	for z in pop.active:
+		if Vector2(z.global_position.x - p0.x, z.global_position.z - p0.y).length() < 90.0:
+			near_home += 1
+	ok = ok and near_home == 0
+	print("POPTEST seed alive=", alive0, " within90mOfStart=", near_home, " ok=", ok)
+	fails += 0 if ok else 1
+	# dense cell: teleport in, expect nearest materialised up to the cap, nothing virtual inside the spawn radius
+	var bk := -1
+	var bn := 0
+	for k in pop.cells:
+		var n: int = (pop.cells[k] as PackedVector3Array).size()
+		if n > bn:
+			bn = n
+			bk = int(k)
+	var cx := float(bk / 64) * Population.CELL - Population.HALF + Population.CELL * 0.5
+	var cz := float(bk % 64) * Population.CELL - Population.HALF + Population.CELL * 0.5
+	player.place(cx, cz)
+	player.position.y = 100.0
+	var inside := 0
+	for k in pop.cells:
+		for v in (pop.cells[k] as PackedVector3Array):
+			if Vector2(v.x - cx, v.z - cz).length() < Population.SPAWN_R:
+				inside += 1
+	var nodes0 := get_tree().get_node_count()
+	for i in 80:
+		pop.tick(0.1)
+	var left := 0
+	for k in pop.cells:
+		for v in (pop.cells[k] as PackedVector3Array):
+			if Vector2(v.x - cx, v.z - cz).length() < Population.SPAWN_R:
+				left += 1
+	ok = pop.active.size() == mini(inside, Population.T0_CAP) + 0 and (left == 0 or pop.active.size() == Population.T0_CAP)
+	print("POPTEST ring inside=", inside, " active=", pop.active.size(), " left_virtual=", left, " cap=", Population.T0_CAP, " ok=", ok)
+	fails += 0 if ok else 1
+	var alive1 := pop.count_alive()
+	ok = alive1 == alive0
+	print("POPTEST conserved alive=", alive1, " ok=", ok)
+	fails += 0 if ok else 1
+	# park everything far away: pool grows, nothing lost, no new nodes on return
+	var total_nodes := pop.pool.size() + pop.active.size()
+	player.place(cx + 600.0 if cx < 0.0 else cx - 600.0, cz)
+	for i in 40:
+		pop.tick(0.5)
+	var parked := pop.pool.size()
+	ok = pop.count_alive() == alive0 and parked >= minf(inside, 60) * 0.8
+	print("POPTEST park pool=", parked, " alive=", pop.count_alive(), " ok=", ok)
+	fails += 0 if ok else 1
+	player.place(cx, cz)
+	for i in 80:
+		pop.tick(0.1)
+	var total_nodes2 := pop.pool.size() + pop.active.size()
+	ok = total_nodes2 == total_nodes and pop.count_alive() == alive0
+	print("POPTEST pool reuse nodes=", total_nodes, "->", total_nodes2, " ok=", ok)
+	fails += 0 if ok else 1
+	# kills are permanent
+	var victim: Zombie = null
+	for z in pop.active:
+		if is_instance_valid(z):
+			victim = z
+			break
+	var vp := victim.global_position
+	victim.hit(9999.0, player.position)
+	pop.tick(0.5)
+	pop.tick(0.5)
+	var a2 := pop.count_alive()
+	player.place(cx + 600.0 if cx < 0.0 else cx - 600.0, cz)
+	for i in 40:
+		pop.tick(0.5)
+	player.place(cx, cz)
+	for i in 80:
+		pop.tick(0.1)
+	ok = a2 == alive0 - 1 and pop.count_alive() == alive0 - 1
+	print("POPTEST kill persists alive=", pop.count_alive(), " expected=", alive0 - 1, " ok=", ok)
+	fails += 0 if ok else 1
+	# proxies = virtual within 240 m (capped)
+	pop.tick(0.5)
+	var want := 0
+	for k in pop.cells:
+		for v in (pop.cells[k] as PackedVector3Array):
+			if Vector2(v.x - cx, v.z - cz).length() <= Population.PROXY_R:
+				want += 1
+	pop._proxy_step()
+	ok = pop.proxy_n == mini(want, Population.PROXY_CAP)
+	print("POPTEST proxies=", pop.proxy_n, " expected=", mini(want, Population.PROXY_CAP), " ok=", ok)
+	fails += 0 if ok else 1
+	# far noise drags virtual zombies toward the sound
+	player.place(cx, cz)
+	var ev := Vector3(cx + 150.0, 0.0, cz)
+	var d0 := 0.0
+	var dn := 0
+	for k in pop.cells:
+		for v in (pop.cells[k] as PackedVector3Array):
+			var dd := Vector2(v.x - ev.x, v.z - ev.z).length()
+			if dd < 120.0 and dd > 30.0:
+				d0 += dd
+				dn += 1
+	world.get("noise_bus").emit_noise(ev, 120.0, null)
+	for i in 20:
+		pop._drag_step(3.0)
+		pop.clock += 3.0 if false else 0.0
+	var d1 := 0.0
+	var dn1 := 0
+	for k in pop.cells:
+		for v in (pop.cells[k] as PackedVector3Array):
+			var dd2 := Vector2(v.x - ev.x, v.z - ev.z).length()
+			if dd2 < 120.0:
+				d1 += dd2
+				dn1 += 1
+	var m0: float = d0 / maxf(1.0, float(dn))
+	var m1: float = d1 / maxf(1.0, float(dn1))
+	ok = dn > 0 and m1 < m0 - 20.0
+	print("POPTEST drag n=", dn, " mean dist ", snappedf(m0, 0.1), " -> ", snappedf(m1, 0.1), " ok=", ok)
+	fails += 0 if ok else 1
+	# save list covers everyone
+	ok = pop.all_alive().size() == pop.count_alive()
+	print("POPTEST save list=", pop.all_alive().size(), " ok=", ok)
+	fails += 0 if ok else 1
+	# cost
+	var t0 := Time.get_ticks_usec()
+	for i in 200:
+		pop.tick(0.5)
+	var per := float(Time.get_ticks_usec() - t0) / 200.0
+	ok = per < 1500.0
+	print("POPTEST tick cost avg_us=", snappedf(per, 1.0), " active=", pop.active.size(), " proxies=", pop.proxy_n, " ok=", ok)
+	fails += 0 if ok else 1
+	print("POPTEST failures=", fails)
 	get_tree().quit()

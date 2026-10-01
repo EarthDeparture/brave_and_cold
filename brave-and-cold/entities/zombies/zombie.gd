@@ -33,6 +33,7 @@ var forest: ForestScatter
 var cabins: Array = []
 var state: State = State.IDLE
 var hp := 100.0
+var from_pop := false           # owned by Population (may be parked when far)
 var speed_now := 0.0
 var grabs := 0
 var _target := Vector3.ZERO
@@ -98,6 +99,55 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	_phase = _rng.randf() * TAU
 	add_to_group("hostile")
 	_pick_wander()
+
+
+## Pool reuse (Population): reset everything per-life, no instantiate cost.
+func activate(p: Vector3, seed_value: int) -> void:
+	global_position = p
+	rotation.y = randf() * TAU
+	_rng.seed = seed_value
+	_id = seed_value
+	hp = 100.0
+	state = State.IDLE
+	speed_now = 0.0
+	grabs = 0
+	_state_t = 0.0
+	_cd = 0.0
+	_stagger = 0.0
+	_acc = 0.0
+	_vault_t = -1.0
+	_bo = null
+	_bdoor = false
+	_bbld = null
+	_bpick_t = 99.0
+	_sight_cd = 0.0
+	_sight_val = false
+	_hx = 1e9
+	_hz = 1e9
+	_last_seen_t = 0.0
+	_model.rotation = Vector3.ZERO
+	_model.position = Vector3.ZERO
+	visible = true
+	set_process(true)
+	add_to_group("hostile")
+	if _bus != null:
+		_bus.register(self)
+	_pick_wander()
+
+
+func park() -> void:
+	_release()
+	_bo = null
+	remove_from_group("hostile")
+	if _bus != null:
+		_bus.unregister(self)
+	visible = false
+	set_process(false)
+
+
+## Mid-vault or breaching zombies stay real until they are done.
+func can_park() -> bool:
+	return _vault_t < 0.0 and _bo == null and state != State.DEAD
 
 
 func _exit_tree() -> void:

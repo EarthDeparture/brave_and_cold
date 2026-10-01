@@ -138,6 +138,14 @@ func _ready() -> void:
 			plants.suppress_near(cb.global_position.x, cb.global_position.z, 9.0)
 		for hu in huts:
 			plants.suppress_near(hu.global_position.x, hu.global_position.z, 7.0)
+	pop = Population.new()
+	add_child(pop)
+	pop.terrain = terrain
+	pop.player = player
+	pop.world_list = zombies
+	pop.bus = noise_bus
+	pop.make_zombie = Callable(self, "_new_zombie")
+	noise_bus.noise.connect(pop.on_noise)
 	if not opts.has("wolftest") and not opts.has("zombietest") and not opts.has("deertest"):
 		if loading:
 			_restore_creatures(sv)
@@ -145,7 +153,20 @@ func _ready() -> void:
 			_spawn_wolves(int(opts.get("wolves", 3)), home, 70.0, 140.0)
 			_spawn_bears(int(opts.get("bears", 2)), home, 150.0, 320.0)
 		if not loading:
-			_spawn_zombies(int(opts.get("zombies", 10)), home)
+			_populate(int(opts.get("zombies", 700)), home)
+			if opts.has("popview"):   # screenshot helper: stand ~dist m west of the densest clump, looking east
+				var bk := -1
+				var bn := 0
+				for k in pop.cells:
+					var n: int = (pop.cells[k] as PackedVector3Array).size()
+					if n > bn:
+						bn = n
+						bk = int(k)
+				var cxx := float(bk / 64) * Population.CELL - Population.HALF + Population.CELL * 0.5
+				var czz := float(bk % 64) * Population.CELL - Population.HALF + Population.CELL * 0.5
+				player.place(cxx - float(opts["popview"]), czz)
+				opts["yaw"] = "-90"
+				opts["pitch"] = "-2"
 			_spawn_deer(int(opts.get("deer", 6)), home)
 	player.cabins = colliders
 	if opts.has('hutpos') and not huts.is_empty():
@@ -298,6 +319,7 @@ func _process(delta: float) -> void:
 	sky_rig.apply_hour(clock.hour)
 	var night := clampf(1.0 - sun.light_energy / 0.7, 0.0, 1.0)
 	Zombie.night_factor = night
+	pop.tick(delta)
 	_attack_cd = maxf(0.0, _attack_cd - delta)
 	Carcass.wind_dir = weather.wind_dir
 	_craft_update(delta)
@@ -1476,6 +1498,7 @@ var _wt_last := -1
 
 
 var zombies: Array[Zombie] = []
+var pop: Population
 var _force_death := false
 var _zombietest := false
 var _zt := 0.0
@@ -1490,31 +1513,25 @@ const AXE_DAMAGE := 40.0
 const FIST_DAMAGE := 10.0
 
 
-func _spawn_zombies(n: int, center: Vector2) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 7
-	var made := 0
-	var tries := 0
-	while made < n and tries < 400:
-		tries += 1
-		var a := rng.randf() * TAU
-		var r := rng.randf_range(50.0, 240.0)
-		var cx := center.x + cos(a) * r
-		var cz := center.y + sin(a) * r
-		var group := mini(3, n - made)
-		for k in range(group):
-			var x := cx + rng.randf_range(-5.0, 5.0)
-			var z := cz + rng.randf_range(-5.0, 5.0)
-			if absf(x) > 950.0 or absf(z) > 950.0:
-				continue
-			var h: float = terrain.data.get_height(Vector3(x, 0, z))
-			if is_nan(h):
-				continue
-			_add_zombie(Vector3(x, h, z), 500 + made)
-			made += 1
+func _populate(n: int, center: Vector2) -> void:
+	if n <= 0:
+		return
+	var water := MapIO.load_png("res://data/maps/valley_b/water_mask.png")
+	water.convert(Image.FORMAT_L8)
+	var anchors: Array = []
+	for cb in cabins:
+		anchors.append(Vector2(cb.global_position.x, cb.global_position.z))
+	for hu in huts:
+		anchors.append(Vector2(hu.global_position.x, hu.global_position.z))
+	var rp: Array = []
+	if road != null:
+		for i in range(0, road.points.size(), 4):
+			rp.append(road.points[i])
+	pop.generate(n, center, anchors, rp, water)
+	pop.prewarm(16)
 
 
-func _add_zombie(p: Vector3, idx: int) -> Zombie:
+func _new_zombie(p: Vector3, idx: int) -> Zombie:
 	var z := Zombie.new()
 	add_child(z)
 	z.global_position = p
@@ -1523,6 +1540,13 @@ func _add_zombie(p: Vector3, idx: int) -> Zombie:
 	zombies.append(z)
 	return z
 
+
+## Real node (pooled). Test/dev spawns are NOT population-owned (never parked).
+func _add_zombie(p: Vector3, idx: int) -> Zombie:
+	var z := pop.acquire(p, idx)
+	if not zombies.has(z):
+		zombies.append(z)
+	return z
 
 func _attack() -> void:
 	if _attack_cd > 0.0 or player.dead or inv == null:
@@ -1920,7 +1944,7 @@ func save_game() -> bool:
 		'wolves': _alive_list(wolves),
 		'pickups': _pickup_list(),
 		'bears': _alive_list(bears),
-		'zombies': _alive_list(zombies),
+		'zombies': pop.all_alive(),
 		'deer': _alive_list(deer),
 		'felled': forest.felled.keys() if forest != null else [],
 		'logs': _log_list(),
@@ -1987,8 +2011,7 @@ func _restore_creatures(sv: Dictionary) -> void:
 		i += 1
 	i = 0
 	for e in sv.get('zombies', []):
-		var z := _add_zombie(_ground(float(e['x']), float(e['z'])), 500 + i)
-		z.hp = float(e['hp'])
+		pop.add_virtual(_ground(float(e['x']), float(e['z'])))   # materialises by distance within a few ticks
 		i += 1
 	i = 0
 	for e in sv.get('deer', []):
