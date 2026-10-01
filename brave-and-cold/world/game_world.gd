@@ -68,6 +68,9 @@ func _ready() -> void:
 	footprints = Footprints.new()
 	add_child(footprints)
 	player.footprints = footprints
+	viewmodel = Viewmodel.new()
+	viewmodel.player = player
+	player.cam.add_child(viewmodel)
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var home := _find_spawn()
@@ -138,6 +141,11 @@ func _ready() -> void:
 	_flareopt = opts.has("flare")
 	_zombietest = opts.has("zombietest")
 	_deertest = opts.has("deertest")
+	_vmtest = String(opts.get('vmtest', ''))
+	_opts_vmact = String(opts.get('vmact', ''))
+	viewmodel.visible = not opts.has('nohud') or _vmtest != ''
+	if opts.has('vmt'):
+		viewmodel.freeze_t = float(opts.get('vmt', 0.0))
 	_campfire_opt = opts.has("campfire")
 	_savetest = String(opts.get('savetest', ''))
 	opts_pausetest = opts.has('pausetest')
@@ -192,6 +200,7 @@ func _process(delta: float) -> void:
 	if hud == null:
 		return
 	_frames += 1
+	_update_viewmodel()
 	_t += delta
 	# time / lighting
 	var gs := clock.advance(delta)
@@ -275,6 +284,8 @@ func _process(delta: float) -> void:
 		inv.add('matches', 1)
 		inv.add('flare', 2)
 		_build_campfire()
+	if _vmtest != '' and _frames == 30:
+		_run_vmtest()
 	if _deertest and _frames > 30:
 		_deertest_step(delta)
 	if _wolftest and _frames > 30:
@@ -804,9 +815,11 @@ func _run_selftest() -> void:
 	var cp := cb.crate_world_pos()
 	_stand_at(cp + Vector3(-1.0, 0.0, 0.0), cp)
 	var ok1 := String(_cur.get("text", "")) == "Search crate"
+	var m0 := inv.count("matches")
+	var p0 := inv.count("parka")
 	if ok1:
 		(_cur["act"] as Callable).call()
-	var ok2 := inv.count("parka") == 1 and inv.count("matches") == 5
+	var ok2 := inv.count("parka") == p0 + 1 and inv.count("matches") == m0 + 4 and inv.count("axe") >= 1 and inv.count("rifle") >= 1
 	print("TEST crate prompt=%s loot=%s" % [ok1, ok2])
 	# door
 	var dp := cb.door_world_pos()
@@ -828,7 +841,7 @@ func _run_selftest() -> void:
 	print("TEST wear '%s' warmth=%.2f windproof=%.2f" % [msg, body.warmth, body.windproof])
 	var msg2 := inv.use("parka")
 	print("TEST unwear '%s' warmth=%.2f" % [msg2, body.warmth])
-	if not (ok1 and ok2 and ok3 and ok4 and lit and heat > 100.0 and is_equal_approx(body.warmth, 0.25)):
+	if not (ok1 and ok2 and ok3 and ok4 and lit and heat > 100.0 and msg.begins_with("Took off") and msg2.begins_with("Wearing") and body.warmth > 0.8):
 		fails += 1
 	print("SELFTEST failures=", fails)
 	get_tree().quit()
@@ -947,6 +960,9 @@ var _zt_spawned := false
 var _zt_noise := false
 var _zt_last := -1
 var _attack_cd := 0.0
+var viewmodel: Viewmodel
+var _vmtest := ''
+var _opts_vmact := ''
 const AXE_DAMAGE := 40.0
 const FIST_DAMAGE := 10.0
 
@@ -993,6 +1009,7 @@ func _attack() -> void:
 		return
 	var axe := inv.count("axe") > 0
 	_attack_cd = 0.9 if axe else 0.7
+	viewmodel.swing(axe)
 	var dmg := AXE_DAMAGE if axe else FIST_DAMAGE
 	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_AXE if axe else 10.0, player)
 	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
@@ -1083,10 +1100,12 @@ func _add_deer(p: Vector3, idx: int) -> Deer:
 func _shoot() -> void:
 	if inv.count('ammo') == 0:
 		_attack_cd = 0.4
+		viewmodel.dry()
 		_say('Click. No ammo')
 		return
 	inv.remove('ammo')
 	_attack_cd = 1.2
+	viewmodel.fire()
 	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_GUNSHOT, player)
 	audio.gunshot()
 	var eye := player.position + Vector3(0, 1.6, 0)
@@ -1325,3 +1344,34 @@ var _savetest := ''
 
 func _print_state() -> void:
 	print('STATE pos=(%.1f,%.1f) hp=%.0f cal=%.0f core=%.2f hour=%.2f wood=%d matches=%d worn=%s fires=%d fuel=%.0f wolves=%d zombies=%d deer=%d deer0hp=%.0f' % [player.position.x, player.position.z, player.health, needs.calories, body.core, clock.hour, inv.count('wood') if inv else -1, inv.count('matches') if inv else -1, inv.equipped_body if inv else '?', campfires.size(), campfires[0].fuel_s if campfires.size() > 0 else -1.0, wolves.size(), zombies.size(), deer.size(), deer[0].hp if deer.size() > 0 else -1.0])
+
+
+func _update_viewmodel() -> void:
+	if viewmodel == null:
+		return
+	var m := 'fists'
+	if inv != null:
+		if rifle_up and inv.count('rifle') > 0:
+			m = 'rifle'
+		elif inv.count('axe') > 0:
+			m = 'axe'
+	viewmodel.mode = m
+
+
+func _run_vmtest() -> void:
+	inv = Inventory.new(body)
+	inv.needs = needs
+	if _vmtest != 'fists':
+		inv.add('axe')
+	if _vmtest == 'rifle':
+		inv.add('rifle')
+		inv.add('ammo', 5)
+		rifle_up = true
+	_update_viewmodel()
+	viewmodel._cur = viewmodel.mode
+	viewmodel._equip = 1.0
+	var act := _opts_vmact
+	if act == 'swing':
+		viewmodel.swing(_vmtest == 'axe')
+	elif act == 'fire':
+		viewmodel.fire()
