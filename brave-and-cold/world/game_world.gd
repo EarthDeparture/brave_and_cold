@@ -351,6 +351,8 @@ func _process(delta: float) -> void:
 	_frames += 1
 	_update_viewmodel()
 	_t += delta
+	if _sl_on:
+		_sleep_update(delta)
 	# time / lighting
 	var gs := clock.advance(delta)
 	if inv != null:
@@ -387,7 +389,7 @@ func _process(delta: float) -> void:
 		cf.advance(gs)
 		fw = maxf(fw, cf.heat_at(player.position.x, player.position.z))
 	body.metabolism_mult = needs.metabolism_mult()
-	body.update(gs, clock.ambient_c(), wind, player.is_sheltered(), fw, player.activity, 0.0 if player.is_sheltered() else weather.precip * 0.05, false)
+	body.update(gs, clock.ambient_c() + _indoor_c(), wind, player.is_sheltered(), fw, player.activity, 0.0 if player.is_sheltered() else weather.precip * 0.05, false)
 	needs.update(gs, player.activity, body.core)
 	_act_update(delta, Input.is_key_pressed(KEY_E))
 	player.injury.update(gs, delta)
@@ -1146,6 +1148,11 @@ func _opening_cands(cands: Array, fwd: Vector3) -> void:
 
 
 func _update_prompt() -> void:
+	if _sl_on:
+		hud.actions = []
+		_cands_cache = []
+		_cur = {}
+		return
 	if inv == null:
 		inv = Inventory.new(body)
 		inv.add("wood", 2)
@@ -1247,6 +1254,7 @@ func _update_prompt() -> void:
 				inv.add("antiseptic", 1)
 				inv.add("antibiotics", 1)
 				_say("Found: hatchet, knife, rifle + 6 rounds, parka, sweater, toque, matches, beans, hammer, nails, planks, rags")})
+		items.append_array(_sleep_items(cb))
 		for it in items:
 			if it.get('hide', false):
 				continue
@@ -1257,7 +1265,7 @@ func _update_prompt() -> void:
 			var flat := Vector3(to.x, 0.0, to.z)
 			if flat.length() > 0.6 and flat.normalized().dot(fwd) < 0.5:
 				continue
-			it["d"] = d
+			it["d"] = d + float(it.get("dbias", 0.0))
 			cands.append(it)
 	_opening_cands(cands, fwd)
 	for cf in campfires:
@@ -1590,6 +1598,8 @@ func _unhandled_input(e: InputEvent) -> void:
 	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_ESCAPE and pause_menu != null and not pause_menu.visible:
 		pause_menu.open()
 		return
+	if _sl_on:
+		return   # asleep: only the pause menu and the wake keys (polled) work
 	if player.struggling and not player.dead:
 		if e is InputEventKey and e.pressed and not e.echo and (e.keycode == KEY_SPACE or e.keycode == KEY_E):
 			player.struggle_press()
@@ -2227,8 +2237,177 @@ var pause_shot := ''
 var _autosave_t := 0.0
 
 
+# ---- Sleep: lie in a cabin bed. Clock runs fast, body rests, danger/cold/hits wake you. Hordes keep wandering.
+const SLEEP_FADE := 1.1
+var sleep_rate := 1200.0   # game seconds per real second while asleep (8 h ~ 24 s)
+var _sl_on := false
+var _sl: Dictionary = {}
+
+
+## Walls blunt the cold: a few degrees warmer inside any cabin even with the stove out (wind is already cut by is_sheltered).
+func _indoor_c() -> float:
+	for cb in cabins:
+		if cb.contains_xz(player.position.x, player.position.z):
+			return 6.0
+	return 0.0
+
+
+func _sleep_block_reason() -> String:
+	if body.core < 35.8:
+		return "Too cold to sleep: warm up first"
+	if player.injury.bleeding():
+		return "Can't sleep while bleeding"
+	for h in get_tree().get_nodes_in_group('hostile'):
+		var n := h as Node3D
+		if n != null and not bool(n.call('is_dead')) and n.global_position.distance_to(player.position) < 45.0:
+			return "Can't sleep: something is close"
+	if pop != null:
+		var nh: Dictionary = pop.nearest_horde(player.position)
+		if not nh.is_empty() and float(nh["dist"]) < 90.0:
+			return "Can't sleep: a horde is close"
+	return ""
+
+func _sleep_items(cb: Cabin) -> Array:
+	var bp := cb.bed_world_pos()
+	var out: Array = []
+	var why := _sleep_block_reason()
+	if why != "":
+		out.append({"pos": bp, "r": 1.9, "text": why, "act": func() -> void: _say(why)})
+		return out
+	out.append({"pos": bp, "r": 1.9, "text": "Rest on the bed (2 h)", "hold": 1.2, "dbias": 0.0, "act": func() -> void: _sleep_begin(cb, 2.0)})
+	out.append({"pos": bp, "r": 1.9, "text": "Sleep (8 h)", "hold": 1.2, "dbias": 0.01, "act": func() -> void: _sleep_begin(cb, 8.0)})
+	var h := clock.hour
+	if h >= 17.0 or h < 5.0:
+		var until := minf(fposmod(6.0 - h, 24.0), 12.0)
+		out.append({"pos": bp, "r": 1.9, "text": "Sleep until dawn (06:00)", "hold": 1.2, "dbias": 0.02, "act": func() -> void: _sleep_begin(cb, until)})
+	return out
+
+
+func _sleep_begin(cb: Cabin, hours: float) -> void:
+	if _sl_on or player.dead:
+		return
+	_sl_on = true
+	player.sleeping = true
+	_sl = {"cb": cb, "hours": hours, "phase": 0, "t": 0.0, "stand": player.position, "pitch": player.pitch, "yaw": player.yaw,
+		"scale0": clock.time_scale, "hp0": player.health, "cal0": needs.calories, "water0": needs.water, "hits0": player.hits_taken,
+		"chk": 0.0, "armed": false, "start_s": 0.0, "target": 0.0, "msg": ""}
+
+
+func _sleep_quality() -> float:
+	var q := 1.0
+	if needs.calories < Needs.HUNGRY:
+		q *= 0.4
+	if needs.water < 45.0:
+		q *= 0.6
+	if body.core < 36.5:
+		q *= 0.5
+	if player.injury.symptomatic():
+		q = 0.0
+	return q
+
+
+func _sleep_update(delta: float) -> void:
+	if player.dead:
+		_sleep_restore_clock()
+		_sl_on = false
+		hud.sleep_fade = 0.0
+		hud.sleep_text = ""
+		player.sleeping = false
+		return
+	var cb: Cabin = _sl["cb"]
+	_sl["t"] = float(_sl["t"]) + delta
+	var t := float(_sl["t"])
+	match int(_sl["phase"]):
+		0:
+			hud.sleep_fade = clampf(t / SLEEP_FADE, 0.0, 1.0)
+			if t >= SLEEP_FADE:
+				_sl["phase"] = 1
+				_sl["t"] = 0.0
+				_sl["start_s"] = clock.total_game_s
+				_sl["target"] = clock.total_game_s + float(_sl["hours"]) * 3600.0
+				player.position = cb.bed_lie_pos()
+				player.pitch = -0.6
+				clock.time_scale = sleep_rate
+				Cabin.game_scale = sleep_rate
+				needs.rest_mult = 0.75
+		1:
+			_sleep_tick(delta, cb)
+		_:
+			hud.sleep_fade = 1.0 - clampf(t / SLEEP_FADE, 0.0, 1.0)
+			if t >= SLEEP_FADE:
+				hud.sleep_fade = 0.0
+				hud.sleep_text = ""
+				player.sleeping = false
+				_sl_on = false
+				if _safe_to_save() and out_path == '':
+					save_game()
+
+
+func _sleep_tick(delta: float, cb: Cabin) -> void:
+	var gs := delta * sleep_rate
+	var q := _sleep_quality()
+	player.health = minf(100.0, player.health + 3.0 * q * gs / 3600.0)
+	player.stamina = 100.0
+	player.exhausted = false
+	player.position = cb.bed_lie_pos()
+	if pop != null:
+		pop.catch_up(maxf(0.0, gs / 48.0 - delta))   # world minutes pass at the normal 48x pace, not at sleep speed
+	hud.sleep_text = "Sleeping...  %s     (E to wake)" % clock.time_string()
+	var key := Input.is_key_pressed(KEY_E) or Input.is_key_pressed(KEY_SPACE)
+	if not key:
+		_sl["armed"] = true
+	var why := ""
+	if bool(_sl["armed"]) and key:
+		why = "You wake up"
+	_sl["chk"] = float(_sl["chk"]) + delta
+	if why == "" and float(_sl["chk"]) >= 0.25:
+		_sl["chk"] = 0.0
+		why = _sleep_wake_reason()
+	if why == "" and clock.total_game_s >= float(_sl["target"]):
+		why = "You wake rested"
+	if why != "":
+		_sleep_wake(why)
+
+
+func _sleep_wake_reason() -> String:
+	if player.hits_taken != int(_sl["hits0"]):
+		return "Jolted awake: something hurt you"
+	if body.core < 35.4:
+		return "Woke shivering: too cold"
+	if needs.damage_per_s() > 0.0:
+		return "Woke: starving or dying of thirst"
+	if player.injury.bleeding():
+		return "Woke: you are bleeding"
+	for h in get_tree().get_nodes_in_group('hostile'):
+		var n := h as Node3D
+		if n != null and not bool(n.call('is_dead')) and n.global_position.distance_to(player.position) < 30.0:
+			return "Woke: something is outside"
+	if pop != null:
+		var nh: Dictionary = pop.nearest_horde(player.position)
+		if not nh.is_empty() and float(nh["dist"]) < 60.0:
+			return "Woke: a horde is moaning outside"
+	return ""
+
+
+func _sleep_restore_clock() -> void:
+	clock.time_scale = float(_sl.get("scale0", 48.0))
+	Cabin.game_scale = clock.time_scale
+	needs.rest_mult = 1.0
+
+
+func _sleep_wake(why: String) -> void:
+	_sleep_restore_clock()
+	var hrs := (clock.total_game_s - float(_sl["start_s"])) / 3600.0
+	player.position = _sl["stand"]
+	player.pitch = float(_sl["pitch"])
+	player.yaw = float(_sl["yaw"])
+	_sl["phase"] = 2
+	_sl["t"] = 0.0
+	hud.sleep_text = ""
+	_say("%s. Slept %.1f h: +%d health, -%d kcal, -%d water." % [why, hrs, int(player.health - float(_sl["hp0"])), int(float(_sl["cal0"]) - needs.calories), int(float(_sl["water0"]) - needs.water)])
+
 func _safe_to_save() -> bool:
-	if player.dead or inv == null:
+	if player.dead or inv == null or _sl_on:
 		return false
 	for h in get_tree().get_nodes_in_group('hostile'):
 		var n := h as Node3D

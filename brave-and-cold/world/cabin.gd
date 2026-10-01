@@ -288,6 +288,15 @@ func stove_world_pos() -> Vector3:
 	return to_global(STOVE_LOCAL + Vector3(0.0, FLOOR_LOCAL_Y + 0.9, 0.0))
 
 
+## Mattress top (back-right corner, matches gen_cabin.py bed) and the eye spot when lying on it.
+func bed_world_pos() -> Vector3:
+	return to_global(Vector3(2.0, FLOOR_LOCAL_Y + 0.5, -1.65))
+
+
+func bed_lie_pos() -> Vector3:
+	return to_global(Vector3(1.85, FLOOR_LOCAL_Y + 0.46 + 0.3, -1.65))
+
+
 func crate_world_pos() -> Vector3:
 	return to_global(Vector3(2.5, FLOOR_LOCAL_Y + 0.5, 1.6))
 

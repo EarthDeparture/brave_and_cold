@@ -11,8 +11,8 @@ const TRAMPLE_LIFE_S := 240.0  # real game seconds until a trail refills (tunabl
 const TIER_NAMES: Array[String] = ["bare", "ankle", "shin", "knee", "thigh", "waist"]
 ## Speed multipliers by tier (GDD: zombies 100/95/75/50/30/20 %). Player is slowed less (boots, awareness), tunable.
 const ZOMBIE_SPEED: Array[float] = [1.0, 0.95, 0.75, 0.5, 0.3, 0.2]
-const PLAYER_SPEED: Array[float] = [1.0, 0.97, 0.88, 0.72, 0.55, 0.42]
-const PLAYER_STAMINA_COST: Array[float] = [1.0, 1.05, 1.2, 1.5, 1.9, 2.4]
+const PLAYER_SPEED: Array[float] = [1.0, 0.99, 0.96, 0.92, 0.87, 0.82]
+const PLAYER_STAMINA_COST: Array[float] = [1.0, 1.03, 1.1, 1.22, 1.38, 1.55]
 
 var size_m: int = 2048
 var half: float = 1024.0

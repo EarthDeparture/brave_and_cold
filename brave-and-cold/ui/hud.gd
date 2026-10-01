@@ -39,6 +39,8 @@ var actions: Array = []   # action-menu lines
 var action_sel := 0
 var action_t := -1.0       # hold-to-act progress 0..1, -1 = none
 var action_label := ""
+var sleep_fade := 0.0      # 0..1 black-out while sleeping
+var sleep_text := ""
 var rifle_up := false
 var kills := 0
 var show_monitor := true
@@ -147,6 +149,8 @@ func _draw_ui() -> void:
 		_draw_struggle(sz, k)
 	if show_dev:
 		_draw_dev(k)
+	if sleep_fade > 0.0:
+		_draw_sleep(sz, k)
 	if player.dead:
 		_draw_death(sz, k)
 
@@ -293,6 +297,12 @@ func _draw_dev(k: float) -> void:
 	for line in t.split("\n"):
 		DZ.text(_ui, line, Vector2(24.0 * k, y), int(14.0 * k), Color(0.7, 0.9, 0.7))
 		y += 18.0 * k
+
+
+func _draw_sleep(sz: Vector2, k: float) -> void:
+	_ui.draw_rect(Rect2(Vector2.ZERO, sz), Color(0, 0, 0, sleep_fade))
+	if sleep_text != "":
+		DZ.text(_ui, sleep_text, Vector2(sz.x * 0.5 - 400.0 * k, sz.y * 0.5), int(24.0 * k), Color(0.78, 0.78, 0.74, sleep_fade), HORIZONTAL_ALIGNMENT_CENTER, 800.0 * k)
 
 
 func _draw_death(sz: Vector2, k: float) -> void:

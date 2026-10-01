@@ -596,6 +596,12 @@ func _plan(h: Horde, goal: Vector2) -> void:
 	h.path.append(goal)
 
 
+## Sleep: the world's hordes live on during the skipped hours (real-time-equivalent seconds, not game seconds).
+func catch_up(world_s: float) -> void:
+	if world_s > 0.0 and enabled:
+		_horde_step(world_s)
+
+
 func _horde_step(dt: float) -> void:
 	for hi in range(hordes.size() - 1, -1, -1):
 		var h: Horde = hordes[hi]

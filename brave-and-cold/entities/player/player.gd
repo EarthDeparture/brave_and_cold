@@ -13,6 +13,11 @@ const STAMINA_DRAIN := 12.0
 const STAMINA_REGEN := 8.0
 const TRAMPLE_STEP := 0.6
 const NOISE_INTERVAL := 0.5
+const ACCEL := 16.0          # m/s^2 ramp up/down: no hard start/stop
+const DECEL := 22.0
+const SLOPE_PROBE := 0.6
+const SLIDE_ANGLES: Array[float] = [0.0, 0.6, -0.6, 1.1, -1.1]
+const BLUR_OFFSETS: Array[Vector2] = [Vector2(0.7, 0.0), Vector2(-0.7, 0.0), Vector2(0.0, 0.7), Vector2(0.0, -0.7)]
 
 var terrain: Terrain3D
 var snow: SnowField
@@ -53,6 +58,16 @@ var struggle_by: Node = null
 var struggle_prog := 0.0
 var struggle_gain := 0.12
 var struggle_t := 0.0
+var sim_on := false          # tests: drive movement without key events
+var sim_dir := Vector3.ZERO
+var sim_sprint := false
+var dbg_blocks := 0
+var sleeping := false       # lying in a bed: no movement, world keeps running
+var hits_taken := 0         # damage events >= 1 HP (wakes sleepers)
+var _vel := Vector2.ZERO
+var _snow_mult := 1.0
+var _bob_t := 0.0
+var _bob_amp := 0.0
 
 
 func start_struggle(attacker: Node, gain: float) -> void:
@@ -105,6 +120,8 @@ func setup(t: Terrain3D, s: SnowField, b: BodyTemperature, n: NoiseBus) -> void:
 
 
 func hurt(amount: float, cause: String = "Killed") -> void:
+	if amount >= 1.0:
+		hits_taken += 1
 	if dead or god:
 		return
 	health = maxf(0.0, health - amount)
@@ -130,6 +147,9 @@ func ground_at(x: float, z: float) -> float:
 
 
 func is_sheltered() -> bool:
+	for cb in cabins:
+		if cb.contains_xz(position.x, position.z):
+			return true
 	return snow.canopy_height_at(position.x, position.z) >= 10.0
 
 
@@ -160,7 +180,7 @@ func _process(delta: float) -> void:
 	if noclip and not dead:
 		_fly(delta)
 		return
-	if frozen or struggling or ui_open:
+	if frozen or struggling or ui_open or sleeping:
 		return
 	_move(delta)
 	_stamina(delta)
@@ -194,21 +214,37 @@ func _move(delta: float) -> void:
 	if Input.is_key_pressed(KEY_S): dir -= fwd
 	if Input.is_key_pressed(KEY_D): dir += right
 	if Input.is_key_pressed(KEY_A): dir -= right
+	if sim_on:
+		dir = sim_dir
 	crouching = Input.is_key_pressed(KEY_C)
-	var want_sprint := Input.is_key_pressed(KEY_SHIFT) and not crouching and not exhausted and stamina > 0.0
-	moving = dir.length() > 0.01
-	sprinting = want_sprint and moving
-	var base := CROUCH if crouching else (SPRINT if sprinting else WALK)
+	var wish := dir.length() > 0.01
+	var want_sprint := (Input.is_key_pressed(KEY_SHIFT) or (sim_on and sim_sprint)) and not crouching and not exhausted and stamina > 0.0
+	var base := CROUCH if crouching else (SPRINT if (want_sprint and wish) else WALK)
+	# deep snow: a slight, smoothly blended slowdown (no hard steps when the tier flips under the boots)
 	var tier: int = snow.tier_at(position.x, position.z)
-	speed_now = base * SnowField.PLAYER_SPEED[tier] * speed_mult if moving else 0.0
-	if moving:
-		var step := dir.normalized() * speed_now * delta
-		var np := position + step
-		var h0: float = ground_at(position.x, position.z)
-		var h1: float = ground_at(np.x, np.z)
-		if not is_nan(h1) and not is_nan(h0) and (h1 - h0) / maxf(step.length(), 0.001) < MAX_SLOPE:
-			position.x = np.x
-			position.z = np.z
+	_snow_mult = lerpf(_snow_mult, SnowField.PLAYER_SPEED[tier], minf(1.0, delta * 2.5))
+	var want := Vector2.ZERO
+	if wish:
+		want = Vector2(dir.x, dir.z).normalized() * base * _snow_mult * speed_mult
+	var rate := ACCEL if want.length_squared() > _vel.length_squared() else DECEL
+	_vel = _vel.move_toward(want, rate * delta)
+	var sp := _vel.length()
+	moving = sp > 0.3
+	sprinting = want_sprint and wish and sp > 1.0
+	speed_now = sp
+	if sp > 0.001:
+		var step := _slope_step(_vel * delta)
+		if step.length_squared() < 1e-10:
+			dbg_blocks += 1
+			_vel = Vector2.ZERO
+			speed_now = 0.0
+			moving = false
+			sprinting = false
+		else:
+			position.x += step.x
+			position.z += step.y
+			var ax := position.x
+			var az := position.z
 			if forest != null:
 				var q := forest.resolve_trunks(position.x, position.z, 0.35)
 				position.x = q.x
@@ -217,19 +253,65 @@ func _move(delta: float) -> void:
 				var q2: Vector2 = cb.resolve(position.x, position.z, 0.35)
 				position.x = q2.x
 				position.z = q2.y
-		else:
-			speed_now = 0.0
-			moving = false
-			sprinting = false
+			var push := Vector2(position.x - ax, position.z - az)
+			if push.length_squared() > 1e-8:
+				# slide: drop the velocity component pointing into whatever pushed us out
+				var pn := push.normalized()
+				_vel -= pn * minf(0.0, _vel.dot(pn))
 	activity = 0
 	if moving:
 		activity = 2 if sprinting else 1
 	var target_eye := EYE_CROUCH if crouching else EYE
 	eye_h = lerpf(eye_h, target_eye, minf(1.0, delta * 8.0))
-	var g: float = ground_at(position.x, position.z)
+	var g: float = _eye_ground(position.x, position.z)
 	if not is_nan(g):
-		position.y = lerpf(position.y, g + eye_h, minf(1.0, delta * 14.0))
+		position.y = lerpf(position.y, g + eye_h, minf(1.0, delta * 12.0))
+	_head_bob(delta, sp)
 
+
+## Ground-slope gate over a 0.6 m lookahead (a 2-5 cm per-frame step made lidar noise look like a wall). Too steep: slide along the contour.
+func _slope_step(step: Vector2) -> Vector2:
+	var len := step.length()
+	if len < 1e-6:
+		return step
+	var d := step / len
+	var h0: float = ground_at(position.x, position.z)
+	if is_nan(h0):
+		return step
+	for a in SLIDE_ANGLES:
+		var dd := d.rotated(a)
+		var h1: float = ground_at(position.x + dd.x * SLOPE_PROBE, position.z + dd.y * SLOPE_PROBE)
+		if is_nan(h1) or (h1 - h0) / SLOPE_PROBE <= MAX_SLOPE:
+			return dd * len * (1.0 if a == 0.0 else cos(a) * 0.9)
+	return Vector2.ZERO
+
+
+## Camera ground height: structures exact, open terrain low-passed over ~1.5 m so lidar-scale bumps don't shake the view.
+func _eye_ground(x: float, z: float) -> float:
+	var th: float = terrain.data.get_height(Vector3(x, 0.0, z))
+	for cb in cabins:
+		var f: float = cb.floor_at(x, z, th)
+		if not is_nan(f):
+			return f
+	if is_nan(th):
+		return th
+	var s := th
+	var n := 1
+	for o in BLUR_OFFSETS:
+		var h: float = terrain.data.get_height(Vector3(x + o.x, 0.0, z + o.y))
+		if not is_nan(h):
+			s += h
+			n += 1
+	return s / float(n)
+
+
+func _head_bob(delta: float, sp: float) -> void:
+	var amp := 0.0
+	if sp > 0.3 and not sim_on:
+		amp = clampf(sp / WALK, 0.0, 1.7) * (0.55 if crouching else 1.0)
+	_bob_amp = lerpf(_bob_amp, amp, minf(1.0, delta * 6.0))
+	_bob_t += delta * sp * 1.9
+	cam.position = Vector3(sin(_bob_t) * 0.011 * _bob_amp, absf(sin(_bob_t)) * -0.016 * _bob_amp, 0.0)
 
 func _stamina(delta: float) -> void:
 	var tier: int = snow.tier_at(position.x, position.z)

@@ -13,15 +13,16 @@ const STARVING := 300.0
 var calories := 2000.0
 var water := 85.0  # 0..100
 var starve_dmg_accum := 0.0
+var rest_mult := 1.0   # < 1 while asleep: resting bodies burn less
 
 
 func update(game_s: float, activity: int, core_temp: float) -> void:
 	var h := game_s / 3600.0
-	var burn := BASE_CAL_PER_H + ACTIVITY_CAL_PER_H[clampi(activity, 0, 2)]
+	var burn := (BASE_CAL_PER_H + ACTIVITY_CAL_PER_H[clampi(activity, 0, 2)]) * rest_mult
 	if core_temp < BodyTemperature.SHIVER:
 		burn += SHIVER_BONUS_PER_H
 	calories = maxf(0.0, calories - burn * h)
-	var w := WATER_PER_H * (1.0 + 0.5 * activity)
+	var w := WATER_PER_H * (1.0 + 0.5 * activity) * rest_mult
 	water = maxf(0.0, water - w * h)
 
 

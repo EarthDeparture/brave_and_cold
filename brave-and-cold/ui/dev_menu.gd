@@ -78,6 +78,10 @@ func setup(w: Node) -> void:
 		_hamlettest()
 	if "storetest=1" in ua:
 		_storetest()
+	if "walktest=1" in ua:
+		_walktest()
+	if "sleeptest=1" in ua:
+		_sleeptest()
 	if "injurytest=1" in ua:
 		_injurytest()
 	if "popperf=1" in ua:
@@ -2470,6 +2474,186 @@ func _hamlettest() -> void:
 		print("HAMLETTEST hut door open_free=", free, " closed_blocks=", blocked, " leak=", leak_closed, " bash_breaks=", broke, " ok=", ok)
 		fails += 0 if ok else 1
 	print("HAMLETTEST failures=", fails)
+	get_tree().quit()
+
+## Movement quality: walk scripted headings at 60 fps from several spots (+ through a cabin door); measures stalls, slope blocks, camera jerk.
+func _walktest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	Engine.max_fps = 60
+	var fails := 0
+	player.god = true
+	var cabins: Array = world.get("cabins")
+	var spots: Array = []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 77
+	var c0: Vector3 = player.position
+	for i in 5:
+		var a := rng.randf() * TAU
+		spots.append({"p": Vector3(c0.x + cos(a) * rng.randf_range(40.0, 240.0), 0.0, c0.z + sin(a) * rng.randf_range(40.0, 240.0)), "d": Vector3(cos(a + 1.0), 0.0, sin(a + 1.0)), "name": "open%d" % i})
+	if not cabins.is_empty():
+		var cb: Cabin = cabins[0]
+		if not cb.door_open:
+			cb.toggle_door()
+		var s: Vector3 = cb.to_global(Vector3(0.0, 0.0, Cabin.HZ + 7.0))
+		var e: Vector3 = cb.to_global(Vector3(0.0, 0.0, Cabin.HZ - 3.0))
+		spots.append({"p": Vector3(s.x, 0.0, s.z), "d": Vector3(e.x - s.x, 0.0, e.z - s.z).normalized(), "name": "door"})
+	var tot_stall := 0.0
+	var tot_blocks := 0
+	var worst_jerk := 0.0
+	for sp in spots:
+		var p: Vector3 = sp["p"]
+		player.place(p.x, p.z)
+		player.sim_on = false
+		for k in 20:
+			await get_tree().process_frame
+		var d: Vector3 = sp["d"]
+		player.yaw = atan2(-d.x, -d.z)
+		player.sim_dir = d
+		player.sim_on = true
+		player.dbg_blocks = 0
+		var t := 0.0
+		var stall := 0.0
+		var dist := 0.0
+		var prev: Vector3 = player.position
+		var vy_prev := 0.0
+		var jerk_sq := 0.0
+		var jerk_max := 0.0
+		var worst_dt := 0.0
+		var worst_flat := 0.0
+		var n := 0
+		var minx := 1e9
+		var tmax := 3.5 if sp["name"] == "door" else 8.0   # door run ends well inside, before the back wall
+		while t < tmax:
+			await get_tree().process_frame
+			var dt: float = get_process_delta_time()
+			t += dt
+			var cur: Vector3 = player.position
+			var flat := Vector2(cur.x - prev.x, cur.z - prev.z).length()
+			dist += flat
+			if t > 1.0:
+				if flat / maxf(dt, 0.0001) < 0.35 * player.WALK * 0.4:
+					stall += dt
+				var vy := cur.y - prev.y
+				var jk := absf(vy - vy_prev) * 1000.0   # second difference of eye height, mm per frame^2
+				vy_prev = vy
+				jerk_sq += jk * jk
+				if jk > jerk_max:
+					jerk_max = jk
+					worst_dt = dt
+					worst_flat = flat
+				n += 1
+			prev = cur
+		player.sim_on = false
+		var jerk_rms := sqrt(jerk_sq / maxf(n, 1.0))
+		print("WALKTEST %s dist=%.1f stall_s=%.2f blocks=%d ddy_rms_mm=%.2f ddy_max_mm=%.1f (dt=%.1fms flat=%.3f) tier=%d" % [sp["name"], dist, stall, player.dbg_blocks, jerk_rms, jerk_max, worst_dt * 1000.0, worst_flat, snow_tier_here()])
+		tot_stall += stall
+		tot_blocks += player.dbg_blocks
+		worst_jerk = maxf(worst_jerk, jerk_rms)
+	print("WALKTEST totals stall_s=%.2f blocks=%d worst_jerk_rms=%.1f" % [tot_stall, tot_blocks, worst_jerk])
+	var ok := tot_blocks == 0 and tot_stall < 6.0   # stalls left are head-on tree hits; no dead stops on slopes
+	print("WALKTEST no slope blocks, stalls bounded ok=", ok)
+	fails += 0 if ok else 1
+	print("WALKTEST failures=", fails)
+	get_tree().quit()
+
+
+func snow_tier_here() -> int:
+	var sn: SnowField = world.get("snow")
+	return sn.tier_at(player.position.x, player.position.z)
+
+## Sleep: bed prompt, time skip to dawn, healing + burn, wake on hit / cold / danger, state restored.
+func _sleeptest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var cabins: Array = world.get("cabins")
+	var inv: Inventory = world.get("inv")
+	var needs: Needs = world.get("needs")
+	var body: BodyTemperature = world.get("body")
+	var cb: Cabin = cabins[0]
+	world.set("sleep_rate", 4000.0)
+	if not cb.door_open:
+		cb.toggle_door()
+	for w in 5:
+		cb.add_wood()
+	var stand: Vector3 = cb.to_global(Vector3(1.0, 0.0, -0.4))
+	player.god = false
+	player.place(stand.x, stand.z)
+	for k in 20:
+		await get_tree().process_frame
+	stand = player.position
+	clock.hour = 22.0
+	var day0 := clock.day
+	player.health = 60.0
+	needs.calories = 1800.0
+	needs.water = 80.0
+	body.core = 37.0
+	var fuel0 := cb.stove_fuel_s
+	var cands: Array = world.call("_sleep_items", cb)
+	var ok := cands.size() == 3
+	print("SLEEPTEST prompts=", cands.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	var hp0 := player.health
+	var cal0 := needs.calories
+	world.call("_sleep_begin", cb, 8.0)
+	var t := 0.0
+	while bool(world.get("_sl_on")) and t < 60.0:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+	var hrs := clock.hour
+	ok = not bool(world.get("_sl_on")) and absf(fposmod(hrs - 6.0, 24.0)) < 0.35 and clock.day == day0 + 1
+	print("SLEEPTEST 8h slept real_s=%.1f hour=%.2f day=%d->%d ok=%s" % [t, hrs, day0, clock.day, str(ok)])
+	fails += 0 if ok else 1
+	ok = player.health > hp0 + 15.0 and player.health <= 100.0
+	print("SLEEPTEST heal %.1f -> %.1f ok=%s" % [hp0, player.health, str(ok)])
+	fails += 0 if ok else 1
+	var burned := cal0 - needs.calories
+	ok = burned > 300.0 and burned < 700.0 and needs.rest_mult == 1.0 and absf(clock.time_scale - 48.0) < 0.01
+	print("SLEEPTEST burn kcal=%.0f rest_mult=%.2f scale=%.1f ok=%s" % [burned, needs.rest_mult, clock.time_scale, str(ok)])
+	fails += 0 if ok else 1
+	ok = cb.stove_fuel_s < fuel0 and player.position.distance_to(stand) < 0.2 and not player.sleeping and body.core > 36.0
+	print("SLEEPTEST stove fuel %.0f -> %.0f, back at bedside=%s core=%.2f ok=%s" % [fuel0, cb.stove_fuel_s, str(player.position.distance_to(stand) < 0.2), body.core, str(ok)])
+	fails += 0 if ok else 1
+	# abort: hurt
+	clock.hour = 23.0
+	world.call("_sleep_begin", cb, 8.0)
+	t = 0.0
+	while t < 3.0:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+	var h_mid := clock.hour
+	player.hurt(5.0, "test")
+	t = 0.0
+	while bool(world.get("_sl_on")) and t < 10.0:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+	var slept := fposmod(clock.hour - 23.0, 24.0)
+	ok = not bool(world.get("_sl_on")) and slept < 7.0 and slept > 0.2 and absf(clock.time_scale - 48.0) < 0.01
+	print("SLEEPTEST wake on hit slept=%.2f h mid=%.2f ok=%s" % [slept, h_mid, str(ok)])
+	fails += 0 if ok else 1
+	# abort: too cold
+	player.health = 100.0
+	body.core = 36.5
+	clock.hour = 1.0
+	world.call("_sleep_begin", cb, 8.0)
+	t = 0.0
+	while t < 2.5:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+	body.core = 35.0
+	t = 0.0
+	while bool(world.get("_sl_on")) and t < 10.0:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+	ok = not bool(world.get("_sl_on")) and not player.sleeping
+	print("SLEEPTEST wake on cold ok=", ok)
+	fails += 0 if ok else 1
+	# refuse: cold start and bleeding
+	body.core = 35.0
+	var why: String = world.call("_sleep_block_reason")
+	ok = why.begins_with("Too cold")
+	print("SLEEPTEST refuse cold: '", why, "' ok=", ok)
+	fails += 0 if ok else 1
+	print("SLEEPTEST failures=", fails)
 	get_tree().quit()
 
 func _storetest() -> void:
