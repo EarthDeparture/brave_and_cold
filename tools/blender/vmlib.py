@@ -21,6 +21,9 @@ MATS = {
     "blued": ("vm_blued.png", 0.25, 0.38, 0.55),
     "steel": ("vm_steel.png", 0.25, 0.40, 0.60),
     "rubber": ("vm_rubber.png", 0.10, 0.90, 0.0),
+    "skin": ("vm_skin.png", 0.10, 0.62, 0.0),
+    "nail": ("vm_nail.png", 0.05, 0.35, 0.0),
+    "beech": ("vm_beech.png", 0.30, 0.38, 0.0),
 }
 _MC = {}
 

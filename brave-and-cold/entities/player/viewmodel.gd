@@ -13,7 +13,7 @@ const WRIST_R := Vector3(0.075, -0.005, 0.05)
 const WRIST_L := Vector3(-0.075, -0.005, 0.05)
 const SLEEVE_R := Vector3(0.25, -0.12, 1.0)
 const SLEEVE_L := Vector3(-0.25, -0.12, 1.0)
-const BOLT_ORIGIN := Vector3(0.0, 0.034, 0.06)
+const BOLT_ORIGIN := Vector3(0.0, 0.046, 0.06)
 
 var player: Player
 var mode := "fists"  # fists | axe | rifle
@@ -59,7 +59,7 @@ func _ready() -> void:
 	_flash.omni_range = 6.0
 	_flash.light_energy = 0.0
 	_flash.shadow_enabled = false
-	_flash.position = Vector3(0.0, 0.034, -0.70)
+	_flash.position = Vector3(0.0, 0.040, -0.76)
 	_rifle.add_child(_flash)
 
 
@@ -249,15 +249,15 @@ func _pose_rifle(base: Transform3D) -> void:
 				bolt_slide = 0.055 * (1.0 - _sstep((t - 0.68) / 0.10))
 			elif t >= 0.78 and t < 0.9:
 				bolt_roll = 70.0 * (1.0 - _sstep((t - 0.78) / 0.12))
-	var rpos := Vector3(0.17, -0.15, -0.36)
-	var rb := Basis(Vector3.UP, deg_to_rad(5.0)) * Basis(Vector3.RIGHT, deg_to_rad(-2.0))
+	var rpos := Vector3(0.13, -0.085, -0.40)
+	var rb := Basis(Vector3.UP, deg_to_rad(16.0)) * Basis(Vector3.RIGHT, deg_to_rad(-2.0))
 	var butt := rpos + Vector3(0.0, 0.0, 0.4)
 	var kb := Basis(Vector3.RIGHT, deg_to_rad(9.0 * kick))
 	var w := base * _about(butt, kb) * Transform3D(rb, rpos + Vector3(0.0, 0.01 * kick, 0.0))
 	_rifle.transform = w
 	_bolt.transform = w * Transform3D(Basis(Vector3.BACK, deg_to_rad(bolt_roll)), BOLT_ORIGIN + Vector3(0.0, 0.0, bolt_slide))
-	var tr := w * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(-22.0)), Vector3(0.0, -0.058, 0.022))
-	var tl := w * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(90.0)), Vector3(0.0, 0.010, -0.17))
+	var tr := w * Transform3D(Basis(Vector3.UP, deg_to_rad(16.0)) * Basis(Vector3.RIGHT, deg_to_rad(10.0)) * Basis(Vector3(0, -1, 0), Vector3(1, 0, 0), Vector3(0, 0, 1)), Vector3(0.05, 0.0, 0.040))
+	var tl := w * Transform3D(Basis(Vector3.UP, deg_to_rad(-8.0)) * Basis(Vector3.RIGHT, deg_to_rad(22.0)) * Basis(Vector3(-1, 0, 0), Vector3(0, -1, 0), Vector3(0, 0, 1)), Vector3(0.0, -0.045, -0.20))
 	_hand_r.transform = tr
 	_hand_l.transform = tl
 	var arm := base * _about(butt, kb)

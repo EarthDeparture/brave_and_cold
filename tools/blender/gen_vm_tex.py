@@ -109,6 +109,27 @@ def steel(name, base, wear):
     save(name, c)
 
 
+def skin(name):
+    mott = pnoise(sx=7.0, sy=7.0, seed=30)
+    fine = pnoise(sx=150.0, sy=150.0, seed=31)
+    v = pnoise(sx=14.0, sy=3.0, seed=32)
+    vein = np.exp(-((v - 0.5) / 0.03) ** 2)
+    cr = pnoise(sx=3.0, sy=40.0, seed=33)
+    crease = np.exp(-((cr - 0.5) / 0.02) ** 2)
+    base = np.array([0.86, 0.69, 0.62])
+    pink = np.array([0.90, 0.56, 0.52])
+    c = lerp(base, pink, np.clip((mott - 0.35) * 1.6, 0, 1) * 0.55)
+    c = c * (0.93 + 0.12 * fine[..., None])
+    c = c * (1 - 0.10 * crease[..., None])
+    c = c * (1 - 0.14 * vein[..., None]) + np.array([0.0, 0.0, 0.03]) * vein[..., None]
+    save(name, c)
+
+
+def flat(name, col):
+    n = pnoise(sx=20.0, sy=20.0, seed=34)
+    save(name, np.array(col)[None, None, :] * (0.94 + 0.12 * n[..., None]))
+
+
 def rubber(name):
     n = pnoise(sx=120.0, sy=120.0, seed=20)
     save(name, np.array([0.06, 0.06, 0.065])[None, None, :] * (0.7 + 0.6 * n[..., None]))
@@ -117,10 +138,13 @@ def rubber(name):
 if __name__ == "__main__":
     wood("walnut", (0.17, 0.085, 0.035), (0.46, 0.27, 0.12))
     wood("ash", (0.40, 0.26, 0.13), (0.72, 0.55, 0.34), rings=6.0)
-    knit("wool", (0.30, 0.27, 0.24), (0.62, 0.58, 0.52))
+    knit("wool", (0.40, 0.26, 0.13), (0.72, 0.52, 0.28))
     leather("leather", (0.50, 0.32, 0.17))
     fabric("fabric", (0.30, 0.34, 0.25))
     steel("blued", (0.13, 0.14, 0.17), (0.35, 0.36, 0.38))
     steel("steel", (0.50, 0.51, 0.54), (0.35, 0.35, 0.35))
     rubber("rubber")
+    skin("skin")
+    flat("nail", (0.93, 0.78, 0.73))
+    wood("beech", (0.46, 0.22, 0.08), (0.80, 0.50, 0.22), rings=7.0)
 

@@ -2,19 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://de3n514myoief"
-path="res://.godot/imported/vm_hands_vm_wool.png-a816838868c25b098a8db7d05fae7372.ctex"
+uid="uid://c25qme25ax4p2"
+path="res://.godot/imported/vm_skin.png-69d122aab43176f5f7423ecdf169d895.ctex"
 metadata={
 "vram_texture": false
-}
-generator_parameters={
-"md5": "c3b29a5a96c1c5682621888743d442d2"
 }
 
 [deps]
 
-source_file="res://assets/models/viewmodel/vm_hands_vm_wool.png"
-dest_files=["res://.godot/imported/vm_hands_vm_wool.png-a816838868c25b098a8db7d05fae7372.ctex"]
+source_file="res://assets/models/viewmodel/tex/vm_skin.png"
+dest_files=["res://.godot/imported/vm_skin.png-69d122aab43176f5f7423ecdf169d895.ctex"]
 
 [params]
 
@@ -26,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

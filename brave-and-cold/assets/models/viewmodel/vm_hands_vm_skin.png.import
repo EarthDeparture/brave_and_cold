@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://de3n514myoief"
-path="res://.godot/imported/vm_hands_vm_wool.png-a816838868c25b098a8db7d05fae7372.ctex"
+uid="uid://c7gw3pi1sujwp"
+path="res://.godot/imported/vm_hands_vm_skin.png-9c41479080a14c89c80f0ad28ac48cad.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "c3b29a5a96c1c5682621888743d442d2"
+"md5": "0528d2c78e90839554c885a9fac9cb3e"
 }
 
 [deps]
 
-source_file="res://assets/models/viewmodel/vm_hands_vm_wool.png"
-dest_files=["res://.godot/imported/vm_hands_vm_wool.png-a816838868c25b098a8db7d05fae7372.ctex"]
+source_file="res://assets/models/viewmodel/vm_hands_vm_skin.png"
+dest_files=["res://.godot/imported/vm_hands_vm_skin.png-9c41479080a14c89c80f0ad28ac48cad.ctex"]
 
 [params]
 
