@@ -717,7 +717,8 @@ func _update_prompt() -> void:
 					inv.add('matches', 2)
 					inv.add('beans', 1)
 					inv.add('flare', 1)
-					_say('Found: 2 matches, beans, flare')})
+					inv.add('knife', 1)
+					_say('Found: 2 matches, beans, flare, knife')})
 	for cb in cabins:
 		var stove_text := "Add wood to stove (%d)" % inv.count("wood")
 		if not cb.is_lit():
@@ -740,9 +741,9 @@ func _update_prompt() -> void:
 					inv.remove("wood")
 					cb.add_wood()
 					_say("Added firewood")},
-			{"pos": cb.stove_world_pos(), "r": 1.7, "text": "Cook meat", "hold": 3.0, "hide": not (cb.is_lit() and inv.count('venison_raw') > 0), "act": func() -> void:
+			{"pos": cb.stove_world_pos(), "r": 1.7, "text": "Cook meat", "hold": 3.0, "hide": not (cb.is_lit() and inv.has_raw()), "act": func() -> void:
 				var n := inv.cook_all()
-				_say('Cooked %d venison' % n)},
+				_say('Cooked %d meat' % n)},
 			{"pos": cb.stove_world_pos(), "r": 1.7, "text": "Drink melted snow", "hold": 4.0, "hide": not cb.is_lit() or needs.water > 95.0, "act": func() -> void:
 				needs.drink(35.0)
 				_say('Drank melted snow (+35 water)')},
@@ -758,11 +759,12 @@ func _update_prompt() -> void:
 				inv.add("flare", 1)
 				inv.add("parka")
 				inv.add("axe")
+				inv.add("knife")
 				inv.add("sweater")
 				inv.add("rifle")
 				inv.add("ammo", 6)
 				inv.add("beans", 2)
-				_say("Found: hatchet, rifle + 6 rounds, parka, sweater, matches, beans")})
+				_say("Found: hatchet, knife, rifle + 6 rounds, parka, sweater, matches, beans")})
 		for it in items:
 			if it.get('hide', false):
 				continue
@@ -788,22 +790,42 @@ func _update_prompt() -> void:
 					_say('Added log: %d min of fuel' % int(cfire.fuel_s / 60.0))
 				else:
 					_say('No firewood')})
-			if cfire.is_lit() and inv.count('venison_raw') > 0 and cd < 1.8:
+			if cfire.is_lit() and inv.has_raw() and cd < 1.8:
 				cands.append({"d": cd - 0.01, "text": "Cook meat over fire", "hold": 3.0, "act": func() -> void:
-					_say('Cooked %d venison' % inv.cook_all())})
+					_say('Cooked %d meat' % inv.cook_all())})
 			if cfire.is_lit() and needs.water < 90.0 and cd < 1.8:
 				cands.append({"d": cd + 0.01, "text": "Melt snow and drink", "hold": 4.0, "act": func() -> void:
 					needs.drink(35.0)
 					_say('Drank melted snow (+35 water)')})
-	for dr in deer:
-		if is_instance_valid(dr) and dr.state == Deer.State.DEAD and not dr.harvested:
-			var dd: float = dr.global_position.distance_to(player.position)
-			if dd < 2.4:
-				cands.append({"d": dd, "text": "Harvest deer (+%d venison)" % Deer.MEAT_YIELD, "hold": 6.0, "kcal": 40.0, "act": func() -> void:
-					dr.harvested = true
-					inv.add('venison_raw', Deer.MEAT_YIELD)
-					dr.queue_free()
-					_say('Harvested %d raw venison' % Deer.MEAT_YIELD)})
+	for cn in get_tree().get_nodes_in_group("carcasses"):
+		var cnode := cn as Node3D
+		if cnode == null or cnode.is_queued_for_deletion():
+			continue
+		var cdist := cnode.global_position.distance_to(player.position)
+		if cdist > 2.6:
+			continue
+		var sp := Carcass.species_of(cnode)
+		var done: Dictionary = cnode.get_meta("done", {})
+		var si := 0
+		for st in Carcass.open_steps(sp, done):
+			var info := Carcass.step_info(sp, st, inv.count('knife') > 0, inv.count('axe') > 0)
+			var step: String = st
+			var lab := "%s %s" % [Carcass.STEP_VERB[step], Carcass.SPECIES[sp]["label"]]
+			si += 1
+			if not bool(info["ok"]):
+				cands.append({"d": cdist + si * 0.01, "text": "%s (needs a %s)" % [lab, info["need"]], "act": func() -> void: _say('You need a knife for that')})
+				continue
+			var yid: String = info["id"]
+			var yn: int = int(info["n"])
+			cands.append({"d": cdist + si * 0.01, "text": "%s (+%d %s)" % [lab, yn, inv.name_of(yid)], "hold": float(info["time"]), "kcal": 30.0, "label": lab,
+				"act": func() -> void: _carcass_step(cnode, sp, step, yid, yn)})
+	for bn in get_tree().get_nodes_in_group("bodies"):
+		var bz := bn as Node3D
+		if bz == null or bz.is_queued_for_deletion() or bz.get_meta("searched", false):
+			continue
+		var bd := bz.global_position.distance_to(player.position)
+		if bd < 2.4:
+			cands.append({"d": bd, "text": "Search body", "hold": 3.0, "kcal": 5.0, "act": func() -> void: _search_body(bz)})
 	for pk in get_tree().get_nodes_in_group("pickups"):
 		var ip := pk as ItemPickup
 		if ip == null:
@@ -1002,6 +1024,39 @@ func _give_or_drop(id: String, n: int, pos: Vector3) -> void:
 	if dropped > 0:
 		ItemPickup.spawn(self, id, dropped, _ground(pos.x, pos.z))
 		_say('Pack full: %d %s left on the ground' % [dropped, inv.name_of(id)])
+
+
+func _carcass_step(cn: Node3D, sp: String, step: String, id: String, n: int) -> void:
+	if cn == null or cn.is_queued_for_deletion():
+		return
+	var done: Dictionary = cn.get_meta("done", {})
+	if done.get(step, false):
+		return
+	done[step] = true
+	cn.set_meta("done", done)
+	_give_or_drop(id, n, cn.global_position)
+	if inv.count('knife') > 0:
+		inv.wear('knife', 0.01)
+	elif step == "meat":
+		inv.wear('axe', 0.02)
+	_say('%s: +%d %s' % [String(Carcass.STEP_VERB[step]).replace(" from", ""), n, inv.name_of(id)])
+	if Carcass.open_steps(sp, done).is_empty():
+		cn.queue_free()
+
+
+func _search_body(bz: Node3D) -> void:
+	if bz == null or bz.get_meta("searched", false):
+		return
+	bz.set_meta("searched", true)
+	var loot := Carcass.body_loot(int(bz.global_position.x * 7.0) * 31 + int(bz.global_position.z * 13.0))
+	if loot.is_empty():
+		_say('Nothing on the body')
+		return
+	var parts: Array = []
+	for id in loot.keys():
+		_give_or_drop(String(id), int(loot[id]), bz.global_position)
+		parts.append('%d %s' % [int(loot[id]), inv.name_of(String(id))])
+	_say('Found: ' + ', '.join(parts))
 
 
 func _log_list() -> Array:
@@ -1424,6 +1479,7 @@ func _deertest_step(delta: float) -> void:
 		inv.needs = needs
 		inv.add('rifle')
 		inv.add('ammo', 3)
+		inv.add('knife')
 		rifle_up = true
 		var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
 		var dp := player.position + fwd * 40.0
@@ -1448,6 +1504,11 @@ func _deertest_step(delta: float) -> void:
 		if _cur.has('act'):
 			(_cur['act'] as Callable).call()
 		print('DEERTEST venison_raw=%d ammo=%d' % [inv.count('venison_raw'), inv.count('ammo')])
+		for c2 in _cands_cache.duplicate():
+			var tx := String(c2['text'])
+			if tx.begins_with('Skin') or tx.begins_with('Gut'):
+				(c2['act'] as Callable).call()
+		print('DEERTEST hide=%d gut=%d knife_cond=%.2f' % [inv.count('deer_hide'), inv.count('gut'), inv.condition('knife')])
 		var cal0 := needs.calories
 		needs.calories = 500.0
 		print('DEERTEST eat: ', inv.use('venison_raw'), ' cal ', needs.calories)

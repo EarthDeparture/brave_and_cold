@@ -14,7 +14,7 @@ const GRAB_RANGE := 1.15
 const DAMAGE := 7.0
 const COOLDOWN := 1.6
 const DOOR_BASH_DPS := 10.0
-const CORPSE_LIFE_S := 60.0
+const CORPSE_LIFE_S := 300.0
 
 static var night_factor := 0.0
 
@@ -123,6 +123,7 @@ func hit(dmg: float, from: Vector3) -> void:
 func _die() -> void:
 	state = State.DEAD
 	remove_from_group("hostile")
+	add_to_group("bodies")
 	speed_now = 0.0
 	var tw := create_tween()
 	tw.tween_property(_model, "rotation:x", -PI / 2.0, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)

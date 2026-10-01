@@ -79,6 +79,7 @@ func hit(dmg: float, from: Vector3) -> void:
 	if hp <= 0.0:
 		state = State.DEAD
 		remove_from_group("prey")
+		add_to_group("carcasses")
 		speed_now = 0.0
 		var tw := create_tween()
 		tw.tween_property(self, "rotation:z", PI / 2.0, 0.45)

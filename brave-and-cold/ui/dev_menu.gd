@@ -50,6 +50,8 @@ func setup(w: Node) -> void:
 		_selftest()
 	if "choptest=1" in ua:
 		_choptest()
+	if "carcasstest=1" in ua:
+		_carcasstest()
 
 
 func _selftest() -> void:
@@ -621,7 +623,7 @@ func _kit() -> void:
 	var inv: Inventory = world.get("inv")
 	if inv == null:
 		return
-	for pr in [["rifle", 1], ["ammo", 40], ["axe", 1], ["parka", 1], ["sweater", 1], ["matches", 8], ["wood", 10], ["beans", 4], ["flare", 3]]:
+	for pr in [["rifle", 1], ["ammo", 40], ["axe", 1], ["knife", 1], ["parka", 1], ["sweater", 1], ["matches", 8], ["wood", 10], ["beans", 4], ["flare", 3]]:
 		inv.add(pr[0], pr[1])
 	world.call("_say", "Dev kit added")
 
@@ -730,4 +732,113 @@ func _choptest() -> void:
 	print("CHOPTEST apply_felled=", ok)
 	fails += 0 if ok else 1
 	print("CHOPTEST failures=", fails)
+	get_tree().quit()
+
+
+func _steps_texts() -> String:
+	world.call("_update_prompt")
+	var s := ""
+	for c in world.get("_cands_cache"):
+		s += String(c["text"]) + " | "
+	return s
+
+
+func _run_acts(prefixes: Array) -> int:
+	var n := 0
+	for c in (world.get("_cands_cache") as Array).duplicate():
+		for p in prefixes:
+			if String(c["text"]).begins_with(p) and c.has("act"):
+				(c["act"] as Callable).call()
+				n += 1
+				break
+	return n
+
+
+func _carcasstest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	inv.counts.erase("knife")
+	inv.counts.erase("axe")
+	var pp: Vector3 = player.position
+	var tg: Terrain3D = world.get("terrain")
+	for sp: String in ["wolf", "bear"]:
+		var pos := Vector3(pp.x + 3.0, tg.data.get_height(Vector3(pp.x + 3.0, 0, pp.z)), pp.z)
+		var w: Wolf = world.call("_add_wolf", pos, 77, sp == "bear")
+		w.hit(9999.0, pp)
+		await get_tree().create_timer(0.8).timeout
+		var ok: bool = w.is_in_group("carcasses") and Carcass.species_of(w) == sp
+		print("CARCASSTEST ", sp, " carcass group+species=", ok)
+		fails += 0 if ok else 1
+		_tp(pos.x + 1.2, pos.z, pos)
+		await get_tree().create_timer(0.8).timeout
+		var tx := _steps_texts()
+		ok = tx.contains("needs a knife")
+		print("CARCASSTEST ", sp, " no tool -> ", tx)
+		fails += 0 if ok else 1
+		inv.add("axe")
+		tx = _steps_texts()
+		ok = tx.begins_with("Quarter") or tx.contains("Quarter")
+		var m0 := inv.count(Carcass.SPECIES[sp]["meat"])
+		_run_acts(["Quarter"])
+		var half := inv.count(Carcass.SPECIES[sp]["meat"]) - m0
+		ok = ok and half == int(ceil(float(Carcass.SPECIES[sp]["meat_n"]) * 0.5))
+		print("CARCASSTEST ", sp, " hatchet half yield=", ok, " got ", half)
+		fails += 0 if ok else 1
+		inv.add("knife")
+		tx = _steps_texts()
+		ok = not tx.contains("Quarter") and tx.contains("Skin") and tx.contains("Gut")
+		print("CARCASSTEST ", sp, " knife steps left=", ok, " ", tx)
+		fails += 0 if ok else 1
+		_run_acts(["Skin", "Gut", "Render"])
+		var hid := inv.count(Carcass.SPECIES[sp]["hide"])
+		ok = hid == 1 and inv.count("gut") >= 1 and inv.condition("knife") < 1.0
+		await get_tree().process_frame
+		await get_tree().process_frame
+		ok = ok and (not is_instance_valid(w) or w.is_queued_for_deletion())
+		print("CARCASSTEST ", sp, " fully butchered + carcass gone=", ok)
+		fails += 0 if ok else 1
+		inv.counts.erase("axe")
+		inv.counts.erase("knife")
+	var zpos := Vector3(pp.x - 3.0, tg.data.get_height(Vector3(pp.x - 3.0, 0, pp.z)), pp.z)
+	var z: Zombie = world.call("_add_zombie", zpos, 900)
+	z.hit(9999.0, pp)
+	await get_tree().create_timer(0.6).timeout
+	_tp(zpos.x + 1.2, zpos.z, zpos)
+	await get_tree().create_timer(0.8).timeout
+	var tx2 := _steps_texts()
+	var ok2 := tx2.contains("Search body")
+	print("CARCASSTEST zombie search prompt=", ok2)
+	fails += 0 if ok2 else 1
+	var w0 := 0
+	for id in inv.counts.keys():
+		w0 += int(inv.counts[id])
+	var ex := Carcass.body_loot(int(zpos.x * 7.0) * 31 + int(zpos.z * 13.0))
+	_run_acts(["Search body"])
+	var w1 := 0
+	for id in inv.counts.keys():
+		w1 += int(inv.counts[id])
+	var exn := 0
+	for id in ex.keys():
+		exn += int(ex[id])
+	ok2 = (w1 - w0) == exn and z.get_meta("searched", false) and not _steps_texts().contains("Search body")
+	print("CARCASSTEST zombie loot=", ok2, " expected ", ex, " got +", w1 - w0)
+	fails += 0 if ok2 else 1
+	# loot path with a body whose roll is non-empty
+	var zp2 := zpos
+	for i in range(1, 40):
+		zp2 = Vector3(zpos.x + float(i) * 0.37, tg.data.get_height(Vector3(zpos.x + float(i) * 0.37, 0, zpos.z)), zpos.z)
+		if not Carcass.body_loot(int(zp2.x * 7.0) * 31 + int(zp2.z * 13.0)).is_empty():
+			break
+	var z2: Zombie = world.call("_add_zombie", zp2, 901)
+	z2.hit(9999.0, pp)
+	await get_tree().create_timer(0.6).timeout
+	var ex2 := Carcass.body_loot(int(z2.global_position.x * 7.0) * 31 + int(z2.global_position.z * 13.0))
+	var before := inv.total_weight()
+	world.call("_search_body", z2)
+	ok2 = not ex2.is_empty() and inv.total_weight() > before and z2.get_meta("searched", false)
+	print("CARCASSTEST zombie nonempty loot=", ok2, " ", ex2)
+	fails += 0 if ok2 else 1
+	print("CARCASSTEST failures=", fails)
 	get_tree().quit()

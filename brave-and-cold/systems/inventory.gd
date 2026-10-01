@@ -13,13 +13,23 @@ const ITEMS := {
 	"beans": {"name": "Canned Beans", "kind": "food", "stack": 4, "kcal": 650.0, "desc": "Tinned beans. Safe to eat cold."},
 	"venison_raw": {"name": "Raw Venison", "kind": "food", "stack": 4, "kcal": 350.0, "raw": true, "cooked": "venison_cooked", "desc": "Fresh meat. Cook it over a fire for more calories."},
 	"venison_cooked": {"name": "Cooked Venison", "kind": "food", "stack": 4, "kcal": 900.0, "desc": "Seared venison steak."},
+	"knife": {"name": "Hunting Knife", "kind": "tool", "stack": 1, "desc": "Sharp skinning knife. Needed to skin, gut and fully butcher animals."},
+	"wolf_meat_raw": {"name": "Raw Wolf Meat", "kind": "food", "stack": 4, "kcal": 250.0, "raw": true, "cooked": "wolf_meat_cooked", "desc": "Gamey, lean. Cook it."},
+	"wolf_meat_cooked": {"name": "Cooked Wolf Meat", "kind": "food", "stack": 4, "kcal": 650.0, "desc": "Tough but filling."},
+	"bear_meat_raw": {"name": "Raw Bear Meat", "kind": "food", "stack": 4, "kcal": 300.0, "raw": true, "cooked": "bear_meat_cooked", "desc": "Rich, fatty meat. Cook it."},
+	"bear_meat_cooked": {"name": "Cooked Bear Meat", "kind": "food", "stack": 4, "kcal": 800.0, "desc": "Fatty and calorie dense."},
+	"fat": {"name": "Animal Fat", "kind": "misc", "stack": 4, "desc": "Rendered fat. Future: candles, waterproofing, tinder."},
+	"gut": {"name": "Gut", "kind": "misc", "stack": 4, "desc": "Cleaned animal gut. Future: cordage, sewing."},
+	"deer_hide": {"name": "Deer Hide", "kind": "misc", "stack": 2, "desc": "Raw hide. Future: cure and sew into clothing."},
+	"wolf_pelt": {"name": "Wolf Pelt", "kind": "misc", "stack": 2, "desc": "Thick grey fur. Future: warm clothing."},
+	"bear_pelt": {"name": "Bear Pelt", "kind": "misc", "stack": 1, "desc": "Huge heavy pelt. Future: the warmest coat."},
 	"sweater": {"name": "Wool Sweater", "kind": "clothing", "stack": 1, "slot": "body", "warmth": 0.55, "windproof": 0.2, "waterproof": 0.1, "desc": "Warm but lets the wind straight through."},
 	"parka": {"name": "Down Parka", "kind": "clothing", "stack": 1, "slot": "body", "warmth": 0.85, "windproof": 0.8, "waterproof": 0.6, "desc": "Heavy insulated parka. Wind and water resistant."},
 }
 const KIND_ORDER := ["weapon", "tool", "ammo", "clothing", "food", "fuel", "misc"]
 const CAPACITY := 24          # backpack cells
 const EQUIP_ITEMS := ["rifle", "axe"]   # live in equipment slots, not backpack cells
-const WEIGHTS := {"wood": 1.2, "stick": 0.15, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6}
+const WEIGHTS := {"wood": 1.2, "stick": 0.15, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6}
 const WEIGHT_SOFT := 30.0   # kg carried before you slow down
 const WEIGHT_HARD := 45.0   # kg hard cap (cannot pick up more)
 const BASE_WARMTH := 0.25
@@ -152,6 +162,13 @@ func cook_all() -> int:
 			add(out, c)
 			n += c
 	return n
+
+
+func has_raw() -> bool:
+	for id in counts.keys():
+		if ITEMS.has(id) and ITEMS[id].get("raw", false):
+			return true
+	return false
 
 
 func is_wearable(id: String) -> bool:

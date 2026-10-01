@@ -76,6 +76,7 @@ func hit(dmg: float, from: Vector3) -> void:
 	if hp <= 0.0:
 		dead = true
 		remove_from_group("hostile")
+		add_to_group("carcasses")
 		speed_now = 0.0
 		var tw := create_tween()
 		tw.tween_property(self, "rotation:z", PI / 2.0, 0.5)
@@ -151,7 +152,7 @@ func _process(delta: float) -> void:
 		return
 	if dead:
 		_dead_t += delta
-		if _dead_t > 60.0:
+		if _dead_t > 900.0:
 			queue_free()
 		return
 	_state_t += delta
