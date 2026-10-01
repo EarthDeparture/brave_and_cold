@@ -2432,5 +2432,29 @@ func _hamlettest() -> void:
 		ok = moved > 0.6 and absf(far.x - (c0.x + 30.0)) < 0.001 and not ob.contains_xz(c0.x, c0.z)
 	print("HAMLETTEST outbuildings=", obs.size(), " solid ok=", ok)
 	fails += 0 if ok else 1
+	var shed = null
+	for ob2 in obs:
+		if ob2.kind == "woodshed":
+			shed = ob2
+	ok = shed != null and shed.wood_left == 5 and shed.wood_world_pos().distance_to(shed.global_position) > shed.hz
+	print("HAMLETTEST woodshed firewood=", shed.wood_left if shed != null else -1, " ok=", ok)
+	fails += 0 if ok else 1
+	var huts: Array = world.get("huts")
+	if huts.is_empty():
+		print("HAMLETTEST hut door skipped (no huts)")
+	else:
+		var hu: Hut = huts[0]
+		var gp: Vector3 = hu.to_global(Vector3(0.0, 0.0, Hut.HZ))
+		var open_q: Vector2 = hu.resolve(gp.x, gp.z, 0.35)
+		var free: bool = Vector2(open_q.x - gp.x, open_q.y - gp.z).length() < 0.001
+		hu.toggle_door()
+		var closed_q: Vector2 = hu.resolve(gp.x, gp.z, 0.35)
+		var blocked: bool = Vector2(closed_q.x - gp.x, closed_q.y - gp.z).length() > 0.05
+		var leak_closed: float = hu.noise_leak()
+		hu.bash_door(100.0)
+		var broke: bool = hu.door_broken and hu.door_open
+		ok = free and blocked and leak_closed < 1.0 and broke
+		print("HAMLETTEST hut door open_free=", free, " closed_blocks=", blocked, " leak=", leak_closed, " bash_breaks=", broke, " ok=", ok)
+		fails += 0 if ok else 1
 	print("HAMLETTEST failures=", fails)
 	get_tree().quit()

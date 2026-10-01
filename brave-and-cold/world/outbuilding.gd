@@ -15,6 +15,7 @@ var floor_y := 0.0
 var door_open := true
 var door_boards := 0
 var crate_looted := true
+var wood_left := 0
 var openings: Array[Opening] = []
 
 
@@ -40,6 +41,7 @@ func setup(terrain: Terrain3D, k: String, x: float, z: float, yaw_deg: float) ->
 	position = Vector3(x, hmax - 0.08, z)
 	rotation_degrees = Vector3(0, yaw_deg, 0)
 	floor_y = position.y
+	wood_left = 5 if k == "woodshed" else 0
 	var model := (load(String(d["model"])) as PackedScene).instantiate()
 	add_child(model)
 	var mat := StandardMaterial3D.new()
@@ -100,3 +102,8 @@ func resolve(x: float, z: float, r: float) -> Vector2:
 
 func floor_at(_x: float, _z: float, _terrain_h: float) -> float:
 	return NAN
+
+
+## Spot at the open front of the woodshed where the cordwood stack is reachable.
+func wood_world_pos() -> Vector3:
+	return to_global(Vector3(0.0, 0.3, hz + 0.1))

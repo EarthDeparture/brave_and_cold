@@ -1063,6 +1063,10 @@ func _update_prompt() -> void:
 	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
 	var cands: Array = []
 	for hu in huts:
+		var hud: Hut = hu
+		var hdd: float = hud.to_global(Vector3(0.0, 1.0, Hut.HZ)).distance_to(player.position)
+		if hdd < 2.2 and not hud.door_broken:
+			cands.append({'d': hdd, 'text': 'Close door' if hud.door_open else 'Open door', 'act': hud.toggle_door})
 		if not hu.crate_looted:
 			var hh: Hut = hu
 			var hd: float = hh.tackle_world_pos().distance_to(player.position)
@@ -1074,6 +1078,16 @@ func _update_prompt() -> void:
 					inv.add('flare', 1)
 					inv.add('knife', 1)
 					_say('Found: 2 matches, beans, flare, knife')})
+	for ob in outbuildings:
+		if ob.wood_left > 0:
+			var obb: Outbuilding = ob
+			var od: float = obb.wood_world_pos().distance_to(player.position)
+			if od < 2.0:
+				cands.append({'d': od, 'text': 'Take firewood (%d left)' % obb.wood_left, 'hold': 1.0, 'act': func() -> void:
+					if obb.wood_left > 0:
+						obb.wood_left -= 1
+						inv.add('wood')
+						_say('+1 firewood')})
 	for cb in cabins:
 		var stove_text := "Add wood to stove (%d)" % inv.count("wood")
 		if not cb.is_lit():
@@ -2129,6 +2143,7 @@ func save_game() -> bool:
 		'needs': {'cal': needs.calories, 'water': needs.water},
 		'inv': {'counts': inv.counts, 'worn': inv.equipped_body, 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age},
 		'cabins': cabs,
+		'sheds': outbuildings.map(func(o: Outbuilding) -> int: return o.wood_left),
 		'fires': fires,
 		'wolves': _alive_list(wolves),
 		'pickups': _pickup_list(),
@@ -2250,6 +2265,9 @@ func _apply_save(sv: Dictionary) -> void:
 			inv.extra[String(sl)] = String(ex[sl])
 	inv._recompute()
 	rifle_up = bool(sv['inv']['rifle_up']) and inv.count('rifle') > 0
+	var shs: Array = sv.get('sheds', [])
+	for si in range(mini(shs.size(), outbuildings.size())):
+		outbuildings[si].wood_left = int(shs[si])
 	var cabs: Array = sv['cabins']
 	for i in range(mini(cabs.size(), cabins.size())):
 		var cb = cabins[i]

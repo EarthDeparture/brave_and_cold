@@ -13,7 +13,12 @@ const RAMP_LEN := 1.2
 const TACKLE_LOCAL := Vector3(1.15, 0.0, -0.9)
 
 var floor_y := 0.0
-var door_open := true       # always open; zombies/wolves read this
+var door_open := true       # starts open; the player can close it, zombies bash it (no boards on huts)
+var door_boards := 0         # zombie code reads this; huts cannot be boarded
+var door_hp := 60.0
+var door_broken := false
+var _door_pivot: Node3D
+var _door_rect := Rect2(-DOOR_HALF, HZ - 0.04, 2 * DOOR_HALF, 0.08)
 var crate_looted := false   # tackle box
 var _walls: Array[Rect2] = []
 var openings: Array[Opening] = []
@@ -112,8 +117,34 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 		Rect2(-HX - t, -HZ - t, 2 * t, 2 * HZ + 2 * t),
 		Rect2(HX - t, -HZ - t, 2 * t, 2 * HZ + 2 * t),
 	]
+	_build_door()
 	openings.append(Opening.make(self, "window", 0.75, 0.7, Vector3(HX, 1.7, -0.275), 90.0))  # gen_hut.py WIN
 	return true
+
+
+func _build_door() -> void:
+	_door_pivot = Node3D.new()
+	_door_pivot.position = Vector3(-DOOR_HALF, FLOOR_LOCAL_Y, HZ)
+	add_child(_door_pivot)
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = Vector3(2 * DOOR_HALF, 1.95, 0.06)
+	mi.mesh = bm
+	mi.position = Vector3(DOOR_HALF, 0.975, 0.0)
+	var dm := StandardMaterial3D.new()
+	dm.albedo_color = Color(0.20, 0.17, 0.13)
+	dm.roughness = 0.95
+	mi.material_override = dm
+	_door_pivot.add_child(mi)
+	_door_pivot.rotation.y = deg_to_rad(105.0)   # starts open
+
+
+func toggle_door() -> void:
+	if door_broken:
+		return
+	door_open = not door_open
+	var tw := create_tween()
+	tw.tween_property(_door_pivot, "rotation:y", deg_to_rad(105.0) if door_open else 0.0, 0.5).set_trans(Tween.TRANS_SINE)
 
 
 func tackle_world_pos() -> Vector3:
@@ -121,13 +152,13 @@ func tackle_world_pos() -> Vector3:
 
 
 func noise_leak() -> float:
-	return 1.0
+	return 1.0 if door_open else 0.45
 
 
 func sight_line_open(a: Vector3, b: Vector3) -> bool:
 	var la := to_local(a)
 	var lb := to_local(b)
-	if (la.z > HZ) != (lb.z > HZ):
+	if door_open and (la.z > HZ) != (lb.z > HZ):
 		var t := (HZ - la.z) / (lb.z - la.z)
 		var p := la + (lb - la) * t
 		if absf(p.x) < DOOR_HALF and p.y > FLOOR_LOCAL_Y and p.y < 2.2:
@@ -142,8 +173,16 @@ func door_world_pos() -> Vector3:
 	return to_global(Vector3(0.0, 0.0, HZ + 0.6))
 
 
-func bash_door(_dmg: float) -> void:
-	pass
+func bash_door(dmg: float) -> void:
+	if door_broken or door_open:
+		return
+	door_hp -= dmg
+	_door_pivot.rotation.y = sin(Time.get_ticks_msec() * 0.06) * 0.03
+	if door_hp <= 0.0:
+		door_broken = true
+		door_open = true
+		var tw := create_tween()
+		tw.tween_property(_door_pivot, "rotation:y", deg_to_rad(120.0), 0.25)
 
 
 func to_local_xz(x: float, z: float) -> Vector2:
@@ -159,7 +198,10 @@ func contains_xz(x: float, z: float) -> bool:
 func resolve(x: float, z: float, r: float) -> Vector2:
 	var l := to_local_xz(x, z)
 	var moved := false
-	for w in _walls:
+	var rects := _walls.duplicate()
+	if not door_open:
+		rects.append(_door_rect)
+	for w in rects:
 		var cx := clampf(l.x, w.position.x, w.end.x)
 		var cz := clampf(l.y, w.position.y, w.end.y)
 		var d := l - Vector2(cx, cz)
