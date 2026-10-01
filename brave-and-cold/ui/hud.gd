@@ -32,6 +32,7 @@ var player: Player
 var body: BodyTemperature
 var snow: SnowField
 var clock: GameClock
+var weather: Weather
 var needs: Needs
 var inv: Inventory
 var actions: Array = []   # action-menu lines
@@ -195,6 +196,9 @@ func _draw_monitor(sz: Vector2, k: float) -> void:
 		lines.append("Food: %d kcal" % int(needs.calories))
 		lines.append("Water: %d%%" % int(needs.water))
 	lines.append("Temperature: %.1f C" % body.core)
+	if weather != null:
+		lines.append("Air: %.0f C   Feels: %.0f C" % [clock.ambient_c(), body.feels_like])
+		lines.append("%s   Wind: %.0f m/s" % [weather.state_name(), weather.wind])
 	lines.append("Zombies killed: %d" % kills)
 	var hrs := clock.total_game_s / 3600.0
 	lines.append("Survived: %d d %d h" % [int(hrs / 24.0), int(fmod(hrs, 24.0))])
@@ -208,7 +212,7 @@ func _draw_monitor(sz: Vector2, k: float) -> void:
 
 func _draw_messages(sz: Vector2, k: float) -> void:
 	var lh := 20.0 * k
-	var base := sz.y - 22.0 * k - 19.0 * k * 6.0 - 26.0 * k
+	var base := sz.y - 22.0 * k - 19.0 * k * 8.0 - 26.0 * k
 	if not show_monitor:
 		base = sz.y - 30.0 * k
 	var n := _msgs.size()

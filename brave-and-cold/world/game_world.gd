@@ -130,6 +130,7 @@ func _ready() -> void:
 	hud = Hud.new()
 	add_child(hud)
 	hud.setup(player, body, snow, clock)
+	hud.weather = weather
 	hud.visible = not opts.has('nohud')
 	gear = GearScreen.new()
 	add_child(gear)
