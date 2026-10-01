@@ -38,6 +38,8 @@ var _prev_yaw := 0.0
 var _prev_pitch := 0.0
 var _sway := Vector2.ZERO
 var _sprint_k := 0.0
+var _flash: OmniLight3D
+var _push := 0.0
 
 
 func _ready() -> void:
@@ -52,6 +54,13 @@ func _ready() -> void:
 	_axe = _pick(AXE, "vm_axe")
 	_rifle = _pick(RIFLE, "vm_rifle")
 	_bolt = _pick(RIFLE, "vm_bolt")
+	_flash = OmniLight3D.new()
+	_flash.light_color = Color(1.0, 0.72, 0.38)
+	_flash.omni_range = 6.0
+	_flash.light_energy = 0.0
+	_flash.shadow_enabled = false
+	_flash.position = Vector3(0.0, 0.034, -0.70)
+	_rifle.add_child(_flash)
 
 
 func _pick(path: String, node_name: String) -> MeshInstance3D:
@@ -156,6 +165,20 @@ func _process(delta: float) -> void:
 	_sway = _sway.lerp(want, clampf(delta * 9.0, 0.0, 1.0))
 	off += Vector3(_sway.x, _sway.y, 0.0)
 	_sprint_k = move_toward(_sprint_k, 1.0 if player.sprinting else 0.0, delta * 4.0)
+	# wall clip pullback: short ray along the view, ignore ground-ish normals
+	var want_push := 0.0
+	if freeze_t < 0.0:
+		var from := global_position
+		var to := from - global_basis.z * 1.1
+		var q := PhysicsRayQueryParameters3D.create(from, to)
+		var hit := get_world_3d().direct_space_state.intersect_ray(q)
+		if not hit.is_empty() and absf((hit["normal"] as Vector3).y) < 0.6:
+			want_push = clampf(1.1 - from.distance_to(hit["position"] as Vector3), 0.0, 0.55)
+	_push = lerpf(_push, want_push, clampf(delta * 14.0, 0.0, 1.0))
+	off += Vector3(0.0, -0.06 * _push, _push)
+	_flash.light_energy = 0.0
+	if _fire_t >= 0.0 and _fire_t < 0.09 and _kick > 0.5:
+		_flash.light_energy = 7.0 * (1.0 - _fire_t / 0.09)
 	var e := _sstep(_equip)
 	off.y -= (1.0 - e) * 0.5
 	off += Vector3(0.025, -0.045, 0.0) * _sprint_k
@@ -248,8 +271,8 @@ func _pose_fists(base: Transform3D) -> void:
 		jab = sin(clampf(_swing_t / 0.38, 0.0, 1.0) * PI)
 	var er := Vector3(0.45, -0.85, 0.45)
 	var el := Vector3(-0.45, -0.85, 0.45)
-	var tr := _free_hand(1.0, Vector3(0.20, -0.20 + 0.04 * jab, -0.38 - 0.24 * jab), er, 0.0, base)
-	var tl := _free_hand(-1.0, Vector3(-0.20, -0.21, -0.38), el, 0.0, base)
+	var tr := _free_hand(1.0, Vector3(0.22, -0.30 + 0.05 * jab, -0.34 - 0.24 * jab), er, 0.0, base)
+	var tl := _free_hand(-1.0, Vector3(-0.22, -0.31, -0.34), el, 0.0, base)
 	_hand_r.transform = tr
 	_hand_l.transform = tl
 	_sl_r.transform = tr * Transform3D(Basis.IDENTITY, WRIST_R)

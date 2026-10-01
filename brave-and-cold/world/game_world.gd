@@ -1012,6 +1012,9 @@ func _attack() -> void:
 	viewmodel.swing(axe)
 	var dmg := AXE_DAMAGE if axe else FIST_DAMAGE
 	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_AXE if axe else 10.0, player)
+	await get_tree().create_timer(0.27 if axe else 0.14).timeout  # damage lands at swing impact, not at click
+	if player.dead:
+		return
 	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
 	var best: Node3D = null
 	var bd := 2.1
