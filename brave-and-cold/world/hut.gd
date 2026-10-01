@@ -139,6 +139,19 @@ func _build_door() -> void:
 	_door_pivot.rotation.y = deg_to_rad(105.0)   # starts open
 
 
+func state_dict() -> Dictionary:
+	return {'looted': crate_looted, 'open': door_open, 'broken': door_broken, 'hp': door_hp}
+
+
+func restore_state(d: Dictionary) -> void:
+	crate_looted = bool(d.get('looted', false))
+	door_broken = bool(d.get('broken', false))
+	door_open = bool(d.get('open', true)) or door_broken
+	door_hp = float(d.get('hp', 60.0))
+	if _door_pivot != null:
+		_door_pivot.rotation.y = deg_to_rad(120.0 if door_broken else (105.0 if door_open else 0.0))
+
+
 func toggle_door() -> void:
 	if door_broken:
 		return

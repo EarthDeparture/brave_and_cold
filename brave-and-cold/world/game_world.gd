@@ -2143,6 +2143,7 @@ func save_game() -> bool:
 		'needs': {'cal': needs.calories, 'water': needs.water},
 		'inv': {'counts': inv.counts, 'worn': inv.equipped_body, 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age},
 		'cabins': cabs,
+		'huts': huts.map(func(h: Hut) -> Dictionary: return h.state_dict()),
 		'sheds': outbuildings.map(func(o: Outbuilding) -> int: return o.wood_left),
 		'fires': fires,
 		'wolves': _alive_list(wolves),
@@ -2265,6 +2266,9 @@ func _apply_save(sv: Dictionary) -> void:
 			inv.extra[String(sl)] = String(ex[sl])
 	inv._recompute()
 	rifle_up = bool(sv['inv']['rifle_up']) and inv.count('rifle') > 0
+	var hsv: Array = sv.get('huts', [])
+	for hi in range(mini(hsv.size(), huts.size())):
+		huts[hi].restore_state(hsv[hi])
 	var shs: Array = sv.get('sheds', [])
 	for si in range(mini(shs.size(), outbuildings.size())):
 		outbuildings[si].wood_left = int(shs[si])

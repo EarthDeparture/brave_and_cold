@@ -2453,6 +2453,13 @@ func _hamlettest() -> void:
 		var leak_closed: float = hu.noise_leak()
 		hu.bash_door(100.0)
 		var broke: bool = hu.door_broken and hu.door_open
+		var sd: Dictionary = hu.state_dict()
+		hu.restore_state({'looted': true, 'open': false, 'broken': false, 'hp': 30.0})
+		var rs: bool = hu.crate_looted and not hu.door_open and absf(hu.door_hp - 30.0) < 0.01
+		hu.restore_state(sd)
+		rs = rs and hu.door_broken and bool(sd['broken'])
+		print("HAMLETTEST hut state save/restore ok=", rs)
+		fails += 0 if rs else 1
 		ok = free and blocked and leak_closed < 1.0 and broke
 		print("HAMLETTEST hut door open_free=", free, " closed_blocks=", blocked, " leak=", leak_closed, " bash_breaks=", broke, " ok=", ok)
 		fails += 0 if ok else 1
