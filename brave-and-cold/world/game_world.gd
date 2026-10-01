@@ -61,6 +61,8 @@ func _ready() -> void:
 		wimg.convert(Image.FORMAT_L8)
 		hut_sites = Hut.find_sites(terrain, road, wimg, int(opts.get('hutn', 5)))
 		print('HUT_SITES ', hut_sites.size(), ' ', hut_sites)
+		if opts.get('hamlet', '1') == '1':
+			_plan_hamlet(wimg)
 		for hs in hut_sites:
 			var hp := Vector2(float(hs['x']), float(hs['z']))
 			var hyaw := deg_to_rad(float(hs['yaw']))
@@ -71,6 +73,9 @@ func _ready() -> void:
 		forest.exclude = func(x: float, z: float) -> bool:
 			for hs in hut_sites:
 				if absf(x - float(hs['x'])) < 7.0 and absf(z - float(hs['z'])) < 7.0:
+					return true
+			for hp2 in hamlet_plan:
+				if absf(x - float(hp2['x'])) < 8.0 and absf(z - float(hp2['z'])) < 8.0:
 					return true
 			return road.is_near(x, z) or trailnet.is_near(x, z)
 		forest.build(terrain)
@@ -132,6 +137,7 @@ func _ready() -> void:
 		sp = Vector2(float(sv['player']['x']), float(sv['player']['z']))
 	player.place(sp.x, sp.y)
 	_place_cabin(home)
+	_build_hamlet(home)
 	_build_huts()
 	if plants != null:
 		for cb in cabins:
@@ -184,6 +190,13 @@ func _ready() -> void:
 		var hdir: Vector3 = hu0.global_position - hwp
 		opts['yaw'] = rad_to_deg(atan2(-hdir.x, -hdir.z))
 		opts['pitch'] = -4.0
+	if opts.has('hamletpos') and hamlet_n > 0:
+		var hedge := _road_edge_toward(hamlet_center)
+		var hv := (hamlet_center - hedge)
+		var hstart := hamlet_center - hv.normalized() * float(opts.get('hamletd', 40.0))
+		player.place(hstart.x, hstart.y)
+		opts['yaw'] = rad_to_deg(atan2(-hv.x, -hv.y))
+		opts['pitch'] = -3.0
 	if not cabins.is_empty():
 		if opts.has("stove"):
 			cabins[0].add_wood()
@@ -557,7 +570,114 @@ func _build_huts() -> void:
 		var cyaw := deg_to_rad(cabins[0].rotation_degrees.y)
 		var cp := Vector2(cabins[0].position.x, cabins[0].position.z)
 		trailnet.add_trail(_road_edge_toward(cp), cp + Vector2(sin(cyaw), cos(cyaw)) * 3.9, 23)
+	for ci in range(1, cabins.size()):
+		var hy := deg_to_rad(cabins[ci].rotation_degrees.y)
+		var hp := Vector2(cabins[ci].position.x, cabins[ci].position.z)
+		trailnet.add_trail(_road_edge_toward(hp), hp + Vector2(sin(hy), cos(hy)) * 3.9, 23)
 	trailnet.build_mesh(terrain)
+
+
+## Hamlet: a cluster of 4-5 cabins well off the start, 35-60 m from the road. Reuses Cabin (doors, stove, windows); crates hold scavenged loot, not the starter kit.
+var hamlet_center := Vector2.ZERO
+var hamlet_n := 0
+
+
+var hamlet_plan: Array = []   # [{x, z, yaw}] planned BEFORE the forest so trees keep out of it
+
+
+## Terrain-only hamlet planning (needs no forest). 3-5 cabins 35-90 m off the road, > 400 m from the map centre (where the start cabin lives).
+func _plan_hamlet(water: Image) -> void:
+	hamlet_plan = []
+	if road.points.size() < 60:
+		return
+	var layout := [Vector2(0, 0), Vector2(15, 4), Vector2(-14, 7), Vector2(9, -16), Vector2(-10, -15)]
+	var i := 40
+	var best_n := 0
+	while i < road.points.size() - 20:
+		var rp: Vector2 = road.points[i]
+		if rp.length() < 400.0:
+			i += 6
+			continue
+		var rq: Vector2 = road.points[mini(i + 1, road.points.size() - 1)]
+		var d := (rq - rp).normalized()
+		var nrm := Vector2(-d.y, d.x)
+		for off in [35.0, -35.0, 45.0, -45.0, 58.0, -58.0, 72.0, -72.0, 90.0, -90.0]:
+			var c: Vector2 = rp + nrm * off
+			var spots: Array = []
+			var far_from_huts := true
+			for hs in hut_sites:
+				if Vector2(float(hs['x']), float(hs['z'])).distance_to(c) < 80.0:
+					far_from_huts = false
+			if not far_from_huts:
+				continue
+			for l in layout:
+				var q: Vector2 = c + nrm * l.x + d * l.y
+				if _flat_ok(q.x, q.y, water) and not road.is_near(q.x, q.y, 9.0):
+					spots.append({'x': q.x, 'z': q.y, 'yaw': rad_to_deg(atan2(rp.x - q.x, rp.y - q.y)) + float((spots.size() * 37) % 31 - 15)})
+			if spots.size() > best_n and spots.size() >= 3:
+				best_n = spots.size()
+				hamlet_plan = spots
+				hamlet_center = c
+				if best_n >= layout.size():
+					print('HAMLET_PLAN at ', c, ' n=', best_n)
+					return
+		i += 6
+	print('HAMLET_PLAN best n=', best_n, ' at ', hamlet_center)
+
+
+func _flat_ok(x: float, z: float, water: Image) -> bool:
+	var hs: Array[float] = []
+	for ox in [-5.0, 0.0, 5.0]:
+		for oz in [-5.0, 0.0, 5.0]:
+			var px: float = x + ox
+			var pz: float = z + oz
+			var wx := int(px) + 1024
+			var wz := int(pz) + 1024
+			if wx < 0 or wz < 0 or wx >= water.get_width() or wz >= water.get_height():
+				return false
+			if water.get_pixel(wx, wz).r > 0.5:
+				return false
+			var h: float = terrain.data.get_height(Vector3(px, 0, pz))
+			if is_nan(h):
+				return false
+			hs.append(h)
+	return (hs.max() - hs.min()) < 1.4
+
+
+func _build_hamlet(_home: Vector2) -> void:
+	hamlet_n = 0
+	for hp in hamlet_plan:
+		var cb := Cabin.new()
+		add_child(cb)
+		if cb.setup(terrain, float(hp['x']), float(hp['z']), float(hp['yaw'])):
+			cb.wood_pile = 2 + (hamlet_n * 3) % 5
+			cabins.append(cb)
+			hamlet_n += 1
+		else:
+			cb.queue_free()
+	if hamlet_n > 0:
+		print('HAMLET built cabins=', hamlet_n, ' at ', hamlet_center)
+
+## Scavenged crate: 3-5 rolls from a weighted table, seeded by the crate position so it is stable.
+func _loot_hamlet_crate(cb: Cabin) -> void:
+	cb.crate_looted = true
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(absf(cb.position.x) * 31.0 + absf(cb.position.z) * 17.0)
+	var table := [['matches', 3, 22], ['beans', 2, 20], ['ammo', 5, 12], ['bandage', 1, 14], ['rag', 2, 14], ['antiseptic', 1, 8], ['antibiotics', 1, 5], ['nails', 12, 9], ['plank', 2, 8], ['flare', 1, 7], ['sweater', 1, 4], ['toque', 1, 4], ['knife', 1, 3], ['hammer', 1, 3]]
+	var total := 0
+	for e in table:
+		total += int(e[2])
+	var got: Array[String] = []
+	for r in rng.randi_range(3, 5):
+		var roll := rng.randi_range(0, total - 1)
+		for e in table:
+			roll -= int(e[2])
+			if roll < 0:
+				var n := maxi(1, int(e[1]) - rng.randi_range(0, int(e[1]) / 2))
+				inv.add(String(e[0]), n)
+				got.append('%s x%d' % [e[0], n])
+				break
+	_say('Found: ' + ', '.join(got))
 
 
 func _site_ok(x: float, z: float, water: Image) -> bool:
@@ -940,7 +1060,9 @@ func _update_prompt() -> void:
 					inv.add("wood")
 					_say("+1 firewood")},
 		]
-		if not cb.crate_looted:
+		if not cb.crate_looted and cb != cabins[0]:
+			items.append({"pos": cb.crate_world_pos(), "r": 1.7, "text": "Search crate", "hold": 3.0, "act": func() -> void: _loot_hamlet_crate(cb)})
+		elif not cb.crate_looted:
 			items.append({"pos": cb.crate_world_pos(), "r": 1.7, "text": "Search crate", "hold": 3.0, "act": func() -> void:
 				cb.crate_looted = true
 				inv.add("matches", 4)
@@ -1543,6 +1665,9 @@ func _populate(n: int, center: Vector2) -> void:
 			rp.append(road.points[i])
 	pop.generate(n, center, anchors, rp, water)
 	pop.prewarm(16)
+	for ci in range(1, cabins.size()):
+		if randf() < 0.6:
+			pop.add_special(cabins[ci].to_global(Vector3(randf_range(-1.5, 1.5), Cabin.FLOOR_LOCAL_Y, randf_range(-0.8, 1.2))))
 	for hu in huts:
 		if randf() < 0.7:
 			pop.add_special(hu.to_global(Vector3(randf_range(-0.9, 0.9), Hut.FLOOR_LOCAL_Y, randf_range(-0.7, 0.7))))

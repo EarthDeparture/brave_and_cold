@@ -74,6 +74,8 @@ func setup(w: Node) -> void:
 		_hordetest()
 	if "variantstest=1" in ua:
 		_variantstest()
+	if "hamlettest=1" in ua:
+		_hamlettest()
 	if "injurytest=1" in ua:
 		_injurytest()
 	if "popperf=1" in ua:
@@ -2371,3 +2373,53 @@ func _variantstest() -> void:
 	print("VARIANTSTEST failures=", fails)
 	get_tree().quit()
 
+func _hamlettest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var cabs: Array = world.get("cabins")
+	var inv: Inventory = world.get("inv")
+	var hn: int = int(world.get("hamlet_n"))
+	var ok := hn >= 3 and cabs.size() == 1 + hn
+	print("HAMLETTEST cabins=", cabs.size(), " hamlet_n=", hn, " ok=", ok)
+	fails += 0 if ok else 1
+	if hn < 3:
+		print("HAMLETTEST failures=", fails)
+		get_tree().quit()
+		return
+	var mind := 1e9
+	for i in range(1, cabs.size()):
+		for j in range(i + 1, cabs.size()):
+			mind = minf(mind, (cabs[i].position - cabs[j].position).length())
+	ok = mind > 9.0
+	print("HAMLETTEST min spacing=", snappedf(mind, 0.1), " ok=", ok)
+	fails += 0 if ok else 1
+	var hc: Vector2 = world.get("hamlet_center")
+	var home: Vector2 = Vector2(cabs[0].position.x, cabs[0].position.z)
+	ok = hc.distance_to(home) > 300.0
+	print("HAMLETTEST distance from start=", snappedf(hc.distance_to(home), 1.0), " ok=", ok)
+	fails += 0 if ok else 1
+	var cb = cabs[1]
+	var n0 := 0
+	for id in inv.counts:
+		n0 += int(inv.counts[id])
+	world.call("_loot_hamlet_crate", cb)
+	var n1 := 0
+	for id in inv.counts:
+		n1 += int(inv.counts[id])
+	ok = cb.crate_looted and n1 > n0 and inv.count("rifle") == 0 and inv.count("parka") == 0
+	print("HAMLETTEST crate loot items ", n0, "->", n1, " no starter kit ok=", ok)
+	fails += 0 if ok else 1
+	var pop: Population = world.get("pop")
+	var ns := 0
+	for s in pop.specials:
+		if Vector2(s.x - hc.x, s.z - hc.y).length() < 40.0:
+			ns += 1
+	for z in pop.active:
+		if is_instance_valid(z) and z.state == Zombie.State.SLEEP and Vector2(z.global_position.x - hc.x, z.global_position.z - hc.y).length() < 40.0:
+			ns += 1
+	ok = ns >= 1
+	print("HAMLETTEST sleepers=", ns, " ok=", ok)
+	fails += 0 if ok else 1
+	print("HAMLETTEST failures=", fails)
+	get_tree().quit()
