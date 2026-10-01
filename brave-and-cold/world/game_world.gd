@@ -11,6 +11,8 @@ var env: Environment
 var sky_mat: ProceduralSkyMaterial
 var sky_rig: SkyRig
 var clock := GameClock.new()
+var weather := Weather.new()
+var snowfall: SnowFall
 var body := BodyTemperature.new()
 var snow := SnowField.new()
 var noise_bus := NoiseBus.new()
@@ -56,12 +58,21 @@ func _ready() -> void:
 	sky_rig = SkyRig.new()
 	add_child(sky_rig)
 	sky_rig.setup(sun, env, sky_mat)
+	sky_rig.weather = weather
+	if opts.has('weather'):
+		var wi := ['clear', 'cloudy', 'flurry', 'snow', 'blizzard'].find(String(opts['weather']).to_lower())
+		if wi >= 0:
+			weather.lock_state(wi)
 	sky_rig.clouds = CloudLayer.new()
 	add_child(sky_rig.clouds)
 	sky_rig.apply_hour(clock.hour)
 	player = Player.new()
 	add_child(player)
 	player.setup(terrain, snow, body, noise_bus)
+	snowfall = SnowFall.new()
+	add_child(snowfall)
+	snowfall.follow = player
+	snowfall.weather = weather
 	player.forest = forest
 	sky_rig.clouds.follow = player
 	sky_rig.apply_hour(clock.hour)
@@ -204,6 +215,9 @@ func _process(delta: float) -> void:
 	_t += delta
 	# time / lighting
 	var gs := clock.advance(delta)
+	weather.advance(delta, gs)
+	wind = weather.wind
+	clock.weather_offset_c = weather.temp_off
 	sky_rig.apply_hour(clock.hour)
 	var night := clampf(1.0 - sun.light_energy / 0.7, 0.0, 1.0)
 	Zombie.night_factor = night
@@ -224,7 +238,7 @@ func _process(delta: float) -> void:
 		cf.advance(gs)
 		fw = maxf(fw, cf.heat_at(player.position.x, player.position.z))
 	body.metabolism_mult = needs.metabolism_mult()
-	body.update(gs, clock.ambient_c(), wind, player.is_sheltered(), fw, player.activity, 0.0, false)
+	body.update(gs, clock.ambient_c(), wind, player.is_sheltered(), fw, player.activity, 0.0 if player.is_sheltered() else weather.precip * 0.05, false)
 	needs.update(gs, player.activity, body.core)
 	var sd := needs.damage_per_s()
 	if sd > 0.0 and not player.dead:

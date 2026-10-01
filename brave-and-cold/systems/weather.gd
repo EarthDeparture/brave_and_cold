@@ -10,9 +10,9 @@ const NAMES: Array[String] = ["Clear", "Cloudy", "Light snow", "Snowfall", "Bliz
 const TBL: Array = [
 	[2.0, 0.0, 0.0, 0.0, 1.0, 0.35],
 	[4.0, -1.5, 0.0, 0.55, 1.5, 0.7],
-	[5.5, -2.5, 0.3, 0.72, 2.2, 0.8],
-	[9.0, -5.0, 0.65, 0.88, 4.0, 0.92],
-	[19.0, -10.0, 1.0, 1.0, 11.0, 1.0],
+	[5.5, -2.5, 0.3, 0.72, 3.0, 0.8],
+	[9.0, -5.0, 0.65, 0.88, 7.0, 0.92],
+	[19.0, -10.0, 1.0, 1.0, 24.0, 1.0],
 ]
 # row = from state, columns = weights to each next state
 const NEXT: Array = [

@@ -14,6 +14,7 @@ var env: Environment
 var sky_mat: ProceduralSkyMaterial
 var clouds: CloudLayer
 var coverage := 0.45
+var weather: Weather
 var _keys: Array = []  # [hour, preset]
 
 
@@ -63,6 +64,20 @@ func apply_hour(h: float) -> void:
 	env.fog_density = lerpf(pa[8], pb[8], t)
 	env.ambient_light_color = (pa[9] as Color).lerp(pb[9], t)
 	env.ambient_light_energy = lerpf(pa[10], pb[10], t)
+
+	if weather != null:
+		var o := weather.overcast
+		var day := clampf(sun.light_energy / 1.5, 0.0, 1.0)
+		var gray := Color(0.60, 0.64, 0.70) * (0.22 + 0.78 * day)
+		gray.a = 1.0
+		sun.light_energy *= 1.0 - 0.75 * o
+		sky_mat.sky_top_color = (sky_mat.sky_top_color as Color).lerp(gray.darkened(0.15), o * 0.8)
+		sky_mat.sky_horizon_color = (sky_mat.sky_horizon_color as Color).lerp(gray, o * 0.85)
+		sky_mat.ground_horizon_color = (sky_mat.ground_horizon_color as Color).lerp(gray, o * 0.5)
+		env.fog_light_color = env.fog_light_color.lerp(gray.lightened(0.1), o * 0.8)
+		env.fog_density *= weather.fog_mult
+		env.ambient_light_color = env.ambient_light_color.lerp(gray, o * 0.5)
+		coverage = weather.coverage
 
 	if clouds != null:
 		var lum := 0.3 + 0.7 * clampf(sun.light_energy / 1.5, 0.0, 1.0)
