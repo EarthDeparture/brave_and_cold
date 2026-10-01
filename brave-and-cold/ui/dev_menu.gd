@@ -2421,5 +2421,16 @@ func _hamlettest() -> void:
 	ok = ns >= 1
 	print("HAMLETTEST sleepers=", ns, " ok=", ok)
 	fails += 0 if ok else 1
+	var obs: Array = world.get("outbuildings")
+	ok = obs.size() >= 1
+	if ok:
+		var ob = obs[0]
+		var c0: Vector3 = ob.global_position
+		var q: Vector2 = ob.resolve(c0.x, c0.z, 0.4)
+		var moved: float = Vector2(q.x - c0.x, q.y - c0.z).length()
+		var far: Vector2 = ob.resolve(c0.x + 30.0, c0.z, 0.4)
+		ok = moved > 0.6 and absf(far.x - (c0.x + 30.0)) < 0.001 and not ob.contains_xz(c0.x, c0.z)
+	print("HAMLETTEST outbuildings=", obs.size(), " solid ok=", ok)
+	fails += 0 if ok else 1
 	print("HAMLETTEST failures=", fails)
 	get_tree().quit()

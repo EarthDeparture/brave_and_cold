@@ -77,6 +77,9 @@ func _ready() -> void:
 			for hp2 in hamlet_plan:
 				if absf(x - float(hp2['x'])) < 8.0 and absf(z - float(hp2['z'])) < 8.0:
 					return true
+			for he2 in hamlet_extra:
+				if absf(x - float(he2['x'])) < 5.0 and absf(z - float(he2['z'])) < 5.0:
+					return true
 			return road.is_near(x, z) or trailnet.is_near(x, z)
 		forest.build(terrain)
 		if opts.get('plants', '1') == '1':
@@ -189,6 +192,13 @@ func _ready() -> void:
 		player.place(hwp.x, hwp.z)
 		var hdir: Vector3 = hu0.global_position - hwp
 		opts['yaw'] = rad_to_deg(atan2(-hdir.x, -hdir.z))
+		opts['pitch'] = -4.0
+	if opts.has('outpos') and not outbuildings.is_empty():
+		var ob0: Outbuilding = outbuildings[clampi(int(opts['outpos']), 0, outbuildings.size() - 1)]
+		var owp: Vector3 = ob0.to_global(Vector3(float(opts.get('outx', 1.5)), 0.0, float(opts.get('outd', 6.0))))
+		player.place(owp.x, owp.z)
+		var odir: Vector3 = ob0.global_position - owp
+		opts['yaw'] = rad_to_deg(atan2(-odir.x, -odir.z))
 		opts['pitch'] = -4.0
 	if opts.has('hamletpos') and hamlet_n > 0:
 		var hedge := _road_edge_toward(hamlet_center)
@@ -559,6 +569,7 @@ func _build_huts() -> void:
 	colliders = []
 	colliders.append_array(cabins)
 	colliders.append_array(huts)
+	colliders.append_array(outbuildings)
 	noise_bus.buildings = colliders
 	for cbx in cabins:
 		cbx.bus = noise_bus
@@ -583,11 +594,14 @@ var hamlet_n := 0
 
 
 var hamlet_plan: Array = []   # [{x, z, yaw}] planned BEFORE the forest so trees keep out of it
+var hamlet_extra: Array = []  # [{kind, x, z, yaw}] woodshed / outhouse
+var outbuildings: Array = []
 
 
 ## Terrain-only hamlet planning (needs no forest). 3-5 cabins 35-90 m off the road, > 400 m from the map centre (where the start cabin lives).
 func _plan_hamlet(water: Image) -> void:
 	hamlet_plan = []
+	hamlet_extra = []
 	if road.points.size() < 60:
 		return
 	var layout := [Vector2(0, 0), Vector2(15, 4), Vector2(-14, 7), Vector2(9, -16), Vector2(-10, -15)]
@@ -618,11 +632,36 @@ func _plan_hamlet(water: Image) -> void:
 				best_n = spots.size()
 				hamlet_plan = spots
 				hamlet_center = c
+				hamlet_extra = _plan_extras(c, nrm, d, rp, spots, water)
 				if best_n >= layout.size():
 					print('HAMLET_PLAN at ', c, ' n=', best_n)
 					return
 		i += 6
 	print('HAMLET_PLAN best n=', best_n, ' at ', hamlet_center)
+
+
+func _plan_extras(c: Vector2, nrm: Vector2, d: Vector2, rp: Vector2, spots: Array, water: Image) -> Array:
+	var out: Array = []
+	var want := ['woodshed', 'outhouse']
+	var offs := [Vector2(-3, 24), Vector2(24, -4), Vector2(-26, 0), Vector2(2, -27), Vector2(-24, 22), Vector2(26, 18)]
+	for k in want:
+		var he := Outbuilding.half_extents(k)
+		for o in offs:
+			var q: Vector2 = c + nrm * o.x + d * o.y
+			if road.is_near(q.x, q.y, 8.0) or not _flat_ok(q.x, q.y, water):
+				continue
+			var clash := false
+			for s in spots:
+				if Vector2(float(s['x']), float(s['z'])).distance_to(q) < 8.0 + he.x:
+					clash = true
+			for e in out:
+				if Vector2(float(e['x']), float(e['z'])).distance_to(q) < 7.0:
+					clash = true
+			if clash:
+				continue
+			out.append({'kind': k, 'x': q.x, 'z': q.y, 'yaw': rad_to_deg(atan2(rp.x - q.x, rp.y - q.y)) + float(out.size() * 23 - 12)})
+			break
+	return out
 
 
 func _flat_ok(x: float, z: float, water: Image) -> bool:
@@ -655,8 +694,16 @@ func _build_hamlet(_home: Vector2) -> void:
 			hamlet_n += 1
 		else:
 			cb.queue_free()
+	outbuildings = []
+	for he in hamlet_extra:
+		var ob := Outbuilding.new()
+		add_child(ob)
+		if ob.setup(terrain, String(he['kind']), float(he['x']), float(he['z']), float(he['yaw'])):
+			outbuildings.append(ob)
+		else:
+			ob.queue_free()
 	if hamlet_n > 0:
-		print('HAMLET built cabins=', hamlet_n, ' at ', hamlet_center)
+		print('HAMLET built outbuildings=', outbuildings.size(), '  cabins=', hamlet_n, ' at ', hamlet_center)
 
 ## Scavenged crate: 3-5 rolls from a weighted table, seeded by the crate position so it is stable.
 func _loot_hamlet_crate(cb: Cabin) -> void:
