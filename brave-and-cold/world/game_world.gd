@@ -15,6 +15,7 @@ var weather := Weather.new()
 var snowfall: SnowFall
 var road: RoadNet
 var huts: Array = []
+var trailnet: TrailNet
 var colliders: Array = []
 var hut_sites: Array = []
 var body := BodyTemperature.new()
@@ -50,6 +51,8 @@ func _ready() -> void:
 	terrain.material.set_shader_param("macro_variation2", Color(1.0, 0.97, 0.98))
 	road = RoadNet.new()
 	add_child(road)
+	trailnet = TrailNet.new()
+	add_child(trailnet)
 	if opts.get('road', '1') == '1':
 		road.plan()
 	if road.points.size() > 40 and opts.get('huts', '1') == '1':
@@ -57,6 +60,10 @@ func _ready() -> void:
 		wimg.convert(Image.FORMAT_L8)
 		hut_sites = Hut.find_sites(terrain, road, wimg, int(opts.get('hutn', 5)))
 		print('HUT_SITES ', hut_sites.size(), ' ', hut_sites)
+		for hs in hut_sites:
+			var hp := Vector2(float(hs['x']), float(hs['z']))
+			var hyaw := deg_to_rad(float(hs['yaw']))
+			trailnet.add_trail(_road_edge_toward(hp), hp + Vector2(sin(hyaw), cos(hyaw)) * 1.8, 11)
 	if opts.get("trees", "1") == "1":
 		forest = ForestScatter.new()
 		add_child(forest)
@@ -64,7 +71,7 @@ func _ready() -> void:
 			for hs in hut_sites:
 				if absf(x - float(hs['x'])) < 7.0 and absf(z - float(hs['z'])) < 7.0:
 					return true
-			return road.is_near(x, z)
+			return road.is_near(x, z) or trailnet.is_near(x, z)
 		forest.build(terrain)
 	road.build_mesh(terrain)
 	road.build_props(terrain)
@@ -436,6 +443,18 @@ func _place_cabin(spawn: Vector2) -> void:
 	print("CABIN no site found")
 
 
+## Point on the road bank (5 m off the centreline) nearest to p.
+func _road_edge_toward(p: Vector2) -> Vector2:
+	var best := p
+	var bd := 1e18
+	for q in road.points:
+		var d := p.distance_squared_to(q)
+		if d < bd:
+			bd = d
+			best = q
+	return best + (p - best).normalized() * 5.0
+
+
 func _build_huts() -> void:
 	for hs in hut_sites:
 		var h := Hut.new()
@@ -448,6 +467,11 @@ func _build_huts() -> void:
 	colliders = []
 	colliders.append_array(cabins)
 	colliders.append_array(huts)
+	if not cabins.is_empty() and road.points.size() > 2:
+		var cyaw := deg_to_rad(cabins[0].rotation_degrees.y)
+		var cp := Vector2(cabins[0].position.x, cabins[0].position.z)
+		trailnet.add_trail(_road_edge_toward(cp), cp + Vector2(sin(cyaw), cos(cyaw)) * 3.9, 23)
+	trailnet.build_mesh(terrain)
 
 
 func _site_ok(x: float, z: float, water: Image) -> bool:
