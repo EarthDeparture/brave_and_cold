@@ -70,6 +70,8 @@ func setup(w: Node) -> void:
 		_breachtest()
 	if "poptest=1" in ua:
 		_poptest()
+	if "hordetest=1" in ua:
+		_hordetest()
 
 
 func _selftest() -> void:
@@ -1882,6 +1884,7 @@ func _poptest() -> void:
 	ok = ok and near_home == 0
 	print("POPTEST seed alive=", alive0, " within90mOfStart=", near_home, " ok=", ok)
 	fails += 0 if ok else 1
+	pop.dissolve_all()
 	# dense cell: teleport in, expect nearest materialised up to the cap, nothing virtual inside the spawn radius
 	var bk := -1
 	var bn := 0
@@ -2002,4 +2005,112 @@ func _poptest() -> void:
 	print("POPTEST tick cost avg_us=", snappedf(per, 1.0), " active=", pop.active.size(), " proxies=", pop.proxy_n, " ok=", ok)
 	fails += 0 if ok else 1
 	print("POPTEST failures=", fails)
+	get_tree().quit()
+
+func _hordetest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var pop: Population = world.get("pop")
+	var nb = world.get("noise_bus")
+	var n_h0 := pop.hordes.size()
+	var members := 0
+	for hh in pop.hordes:
+		members += hh.pts.size()
+	var ok := n_h0 >= 3 and members >= 100 and not pop.road_pts.is_empty()
+	print("HORDETEST seeded hordes=", n_h0, " members=", members, " road_pts=", pop.road_pts.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	pop.dissolve_all()
+	var rp: Array = pop.road_pts
+	var start: Vector2 = rp[rp.size() / 2]
+	player.place(clampf(start.x + 200.0, -900.0, 900.0), start.y)
+	player.position.y = 100.0
+	pop.spawn_horde(start, 40)
+	var h = pop.hordes[pop.hordes.size() - 1]
+	h.rest_len = 0.1
+	pop.tick(0.5)
+	ok = h.pts.size() == 40 and pop.proxy_n >= 40
+	print("HORDETEST made size=", h.pts.size(), " proxies=", pop.proxy_n, " ok=", ok)
+	fails += 0 if ok else 1
+	var c0: Vector2 = h.center
+	var moved := 0.0
+	for i in 400:
+		pop.tick(0.5)
+		moved = maxf(moved, h.center.distance_to(c0))
+	var nearest := 1e9
+	for q in rp:
+		nearest = minf(nearest, (q as Vector2).distance_to(h.center))
+	var far := 0.0
+	for v in h.pts:
+		far = maxf(far, Vector2(v.x - h.center.x, v.z - h.center.y).length())
+	ok = moved >= 30.0 and nearest < 30.0 and far < 70.0
+	print("HORDETEST wander moved=", snappedf(moved, 0.1), " roadDist=", snappedf(nearest, 0.1), " maxSpread=", snappedf(far, 0.1), " ok=", ok)
+	fails += 0 if ok else 1
+	# response to a gunshot 200 m away
+	var c1: Vector2 = h.center
+	var tgt := Vector2(clampf(c1.x + 200.0, -900.0, 900.0), c1.y)
+	player.place(tgt.x + 300.0 if tgt.x < 0.0 else tgt.x - 300.0, tgt.y)
+	player.position.y = 100.0
+	nb.emit_noise(Vector3(tgt.x, 0.0, tgt.y), 150.0, null)
+	var st: int = h.state
+	for i in 160:
+		pop.tick(0.5)
+	var moved2: float = h.center.distance_to(c1)
+	ok = st == 1 and moved2 >= 60.0
+	print("HORDETEST respond state=", st, " moved=", snappedf(moved2, 0.1), " now_state=", h.state, " ok=", ok)
+	fails += 0 if ok else 1
+	# snowball
+	var n_before: int = h.pts.size()
+	for i in 8:
+		pop.add_virtual(Vector3(h.center.x + 4.0, h.pts[0].y, h.center.y + float(i)))
+	for i in 6:
+		pop.tick(0.5)
+	ok = h.pts.size() >= n_before + 8
+	print("HORDETEST absorb ", n_before, " -> ", h.pts.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	# near the player: members become real zombies, nothing lost
+	var alive_b := pop.count_alive()
+	player.place(h.center.x, h.center.y)
+	player.position.y = 100.0
+	var size_b: int = h.pts.size()
+	for i in 40:
+		pop.tick(0.1)
+	var made := pop.active.size()
+	ok = made > 0 and made <= Population.T0_CAP and pop.count_alive() == alive_b and h.pts.size() == size_b - made + 0 or (not pop.hordes.has(h))
+	print("HORDETEST materialise real=", made, " horde ", size_b, " -> ", h.pts.size() if pop.hordes.has(h) else 0, " alive ", alive_b, "->", pop.count_alive(), " ok=", ok)
+	fails += 0 if ok else 1
+	# tiny horde dissolves into cells
+	pop.dissolve_all()
+	player.place(clampf(start.x + 400.0, -900.0, 900.0), start.y)
+	player.position.y = 100.0
+	pop.spawn_horde(start, 40)
+	var h2 = pop.hordes[0]
+	var alive_c := pop.count_alive()
+	h2.pts.resize(3)
+	pop._horde_step(0.5)
+	ok = pop.hordes.is_empty() and pop.count_alive() == alive_c - 37
+	print("HORDETEST dissolve hordes=", pop.hordes.size(), " alive=", pop.count_alive(), " expected=", alive_c - 37, " ok=", ok)
+	fails += 0 if ok else 1
+	# save list roundtrip
+	pop.spawn_horde(start, 20)
+	pop.spawn_horde(Vector2(start.x, start.y + 30.0), 15)
+	var lst: Array = pop.horde_list()
+	var tot := pop.count_alive()
+	pop.dissolve_all()
+	pop.restore_hordes(lst)
+	ok = pop.hordes.size() == 2 and pop.count_alive() == tot + 0 + 0 or pop.count_alive() == tot + 35
+	print("HORDETEST save/restore hordes=", pop.hordes.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	# cost with 6 big hordes
+	pop.dissolve_all()
+	for i in 6:
+		pop.spawn_horde(rp[(i * 97) % rp.size()], 100)
+	var t0 := Time.get_ticks_usec()
+	for i in 100:
+		pop.tick(0.5)
+	var per := float(Time.get_ticks_usec() - t0) / 100.0
+	ok = per < 3000.0
+	print("HORDETEST cost 6x100 avg_us=", snappedf(per, 1.0), " ok=", ok)
+	fails += 0 if ok else 1
+	print("HORDETEST failures=", fails)
 	get_tree().quit()

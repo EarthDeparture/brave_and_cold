@@ -123,7 +123,21 @@ func hit(pos: Vector3) -> void:
 	play_at("thud", pos, 0.0, _rng.randf_range(0.85, 1.15), 8.0, 80.0)
 
 
+var _horde_t := 3.0
+
+
 func _creatures(delta: float) -> void:
+	_horde_t -= delta
+	if _horde_t <= 0.0:
+		_horde_t = _rng.randf_range(6.0, 11.0)
+		var pop = world.get("pop")
+		if pop != null:
+			var hi: Dictionary = pop.nearest_horde(player.position)
+			if not hi.is_empty() and float(hi["dist"]) > 70.0 and float(hi["dist"]) < 320.0:
+				var vol := clampf(float(hi["size"]) / 30.0, 0.4, 1.6)
+				var dd: float = minf(float(hi["dist"]), 120.0)
+				var gp: Vector3 = player.position + (hi["dir"] as Vector3) * dd + Vector3(0, 1.6, 0)
+				play_at("groan", gp, -2.0 + 6.0 * vol, _rng.randf_range(0.65, 0.85), 40.0, 380.0)
 	for z in world.get("zombies"):
 		if not is_instance_valid(z):
 			continue

@@ -146,6 +146,8 @@ func _ready() -> void:
 	pop.bus = noise_bus
 	pop.make_zombie = Callable(self, "_new_zombie")
 	noise_bus.noise.connect(pop.on_noise)
+	if road != null:
+		pop.road_pts = road.points
 	if not opts.has("wolftest") and not opts.has("zombietest") and not opts.has("deertest"):
 		if loading:
 			_restore_creatures(sv)
@@ -154,6 +156,9 @@ func _ready() -> void:
 			_spawn_bears(int(opts.get("bears", 2)), home, 150.0, 320.0)
 		if not loading:
 			_populate(int(opts.get("zombies", 700)), home)
+			if opts.has("horde"):   # dev: a horde of N, hordedist m ahead (default 180)
+				var hf := Vector2(-sin(deg_to_rad(float(opts.get('yaw', 0.0)))), -cos(deg_to_rad(float(opts.get('yaw', 0.0)))))
+				pop.spawn_horde(Vector2(player.position.x, player.position.z) + hf * float(opts.get('hordedist', 180.0)), int(opts['horde']))
 			if opts.has("popview"):   # screenshot helper: stand ~dist m west of the densest clump, looking east
 				var bk := -1
 				var bn := 0
@@ -352,7 +357,7 @@ func _process(delta: float) -> void:
 	_update_prompt()
 	if out_path != "" and _frames == 40:
 		get_viewport().get_texture().get_image().save_png(out_path)
-		print("SHOT_SAVED ", out_path, " hour=", clock.hour, " pos=", player.position, " yaw=", player.yaw)
+		print("SHOT_SAVED ", out_path, " hour=", clock.hour, " pos=", player.position, " yaw=", player.yaw, " proxies=", pop.proxy_n, " active=", pop.active.size(), " hordes=", pop.hordes.size())
 		get_tree().quit()
 	if _force_death and _frames == 35:
 		player.hurt(999.0, "Mauled by a wolf")
@@ -1945,6 +1950,7 @@ func save_game() -> bool:
 		'pickups': _pickup_list(),
 		'bears': _alive_list(bears),
 		'zombies': pop.all_alive(),
+		'hordes': pop.horde_list(),
 		'deer': _alive_list(deer),
 		'felled': forest.felled.keys() if forest != null else [],
 		'logs': _log_list(),
@@ -2010,6 +2016,7 @@ func _restore_creatures(sv: Dictionary) -> void:
 		br.hp = float(e['hp'])
 		i += 1
 	i = 0
+	pop.restore_hordes(sv.get('hordes', []))
 	for e in sv.get('zombies', []):
 		pop.add_virtual(_ground(float(e['x']), float(e['z'])))   # materialises by distance within a few ticks
 		i += 1
