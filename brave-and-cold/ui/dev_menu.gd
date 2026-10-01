@@ -76,6 +76,8 @@ func setup(w: Node) -> void:
 		_variantstest()
 	if "hamlettest=1" in ua:
 		_hamlettest()
+	if "storetest=1" in ua:
+		_storetest()
 	if "injurytest=1" in ua:
 		_injurytest()
 	if "popperf=1" in ua:
@@ -1933,11 +1935,15 @@ func _poptest() -> void:
 	# park everything far away: pool grows, nothing lost, no new nodes on return
 	var total_nodes := pop.pool.size() + pop.active.size()
 	player.place(cx + 600.0 if cx < 0.0 else cx - 600.0, cz)
-	for i in 40:
+	for i in 100:   # parking is rate limited; denser rings need more ticks
 		pop.tick(0.5)
 	var parked := pop.pool.size()
-	ok = pop.count_alive() == alive0 and parked >= minf(inside, 60) * 0.8
-	print("POPTEST park pool=", parked, " alive=", pop.count_alive(), " ok=", ok)
+	var old_left := 0
+	for z in pop.active:
+		if Vector2(z.global_position.x - cx, z.global_position.z - cz).length() < Population.DESPAWN_R:
+			old_left += 1   # zombies materialising at the far destination reuse pool nodes, so count the old clump instead
+	ok = pop.count_alive() == alive0 and old_left == 0 and parked + pop.active.size() >= minf(inside, 60) * 0.8
+	print("POPTEST park pool=", parked, " active_left=", pop.active.size(), " specials=", pop.specials.size(), " alive=", pop.count_alive(), " ok=", ok)
 	fails += 0 if ok else 1
 	player.place(cx, cz)
 	for i in 80:
@@ -2464,4 +2470,72 @@ func _hamlettest() -> void:
 		print("HAMLETTEST hut door open_free=", free, " closed_blocks=", blocked, " leak=", leak_closed, " bash_breaks=", broke, " ok=", ok)
 		fails += 0 if ok else 1
 	print("HAMLETTEST failures=", fails)
+	get_tree().quit()
+
+func _storetest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var inv: Inventory = world.get("inv")
+	var stores: Array = world.get("stores")
+	var ok := stores.size() == 1
+	print("STORETEST stores=", stores.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	if stores.is_empty():
+		print("STORETEST failures=", fails)
+		get_tree().quit()
+		return
+	var st: Store = stores[0]
+	ok = st.openings.size() == 4
+	print("STORETEST windows=", st.openings.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	var cen: Vector3 = st.global_position
+	ok = st.contains_xz(cen.x, cen.z) and not is_nan(st.floor_at(cen.x, cen.z, 0.0))
+	print("STORETEST interior contains+floor ok=", ok)
+	fails += 0 if ok else 1
+	var wall: Vector3 = st.to_global(Vector3(Store.HX, 0.0, 0.0))
+	var q: Vector2 = st.resolve(wall.x, wall.z, 0.4)
+	ok = Vector2(q.x - wall.x, q.y - wall.z).length() > 0.3
+	print("STORETEST wall solid ok=", ok)
+	fails += 0 if ok else 1
+	var dp: Vector3 = st.to_global(Vector3(0.0, 0.0, Store.HZ))
+	var oq: Vector2 = st.resolve(dp.x, dp.z, 0.35)
+	var free: bool = Vector2(oq.x - dp.x, oq.y - dp.z).length() < 0.001
+	st.toggle_door()
+	var cq: Vector2 = st.resolve(dp.x, dp.z, 0.35)
+	var blocked: bool = Vector2(cq.x - dp.x, cq.y - dp.z).length() > 0.05
+	st.bash_door(200.0)
+	ok = free and blocked and st.door_broken and st.door_open
+	print("STORETEST door free=", free, " closed_blocks=", blocked, " breaks=", st.door_broken, " ok=", ok)
+	fails += 0 if ok else 1
+	var n0 := 0
+	for id in inv.counts:
+		n0 += int(inv.counts[id])
+	for li in 3:
+		world.call("_loot_store", st, li)
+	var n1 := 0
+	for id in inv.counts:
+		n1 += int(inv.counts[id])
+	ok = st.looted[0] and st.looted[1] and st.looted[2] and n1 > n0 + 8 and inv.count("rifle") == 0
+	print("STORETEST loot items ", n0, "->", n1, " ok=", ok)
+	fails += 0 if ok else 1
+	var sd: Dictionary = st.state_dict()
+	st.restore_state({'looted': [false, true, false], 'open': false, 'broken': false, 'hp': 10.0})
+	var rs: bool = not st.looted[0] and st.looted[1] and not st.door_open and absf(st.door_hp - 10.0) < 0.01
+	st.restore_state(sd)
+	ok = rs and st.looted[2] and st.door_broken
+	print("STORETEST save/restore ok=", ok)
+	fails += 0 if ok else 1
+	var pop: Population = world.get("pop")
+	var ns := 0
+	for s in pop.specials:
+		if Vector2(s.x - cen.x, s.z - cen.z).length() < 8.0:
+			ns += 1
+	for z in pop.active:
+		if is_instance_valid(z) and z.state == Zombie.State.SLEEP and Vector2(z.global_position.x - cen.x, z.global_position.z - cen.z).length() < 8.0:
+			ns += 1
+	ok = ns >= 1
+	print("STORETEST sleepers=", ns, " ok=", ok)
+	fails += 0 if ok else 1
+	print("STORETEST failures=", fails)
 	get_tree().quit()

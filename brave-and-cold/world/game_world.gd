@@ -63,6 +63,8 @@ func _ready() -> void:
 		print('HUT_SITES ', hut_sites.size(), ' ', hut_sites)
 		if opts.get('hamlet', '1') == '1':
 			_plan_hamlet(wimg)
+		if opts.get('store', '1') == '1':
+			_plan_store(wimg)
 		for hs in hut_sites:
 			var hp := Vector2(float(hs['x']), float(hs['z']))
 			var hyaw := deg_to_rad(float(hs['yaw']))
@@ -77,6 +79,8 @@ func _ready() -> void:
 			for hp2 in hamlet_plan:
 				if absf(x - float(hp2['x'])) < 8.0 and absf(z - float(hp2['z'])) < 8.0:
 					return true
+			if not store_plan.is_empty() and absf(x - float(store_plan['x'])) < 8.0 and absf(z - float(store_plan['z'])) < 8.0:
+				return true
 			for he2 in hamlet_extra:
 				if absf(x - float(he2['x'])) < 5.0 and absf(z - float(he2['z'])) < 5.0:
 					return true
@@ -141,6 +145,7 @@ func _ready() -> void:
 	player.place(sp.x, sp.y)
 	_place_cabin(home)
 	_build_hamlet(home)
+	_build_store()
 	_build_huts()
 	if plants != null:
 		for cb in cabins:
@@ -193,6 +198,13 @@ func _ready() -> void:
 		var hdir: Vector3 = hu0.global_position - hwp
 		opts['yaw'] = rad_to_deg(atan2(-hdir.x, -hdir.z))
 		opts['pitch'] = -4.0
+	if opts.has('storepos') and not stores.is_empty():
+		var sp0: Store = stores[0]
+		var swp: Vector3 = sp0.to_global(Vector3(float(opts.get('storex', 0.0)), 0.0, float(opts.get('stored', 9.0))))
+		player.place(swp.x, swp.z)
+		var sdir: Vector3 = sp0.global_position - swp
+		opts['yaw'] = rad_to_deg(atan2(-sdir.x, -sdir.z))
+		opts['pitch'] = float(opts.get('storepitch', -4.0))
 	if opts.has('outpos') and not outbuildings.is_empty():
 		var ob0: Outbuilding = outbuildings[clampi(int(opts['outpos']), 0, outbuildings.size() - 1)]
 		var owp: Vector3 = ob0.to_global(Vector3(float(opts.get('outx', 1.5)), 0.0, float(opts.get('outd', 6.0))))
@@ -364,6 +376,8 @@ func _process(delta: float) -> void:
 			_say('Autosaved')
 	for cb in cabins:
 		cb.set_night(night)
+	for stn in stores:
+		stn.set_night(night)
 	# survival
 	snow.advance(delta)
 	var fw := player.fire_w
@@ -570,6 +584,7 @@ func _build_huts() -> void:
 	colliders.append_array(cabins)
 	colliders.append_array(huts)
 	colliders.append_array(outbuildings)
+	colliders.append_array(stores)
 	noise_bus.buildings = colliders
 	for cbx in cabins:
 		cbx.bus = noise_bus
@@ -591,6 +606,82 @@ func _build_huts() -> void:
 ## Hamlet: a cluster of 4-5 cabins well off the start, 35-60 m from the road. Reuses Cabin (doors, stove, windows); crates hold scavenged loot, not the starter kit.
 var hamlet_center := Vector2.ZERO
 var hamlet_n := 0
+
+
+var store_plan := {}          # {x, z, yaw} planned before the forest
+var stores: Array = []
+
+
+## Roadside general store: flat spot 24-34 m off the road, far from the start, hamlet and huts.
+func _plan_store(water: Image) -> void:
+	store_plan = {}
+	var i := road.points.size() - 25
+	while i > 40:
+		var rp: Vector2 = road.points[i]
+		if rp.length() < 300.0 or rp.distance_to(hamlet_center) < 150.0:
+			i -= 6
+			continue
+		var rq: Vector2 = road.points[mini(i + 1, road.points.size() - 1)]
+		var d := (rq - rp).normalized()
+		var nrm := Vector2(-d.y, d.x)
+		for off in [26.0, -26.0, 34.0, -34.0, 44.0, -44.0]:
+			var q: Vector2 = rp + nrm * off
+			var ok := true
+			for hs in hut_sites:
+				if Vector2(float(hs['x']), float(hs['z'])).distance_to(q) < 80.0:
+					ok = false
+			if not ok or road.is_near(q.x, q.y, 14.0):
+				continue
+			var yaw := rad_to_deg(atan2(rp.x - q.x, rp.y - q.y))
+			var fwd := Vector2(sin(deg_to_rad(yaw)), cos(deg_to_rad(yaw)))
+			var side := Vector2(fwd.y, -fwd.x)
+			for pt in [q, q + side * 3.2, q - side * 3.2, q + fwd * 3.5]:
+				if not _flat_ok(pt.x, pt.y, water):
+					ok = false
+			if ok:
+				store_plan = {'x': q.x, 'z': q.y, 'yaw': yaw}
+				print('STORE_PLAN at ', q)
+				return
+		i -= 6
+	print('STORE_PLAN none')
+
+
+func _build_store() -> void:
+	if store_plan.is_empty():
+		return
+	var st := Store.new()
+	add_child(st)
+	if st.setup(terrain, float(store_plan['x']), float(store_plan['z']), float(store_plan['yaw'])):
+		stores.append(st)
+		print('STORE built at ', st.global_position)
+	else:
+		st.queue_free()
+
+
+func _loot_store(st: Store, i: int) -> void:
+	st.looted[i] = true
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(absf(st.position.x) * 13.0 + absf(st.position.z) * 7.0) + i * 101
+	var tables := [
+		[['beans', 3, 30], ['matches', 3, 20], ['flare', 1, 8], ['rag', 2, 10], ['bandage', 1, 8]],
+		[['ammo', 8, 25], ['bandage', 2, 16], ['antiseptic', 1, 12], ['antibiotics', 1, 8], ['matches', 2, 14], ['knife', 1, 5]],
+		[['sweater', 1, 12], ['toque', 1, 12], ['hammer', 1, 8], ['nails', 15, 14], ['plank', 3, 14], ['rag', 3, 12], ['axe', 1, 3]],
+	]
+	var table: Array = tables[i]
+	var total := 0
+	for e in table:
+		total += int(e[2])
+	var got: Array[String] = []
+	for r in rng.randi_range(3, 4):
+		var roll := rng.randi_range(0, total - 1)
+		for e in table:
+			roll -= int(e[2])
+			if roll < 0:
+				var n := maxi(1, int(e[1]) - rng.randi_range(0, int(e[1]) / 2))
+				inv.add(String(e[0]), n)
+				got.append('%s x%d' % [e[0], n])
+				break
+	_say('Found: ' + ', '.join(got))
 
 
 var hamlet_plan: Array = []   # [{x, z, yaw}] planned BEFORE the forest so trees keep out of it
@@ -1079,6 +1170,17 @@ func _update_prompt() -> void:
 					inv.add('flare', 1)
 					inv.add('knife', 1)
 					_say('Found: 2 matches, beans, flare, knife')})
+	for stx in stores:
+		var sto: Store = stx
+		var sdd: float = sto.to_global(Vector3(0.0, 1.0, Store.HZ)).distance_to(player.position)
+		if sdd < 2.2 and not sto.door_broken:
+			cands.append({'d': sdd, 'text': 'Close door' if sto.door_open else 'Open door', 'act': sto.toggle_door})
+		for li in 3:
+			if not sto.looted[li]:
+				var lpd: float = sto.loot_world_pos(li).distance_to(player.position)
+				if lpd < 1.7:
+					var lidx: int = li
+					cands.append({'d': lpd, 'text': String(Store.LOOT_NAMES[li]), 'hold': 2.5, 'act': func() -> void: _loot_store(sto, lidx)})
 	for ob in outbuildings:
 		if ob.wood_left > 0:
 			var obb: Outbuilding = ob
@@ -1721,6 +1823,8 @@ func _populate(n: int, center: Vector2) -> void:
 		anchors.append(Vector2(cb.global_position.x, cb.global_position.z))
 	for hu in huts:
 		anchors.append(Vector2(hu.global_position.x, hu.global_position.z))
+	for st0 in stores:
+		anchors.append(Vector2(st0.global_position.x, st0.global_position.z))
 	var rp: Array = []
 	if road != null:
 		for i in range(0, road.points.size(), 4):
@@ -1732,6 +1836,9 @@ func _populate(n: int, center: Vector2) -> void:
 	for ci in range(1, cabins.size()):
 		if srng.randf() < 0.6:
 			pop.add_special(cabins[ci].to_global(Vector3(srng.randf_range(-1.5, 1.5), Cabin.FLOOR_LOCAL_Y, srng.randf_range(-0.8, 1.2))))
+	for st1 in stores:
+		for _k in 2:
+			pop.add_special(st1.to_global(Vector3(srng.randf_range(-2.2, 2.2), Store.FLOOR_LOCAL_Y, srng.randf_range(-1.6, 1.4))))
 	for hu in huts:
 		if srng.randf() < 0.7:
 			pop.add_special(hu.to_global(Vector3(srng.randf_range(-0.9, 0.9), Hut.FLOOR_LOCAL_Y, srng.randf_range(-0.7, 0.7))))
@@ -2147,6 +2254,7 @@ func save_game() -> bool:
 		'inv': {'counts': inv.counts, 'worn': inv.equipped_body, 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age},
 		'cabins': cabs,
 		'huts': huts.map(func(h: Hut) -> Dictionary: return h.state_dict()),
+		'stores': stores.map(func(s: Store) -> Dictionary: return s.state_dict()),
 		'sheds': outbuildings.map(func(o: Outbuilding) -> int: return o.wood_left),
 		'fires': fires,
 		'wolves': _alive_list(wolves),
@@ -2272,6 +2380,9 @@ func _apply_save(sv: Dictionary) -> void:
 	var hsv: Array = sv.get('huts', [])
 	for hi in range(mini(hsv.size(), huts.size())):
 		huts[hi].restore_state(hsv[hi])
+	var ssv: Array = sv.get('stores', [])
+	for sj in range(mini(ssv.size(), stores.size())):
+		stores[sj].restore_state(ssv[sj])
 	var shs: Array = sv.get('sheds', [])
 	for si in range(mini(shs.size(), outbuildings.size())):
 		outbuildings[si].wood_left = int(shs[si])
