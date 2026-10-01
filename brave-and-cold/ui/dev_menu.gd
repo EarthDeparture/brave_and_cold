@@ -54,6 +54,8 @@ func setup(w: Node) -> void:
 		_carcasstest()
 	if "huntest=1" in ua:
 		_huntest()
+	if "gathertest=1" in ua:
+		_gathertest()
 
 
 func _selftest() -> void:
@@ -919,4 +921,92 @@ func _huntest() -> void:
 	print("HUNTEST wolf scavenged meat=", ok2)
 	fails += 0 if ok2 else 1
 	print("HUNTEST failures=", fails)
+	get_tree().quit()
+
+
+func _gathertest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var pf: PlantField = world.get("plants")
+	var clock_ref = world.get("clock")
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	inv.counts.erase("knife")
+	inv.counts.erase("axe")
+	var ok: bool = pf != null
+	print("GATHERTEST counts=", pf.counts if pf != null else {})
+	for kind: String in PlantField.KINDS.keys():
+		ok = ok and int(pf.counts.get(kind, 0)) > 0
+	print("GATHERTEST all kinds present=", ok)
+	fails += 0 if ok else 1
+	for kind: String in PlantField.KINDS.keys():
+		var key := pf.first_of(kind)
+		if key == "":
+			fails += 1
+			print("GATHERTEST no ", kind)
+			continue
+		var pp := pf.pos_of(key)
+		_tp(pp.x, pp.z + 1.2, pp)
+		await get_tree().create_timer(1.0).timeout
+		if "plantshot=1" in OS.get_cmdline_user_args():
+			_tp(pp.x, pp.z + 2.4, pp)
+			player.pitch = deg_to_rad(-14.0)
+			await get_tree().create_timer(1.0).timeout
+			get_viewport().get_texture().get_image().save_png("user://plant_%s.png" % kind)
+			print("PLANTSHOT ", kind)
+			_tp(pp.x, pp.z + 1.2, pp)
+			await get_tree().create_timer(0.5).timeout
+		var kd: Dictionary = PlantField.KINDS[kind]
+		var iid: String = kd["item"]
+		var n0 := inv.count(iid)
+		world.call("_update_prompt")
+		var cand := {}
+		for c in world.get("_cands_cache"):
+			if String(c["text"]).begins_with("Gather"):
+				cand = c
+				break
+		var okp: bool = not cand.is_empty()
+		if okp:
+			okp = absf(float(cand["hold"]) - float(kd["hold"])) < 0.01
+			(cand["act"] as Callable).call()
+		var got := inv.count(iid) - n0
+		okp = okp and got == int(kd["n"]) and pf.picked.has(key) and pf.is_hidden(key)
+		print("GATHERTEST ", kind, " gather=", okp, " got ", got, " cand ", cand.get("text", "none"))
+		fails += 0 if okp else 1
+		world.call("_update_prompt")
+		var again := false
+		for c in world.get("_cands_cache"):
+			if String(c["text"]).begins_with("Gather") and String(c["text"]).contains(String(kd["label"])):
+				again = true
+		print("GATHERTEST ", kind, " not offered again=", not again)
+		fails += 1 if again else 0
+		if kind == "reed":
+			inv.add("knife")
+			var key2 := ""
+			for kk in pf._plants.keys():
+				if pf._plants[kk]["kind"] == "reed" and not pf.picked.has(kk) and kk != key:
+					key2 = kk
+					break
+			var p2 := pf.pos_of(key2)
+			_tp(p2.x, p2.z + 1.2, p2)
+			await get_tree().create_timer(1.0).timeout
+			world.call("_update_prompt")
+			var kh := -1.0
+			for c in world.get("_cands_cache"):
+				if String(c["text"]).begins_with("Gather"):
+					kh = float(c["hold"])
+			print("GATHERTEST reed knife hold=", kh)
+			fails += 0 if absf(kh - 2.0) < 0.01 else 1
+			inv.counts.erase("knife")
+	var saved: Dictionary = pf.picked.duplicate()
+	var any_key: String = saved.keys()[0]
+	pf.update_regrow(float(clock_ref.total_game_s) + 200.0 * 3600.0)
+	var okr: bool = pf.picked.is_empty() and not pf.is_hidden(any_key)
+	print("GATHERTEST regrow=", okr)
+	fails += 0 if okr else 1
+	pf.apply_picked(saved)
+	okr = pf.picked.size() == saved.size() and pf.is_hidden(any_key)
+	print("GATHERTEST save/restore picked=", okr)
+	fails += 0 if okr else 1
+	print("GATHERTEST failures=", fails)
 	get_tree().quit()

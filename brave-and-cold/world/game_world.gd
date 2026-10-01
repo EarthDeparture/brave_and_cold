@@ -24,6 +24,7 @@ var noise_bus := NoiseBus.new()
 var player: Player
 var hud: Hud
 var forest: ForestScatter
+var plants: PlantField
 var footprints: Footprints
 var cabins: Array[Cabin] = []
 var out_path := ""
@@ -73,6 +74,10 @@ func _ready() -> void:
 					return true
 			return road.is_near(x, z) or trailnet.is_near(x, z)
 		forest.build(terrain)
+		if opts.get('plants', '1') == '1':
+			plants = PlantField.new()
+			add_child(plants)
+			plants.build(terrain, forest.exclude)
 	road.build_mesh(terrain)
 	road.build_props(terrain)
 	var w := WaterSurfaces.new()
@@ -128,6 +133,11 @@ func _ready() -> void:
 	player.place(sp.x, sp.y)
 	_place_cabin(home)
 	_build_huts()
+	if plants != null:
+		for cb in cabins:
+			plants.suppress_near(cb.global_position.x, cb.global_position.z, 9.0)
+		for hu in huts:
+			plants.suppress_near(hu.global_position.x, hu.global_position.z, 7.0)
 	if not opts.has("wolftest") and not opts.has("zombietest") and not opts.has("deertest"):
 		if loading:
 			_restore_creatures(sv)
@@ -272,6 +282,8 @@ func _process(delta: float) -> void:
 	Zombie.night_factor = night
 	_attack_cd = maxf(0.0, _attack_cd - delta)
 	Carcass.wind_dir = weather.wind_dir
+	if plants != null and Engine.get_process_frames() % 120 == 0:
+		plants.update_regrow(clock.total_game_s)
 	_autosave_t += delta
 	if _autosave_t > 120.0 and out_path == '' and walk_secs == 0.0 and not _selftest and not _wolftest and not _zombietest and not _deertest:
 		_autosave_t = 0.0
@@ -837,6 +849,19 @@ func _update_prompt() -> void:
 		if pd < 2.4 and (pd < 0.9 or pto.normalized().dot(fwd) > 0.3):
 			var pick: ItemPickup = ip
 			cands.append({"d": pd + 0.5, "text": "Take %s%s" % [inv.name_of(ip.id), " x%d" % ip.n if ip.n > 1 else ""], "act": func() -> void: take_pickup(pick)})
+	if plants != null:
+		var pl: Dictionary = plants.nearest(player.position, fwd, 1.8)
+		if not pl.is_empty():
+			var kd: Dictionary = PlantField.KINDS[pl["kind"]]
+			var iid: String = kd["item"]
+			var pn: int = int(kd["n"])
+			var phold := float(kd["hold"])
+			if inv.count('knife') > 0 and kd.has("knife_hold"):
+				phold = float(kd["knife_hold"])
+			var pkey: String = pl["key"]
+			cands.append({"d": float(pl["d"]) + 0.2, "text": "Gather %s (+%d %s)" % [kd["label"], pn, inv.name_of(iid)], "hold": phold, "kcal": 3.0, "act": func() -> void:
+				if plants.pick(pkey, clock.total_game_s):
+					_give_or_drop(iid, pn, player.position + fwd * 0.8)})
 	var axe_up := inv.count('axe') > 0 and not rifle_up
 	if forest != null and axe_up:
 		var tr: Dictionary = forest.nearest_tree(player.position, fwd, 2.0, true)
@@ -1609,6 +1634,7 @@ func save_game() -> bool:
 		'felled': forest.felled.keys() if forest != null else [],
 		'logs': _log_list(),
 		'carcasses': _carcass_list(),
+		'picked': plants.picked if plants != null else {},
 	}
 	return SaveGame.write(d)
 
@@ -1631,6 +1657,8 @@ func _alive_list(arr: Array) -> Array:
 
 
 func _restore_creatures(sv: Dictionary) -> void:
+	if plants != null:
+		plants.apply_picked(sv.get('picked', {}))
 	var ci := 0
 	for e in sv.get('carcasses', []):
 		var cp := _ground(float(e['x']), float(e['z']))
