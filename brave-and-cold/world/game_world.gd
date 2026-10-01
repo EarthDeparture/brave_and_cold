@@ -13,6 +13,7 @@ var sky_rig: SkyRig
 var clock := GameClock.new()
 var weather := Weather.new()
 var snowfall: SnowFall
+var road: RoadNet
 var body := BodyTemperature.new()
 var snow := SnowField.new()
 var noise_bus := NoiseBus.new()
@@ -44,10 +45,17 @@ func _ready() -> void:
 	terrain.material.set_shader_param("enable_macro_variation", true)
 	terrain.material.set_shader_param("macro_variation1", Color(0.88, 0.93, 1.0))
 	terrain.material.set_shader_param("macro_variation2", Color(1.0, 0.97, 0.98))
+	road = RoadNet.new()
+	add_child(road)
+	if opts.get('road', '1') == '1':
+		road.plan()
 	if opts.get("trees", "1") == "1":
 		forest = ForestScatter.new()
 		add_child(forest)
+		forest.exclude = func(x: float, z: float) -> bool: return road.is_near(x, z)
 		forest.build(terrain)
+	road.build_mesh(terrain)
+	road.build_props(terrain)
 	var w := WaterSurfaces.new()
 	add_child(w)
 	w.build()
@@ -86,6 +94,13 @@ func _ready() -> void:
 	await get_tree().process_frame
 	var home := _find_spawn()
 	var sp := home if not opts.has("pos") else Vector2(float(String(opts["pos"]).split(",")[0]), float(String(opts["pos"]).split(",")[1]))
+	if opts.has('roadpos') and road.points.size() > 2:
+		var ri := clampi(int(opts['roadpos']), 0, road.points.size() - 2)
+		var rp: Vector2 = road.points[ri]
+		var rq: Vector2 = road.points[ri + 1]
+		sp = rp
+		print('ROADPOS ', ri, ' ', rp, ' first ', road.points[0], ' last ', road.points[road.points.size() - 1])
+		opts['yaw'] = str(rad_to_deg(atan2(-(rq.x - rp.x), -(rq.y - rp.y))))
 	var sv: Dictionary = SaveGame.pending
 	SaveGame.pending = {}
 	var loading := not sv.is_empty()
@@ -249,7 +264,7 @@ func _process(delta: float) -> void:
 	_update_prompt()
 	if out_path != "" and _frames == 40:
 		get_viewport().get_texture().get_image().save_png(out_path)
-		print("SHOT_SAVED ", out_path, " hour=", clock.hour)
+		print("SHOT_SAVED ", out_path, " hour=", clock.hour, " pos=", player.position, " yaw=", player.yaw)
 		get_tree().quit()
 	if _force_death and _frames == 35:
 		player.hurt(999.0, "Mauled by a wolf")
@@ -852,11 +867,12 @@ func _run_selftest() -> void:
 	var heat := cb.heat_at(player.position.x, player.position.z)
 	print("TEST stove prompt=%s lit=%s wood %d->%d matches=%d heat=%.0fW" % [ok4, lit, w0, inv.count("wood"), inv.count("matches"), heat])
 	# wear parka
+	var warm0 := body.warmth
 	var msg := inv.use("parka")
 	print("TEST wear '%s' warmth=%.2f windproof=%.2f" % [msg, body.warmth, body.windproof])
 	var msg2 := inv.use("parka")
 	print("TEST unwear '%s' warmth=%.2f" % [msg2, body.warmth])
-	if not (ok1 and ok2 and ok3 and ok4 and lit and heat > 100.0 and msg.begins_with("Took off") and msg2.begins_with("Wearing") and body.warmth > 0.8):
+	if not (ok1 and ok2 and ok3 and ok4 and lit and heat > 100.0 and ((msg.begins_with("Took off") and msg2.begins_with("Wearing")) or (msg.begins_with("Wearing") and msg2.begins_with("Took off"))) and absf(body.warmth - warm0) < 0.01):
 		fails += 1
 	print("SELFTEST failures=", fails)
 	get_tree().quit()

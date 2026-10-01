@@ -14,6 +14,8 @@ const TREE_UNIT_M := 1.0  # source models are 1.0 high; scale = real canopy heig
 var terrain: Terrain3D
 var map_dir := "res://data/maps/valley_b"
 var tree_count := 0
+var excluded := 0
+var exclude: Callable  # (x, z) -> bool: skip trees here (roads, buildings)
 const TRUNK_CELL := 8.0
 var _trunks: Dictionary = {}  # Vector2i cell -> PackedVector3Array(x, z, radius)
 
@@ -28,7 +30,7 @@ func resolve_trunks(x: float, z: float, r: float) -> Vector2:
 			var arr = _trunks.get(Vector2i(cx + ox, cz + oz))
 			if arr == null:
 				continue
-			for t in (arr as PackedVector3Array):
+			for t: Vector3 in (arr as Array):
 				var d := p - Vector2(t.x, t.y)
 				var minr: float = t.z + r
 				var l := d.length()
@@ -82,6 +84,9 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 				continue
 			var wx := float(px - half) + 0.5
 			var wz := float(py - half) + 0.5
+			if exclude.is_valid() and exclude.call(wx, wz):
+				excluded += 1
+				continue
 			var h: float = terrain.data.get_height(Vector3(wx, 0, wz))
 			if is_nan(h):
 				continue
@@ -96,8 +101,8 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 			tree_count += 1
 			var ck := Vector2i(int(floor(wx / TRUNK_CELL)), int(floor(wz / TRUNK_CELL)))
 			if not _trunks.has(ck):
-				_trunks[ck] = PackedVector3Array()
-			(_trunks[ck] as PackedVector3Array).append(Vector3(wx, wz, 0.12 + 0.012 * height_m))
+				_trunks[ck] = []
+			(_trunks[ck] as Array).append(Vector3(wx, wz, 0.12 + 0.012 * height_m))
 
 	for key in buckets:
 		var per_variant: Array = buckets[key]
@@ -124,6 +129,7 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 					inst.visibility_range_end = VIS_END
 				inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if lod == 0 else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 				add_child(inst)
+	print("FOREST_EXCL ", excluded)
 	print("FOREST_TREES ", tree_count, " chunks ", buckets.size())
 
 
