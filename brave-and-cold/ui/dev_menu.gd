@@ -66,6 +66,8 @@ func setup(w: Node) -> void:
 		_zperftest()
 	if "wintest=1" in ua:
 		_wintest()
+	if "breachtest=1" in ua:
+		_breachtest()
 
 
 func _selftest() -> void:
@@ -1584,6 +1586,135 @@ func _wintest() -> void:
 	print("WINTEST glass shader=", ok)
 	fails += 0 if ok else 1
 	print("WINTEST failures=", fails)
+	get_tree().quit()
+
+
+func _breachtest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	player.god = true
+	_kill_hostile()
+	var cabs: Array = world.get("cabins")
+	var cb: Cabin = cabs[0]
+	var terr: Terrain3D = world.get("terrain")
+	var o: Opening = cb.openings[0]
+	cb.door_open = false
+	cb.stove_fuel_s = 0.0
+	var inside: Vector3 = cb.to_global(Vector3(0.0, 0.0, 0.0))
+	player.place(inside.x, inside.z)
+	await get_tree().create_timer(0.3).timeout
+	var out_pt := func(dist: float) -> Vector3:
+		var p: Vector3 = o.to_global(Vector3(0.0, 0.0, dist))
+		p.y = terr.data.get_height(p)
+		return p
+	# --- sight through glass / boards / curtain
+	var z: Zombie = world.call("_add_zombie", out_pt.call(6.0), 9001)
+	var d0: Vector3 = player.position - z.global_position
+	z.rotation.y = atan2(-d0.x, -d0.z)
+	z.state = Zombie.State.IDLE
+	var s_clear: bool = z._can_see_player()
+	o.hang_curtain()
+	var s_curt: bool = z._can_see_player()
+	o.remove_curtain()
+	for i in 4:
+		o.add_board()
+	var s_b4: bool = z._can_see_player()
+	for i in 2:
+		o.remove_board()
+	var s_b2: bool = z._can_see_player()
+	for i in 2:
+		o.remove_board()
+	var ok: bool = s_clear and not s_curt and not s_b4 and s_b2
+	print("BREACHTEST sight clear=", s_clear, " curtain=", s_curt, " 4boards=", s_b4, " 2boards=", s_b2, " ok=", ok)
+	fails += 0 if ok else 1
+	# --- opening choice
+	z._pick_opening(cb)
+	ok = z._bo == o and not z._bdoor
+	for k in cb.openings:
+		for i in 4:
+			k.add_board()
+	z._pick_opening(cb)
+	ok = ok and z._bdoor
+	cb.door_open = true
+	z._pick_opening(cb)
+	ok = ok and z._bdoor
+	cb.door_open = false
+	for k in cb.openings:
+		k.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	print("BREACHTEST opening choice=", ok)
+	fails += 0 if ok else 1
+	# --- slots
+	var zs: Array = []
+	for i in 4:
+		zs.append(world.call("_add_zombie", out_pt.call(3.0), 9100 + i))
+	var got: Array = []
+	for q in zs:
+		got.append(o.reserve(q))
+	ok = got[0] == 0 and got[1] == 1 and got[2] == 2 and got[3] == -1 and o.reserve(zs[1]) == 1
+	o.release(zs[0])
+	ok = ok and o.reserve(zs[3]) == 0
+	print("BREACHTEST slots=", got, " ok=", ok)
+	fails += 0 if ok else 1
+	for q in zs:
+		o.release(q)
+		q.queue_free()
+	# --- noise muffling: 20 m shout inside, zombie 12 m outside
+	z.global_position = out_pt.call(12.0)
+	z._set_state(Zombie.State.IDLE)
+	var bus: NoiseBus = world.get("noise_bus")
+	bus.emit_noise(player.position, 20.0, player)
+	var heard_closed: bool = z.state != Zombie.State.IDLE
+	o.hit(99.0)
+	bus.emit_noise(player.position, 20.0, player)
+	var heard_open: bool = z.state != Zombie.State.IDLE
+	o.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	ok = (not heard_closed) and heard_open
+	print("BREACHTEST noise muffled closed heard=", heard_closed, " broken window heard=", heard_open, " ok=", ok)
+	fails += 0 if ok else 1
+	# --- light cue
+	z.global_position = out_pt.call(25.0)
+	z._set_state(Zombie.State.IDLE)
+	cb.set_night(1.0)
+	cb.stove_fuel_s = 100000.0
+	cb.emit_light_cue()
+	var lure: bool = z.state == Zombie.State.INVESTIGATE
+	z._set_state(Zombie.State.IDLE)
+	for k in cb.openings:
+		k.hang_curtain()
+	cb.emit_light_cue()
+	var lure_c: bool = z.state != Zombie.State.IDLE
+	for k in cb.openings:
+		k.remove_curtain()
+	cb.stove_fuel_s = 0.0
+	cb.set_night(0.0)
+	ok = lure and not lure_c
+	print("BREACHTEST light lure open=", lure, " curtained=", lure_c, " ok=", ok)
+	fails += 0 if ok else 1
+	# --- full breach: zombie outside window 0, chases player inside
+	z.global_position = out_pt.call(5.0)
+	z._set_state(Zombie.State.IDLE)
+	z.hit(0.0001, player.position)
+	var t_glass := -1.0
+	var t_in := -1.0
+	var t := 0.0
+	while t < 40.0 and t_in < 0.0:
+		await get_tree().create_timer(0.25).timeout
+		t += 0.25
+		if t_glass < 0.0 and o.glass_broken:
+			t_glass = t
+		if cb.contains_xz(z.global_position.x, z.global_position.z):
+			t_in = t
+	ok = t_glass > 0.0 and t_in > t_glass and cb.door_hp >= 99.9
+	print("BREACHTEST full breach glass_t=", t_glass, " inside_t=", t_in, " door_hp=", cb.door_hp, " ok=", ok)
+	fails += 0 if ok else 1
+	# inside zombie keeps floor height
+	await get_tree().create_timer(1.0).timeout
+	var fy: float = cb.floor_y
+	ok = absf(z.global_position.y - fy) < 0.35
+	print("BREACHTEST floor y zombie=", z.global_position.y, " floor=", fy, " ok=", ok)
+	fails += 0 if ok else 1
+	print("BREACHTEST failures=", fails)
 	get_tree().quit()
 
 

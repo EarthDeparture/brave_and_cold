@@ -14,6 +14,8 @@ const GRAB_RANGE := 1.15
 const DAMAGE := 7.0
 const COOLDOWN := 1.6
 const DOOR_BASH_DPS := 10.0
+const BREAK_DPS := 6.0            # vs glass / planks at a window
+const VAULT_S := 1.4
 const CORPSE_LIFE_S := 300.0
 
 static var night_factor := 0.0
@@ -23,7 +25,8 @@ static var dbg_skip_move := false
 static var prof: PackedFloat64Array = PackedFloat64Array([0, 0, 0, 0, 0, 0, 0, 0])
 static var _mats: Array[StandardMaterial3D] = []     # shared tints (batching) instead of one material per zombie
 static var _scw_frame := -1
-static var _scw_val: Node3D = null
+static var _scw_val = null
+static var _scw_any = null
 const AI_EVERY_NEAR := 2                              # 20-60 m: brain+move every 2nd frame
 const AI_EVERY_FAR := 6                               # > 60 m: every 6th frame
 
@@ -55,6 +58,13 @@ var _hx := 1e9
 var _hz := 1e9
 var _hcache := 0.0
 var _mcache := 1.0
+var _bo: Opening = null         # window being breached
+var _bdoor := false
+var _bpick_t := 99.0
+var _bbld = null
+var _vault_t := -1.0
+var _vault_from := Vector3.ZERO
+var _vault_to := Vector3.ZERO
 
 
 func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, bus: NoiseBus, seed_value: int) -> void:
@@ -93,6 +103,7 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 
 
 func _exit_tree() -> void:
+	_release()
 	if _bus != null:
 		_bus.unregister(self)
 
@@ -106,6 +117,18 @@ func on_noise(pos: Vector3, _radius: float, _source: Object) -> void:
 		_set_state(State.INVESTIGATE)
 
 
+## Weak lure: lit windows at night draw idle zombies to look.
+func on_light(pos: Vector3, _radius: float, _source: Object) -> void:
+	if state == State.IDLE:
+		_target = pos
+		_set_state(State.INVESTIGATE)
+
+
+func _release() -> void:
+	if _bo != null:
+		_bo.release(self)
+
+
 func _set_state(s: State) -> void:
 	state = s
 	_state_t = 0.0
@@ -117,22 +140,27 @@ func _pick_wander() -> void:
 	_target = global_position + Vector3(cos(a) * r, 0.0, sin(a) * r)
 
 
-## Which closed building holds the player. Computed once per frame for all zombies.
-func _shut_cabin_with_player() -> Cabin:
+## Which building holds the player (any door state) / which CLOSED one does. Computed once per frame for all zombies.
+func _scan_bld() -> void:
 	var f := Engine.get_process_frames()
 	if f != _scw_frame:
 		_scw_frame = f
 		_scw_val = null
+		_scw_any = null
 		for cb in cabins:
-			if cb.contains_xz(player.position.x, player.position.z) and not cb.door_open:
-				_scw_val = cb
+			if cb.contains_xz(player.position.x, player.position.z):
+				_scw_any = cb
+				if not cb.door_open and not cb.openings.is_empty():
+					_scw_val = cb
 				break
-	return _scw_val as Cabin
+
+
+func _shut_cabin_with_player():
+	_scan_bld()
+	return _scw_val
 
 
 func _can_see_player() -> bool:
-	if _shut_cabin_with_player() != null:
-		return false
 	var to := player.position - global_position
 	to.y = 0.0
 	var d := to.length()
@@ -140,7 +168,14 @@ func _can_see_player() -> bool:
 	if d > rng_m:
 		return false
 	var fwd := Vector3(-sin(rotation.y), 0.0, -cos(rotation.y))
-	return d < 4.0 or fwd.dot(to / maxf(d, 0.001)) > 0.3
+	if not (d < 4.0 or fwd.dot(to / maxf(d, 0.001)) > 0.3):
+		return false
+	# walls block sight except through uncovered windows / the open door
+	_scan_bld()
+	var pb = _scw_any
+	if pb != null and not pb.contains_xz(global_position.x, global_position.z):
+		return pb.sight_line_open(global_position + Vector3(0, 1.5, 0), player.position)   # player.position is already eye height
+	return true
 
 
 func hit(dmg: float, from: Vector3) -> void:
@@ -158,6 +193,8 @@ func hit(dmg: float, from: Vector3) -> void:
 
 func _die() -> void:
 	state = State.DEAD
+	_release()
+	_vault_t = -1.0
 	remove_from_group("hostile")
 	add_to_group("bodies")
 	speed_now = 0.0
@@ -173,6 +210,9 @@ func _process(delta: float) -> void:
 		_dead_t += delta
 		if _dead_t > CORPSE_LIFE_S:
 			queue_free()
+		return
+	if _vault_t >= 0.0:
+		_do_vault(delta)
 		return
 	var pp := player.position
 	var gx := pp.x - position.x
@@ -215,7 +255,9 @@ func _process(delta: float) -> void:
 		State.INVESTIGATE:
 			want = INVESTIGATE_SPEED
 			var dd2 := Vector2(_target.x - global_position.x, _target.z - global_position.z).length()
-			if dd2 < 2.0 or _state_t > 20.0:
+			if _shut_cabin_with_player() != null and dist < 30.0 and _state_t > 1.0:
+				_set_state(State.CHASE)   # someone is hiding in there: go for them
+			elif dd2 < 2.0 or _state_t > 20.0:
 				_set_state(State.IDLE)
 				_pick_wander()
 		State.CHASE:
@@ -227,14 +269,12 @@ func _process(delta: float) -> void:
 					_cd = COOLDOWN
 					grabs += 1
 					player.hurt(DAMAGE, "Torn apart by the infected")
-			var cb := _shut_cabin_with_player()
-			if cb != null:
-				# heard the player inside: pound on the door
-				_target = cb.door_world_pos()
-				if Vector2(_target.x - global_position.x, _target.z - global_position.z).length() < 2.3:
-					want = 0.0
-					_face(_target, delta, 8.0)
-					cb.bash_door(DOOR_BASH_DPS * delta)
+			var cb = _shut_cabin_with_player()
+			if cb != null and not cb.contains_xz(global_position.x, global_position.z):
+				want = _breach(cb, delta, want)   # smash a window / the door to get in
+			elif _bo != null:
+				_release()
+				_bo = null
 			if _last_seen_t > 8.0 and cb == null:
 				_set_state(State.INVESTIGATE)
 	if _stagger > 0.0:
@@ -252,6 +292,87 @@ func _process(delta: float) -> void:
 	if prof_on:
 		prof[3] += float(Time.get_ticks_usec() - _t0)
 		prof[4] += 1.0
+
+
+func _barrier(o: Opening) -> float:
+	if o.passable():
+		return 0.0
+	return (0.0 if o.glass_broken else 3.0) + 10.0 * float(o.boards)
+
+
+func _pick_opening(bld) -> void:
+	_release()
+	_bo = null
+	_bdoor = false
+	_bbld = bld
+	var pos := global_position
+	var best := 1e9
+	for o in bld.openings:
+		var c: float = pos.distance_to(o.outside_pos()) + _barrier(o)
+		if not o.has_slot(self):
+			c += 30.0
+		if c < best:
+			best = c
+			_bo = o
+	var dc: float = pos.distance_to(bld.door_world_pos()) + (0.0 if bld.door_open else 20.0)
+	if dc <= best:
+		_bo = null
+		_bdoor = true
+	_bpick_t = 0.0
+
+
+## Cheapest way in: window (glass 3 + 10 per plank + distance), door (20 closed), crowding. Returns wanted speed.
+func _breach(bld, delta: float, want: float) -> float:
+	_bpick_t += delta
+	if _bbld != bld or (_bo == null and not _bdoor) or _bpick_t > 3.0:
+		_pick_opening(bld)
+	var gp := global_position
+	if _bdoor:
+		if bld.door_open:
+			_target = player.position
+			return CHASE_SPEED
+		_target = bld.door_world_pos()
+		if Vector2(_target.x - gp.x, _target.z - gp.z).length() < 2.3:
+			_face(_target, delta, 8.0)
+			bld.bash_door(DOOR_BASH_DPS * delta)
+			return 0.0
+		return CHASE_SPEED
+	var slot := _bo.reserve(self)
+	if slot < 0:
+		_pick_opening(bld)
+		return want
+	var sp := _bo.slot_pos(slot)
+	if Vector2(sp.x - gp.x, sp.z - gp.z).length() > 0.6:
+		_target = sp
+		return CHASE_SPEED
+	_face(_bo.global_position, delta, 8.0)
+	if _bo.passable():
+		_vault_from = gp
+		var ip := _bo.inside_pos()
+		_vault_to = Vector3(ip.x, bld.floor_y, ip.z)
+		_vault_t = 0.0
+		return 0.0
+	var ev := _bo.hit(BREAK_DPS * delta)
+	if ev == "glass_break" and _bus != null:
+		_bus.emit_noise(_bo.global_position, 38.0, self)
+	elif ev == "board_break" and _bus != null:
+		_bus.emit_noise(_bo.global_position, 22.0, self)
+	return 0.0
+
+
+func _do_vault(delta: float) -> void:
+	_vault_t += delta
+	var t := clampf(_vault_t / VAULT_S, 0.0, 1.0)
+	var p := _vault_from.lerp(_vault_to, t)
+	p.y += sin(t * PI) * 0.3
+	global_position = p
+	_face(_vault_to, delta, 10.0)
+	_animate(delta)
+	if t >= 1.0:
+		_vault_t = -1.0
+		_release()
+		_bo = null
+		_hx = 1e9
 
 
 func _face(p: Vector3, delta: float, rate: float) -> void:
@@ -297,6 +418,12 @@ func _move(want: float, delta: float) -> void:
 			prof[7] += float(Time.get_ticks_usec() - _tm)
 		pos = np
 	var h: float = _hcache
+	for cb2 in cabins:
+		if absf(cb2.position.x - pos.x) < 9.0 and absf(cb2.position.z - pos.z) < 9.0:
+			var fh: float = cb2.floor_at(pos.x, pos.z, _hcache)
+			if not is_nan(fh):
+				h = fh
+				break
 	if not is_nan(h):
 		pos.y = lerpf(pos.y, h, minf(1.0, delta * 14.0))
 	global_position = pos

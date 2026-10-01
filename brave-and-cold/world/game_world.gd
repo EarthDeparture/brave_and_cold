@@ -514,6 +514,9 @@ func _build_huts() -> void:
 	colliders = []
 	colliders.append_array(cabins)
 	colliders.append_array(huts)
+	noise_bus.buildings = colliders
+	for cbx in cabins:
+		cbx.bus = noise_bus
 	if not cabins.is_empty() and road.points.size() > 2:
 		var cyaw := deg_to_rad(cabins[0].rotation_degrees.y)
 		var cp := Vector2(cabins[0].position.x, cabins[0].position.z)

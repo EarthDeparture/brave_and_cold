@@ -31,6 +31,8 @@ var _fire_glow: MeshInstance3D
 var _fire_mat: StandardMaterial3D
 var _fire_light: OmniLight3D
 var openings: Array[Opening] = []
+var bus: NoiseBus
+var _lt := 0.0
 var _t := 0.0
 
 
@@ -101,6 +103,37 @@ func _build_openings() -> void:
 
 
 ## 0..1 how much stove light escapes: sum of uncovered openings (+ open door), normalised to 3.
+func noise_leak() -> float:
+	if door_open:
+		return 1.0
+	for o in openings:
+		if o.passable():
+			return 1.0
+	return 0.35
+
+
+## Can the segment a->b (world, one end inside) pass through the door gap or an uncovered window?
+func sight_line_open(a: Vector3, b: Vector3) -> bool:
+	if door_open:
+		var la := to_local(a)
+		var lb := to_local(b)
+		if (la.z > HZ) != (lb.z > HZ):
+			var t := (HZ - la.z) / (lb.z - la.z)
+			var p := la + (lb - la) * t
+			if absf(p.x) < DOOR_HALF and p.y > FLOOR_LOCAL_Y and p.y < 2.4:
+				return true
+	for o in openings:
+		if o.open_fraction() >= 0.5 and o.segment_through(a, b):
+			return true
+	return false
+
+
+func emit_light_cue() -> void:
+	var sg := light_signal()
+	if bus != null and sg > 0.0 and _night > 0.15:
+		bus.emit_light(global_position, 8.0 + 28.0 * sg * _night, self)
+
+
 func light_signal() -> float:
 	if not is_lit():
 		return 0.0
@@ -237,6 +270,10 @@ func _process(delta: float) -> void:
 	else:
 		_fire_mat.emission_energy_multiplier = 0.0
 		_fire_light.light_energy = 0.0
+	_lt += delta
+	if _lt > 2.0:
+		_lt = 0.0
+		emit_light_cue()
 
 
 var _night := 0.0

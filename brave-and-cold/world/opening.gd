@@ -26,6 +26,8 @@ var curtain_hp := CURTAIN_HP
 var glow := 0.0          # interior light energy 0..~2 (set by the building)
 var glow_col := Color(1.0, 0.62, 0.28)
 
+var slots: Array = [null, null, null]   # zombies attacking from outside (3 max)
+
 var _glass: MeshInstance3D
 var _boards_root: Node3D
 var _curtain_mi: MeshInstance3D
@@ -111,6 +113,48 @@ func outside_pos() -> Vector3:
 
 func center_world() -> Vector3:
 	return global_position
+
+
+## Attack slot bookkeeping: returns slot index 0..2 or -1 when all are taken by other zombies.
+func reserve(z: Object) -> int:
+	for i in slots.size():
+		if slots[i] == z:
+			return i
+	for i in slots.size():
+		var s = slots[i]
+		if s == null or not is_instance_valid(s) or s.is_dead():
+			slots[i] = z
+			return i
+	return -1
+
+
+func release(z: Object) -> void:
+	for i in slots.size():
+		if slots[i] == z:
+			slots[i] = null
+
+
+func has_slot(z: Object) -> bool:
+	for i in slots.size():
+		var s = slots[i]
+		if s == z or s == null or not is_instance_valid(s) or s.is_dead():
+			return true
+	return false
+
+
+func slot_pos(i: int) -> Vector3:
+	return to_global(Vector3((float(i) - 1.0) * 0.6, -h * 0.5, 0.8))
+
+
+## Does the world-space segment a->b pass through this opening's rectangle?
+func segment_through(a: Vector3, b: Vector3) -> bool:
+	var la := to_local(a)
+	var lb := to_local(b)
+	if (la.z > 0.0) == (lb.z > 0.0):
+		return false
+	var t := la.z / (la.z - lb.z)
+	var p := la + (lb - la) * t
+	return absf(p.x) < w * 0.5 and absf(p.y) < h * 0.5
 
 
 func passable() -> bool:

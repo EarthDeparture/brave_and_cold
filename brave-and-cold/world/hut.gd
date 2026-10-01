@@ -120,6 +120,24 @@ func tackle_world_pos() -> Vector3:
 	return to_global(Vector3(TACKLE_LOCAL.x, FLOOR_LOCAL_Y, TACKLE_LOCAL.z))
 
 
+func noise_leak() -> float:
+	return 1.0
+
+
+func sight_line_open(a: Vector3, b: Vector3) -> bool:
+	var la := to_local(a)
+	var lb := to_local(b)
+	if (la.z > HZ) != (lb.z > HZ):
+		var t := (HZ - la.z) / (lb.z - la.z)
+		var p := la + (lb - la) * t
+		if absf(p.x) < DOOR_HALF and p.y > FLOOR_LOCAL_Y and p.y < 2.2:
+			return true
+	for o in openings:
+		if o.open_fraction() >= 0.5 and o.segment_through(a, b):
+			return true
+	return false
+
+
 func door_world_pos() -> Vector3:
 	return to_global(Vector3(0.0, 0.0, HZ + 0.6))
 
