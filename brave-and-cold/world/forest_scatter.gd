@@ -17,7 +17,105 @@ var tree_count := 0
 var excluded := 0
 var exclude: Callable  # (x, z) -> bool: skip trees here (roads, buildings)
 const TRUNK_CELL := 8.0
-var _trunks: Dictionary = {}  # Vector2i cell -> PackedVector3Array(x, z, radius)
+var _trunks: Dictionary = {}  # Vector2i cell -> Array of Vector3(x, z, radius)
+var _mms: Dictionary = {}  # Vector3i(chunk x, chunk z, variant) -> [MultiMesh lod0, lod1]
+var _meshes: Array[Mesh] = []
+var _mat: StandardMaterial3D
+var _half := 0
+var felled: Dictionary = {}  # "ix,iz" -> true (trees cut down by the player)
+var chop_hp: Dictionary = {}  # tree key -> remaining hits
+
+
+static func tree_key(x: float, z: float) -> String:
+	return "%d,%d" % [roundi(x * 2.0), roundi(z * 2.0)]
+
+
+static func tree_height_from_r(r: float) -> float:
+	return (r - 0.12) / 0.012
+
+
+static func hits_total(h: float) -> float:
+	return clampf(roundf(h * 1.2), 10.0, 32.0)
+
+
+func tree_mesh(vi: int) -> Mesh:
+	return _meshes[vi]
+
+
+func tree_mat() -> StandardMaterial3D:
+	return _mat
+
+
+## Nearest standing tree trunk surface within reach (xz). With need_facing the tree must be in front of fwd.
+func nearest_tree(pos: Vector3, fwd: Vector3, reach: float, need_facing: bool = true) -> Dictionary:
+	var best := {}
+	var bd := 1e9
+	var f2 := Vector2(fwd.x, fwd.z)
+	f2 = f2.normalized() if f2.length() > 0.001 else Vector2(0, -1)
+	var cx := int(floor(pos.x / TRUNK_CELL))
+	var cz := int(floor(pos.z / TRUNK_CELL))
+	var rc := int(ceil((reach + 1.0) / TRUNK_CELL))
+	for oz in range(-rc, rc + 1):
+		for ox in range(-rc, rc + 1):
+			var arr = _trunks.get(Vector2i(cx + ox, cz + oz))
+			if arr == null:
+				continue
+			for tv: Vector3 in (arr as Array):
+				var to := Vector2(tv.x - pos.x, tv.y - pos.z)
+				var d := to.length() - tv.z
+				if d > reach or d >= bd:
+					continue
+				if need_facing and to.length() > 0.001 and to.normalized().dot(f2) < 0.55:
+					continue
+				bd = d
+				best = {"x": tv.x, "z": tv.y, "r": tv.z, "h": tree_height_from_r(tv.z), "d": d}
+	return best
+
+
+## Remove a tree (collision + all instances). Returns {x,z,r,h,vi,origin,basis} or {} if not found.
+func fell(x: float, z: float) -> Dictionary:
+	var ck := Vector2i(int(floor(x / TRUNK_CELL)), int(floor(z / TRUNK_CELL)))
+	var arr = _trunks.get(ck)
+	if arr == null:
+		return {}
+	var r := -1.0
+	for i in range((arr as Array).size()):
+		var tv: Vector3 = arr[i]
+		if absf(tv.x - x) < 0.02 and absf(tv.y - z) < 0.02:
+			r = tv.z
+			(arr as Array).remove_at(i)
+			break
+	if r < 0.0:
+		return {}
+	var kx := int(floor((x + _half) / CHUNK))
+	var kz := int(floor((z + _half) / CHUNK))
+	for vi in range(VARIANTS.size()):
+		var pair = _mms.get(Vector3i(kx, kz, vi))
+		if pair == null:
+			continue
+		var mm0: MultiMesh = pair[0]
+		for i in range(mm0.instance_count):
+			var xf := mm0.get_instance_transform(i)
+			if absf(xf.origin.x - x) < 0.05 and absf(xf.origin.z - z) < 0.05 and xf.basis.get_scale().y > 0.01:
+				for mm: MultiMesh in pair:
+					mm.set_instance_transform(i, Transform3D(Basis().scaled(Vector3.ZERO), xf.origin))
+				felled[tree_key(x, z)] = true
+				return {"x": x, "z": z, "r": r, "h": tree_height_from_r(r), "vi": vi, "origin": xf.origin, "basis": xf.basis}
+	felled[tree_key(x, z)] = true
+	return {"x": x, "z": z, "r": r, "h": tree_height_from_r(r), "vi": 0, "origin": Vector3(x, 0, z), "basis": Basis()}
+
+
+## Re-apply saved felled trees. Returns the fell infos (for stumps).
+func apply_felled(keys: Array) -> Array:
+	var out: Array = []
+	for k in keys:
+		var p := String(k).split(",")
+		if p.size() != 2:
+			continue
+		var info := fell(float(p[0]) / 2.0, float(p[1]) / 2.0)
+		if not info.is_empty():
+			out.append(info)
+	return out
 
 
 ## Push a circle (x,z,r) out of any trunk it overlaps. Returns corrected xz.
@@ -52,6 +150,7 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 	water.convert(Image.FORMAT_L8)
 
 	var meshes: Array[Mesh] = []
+	_half = half
 	var far_meshes: Array[Mesh] = []
 	for v in VARIANTS:
 		meshes.append(_load_mesh("res://assets/models/trees/%s.glb" % v))
@@ -63,6 +162,7 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
+	_mat = mat
 	# chunk key -> per-variant transform arrays
 	var buckets := {}
 	var gx := int(size_m / SPACING)
@@ -104,12 +204,14 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 				_trunks[ck] = []
 			(_trunks[ck] as Array).append(Vector3(wx, wz, 0.12 + 0.012 * height_m))
 
+	_meshes = meshes
 	for key in buckets:
 		var per_variant: Array = buckets[key]
 		for vi in range(VARIANTS.size()):
 			var xf: Array = per_variant[vi]
 			if xf.is_empty():
 				continue
+			var pair: Array = []
 			for lod in range(2):
 				var mm := MultiMesh.new()
 				mm.transform_format = MultiMesh.TRANSFORM_3D
@@ -129,6 +231,8 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 					inst.visibility_range_end = VIS_END
 				inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if lod == 0 else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 				add_child(inst)
+				pair.append(mm)
+			_mms[Vector3i(key.x, key.y, vi)] = pair
 	print("FOREST_EXCL ", excluded)
 	print("FOREST_TREES ", tree_count, " chunks ", buckets.size())
 

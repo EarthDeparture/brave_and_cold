@@ -814,6 +814,30 @@ func _update_prompt() -> void:
 		if pd < 2.4 and (pd < 0.9 or pto.normalized().dot(fwd) > 0.3):
 			var pick: ItemPickup = ip
 			cands.append({"d": pd + 0.5, "text": "Take %s%s" % [inv.name_of(ip.id), " x%d" % ip.n if ip.n > 1 else ""], "act": func() -> void: take_pickup(pick)})
+	var axe_up := inv.count('axe') > 0 and not rifle_up
+	if forest != null and axe_up:
+		var tr: Dictionary = forest.nearest_tree(player.position, fwd, 2.0, true)
+		if not tr.is_empty():
+			var tk: String = ForestScatter.tree_key(float(tr["x"]), float(tr["z"]))
+			var pw := lerpf(0.55, 1.0, inv.condition('axe'))
+			var left := float(forest.chop_hp.get(tk, ForestScatter.hits_total(float(tr["h"]))))
+			cands.append({"d": float(tr["d"]) + 0.3, "text": "Chop tree (%d hits)" % int(ceil(left / pw)), "label": "Chopping", "hold": 0.85,
+				"start": func() -> void:
+					get_tree().create_timer(0.55).timeout.connect(func() -> void:
+						if not _act.is_empty():
+							viewmodel.swing(true)),
+				"again": func() -> bool: return not forest.felled.has(tk) and inv.count('axe') > 0 and not rifle_up,
+				"act": func() -> void: _chop_hit(tr)})
+	for lg in get_tree().get_nodes_in_group("logs"):
+		var wl := lg as WoodLog
+		if wl == null or wl.is_queued_for_deletion():
+			continue
+		var ld := wl.dist_to(player.position)
+		if ld < 2.2:
+			if axe_up:
+				cands.append({"d": ld + 0.2, "text": "Split log (+%d firewood)" % wl.firewood, "hold": 5.0, "kcal": 25.0, "noise": 20.0, "act": func() -> void: _split_log(wl)})
+			else:
+				cands.append({"d": ld + 0.2, "text": "Log (needs a hatchet equipped)", "act": func() -> void: _say('Need a hatchet to split this')})
 	cands.sort_custom(func(x, y) -> bool: return float(x["d"]) < float(y["d"]))
 	if cands.size() > 7:
 		cands.resize(7)
@@ -868,6 +892,8 @@ func _act_begin(c: Dictionary) -> void:
 	_act_hold = hold
 	_act_pos = player.position
 	_act_hp = player.health
+	if c.has("start"):
+		(c["start"] as Callable).call()
 	if float(c.get("noise", 0.0)) > 0.0:
 		noise_bus.emit_noise(player.position, float(c["noise"]), player)
 
@@ -904,6 +930,87 @@ func _act_update(delta: float, held: bool) -> void:
 		if kc > 0.0:
 			needs.calories = maxf(0.0, needs.calories - kc)
 		(c["act"] as Callable).call()
+		if held and c.has("again") and not player.dead and (c["again"] as Callable).call():
+			_act_begin(c)
+
+
+# ---- Wood: chop trees, fell them, split logs
+func _chop_hit(tr: Dictionary) -> void:
+	var x := float(tr["x"])
+	var z := float(tr["z"])
+	var tk := ForestScatter.tree_key(x, z)
+	if forest.felled.has(tk):
+		return
+	var power := lerpf(0.55, 1.0, inv.condition('axe'))
+	var left := float(forest.chop_hp.get(tk, ForestScatter.hits_total(float(tr["h"])))) - power
+	inv.wear('axe', 0.004)
+	needs.calories = maxf(0.0, needs.calories - 9.0)
+	noise_bus.emit_noise(player.position, 38.0, player)
+	var at := Vector3(x, player.position.y - 0.4, z)
+	audio.play_at("thud", at, 4.0, randf_range(0.55, 0.7), 8.0, 120.0)
+	FallingTree.burst(self, at + Vector3(0, 0.3, 0), 6, 1.5)
+	if left <= 0.0:
+		forest.chop_hp.erase(tk)
+		_fell_tree(x, z)
+	else:
+		forest.chop_hp[tk] = left
+
+
+func _fell_tree(x: float, z: float) -> void:
+	var info: Dictionary = forest.fell(x, z)
+	if info.is_empty():
+		return
+	var away := Vector3(x - player.position.x, 0.0, z - player.position.z)
+	away = away.normalized() if away.length() > 0.01 else Vector3(0, 0, -1)
+	var r := float(info["r"])
+	var h := float(info["h"])
+	WoodLog.make_stump(self, terrain, x, z, r)
+	var ft := FallingTree.new()
+	add_child(ft)
+	ft.setup(forest.tree_mesh(int(info["vi"])), forest.tree_mat(), info["origin"], info["basis"], away, h, func() -> void: _land_tree(x, z, away, h, r))
+	noise_bus.emit_noise(player.position, 55.0, player)
+	_say('Timber!')
+
+
+func _land_tree(x: float, z: float, away: Vector3, h: float, r: float) -> void:
+	var wl := WoodLog.new()
+	add_child(wl)
+	wl.setup(terrain, x, z, away, h, r)
+	audio.play_at("thud", wl.center() + Vector3(0, 0.5, 0), 8.0, 0.5, 14.0, 160.0)
+	noise_bus.emit_noise(wl.center(), 45.0, player)
+
+
+func _split_log(wl: WoodLog) -> void:
+	if wl == null or wl.is_queued_for_deletion():
+		return
+	var fw := wl.firewood
+	var sk := wl.sticks
+	_give_or_drop('wood', fw, wl.center())
+	_give_or_drop('stick', sk, wl.center())
+	inv.wear('axe', 0.01)
+	_say('Split log: %d firewood, %d sticks' % [fw, sk])
+	wl.queue_free()
+
+
+func _give_or_drop(id: String, n: int, pos: Vector3) -> void:
+	var dropped := 0
+	for i in range(n):
+		if inv.can_add(id, 1):
+			inv.add(id, 1)
+		else:
+			dropped += 1
+	if dropped > 0:
+		ItemPickup.spawn(self, id, dropped, _ground(pos.x, pos.z))
+		_say('Pack full: %d %s left on the ground' % [dropped, inv.name_of(id)])
+
+
+func _log_list() -> Array:
+	var out: Array = []
+	for lg in get_tree().get_nodes_in_group('logs'):
+		var wl := lg as WoodLog
+		if wl != null and not wl.is_queued_for_deletion():
+			out.append(wl.to_save())
+	return out
 
 
 func _unhandled_input(e: InputEvent) -> void:
@@ -1198,7 +1305,11 @@ func _attack() -> void:
 		audio.hit(best.global_position + Vector3(0, 1.0, 0))
 		_say("Hit!")
 	else:
-		_say("Swing")
+		var tr: Dictionary = forest.nearest_tree(player.position, fwd, 2.0, true) if axe and forest != null else {}
+		if tr.is_empty():
+			_say("Swing")
+		else:
+			_chop_hit(tr)
 
 
 func _zombietest_step(delta: float) -> void:
@@ -1422,6 +1533,8 @@ func save_game() -> bool:
 		'bears': _alive_list(bears),
 		'zombies': _alive_list(zombies),
 		'deer': _alive_list(deer),
+		'felled': forest.felled.keys() if forest != null else [],
+		'logs': _log_list(),
 	}
 	return SaveGame.write(d)
 
@@ -1444,6 +1557,13 @@ func _alive_list(arr: Array) -> Array:
 
 
 func _restore_creatures(sv: Dictionary) -> void:
+	if forest != null:
+		for info in forest.apply_felled(sv.get('felled', [])):
+			WoodLog.make_stump(self, terrain, float(info['x']), float(info['z']), float(info['r']))
+	for e in sv.get('logs', []):
+		var wl := WoodLog.new()
+		add_child(wl)
+		wl.setup(terrain, float(e['x']), float(e['z']), Vector3(float(e['dx']), 0.0, float(e['dz'])), float(e['h']), float(e['r']))
 	for e in sv.get('pickups', []):
 		if Inventory.ITEMS.has(String(e['id'])):
 			ItemPickup.spawn(self, String(e['id']), int(e['n']), _ground(float(e['x']), float(e['z'])))

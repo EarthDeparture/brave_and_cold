@@ -48,6 +48,8 @@ func setup(w: Node) -> void:
 		Settings.dev_menu = true
 	if "devtest=1" in ua:
 		_selftest()
+	if "choptest=1" in ua:
+		_choptest()
 
 
 func _selftest() -> void:
@@ -639,3 +641,93 @@ func _shot() -> void:
 func _copy_coords() -> void:
 	var p := player.position
 	DisplayServer.clipboard_set("pos=%.1f,%.1f yaw=%.1f pitch=%.1f hour=%.2f" % [p.x, p.z, rad_to_deg(player.yaw), rad_to_deg(player.pitch), clock.hour])
+
+
+func _choptest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var forest: ForestScatter = world.get("forest")
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	inv.add("axe", 1)
+	world.set("rifle_up", false)
+	var t0 := forest.nearest_tree(player.position, Vector3.FORWARD, 80.0, false)
+	var ok := not t0.is_empty()
+	print("CHOPTEST found tree=", ok, " ", t0)
+	fails += 0 if ok else 1
+	if not ok:
+		print("CHOPTEST failures=", fails)
+		get_tree().quit()
+		return
+	var tx := float(t0["x"])
+	var tz := float(t0["z"])
+	_tp(tx + 1.8, tz, Vector3(tx, 0.0, tz))
+	await get_tree().create_timer(1.0).timeout
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var t1 := forest.nearest_tree(player.position, fwd, 2.4, true)
+	ok = not t1.is_empty() and absf(float(t1["x"]) - tx) < 0.3 and absf(float(t1["z"]) - tz) < 0.3
+	print("CHOPTEST facing detect=", ok, " ", t1)
+	fails += 0 if ok else 1
+	var back := forest.nearest_tree(player.position, -fwd, 2.4, true)
+	ok = back.is_empty() or absf(float(back["x"]) - tx) > 0.3
+	print("CHOPTEST behind not chopped=", ok)
+	fails += 0 if ok else 1
+	world.call("_update_prompt")
+	var txt := ""
+	for c in world.get("_cands_cache"):
+		txt += String(c["text"]) + " | "
+	ok = txt.contains("Chop tree")
+	print("CHOPTEST prompt=", ok, " ", txt)
+	fails += 0 if ok else 1
+	var key := ForestScatter.tree_key(tx, tz)
+	var total := ForestScatter.hits_total(float(t0["h"]))
+	var hits := 0
+	while hits < 80 and not forest.felled.has(key):
+		var tr := forest.nearest_tree(player.position, fwd, 3.0, true)
+		if tr.is_empty():
+			break
+		world.call("_chop_hit", tr)
+		hits += 1
+	ok = forest.felled.has(key) and hits >= int(total / 1.0 - 1.0) and hits <= int(total / 0.55) + 2
+	print("CHOPTEST felled=", ok, " hits=", hits, " total=", total)
+	fails += 0 if ok else 1
+	ok = inv.condition("axe") < 1.0
+	print("CHOPTEST axe wear=", ok, " cond=", inv.condition("axe"))
+	fails += 0 if ok else 1
+	var gone := forest.nearest_tree(player.position, fwd, 2.4, true)
+	ok = gone.is_empty() or absf(float(gone["x"]) - tx) > 0.3 or absf(float(gone["z"]) - tz) > 0.3
+	print("CHOPTEST trunk removed=", ok)
+	fails += 0 if ok else 1
+	await get_tree().create_timer(4.0).timeout
+	var logs := get_tree().get_nodes_in_group("logs")
+	ok = logs.size() == 1
+	print("CHOPTEST log landed=", ok, " n=", logs.size())
+	fails += 0 if ok else 1
+	if ok and "chopshot=1" in OS.get_cmdline_user_args():
+		var lc: Vector3 = (logs[0] as WoodLog).center()
+		_tp(lc.x + 7.0, lc.z + 5.0, lc)
+		await get_tree().create_timer(1.5).timeout
+		var img := get_viewport().get_texture().get_image()
+		img.save_png("user://chop_log.png")
+		print("CHOPSHOT ", ProjectSettings.globalize_path("user://chop_log.png"))
+	if ok:
+		var wl: WoodLog = logs[0]
+		var w0 := inv.count("wood")
+		var s0 := inv.count("stick")
+		world.call("_split_log", wl)
+		ok = inv.count("wood") - w0 == wl.firewood and inv.count("stick") - s0 == 3
+		print("CHOPTEST split=", ok, " wood+", inv.count("wood") - w0, " sticks+", inv.count("stick") - s0)
+		fails += 0 if ok else 1
+		await get_tree().process_frame
+		ok = get_tree().get_nodes_in_group("logs").is_empty()
+		print("CHOPTEST log removed=", ok)
+		fails += 0 if ok else 1
+	var t2 := forest.nearest_tree(player.position, fwd, 80.0, false)
+	var k2 := ForestScatter.tree_key(float(t2["x"]), float(t2["z"]))
+	var infos := forest.apply_felled([k2])
+	var again := forest.apply_felled([k2])
+	ok = infos.size() == 1 and again.size() == 0 and forest.felled.has(k2)
+	print("CHOPTEST apply_felled=", ok)
+	fails += 0 if ok else 1
+	print("CHOPTEST failures=", fails)
+	get_tree().quit()
