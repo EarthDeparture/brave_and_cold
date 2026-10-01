@@ -29,6 +29,7 @@ class Horde:
 	var rest_len := 30.0
 	var abs_t := 0.0
 	var path: Array = []      # Vector2 waypoints still to walk
+	var vel := Vector2.ZERO   # m/s over the last step, drives proxy facing + walk cycle
 
 
 const HORDE_MAX := 120
@@ -55,6 +56,7 @@ var _t_slow := 0.0
 var _t_drag := 0.0
 var _next_id := 5000
 var _mm: MultiMeshInstance3D
+var _pmat: ShaderMaterial
 var proxy_n := 0
 var last_tick_us := 0
 
@@ -204,6 +206,8 @@ func tick(delta: float) -> void:
 		return
 	var t0 := Time.get_ticks_usec()
 	clock += delta
+	if _pmat != null:
+		_pmat.set_shader_parameter('now', clock)
 	_t_spawn += delta
 	_t_slow += delta
 	_t_drag += delta
@@ -430,23 +434,37 @@ func _build_proxy() -> void:
 	sh.code = """
 shader_type spatial;
 render_mode cull_disabled;
+uniform float now = 0.0;
+varying float v_tint;
+// INSTANCE_CUSTOM: x,y = velocity (m/s, world xz), z = time the position was set, w = stable per-zombie phase 0..1
 void vertex() {
-	float ph = MODEL_MATRIX[3].x * 0.37 + MODEL_MATRIX[3].z * 0.53;
+	vec4 cd = INSTANCE_CUSTOM;
+	vec3 vel = vec3(cd.x, 0.0, cd.y);
+	float dt = clamp(now - cd.z, 0.0, 0.6);
+	VERTEX += inverse(mat3(MODEL_MATRIX)) * (vel * dt);   // glide between the 0.5 s horde steps
+	float walk = step(0.05, length(vel));
+	float st = now * 5.5 + cd.w * 6.2832;
+	float lw = clamp(1.0 - VERTEX.y / 0.95, 0.0, 1.0);
+	float side = VERTEX.x > 0.0 ? 1.0 : -1.0;
+	VERTEX.z += sin(st) * side * 0.28 * lw * walk;       // leg swing
+	VERTEX.y += abs(sin(st)) * 0.025 * walk;             // body bob
 	float k = clamp(VERTEX.y, 0.0, 2.0);
-	VERTEX.x += sin(TIME * 1.1 + ph) * 0.05 * k;
-	VERTEX.z += cos(TIME * 0.8 + ph * 1.7) * 0.03 * k;
+	VERTEX.x += sin(now * 1.1 + cd.w * 6.2832) * 0.05 * k;
+	VERTEX.z += cos(now * 0.8 + cd.w * 10.8) * 0.03 * k;
+	v_tint = 0.78 + 0.3 * fract(cd.w * 7.31);
 }
 void fragment() {
-	float t = 0.78 + 0.3 * fract(sin(dot(MODEL_MATRIX[3].xz, vec2(12.9898, 78.233))) * 43758.5453);
-	ALBEDO = COLOR.rgb * vec3(t, t * 0.97, t * 0.95);
+	ALBEDO = COLOR.rgb * vec3(v_tint, v_tint * 0.97, v_tint * 0.95);
 	ROUGHNESS = 1.0;
 }
 """
 	var mat := ShaderMaterial.new()
 	mat.shader = sh
+	_pmat = mat
 	mesh.surface_set_material(0, mat)
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_custom_data = true
 	mm.mesh = mesh
 	mm.instance_count = PROXY_CAP
 	mm.visible_instance_count = 0
@@ -467,14 +485,22 @@ func _proxy_step() -> void:
 	var n := 0
 	var lim := PROXY_R * PROXY_R
 	var rc := int(ceilf(PROXY_R / CELL))
+	var hid := 0
 	for h in hordes:
-		for v in (h as Horde).pts:
+		hid += 1
+		var hv: Vector2 = (h as Horde).vel
+		var moving := hv.length() > 0.05
+		var vpts: PackedVector3Array = (h as Horde).pts
+		for vi in vpts.size():
+			var v: Vector3 = vpts[vi]
 			var dd2 := (v.x - pp.x) * (v.x - pp.x) + (v.z - pp.z) * (v.z - pp.z)
 			if dd2 > lim or n >= PROXY_CAP:
 				continue
-			var yw := fposmod(v.x * 12.9898 + v.z * 78.233, TAU)
-			var sw := 0.94 + 0.12 * fposmod(v.x * 3.7 + v.z * 1.3, 1.0)
+			var ph := fposmod(float(vi) * 0.6180339 + float(hid) * 0.137, 1.0)   # stable per member (not position based)
+			var yw := (atan2(-hv.x, -hv.y) + (ph - 0.5) * 0.5) if moving else ph * TAU
+			var sw := 0.94 + 0.12 * fposmod(ph * 7.3, 1.0)
 			mm.set_instance_transform(n, Transform3D(Basis(Vector3.UP, yw).scaled(Vector3.ONE * sw), v))
+			mm.set_instance_custom_data(n, Color(hv.x, hv.y, clock, ph))
 			n += 1
 	for dx in range(-rc, rc + 1):
 		for dz in range(-rc, rc + 1):
@@ -494,6 +520,7 @@ func _proxy_step() -> void:
 				var yaw := fposmod(v.x * 12.9898 + v.z * 78.233, TAU)
 				var sc := 0.94 + 0.12 * fposmod(v.x * 3.7 + v.z * 1.3, 1.0)
 				mm.set_instance_transform(n, Transform3D(Basis(Vector3.UP, yaw).scaled(Vector3.ONE * sc), v))
+				mm.set_instance_custom_data(n, Color(0.0, 0.0, clock, fposmod(yaw * 0.159, 1.0)))
 				n += 1
 	proxy_n = n
 	mm.visible_instance_count = n
@@ -576,6 +603,7 @@ func _horde_step(dt: float) -> void:
 			_dissolve(h)
 			continue
 		h.t += dt
+		h.vel = Vector2.ZERO
 		var speed := 0.0
 		match h.state:
 			0:
@@ -624,6 +652,7 @@ func _horde_step(dt: float) -> void:
 				step = minf(step, d)
 			var mv := to / maxf(d, 0.001) * step
 			h.center += mv
+			h.vel = mv / maxf(dt, 0.001)
 			for i in h.pts.size():
 				var v := h.pts[i]
 				var nx := v.x + mv.x
