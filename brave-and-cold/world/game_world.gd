@@ -177,6 +177,7 @@ func _ready() -> void:
 	audio = GameAudio.new()
 	add_child(audio)
 	audio.setup(player, self, wind)
+	audio.weather = weather
 	pause_menu = PauseMenu.new()
 	add_child(pause_menu)
 	pause_menu.save_requested.connect(func() -> void: pause_menu.save_status(save_game()))

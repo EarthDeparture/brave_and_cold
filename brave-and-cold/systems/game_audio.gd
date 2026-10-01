@@ -8,6 +8,8 @@ var player: Player
 var world: Node
 var wind_speed := 3.0
 var _wind: AudioStreamPlayer
+var _wind2: AudioStreamPlayer
+var weather: Weather
 var _lp: AudioEffectLowPassFilter
 var _wind_db := -60.0
 var _t := 0.0
@@ -43,7 +45,14 @@ func setup(p: Player, w: Node, wind: float) -> void:
 	_wind.bus = AMBIENT_BUS
 	_wind.volume_db = -60.0
 	add_child(_wind)
-	_wind.play()
+	_wind.play(_rng.randf() * 20.0)
+	_wind2 = AudioStreamPlayer.new()
+	_wind2.stream = Sfx.get_stream('wind')
+	_wind2.bus = AMBIENT_BUS
+	_wind2.volume_db = -60.0
+	_wind2.pitch_scale = 0.5
+	add_child(_wind2)
+	_wind2.play(_rng.randf() * 20.0)
 	_step_player = AudioStreamPlayer.new()
 	add_child(_step_player)
 	p.stepped.connect(_on_step)
@@ -55,13 +64,22 @@ func _process(delta: float) -> void:
 	_t += delta
 	var sheltered := player.is_sheltered()
 	var gust := 0.5 + 0.5 * sin(_t * 0.23) * sin(_t * 0.071 + 1.0)
-	var target := lerpf(-26.0, -12.0, clampf(wind_speed / 8.0, 0.0, 1.0)) + 5.0 * gust
-	var cutoff := 20000.0
+	var ws := wind_speed
+	if weather != null:
+		ws = weather.wind
+	var wn := clampf(ws / 20.0, 0.0, 1.0)
+	var target := lerpf(-30.0, -5.0, sqrt(wn)) + 2.5 * gust
+	var cutoff := lerpf(9000.0, 20000.0, wn)
+	var low_db := lerpf(-60.0, -9.0, clampf((ws - 5.0) / 14.0, 0.0, 1.0))
 	if sheltered:
 		target -= 10.0
+		low_db -= 6.0
 		cutoff = 650.0
 	_wind_db = lerpf(_wind_db, target, clampf(delta * 1.5, 0.0, 1.0))
 	_wind.volume_db = _wind_db
+	_wind.pitch_scale = lerpf(0.85, 1.3, wn) + 0.04 * gust
+	_wind2.volume_db = lerpf(_wind2.volume_db, low_db, clampf(delta * 1.2, 0.0, 1.0))
+	_wind2.pitch_scale = 0.45 + 0.25 * wn
 	if _lp != null:
 		_lp.cutoff_hz = lerpf(_lp.cutoff_hz, cutoff, clampf(delta * 3.0, 0.0, 1.0))
 	_creatures(delta)
