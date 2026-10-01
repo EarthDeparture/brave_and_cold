@@ -5,6 +5,7 @@ extends RefCounted
 const PATH := "user://settings.cfg"
 static var master := 0.8        # 0..1
 static var sensitivity := 0.002  # radians per pixel
+static var dev_menu := false      # developer menu available (toggle key: backtick)
 static var _loaded := false
 
 
@@ -16,6 +17,7 @@ static func load_all() -> void:
 	if c.load(PATH) == OK:
 		master = float(c.get_value("audio", "master", master))
 		sensitivity = float(c.get_value("controls", "sensitivity", sensitivity))
+		dev_menu = bool(c.get_value("debug", "dev_menu", dev_menu))
 	apply()
 
 
@@ -23,6 +25,7 @@ static func save_all() -> void:
 	var c := ConfigFile.new()
 	c.set_value("audio", "master", master)
 	c.set_value("controls", "sensitivity", sensitivity)
+	c.set_value("debug", "dev_menu", dev_menu)
 	c.save(PATH)
 
 

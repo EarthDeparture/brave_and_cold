@@ -1,6 +1,6 @@
 class_name DevMenu
 extends CanvasLayer
-## F8 developer menu (left side). World keeps running while it is open.
+## Developer menu (backtick key, enabled in Options) (left side). World keeps running while it is open.
 ## Tab (while open) toggles mouse-look so you can fly around with the menu still on screen; F8 closes it.
 ## Sections: weather, time of day, player cheats (god / noclip / stay warm...), teleports, creatures, items, render toggles, readout.
 
@@ -42,7 +42,10 @@ func setup(w: Node) -> void:
 	clock = world.get("clock")
 	weather = world.get("weather")
 	_build()
-	if "devtest=1" in OS.get_cmdline_user_args():
+	var ua := OS.get_cmdline_user_args()
+	if "devtest=1" in ua or "devmenu=1" in ua:
+		Settings.dev_menu = true
+	if "devtest=1" in ua:
 		_selftest()
 
 
@@ -134,7 +137,9 @@ func close() -> void:
 func _unhandled_input(e: InputEvent) -> void:
 	if not (e is InputEventKey and e.pressed and not e.echo):
 		return
-	if e.keycode == KEY_F8:
+	if e.keycode == KEY_QUOTELEFT:
+		if not Settings.dev_menu:
+			return
 		var pm = world.get("pause_menu")
 		if pm != null and pm.visible:
 			return
@@ -158,7 +163,7 @@ func _build() -> void:
 	var outer := VBoxContainer.new()
 	outer.add_theme_constant_override("separation", 4)
 	_panel.add_child(outer)
-	outer.add_child(UiKit.label("DEV MENU   F8 close   Tab mouse-look", 14, DZ.ACCENT))
+	outer.add_child(UiKit.label("DEV MENU   ` close   Tab mouse-look", 14, DZ.ACCENT))
 	_scroll = ScrollContainer.new()
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.custom_minimum_size = Vector2(350, 560)
@@ -360,6 +365,8 @@ func _process(delta: float) -> void:
 		needs.water = 100.0
 	if player.god and not player.dead:
 		player.health = 100.0
+	if visible and not Settings.dev_menu:
+		close()
 	if not visible:
 		return
 	if not _dragging:
