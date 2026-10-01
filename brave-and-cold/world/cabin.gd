@@ -20,6 +20,7 @@ const WOOD_BURN_S := 7200.0  # GAME seconds per log (2 h)
 static var game_scale := 48.0
 var _snd: AudioStreamPlayer3D
 var door_open := false
+var tint := Color.WHITE   # per-cabin weathering variation (hamlet), multiplies the vertex colours
 var door_hp := 100.0
 var door_broken := false
 var stove_fuel_s := 0.0
@@ -62,6 +63,7 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	mat.vertex_color_use_as_albedo = true
 	mat.roughness = 0.95
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.albedo_color = tint
 	glass_mat = StandardMaterial3D.new()
 	glass_mat.albedo_color = Color(0.25, 0.32, 0.42)
 	glass_mat.roughness = 0.2

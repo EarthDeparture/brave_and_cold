@@ -687,6 +687,7 @@ func _build_hamlet(_home: Vector2) -> void:
 	hamlet_n = 0
 	for hp in hamlet_plan:
 		var cb := Cabin.new()
+		cb.tint = [Color(0.92, 0.88, 0.84), Color(1.0, 1.0, 1.0), Color(0.88, 0.9, 0.95), Color(1.0, 0.95, 0.88), Color(0.9, 0.86, 0.8)][hamlet_n % 5]
 		add_child(cb)
 		if cb.setup(terrain, float(hp['x']), float(hp['z']), float(hp['yaw'])):
 			cb.wood_pile = 2 + (hamlet_n * 3) % 5
@@ -1726,12 +1727,14 @@ func _populate(n: int, center: Vector2) -> void:
 			rp.append(road.points[i])
 	pop.generate(n, center, anchors, rp, water)
 	pop.prewarm(16)
+	var srng := RandomNumberGenerator.new()
+	srng.seed = 4242   # sleepers are fixed per map, not per run
 	for ci in range(1, cabins.size()):
-		if randf() < 0.6:
-			pop.add_special(cabins[ci].to_global(Vector3(randf_range(-1.5, 1.5), Cabin.FLOOR_LOCAL_Y, randf_range(-0.8, 1.2))))
+		if srng.randf() < 0.6:
+			pop.add_special(cabins[ci].to_global(Vector3(srng.randf_range(-1.5, 1.5), Cabin.FLOOR_LOCAL_Y, srng.randf_range(-0.8, 1.2))))
 	for hu in huts:
-		if randf() < 0.7:
-			pop.add_special(hu.to_global(Vector3(randf_range(-0.9, 0.9), Hut.FLOOR_LOCAL_Y, randf_range(-0.7, 0.7))))
+		if srng.randf() < 0.7:
+			pop.add_special(hu.to_global(Vector3(srng.randf_range(-0.9, 0.9), Hut.FLOOR_LOCAL_Y, srng.randf_range(-0.7, 0.7))))
 
 
 func _new_zombie(p: Vector3, idx: int) -> Zombie:
