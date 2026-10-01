@@ -146,6 +146,7 @@ func _ready() -> void:
 	pop.bus = noise_bus
 	pop.make_zombie = Callable(self, "_new_zombie")
 	noise_bus.noise.connect(pop.on_noise)
+	noise_bus.light.connect(pop.on_light)
 	if opts.has("wound"):
 		player.injury.wound(float(opts["wound"]), 0.0)
 	if road != null:

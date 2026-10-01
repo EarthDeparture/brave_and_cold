@@ -74,6 +74,8 @@ func setup(w: Node) -> void:
 		_hordetest()
 	if "injurytest=1" in ua:
 		_injurytest()
+	if "popperf=1" in ua:
+		_popperf()
 
 
 func _selftest() -> void:
@@ -2061,7 +2063,26 @@ func _hordetest() -> void:
 	ok = st == 1 and moved2 >= 60.0
 	print("HORDETEST respond state=", st, " moved=", snappedf(moved2, 0.1), " now_state=", h.state, " ok=", ok)
 	fails += 0 if ok else 1
-	# snowball
+	# a lit window (night) / chimney smoke (day) lures hordes within 5x radius
+	var lp := Vector2(h.center.x - 90.0, h.center.y) if h.center.x > -800.0 else Vector2(h.center.x + 90.0, h.center.y)
+	h.state = 0
+	h.path = []
+	nb.emit_light(Vector3(lp.x, 0.0, lp.y), 36.0, null)
+	ok = h.state == 1 and h.target.distance_to(lp) < 1.0
+	print("HORDETEST light lure state=", h.state, " ok=", ok)
+	fails += 0 if ok else 1
+	h.state = 0
+	h.path = []
+	nb.emit_smoke(Vector3(lp.x, 0.0, lp.y), 24.0, null)
+	ok = h.state == 1
+	print("HORDETEST smoke lure state=", h.state, " ok=", ok)
+	fails += 0 if ok else 1
+	h.state = 0
+	h.path = []
+	nb.emit_light(Vector3(h.center.x + 600.0 if h.center.x < 0.0 else h.center.x - 600.0, 0.0, h.center.y), 36.0, null)
+	ok = h.state == 0
+	print("HORDETEST light too far ignored ok=", ok)
+	fails += 0 if ok else 1	# snowball
 	var n_before: int = h.pts.size()
 	for i in 8:
 		pop.add_virtual(Vector3(h.center.x + 4.0, h.pts[0].y, h.center.y + float(i)))
@@ -2224,4 +2245,34 @@ func _injurytest() -> void:
 	fails += 0 if ok else 1
 	Inventory.injury = prev
 	print("INJTEST failures=", fails)
+	get_tree().quit()
+
+func _popperf() -> void:
+	await get_tree().create_timer(3.0).timeout
+	Engine.max_fps = 0
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	player.god = true
+	var pop: Population = world.get("pop")
+	var s0: Array = await _zp_sample(300)
+	print("POPPERF start (active=", pop.active.size(), " proxies=", pop.proxy_n, ") mean=%.2f med=%.2f p95=%.2f max=%.2f" % [s0[0], s0[1], s0[2], s0[3]])
+	pop.dissolve_all()
+	var bk := -1
+	var bn := 0
+	for k in pop.cells:
+		var n: int = (pop.cells[k] as PackedVector3Array).size()
+		if n > bn:
+			bn = n
+			bk = int(k)
+	var cx := float(bk / 64) * Population.CELL - Population.HALF + Population.CELL * 0.5
+	var cz := float(bk % 64) * Population.CELL - Population.HALF + Population.CELL * 0.5
+	player.place(cx, cz)
+	await get_tree().create_timer(4.0).timeout
+	var s1: Array = await _zp_sample(300)
+	print("POPPERF dense cell (active=", pop.active.size(), " proxies=", pop.proxy_n, ") mean=%.2f med=%.2f p95=%.2f max=%.2f" % [s1[0], s1[1], s1[2], s1[3]])
+	for i in 6:
+		pop.spawn_horde(Vector2(cx + 100.0 + 25.0 * i, cz + 60.0 - 20.0 * i), 100)
+	await get_tree().create_timer(3.0).timeout
+	var s2: Array = await _zp_sample(300)
+	print("POPPERF + 6 hordes x100 (active=", pop.active.size(), " proxies=", pop.proxy_n, ") mean=%.2f med=%.2f p95=%.2f max=%.2f" % [s2[0], s2[1], s2[2], s2[3]])
+	print("POPPERF done")
 	get_tree().quit()

@@ -3,6 +3,7 @@ extends RefCounted
 ## Sound events that AI perceives (zombies/animals). Radii in metres (GDD): walk 8, run 18, axe 45, gunshot 150.
 
 signal noise(position: Vector3, radius: float, source: Object)
+signal light(position: Vector3, radius: float, source: Object)   # lit windows at night / chimney smoke by day: the far, abstract lure
 
 const RADIUS_CROUCH := 3.0
 const RADIUS_WALK := 8.0
@@ -72,3 +73,9 @@ func emit_light(pos: Vector3, radius: float, source: Object = null) -> void:
 		var dz := zp.z - pos.z
 		if dx * dx + dz * dz <= r2:
 			z.on_light(pos, radius, source)
+	light.emit(pos, radius, source)
+
+
+## Daytime chimney smoke: only the abstract population (hordes / strays) notices it from far away.
+func emit_smoke(pos: Vector3, radius: float, source: Object = null) -> void:
+	light.emit(pos, radius, source)

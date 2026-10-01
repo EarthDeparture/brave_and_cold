@@ -136,6 +136,8 @@ func emit_light_cue() -> void:
 	var sg := light_signal()
 	if bus != null and sg > 0.0 and _night > 0.15:
 		bus.emit_light(global_position, 8.0 + 28.0 * sg * _night, self)
+	elif bus != null and _night <= 0.15 and is_lit():
+		bus.emit_smoke(global_position, 24.0, self)
 
 
 func light_signal() -> float:

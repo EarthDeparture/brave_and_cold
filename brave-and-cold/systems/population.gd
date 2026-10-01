@@ -674,3 +674,25 @@ func restore_hordes(lst: Array) -> void:
 			_plan(h, h.target)
 		if h.pts.size() >= 4:
 			hordes.append(h)
+
+## Lit cabin at night (radius <= 36) / chimney smoke by day (24): hordes within 5x the radius come, strays within 3.5x drift in.
+func on_light(pos: Vector3, radius: float, _source: Object) -> void:
+	if radius < 20.0:
+		return
+	var p2 := Vector2(pos.x, pos.z)
+	for h in hordes:
+		var hh := h as Horde
+		var d := hh.center.distance_to(p2)
+		if d < radius * 5.0 and d > 15.0 and not (hh.state == 1 and hh.target.distance_to(p2) < 20.0):
+			hh.state = 1
+			hh.target = p2
+			hh.t = 0.0
+			_plan(hh, p2)
+	for ev in events:
+		if Vector2(float(ev[0]) - pos.x, float(ev[1]) - pos.z).length() < 25.0:
+			ev[2] = maxf(float(ev[2]), radius * 3.5)
+			ev[3] = clock + 60.0
+			return
+	events.append([pos.x, pos.z, radius * 3.5, clock + 60.0])
+	if events.size() > 8:
+		events.pop_front()
