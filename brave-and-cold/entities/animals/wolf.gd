@@ -274,6 +274,7 @@ func _process(delta: float) -> void:
 						player.start_struggle(self, struggle_gain)
 						_tick = 1.3
 					player.hurt(BITE_DAMAGE, death_msg)
+					player.injury.wound(0.6, 0.08)
 			if dist > GIVE_UP_DIST or (_state_t > 25.0 and dist > 35.0) or _stuck_t > 6.0:
 				_set_state(State.RETREAT)
 				var away := (global_position - pp)

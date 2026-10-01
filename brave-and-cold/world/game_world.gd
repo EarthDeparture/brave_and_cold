@@ -146,6 +146,8 @@ func _ready() -> void:
 	pop.bus = noise_bus
 	pop.make_zombie = Callable(self, "_new_zombie")
 	noise_bus.noise.connect(pop.on_noise)
+	if opts.has("wound"):
+		player.injury.wound(float(opts["wound"]), 0.0)
 	if road != null:
 		pop.road_pts = road.points
 	if not opts.has("wolftest") and not opts.has("zombietest") and not opts.has("deertest"):
@@ -349,6 +351,7 @@ func _process(delta: float) -> void:
 	body.update(gs, clock.ambient_c(), wind, player.is_sheltered(), fw, player.activity, 0.0 if player.is_sheltered() else weather.precip * 0.05, false)
 	needs.update(gs, player.activity, body.core)
 	_act_update(delta, Input.is_key_pressed(KEY_E))
+	player.injury.update(gs, delta)
 	var sd := needs.damage_per_s()
 	if sd > 0.0 and not player.dead:
 		player.hurt(sd * delta, 'Died of thirst' if needs.water <= 0.0 else 'Starved to death')
@@ -840,6 +843,7 @@ func _opening_cands(cands: Array, fwd: Vector3) -> void:
 					var dest: Vector3 = o.outside_pos() if inside else o.inside_pos()
 					if o.shards:
 						player.hurt(3.0, "Bled out on broken glass")
+						player.injury.wound(0.3, 0.12)
 						_say("Cut on the glass")
 					player.position.x = dest.x
 					player.position.z = dest.z})
@@ -951,6 +955,9 @@ func _update_prompt() -> void:
 				inv.add("nails", 20)
 				inv.add("plank", 3)
 				inv.add("rag", 4)
+				inv.add("bandage", 2)
+				inv.add("antiseptic", 1)
+				inv.add("antibiotics", 1)
 				_say("Found: hatchet, knife, rifle + 6 rounds, parka, sweater, toque, matches, beans, hammer, nails, planks, rags")})
 		for it in items:
 			if it.get('hide', false):
@@ -1951,6 +1958,7 @@ func save_game() -> bool:
 		'bears': _alive_list(bears),
 		'zombies': pop.all_alive(),
 		'hordes': pop.horde_list(),
+		'injury': player.injury.to_dict(),
 		'deer': _alive_list(deer),
 		'felled': forest.felled.keys() if forest != null else [],
 		'logs': _log_list(),
@@ -2016,6 +2024,7 @@ func _restore_creatures(sv: Dictionary) -> void:
 		br.hp = float(e['hp'])
 		i += 1
 	i = 0
+	player.injury.from_dict(sv.get('injury', {}))
 	pop.restore_hordes(sv.get('hordes', []))
 	for e in sv.get('zombies', []):
 		pop.add_virtual(_ground(float(e['x']), float(e['z'])))   # materialises by distance within a few ticks

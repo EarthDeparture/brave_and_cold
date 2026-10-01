@@ -334,6 +334,7 @@ func _process(delta: float) -> void:
 					_cd = COOLDOWN
 					grabs += 1
 					player.hurt(DAMAGE, "Torn apart by the infected")
+					player.injury.wound(0.45, 0.30)
 			var cb = _shut_cabin_with_player()
 			if cb != null and not cb.contains_xz(global_position.x, global_position.z):
 				want = _breach(cb, delta, want)   # smash a window / the door to get in

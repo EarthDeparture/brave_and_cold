@@ -85,7 +85,12 @@ func _struggle_update(delta: float) -> void:
 		struggle_by.call("struggle_failed")
 
 
+var injury := Injury.new()
+
+
 func setup(t: Terrain3D, s: SnowField, b: BodyTemperature, n: NoiseBus) -> void:
+	injury.player = self
+	Inventory.injury = injury
 	terrain = t
 	snow = s
 	body = b

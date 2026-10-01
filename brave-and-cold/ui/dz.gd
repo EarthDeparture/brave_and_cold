@@ -85,6 +85,9 @@ static func item_color(id: String) -> Color:
 		"nails": return Color(0.62, 0.60, 0.58)
 		"plank": return Color(0.55, 0.40, 0.24)
 		"rag": return Color(0.60, 0.30, 0.26)
+		"bandage": return Color(0.88, 0.86, 0.80)
+		"antiseptic": return Color(0.40, 0.58, 0.72)
+		"antibiotics": return Color(0.82, 0.78, 0.55)
 		"bow_drill": return Color(0.52, 0.38, 0.22)
 		"wolf_meat_raw": return Color(0.62, 0.24, 0.24)
 		"wolf_meat_cooked": return Color(0.46, 0.28, 0.16)
@@ -190,6 +193,17 @@ static func item_icon(ci: CanvasItem, id: String, r: Rect2, dim: float = 1.0) ->
 		"rag":
 			_quad(ci, c, u * 1.3, u * 1.0, 0.2, col)
 			ci.draw_line(c + Vector2(-u * 0.5, -u * 0.1), c + Vector2(u * 0.5, u * 0.2), dark, 2.0)
+		"bandage":
+			_quad(ci, c, u * 1.5, u * 0.8, 0.0, col)
+			ci.draw_line(c + Vector2(-u * 0.2, -u * 0.4), c + Vector2(-u * 0.2, u * 0.4), Color(0.7, 0.2, 0.2), 2.5)
+			ci.draw_line(c + Vector2(u * 0.3, -u * 0.4), c + Vector2(u * 0.3, u * 0.4), Color(0.7, 0.2, 0.2), 2.5)
+		"antiseptic":
+			_quad(ci, c + Vector2(0, u * 0.25), u * 0.9, u * 1.3, 0.0, col)
+			_quad(ci, c + Vector2(0, -u * 0.6), u * 0.45, u * 0.35, 0.0, Color(0.85, 0.85, 0.88))
+		"antibiotics":
+			_quad(ci, c, u * 1.6, u * 1.0, 0.0, col)
+			for k in 3:
+				ci.draw_circle(c + Vector2(-u * 0.5 + k * u * 0.5, 0), u * 0.2, Color(0.95, 0.95, 0.9))
 		"nails":
 			for k in 4:
 				ci.draw_line(c + Vector2(-u * 0.6 + k * u * 0.4, -u * 0.6), c + Vector2(-u * 0.6 + k * u * 0.4, u * 0.7), col, 2.5)

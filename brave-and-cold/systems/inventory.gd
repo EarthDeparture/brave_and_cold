@@ -21,6 +21,9 @@ const ITEMS := {
 	"venison_raw": {"shelf_h": 30.0, "name": "Raw Venison", "kind": "food", "stack": 4, "kcal": 350.0, "raw": true, "cooked": "venison_cooked", "desc": "Fresh meat. Cook it over a fire for more calories."},
 	"venison_cooked": {"shelf_h": 72.0, "name": "Cooked Venison", "kind": "food", "stack": 4, "kcal": 900.0, "desc": "Seared venison steak."},
 	"hammer": {"name": "Hammer", "kind": "tool", "stack": 1, "desc": "Claw hammer. Needed to board up windows and doors. Loud."},
+	"bandage": {"name": "Bandage", "kind": "med", "stack": 6, "desc": "Clean cloth wrap. Stops bleeding."},
+	"antiseptic": {"name": "Antiseptic", "kind": "med", "stack": 3, "desc": "Disinfectant. Clean a wound within two hours or the infection takes hold."},
+	"antibiotics": {"name": "Antibiotics", "kind": "med", "stack": 2, "desc": "A full course. Cures an infection at any stage."},
 	"nails": {"name": "Nails", "kind": "misc", "stack": 25, "desc": "Box of nails. Two per plank."},
 	"plank": {"name": "Plank", "kind": "misc", "stack": 8, "desc": "Rough plank. Board windows from the inside (4 per window)."},
 	"rag": {"name": "Rags", "kind": "misc", "stack": 10, "desc": "Cloth strips. Two make a curtain that hides your light and your silhouette."},
@@ -52,7 +55,7 @@ const ITEMS := {
 const KIND_ORDER := ["weapon", "tool", "ammo", "clothing", "food", "fuel", "misc"]
 const CAPACITY := 24          # backpack cells
 const EQUIP_ITEMS := ["rifle", "axe"]   # live in equipment slots, not backpack cells
-const WEIGHTS := {"wood": 1.2, "stick": 0.15, "thatch": 0.05, "cordage": 0.05, "kindling": 0.1, "bow_drill": 0.4, "jerky": 0.2, "reed": 0.06, "tinder": 0.02, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6, "cured_hide": 1.0, "wolf_fur": 0.7, "bear_fur": 3.0, "toque": 0.1, "hide_cap": 0.3, "wolf_hat": 0.3, "hide_mitts": 0.3, "wolf_mitts": 0.3, "hide_boots": 0.8, "hide_leggings": 0.8, "bear_coat": 4.5, "rotten_meat": 0.5, "hammer": 0.8, "nails": 0.01, "plank": 0.9, "rag": 0.05}
+const WEIGHTS := {"wood": 1.2, "stick": 0.15, "thatch": 0.05, "cordage": 0.05, "kindling": 0.1, "bow_drill": 0.4, "jerky": 0.2, "reed": 0.06, "tinder": 0.02, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6, "cured_hide": 1.0, "wolf_fur": 0.7, "bear_fur": 3.0, "toque": 0.1, "hide_cap": 0.3, "wolf_hat": 0.3, "hide_mitts": 0.3, "wolf_mitts": 0.3, "hide_boots": 0.8, "hide_leggings": 0.8, "bear_coat": 4.5, "rotten_meat": 0.5, "hammer": 0.8, "nails": 0.01, "plank": 0.9, "bandage": 0.05, "antiseptic": 0.2, "antibiotics": 0.05, "rag": 0.05}
 const WEIGHT_SOFT := 30.0   # kg carried before you slow down
 const WEIGHT_HARD := 45.0   # kg hard cap (cannot pick up more)
 const BASE_WARMTH := 0.25
@@ -265,8 +268,33 @@ func is_wearable(id: String) -> bool:
 	return ITEMS.has(id) and ITEMS[id].has("slot")
 
 
+func _use_med(id: String) -> String:
+	if injury == null or count(id) < 1:
+		return "None left"
+	if id == "bandage":
+		if not injury.bandage():
+			return "Not bleeding"
+		remove(id)
+		return "Bandaged: bleeding stopped"
+	if id == "antiseptic":
+		var m := injury.antiseptic()
+		if m == "":
+			return "No fresh wound to clean"
+		remove(id)
+		return m
+	if not injury.antibiotics():
+		return "You feel no sign of infection"
+	remove(id)
+	return "Took the antibiotics: infection cleared"
+
+
 ## Toggle equip/unequip. Returns a short status message.
+static var injury: Injury   # set by the world; medical items act on it
+
+
 func use(id: String) -> String:
+	if id == "bandage" or id == "antiseptic" or id == "antibiotics":
+		return _use_med(id)
 	if ITEMS.has(id) and ITEMS[id].has("kcal") and needs != null:
 		var k: float = ITEMS[id]["kcal"]
 		if not remove(id):

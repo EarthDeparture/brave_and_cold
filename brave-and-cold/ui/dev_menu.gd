@@ -72,6 +72,8 @@ func setup(w: Node) -> void:
 		_poptest()
 	if "hordetest=1" in ua:
 		_hordetest()
+	if "injurytest=1" in ua:
+		_injurytest()
 
 
 func _selftest() -> void:
@@ -2113,4 +2115,113 @@ func _hordetest() -> void:
 	print("HORDETEST cost 6x100 avg_us=", snappedf(per, 1.0), " ok=", ok)
 	fails += 0 if ok else 1
 	print("HORDETEST failures=", fails)
+	get_tree().quit()
+
+func _injurytest() -> void:
+	await get_tree().create_timer(2.0).timeout
+	var fails := 0
+	player.god = false
+	var body: BodyTemperature = world.get("body")
+	var inj := Injury.new()
+	inj.player = player
+	inj.rng.seed = 1
+	var inv := Inventory.new(body)
+	var prev: Injury = Inventory.injury
+	Inventory.injury = inj
+
+	player.health = 100.0
+	inj.wound(0.6, 0.0)
+	inj.update(0.0, 10.0)
+	var lost := 100.0 - player.health
+	var ok := absf(lost - 2.1) < 0.4 and inj.bleeding() and not inj.infected()
+	print("INJTEST bleed drain=", snappedf(lost, 0.01), " ok=", ok)
+	fails += 0 if ok else 1
+	inv.add("bandage", 1)
+	var msg := inv.use("bandage")
+	ok = not inj.bleeding() and inv.count("bandage") == 0 and msg.begins_with("Bandaged")
+	print("INJTEST bandage '", msg, "' ok=", ok)
+	fails += 0 if ok else 1
+	ok = inv.use("bandage") == "None left"
+	print("INJTEST bandage none ok=", ok)
+	fails += 0 if ok else 1
+	inj.wound(0.2, 0.0)
+	inj.update(0.0, 70.0)
+	ok = not inj.bleeding()
+	print("INJTEST light wound clots bleed=", snappedf(inj.bleed, 0.001), " ok=", ok)
+	fails += 0 if ok else 1
+	inj.wound(0.5, 0.0)
+	var b0 := inj.bleed
+	inj.update(0.0, 100.0)
+	ok = is_equal_approx(inj.bleed, b0)
+	print("INJTEST deep wound does not clot ok=", ok)
+	fails += 0 if ok else 1
+	inj.bandage()
+	# infection timeline
+	player.health = 100.0
+	inj.wound(0.05, 1.0)
+	inj.bandage()
+	inj.update(5.0 * 3600.0, 0.0)
+	ok = inj.infected() and not inj.symptomatic() and player.health > 99.9
+	inj.update(2.0 * 3600.0, 0.0)
+	ok = ok and inj.symptomatic() and player.health < 99.0 and "Fever: infection" in inj.status_lines()
+	print("INJTEST infection hidden then fever hp=", snappedf(player.health, 0.01), " ok=", ok)
+	fails += 0 if ok else 1
+	inj.update(18.0 * 3600.0, 0.0)
+	ok = player.dead and player.death_cause == "Succumbed to the infection"
+	print("INJTEST infection kills dead=", player.dead, " cause=", player.death_cause, " ok=", ok)
+	fails += 0 if ok else 1
+	player.dead = false
+	player.frozen = false
+	player.health = 100.0
+	inj.inf_t = -1.0
+	inj.wound_age = -1.0
+	# antibiotics cure at any stage
+	inj.wound(0.05, 1.0)
+	inj.bandage()
+	inj.update(10.0 * 3600.0, 0.0)
+	inv.add("antibiotics", 1)
+	msg = inv.use("antibiotics")
+	inj.update(30.0 * 3600.0, 0.0)
+	ok = not inj.infected() and not player.dead and inv.count("antibiotics") == 0
+	print("INJTEST antibiotics '", msg, "' alive=", not player.dead, " ok=", ok)
+	fails += 0 if ok else 1
+	player.health = 100.0
+	# antiseptic: early cures, late does not
+	inj.wound(0.05, 1.0)
+	inj.bandage()
+	inj.update(3600.0, 0.0)
+	inv.add("antiseptic", 2)
+	msg = inv.use("antiseptic")
+	ok = not inj.infected() and msg == "Wound cleaned" and inv.count("antiseptic") == 1
+	print("INJTEST antiseptic early '", msg, "' ok=", ok)
+	fails += 0 if ok else 1
+	inj.wound(0.05, 1.0)
+	inj.bandage()
+	inj.update(3.0 * 3600.0, 0.0)
+	msg = inv.use("antiseptic")
+	ok = inj.infected() and msg == "No fresh wound to clean" and inv.count("antiseptic") == 1
+	print("INJTEST antiseptic late '", msg, "' ok=", ok)
+	fails += 0 if ok else 1
+	var no_inf := inv.use("antibiotics")
+	inj.inf_t = -1.0
+	no_inf = inv.use("antibiotics")
+	ok = no_inf == "None left"
+	print("INJTEST antibiotics none ok=", ok)
+	fails += 0 if ok else 1
+	# save roundtrip
+	inj.bleed = 0.7
+	inj.inf_t = 12345.0
+	inj.wound_age = 99.0
+	var d := inj.to_dict()
+	var j2 := Injury.new()
+	j2.from_dict(d)
+	ok = j2.bleed == 0.7 and j2.inf_t == 12345.0 and j2.wound_age == 99.0
+	print("INJTEST save roundtrip ok=", ok)
+	fails += 0 if ok else 1
+	# the real player carries one and the world updates it
+	ok = player.injury != null and player.injury.player == player and Inventory.injury != null
+	print("INJTEST wired ok=", ok)
+	fails += 0 if ok else 1
+	Inventory.injury = prev
+	print("INJTEST failures=", fails)
 	get_tree().quit()

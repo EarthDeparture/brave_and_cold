@@ -162,6 +162,8 @@ func _draw_status(sz: Vector2, k: float) -> void:
 		var col := DZ.status_color(fr[i])
 		if fr[i] < 0.3:
 			col.a = 0.55 + 0.45 * absf(sin(_t * (3.0 + (0.3 - fr[i]) * 12.0)))
+		if i == 0 and player.injury.bleeding():
+			col = Color(0.85, 0.14, 0.12, 0.65 + 0.35 * absf(sin(_t * 4.0)))   # bleeding: red pulse
 		DZ.status_icon(_ui, kinds[i], Rect2(x0 + i * (s + gap), y, s, s), col)
 	if player.stamina < 99.0:
 		var w := 4.0 * s + 3.0 * gap
@@ -195,6 +197,8 @@ func _draw_weapon(sz: Vector2, k: float) -> void:
 func _draw_monitor(sz: Vector2, k: float) -> void:
 	var lines: Array[String] = []
 	lines.append("Blood: %d" % int(player.health * 120.0))
+	for il in player.injury.status_lines():
+		lines.append(il)
 	if needs != null:
 		lines.append("Food: %d kcal" % int(needs.calories))
 		lines.append("Water: %d%%" % int(needs.water))

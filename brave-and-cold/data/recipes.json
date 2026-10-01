@@ -5,6 +5,7 @@
   {"id": "plank_split", "name": "Split a plank", "desc": "Hatchet a log into rough planks. Loud.", "inputs": {"wood": 1}, "tools": ["axe"], "station": "", "time_s": 20, "kcal": 14, "noise": 20, "out": {"plank": 2}},
   {"id": "rag_sweater", "name": "Tear sweater into rags", "desc": "Ruins the sweater. Four rags.", "inputs": {"sweater": 1}, "tools": ["knife"], "station": "", "time_s": 8, "kcal": 4, "noise": 0, "out": {"rag": 4}},
   {"id": "rag_hide", "name": "Cut hide into rags", "desc": "Heavy curtain cloth from a cured hide.", "inputs": {"cured_hide": 1}, "tools": ["knife"], "station": "", "time_s": 8, "kcal": 4, "noise": 0, "out": {"rag": 3}},
+  {"id": "bandage_rag", "name": "Wrap a bandage", "desc": "Two clean rags make a bandage.", "inputs": {"rag": 2}, "tools": [], "station": "", "time_s": 4, "kcal": 2, "noise": 0, "out": {"bandage": 1}},
   {"id": "tinder_bundle", "name": "Bundle tinder", "desc": "Rub dry grass into a nest that takes a spark.", "inputs": {"thatch": 2}, "tools": [], "station": "", "time_s": 3, "kcal": 3, "noise": 0, "out": {"tinder": 1}},
   {"id": "kindling", "name": "Prepare kindling", "desc": "Shave sticks and pack them with grass. Replaces firewood when starting a fire.", "inputs": {"stick": 3, "thatch": 1}, "tools": [], "station": "", "time_s": 5, "kcal": 5, "noise": 0, "out": {"kindling": 2}},
   {"id": "split_sticks", "name": "Split firewood into sticks", "desc": "Hatchet work. Loud.", "inputs": {"wood": 1}, "tools": ["axe"], "station": "", "time_s": 6, "kcal": 12, "noise": 20, "out": {"stick": 4}},
