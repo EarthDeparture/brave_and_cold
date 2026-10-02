@@ -59,6 +59,9 @@ const ITEMS := {
 	"sweater": {"name": "Wool Sweater", "kind": "clothing", "stack": 1, "slot": "body", "warmth": 0.55, "windproof": 0.2, "waterproof": 0.1, "desc": "Warm but lets the wind straight through."},
 	"parka": {"name": "Down Parka", "kind": "clothing", "stack": 1, "slot": "body", "warmth": 0.85, "windproof": 0.8, "waterproof": 0.6, "desc": "Heavy insulated parka. Wind and water resistant."},
 }
+## God mode (set by GameWorld every frame from Player.god): ammo, flares and matches are never used up, nothing wears.
+static var infinite := false
+const INFINITE_IDS := ["ammo", "flare", "matches"]
 const KIND_ORDER := ["weapon", "tool", "ammo", "clothing", "food", "fuel", "misc"]
 const CAPACITY := 24          # backpack cells
 const EQUIP_ITEMS := ["rifle", "axe"]   # live in equipment slots, not backpack cells
@@ -149,6 +152,8 @@ func condition(id: String) -> float:
 
 ## Wear a tool by amt (0..1 fraction). Returns remaining condition.
 func wear(id: String, amt: float) -> float:
+	if infinite:
+		return condition(id)
 	var c := clampf(condition(id) - amt, 0.0, 1.0)
 	cond[id] = c
 	return c
@@ -225,6 +230,8 @@ func add(id: String, n: int = 1) -> void:
 
 
 func remove(id: String, n: int = 1) -> bool:
+	if infinite and INFINITE_IDS.has(id):
+		return true
 	if count(id) < n:
 		return false
 	counts[id] = count(id) - n

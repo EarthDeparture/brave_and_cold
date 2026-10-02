@@ -411,6 +411,8 @@ func _process(delta: float) -> void:
 	body.update(gs, clock.ambient_c() + _indoor_c(), wind, player.is_sheltered(), fw, player.activity, 0.0 if player.is_sheltered() else weather.precip * 0.05, false)
 	needs.update(gs, player.activity, body.core)
 	_act_update(delta, Input.is_key_pressed(KEY_E))
+	Inventory.infinite = player.god
+	_hold_attack()
 	player.injury.update(gs, delta)
 	var sd := needs.damage_per_s()
 	if sd > 0.0 and not player.dead:
@@ -706,6 +708,8 @@ func _fish_cands(cands: Array) -> void:
 	var hole := _hole_near(pp.x, pp.z, 2.3)
 	if hole != null:
 		var hd := Vector2(hole.position.x - pp.x, hole.position.z - pp.z).length()
+		if not _aim_ok(hole.global_position, 2.8, 0.9):
+			return
 		if inv.count('tackle') > 0:
 			var tgt: IceHole = hole
 			cands.append({'d': hd, 'text': 'Fish through the hole', 'hold': 10.0, 'kcal': 10.0, 'act': func() -> void: _fish_at(tgt)})
@@ -1225,12 +1229,8 @@ func _on_opening_event(ev: String, pos: Vector3) -> void:
 
 func _door_cands(cands: Array, cb: Cabin, fwd: Vector3) -> void:
 	var dp: Vector3 = cb.door_inside_pos()
-	var to: Vector3 = dp - player.position
-	var dd := to.length()
-	if dd > 2.2 or cb.door_open or cb.door_broken:
-		return
-	var flat := Vector3(to.x, 0.0, to.z)
-	if flat.length() > 0.6 and flat.normalized().dot(fwd) < 0.4:
+	var dd := (dp - player.position).length()
+	if cb.door_open or cb.door_broken or not _aim_ok(dp, 2.2, 1.0):
 		return
 	if cb.door_boards < 3:
 		if inv.count("hammer") > 0 and inv.count("plank") > 0 and inv.count("nails") >= 2:
@@ -1250,6 +1250,32 @@ func _door_cands(cands: Array, cb: Cabin, fwd: Vector3) -> void:
 				_say("Door plank off")})
 
 
+## Interaction targeting. The view ray starts at the eye and follows yaw/pitch (no head bob / sway, deterministic).
+func _view_dir() -> Vector3:
+	return Vector3(-sin(player.yaw) * cos(player.pitch), sin(player.pitch), -cos(player.yaw) * cos(player.pitch))
+
+
+## Perpendicular distance from point p to the view ray, INF when it is behind you.
+func _aim_miss(p: Vector3) -> float:
+	var to := p - player.position
+	var f := _view_dir()
+	var along := to.dot(f)
+	if along <= 0.0:
+		return INF
+	return (to - f * along).length()
+
+
+## Is p under the crosshair? Within `reach` metres (3D, from the eye) AND within `tol` metres of the view ray.
+## Standing practically on top of it (< 0.8 m) counts without looking.
+func _aim_ok(p: Vector3, reach: float, tol: float) -> bool:
+	var dist := (p - player.position).length()
+	if dist > reach:
+		return false
+	if dist < 0.8:
+		return true
+	return _aim_miss(p) <= tol
+
+
 ## Board / unboard / curtain actions for windows within reach, from the INSIDE of cabins and huts.
 func _opening_cands(cands: Array, fwd: Vector3) -> void:
 	var blds: Array = []
@@ -1261,12 +1287,8 @@ func _opening_cands(cands: Array, fwd: Vector3) -> void:
 			_door_cands(cands, bld, fwd)
 		for op in bld.openings:
 			var o: Opening = op
-			var to: Vector3 = o.center_world() - player.position
-			var od := to.length()
-			if od > 2.4:
-				continue
-			var flat := Vector3(to.x, 0.0, to.z)
-			if flat.length() > 0.6 and flat.normalized().dot(fwd) < 0.4:
+			var od := (o.center_world() - player.position).length()
+			if not _aim_ok(o.center_world(), 2.0, 0.75):
 				continue
 			# either side: smash intact glass, climb through a clear gap, sweep up shards
 			if not o.glass_broken and inv.count("axe") > 0:
@@ -1334,12 +1356,12 @@ func _update_prompt() -> void:
 	for hu in huts:
 		var hud: Hut = hu
 		var hdd: float = hud.to_global(Vector3(0.0, 1.0, Hut.HZ)).distance_to(player.position)
-		if hdd < 2.2 and not hud.door_broken:
+		if not hud.door_broken and _aim_ok(hud.to_global(Vector3(0.0, 1.0, Hut.HZ)), 2.2, 1.0):
 			cands.append({'d': hdd, 'text': 'Close door' if hud.door_open else 'Open door', 'act': hud.toggle_door})
 		if not hu.crate_looted:
 			var hh: Hut = hu
 			var hd: float = hh.tackle_world_pos().distance_to(player.position)
-			if hd < 1.8:
+			if _aim_ok(hh.tackle_world_pos(), 1.8, 0.6):
 				cands.append({'d': hd, 'text': 'Search tackle box', 'hold': 2.0, 'act': func() -> void:
 					hh.crate_looted = true
 					inv.add('matches', 2)
@@ -1352,19 +1374,19 @@ func _update_prompt() -> void:
 	for stx in stores:
 		var sto: Store = stx
 		var sdd: float = sto.to_global(Vector3(0.0, 1.0, Store.HZ)).distance_to(player.position)
-		if sdd < 2.2 and not sto.door_broken:
+		if not sto.door_broken and _aim_ok(sto.to_global(Vector3(0.0, 1.0, Store.HZ)), 2.2, 1.0):
 			cands.append({'d': sdd, 'text': 'Close door' if sto.door_open else 'Open door', 'act': sto.toggle_door})
 		for li in 3:
 			if not sto.looted[li]:
 				var lpd: float = sto.loot_world_pos(li).distance_to(player.position)
-				if lpd < 1.7:
+				if _aim_ok(sto.loot_world_pos(li), 1.7, 0.6):
 					var lidx: int = li
 					cands.append({'d': lpd, 'text': String(Store.LOOT_NAMES[li]), 'hold': 2.5, 'act': func() -> void: _loot_store(sto, lidx)})
 	for ob in outbuildings:
 		if ob.wood_left > 0:
 			var obb: Outbuilding = ob
 			var od: float = obb.wood_world_pos().distance_to(player.position)
-			if od < 2.0:
+			if _aim_ok(obb.wood_world_pos(), 2.0, 0.8):
 				cands.append({'d': od, 'text': 'Take firewood (%d left)' % obb.wood_left, 'hold': 1.0, 'act': func() -> void:
 					if obb.wood_left > 0:
 						obb.wood_left -= 1
@@ -1377,7 +1399,7 @@ func _update_prompt() -> void:
 		if inv.count("wood") == 0:
 			stove_text = "Stove needs wood"
 		var items: Array[Dictionary] = [
-			{"pos": cb.door_world_pos(), "r": 2.0, "text": "Door is broken" if cb.door_broken else ("Close door" if cb.door_open else "Open door"), "act": cb.toggle_door},
+			{"pos": cb.door_world_pos(), "r": 2.0, "tol": 1.1, "text": "Door is broken" if cb.door_broken else ("Close door" if cb.door_open else "Open door"), "act": cb.toggle_door},
 			{"pos": cb.stove_world_pos(), "r": 1.7, "text": stove_text, "act": func() -> void:
 				if inv.count("wood") == 0:
 					_say("No firewood")
@@ -1430,19 +1452,17 @@ func _update_prompt() -> void:
 		for it in items:
 			if it.get('hide', false):
 				continue
-			var to: Vector3 = it["pos"] - player.position
-			var d := to.length()
-			if d > float(it["r"]):
-				continue
-			var flat := Vector3(to.x, 0.0, to.z)
-			if flat.length() > 0.6 and flat.normalized().dot(fwd) < 0.5:
+			var ipos: Vector3 = it["pos"]
+			var d := (ipos - player.position).length()
+			if not _aim_ok(ipos, float(it["r"]), float(it.get("tol", 0.9))):
 				continue
 			it["d"] = d + float(it.get("dbias", 0.0))
 			cands.append(it)
+	_chest_cands(cands)
 	_opening_cands(cands, fwd)
 	for cf in campfires:
 		var cd: float = cf.global_position.distance_to(player.position)
-		if cd < 2.6:
+		if _aim_ok(cf.global_position + Vector3(0.0, 0.2, 0.0), 2.6, 0.9):
 			var cfire: Campfire = cf
 			var ctext := 'Add log to fire (%d)' % inv.count('wood')
 			if inv.count('wood') == 0:
@@ -1469,7 +1489,7 @@ func _update_prompt() -> void:
 		if cnode == null or cnode.is_queued_for_deletion():
 			continue
 		var cdist := cnode.global_position.distance_to(player.position)
-		if cdist > 2.6:
+		if not _aim_ok(cnode.global_position + Vector3(0.0, 0.3, 0.0), 2.6, 1.0):
 			continue
 		var sp := Carcass.species_of(cnode)
 		var done: Dictionary = cnode.get_meta("done", {})
@@ -1491,18 +1511,17 @@ func _update_prompt() -> void:
 		if bz == null or bz.is_queued_for_deletion() or bz.get_meta("searched", false):
 			continue
 		var bd := bz.global_position.distance_to(player.position)
-		if bd < 2.4:
+		if _aim_ok(bz.global_position + Vector3(0.0, 0.3, 0.0), 2.4, 1.0):
 			cands.append({"d": bd, "text": "Search body", "hold": 3.0, "kcal": 5.0, "act": func() -> void: _search_body(bz)})
 	for pk in get_tree().get_nodes_in_group("pickups"):
 		var ip := pk as ItemPickup
 		if ip == null:
 			continue
-		var pto := ip.global_position - player.position
-		pto.y = 0.0
-		var pd := pto.length()
-		if pd < 2.4 and (pd < 0.9 or pto.normalized().dot(fwd) > 0.3):
+		var pc := ip.global_position + Vector3(0.0, 0.15, 0.0)
+		if _aim_ok(pc, 2.8, 0.55):
 			var pick: ItemPickup = ip
-			cands.append({"d": pd + 0.5, "text": "Take %s%s" % [inv.name_of(ip.id), " x%d" % ip.n if ip.n > 1 else ""], "act": func() -> void: take_pickup(pick)})
+			var pmiss := _aim_miss(pc)
+			cands.append({"d": 0.5 + (pmiss if pmiss < 50.0 else 0.0) * 1.5 + (pc - player.position).length() * 0.1, "text": "Take %s%s" % [inv.name_of(ip.id), " x%d" % ip.n if ip.n > 1 else ""], "act": func() -> void: take_pickup(pick)})
 	if plants != null:
 		var pl: Dictionary = plants.nearest(player.position, fwd, 1.8)
 		if not pl.is_empty():
@@ -1536,14 +1555,14 @@ func _update_prompt() -> void:
 		if wl == null or wl.is_queued_for_deletion():
 			continue
 		var ld := wl.dist_to(player.position)
-		if ld < 2.2:
+		if ld < 2.2 and _aim_ok(wl.global_position, 2.6, 1.2):
 			if axe_up:
 				cands.append({"d": ld + 0.2, "text": "Split log (+%d firewood)" % wl.firewood, "hold": 5.0, "kcal": 25.0, "noise": 20.0, "act": func() -> void: _split_log(wl)})
 			else:
 				cands.append({"d": ld + 0.2, "text": "Log (needs a hatchet equipped)", "act": func() -> void: _say('Need a hatchet to split this')})
 	cands.sort_custom(func(x, y) -> bool: return float(x["d"]) < float(y["d"]))
-	if cands.size() > 7:
-		cands.resize(7)
+	if cands.size() > 40:
+		cands.resize(40)
 	var texts: Array = []
 	for c in cands:
 		texts.append(String(c["text"]).split(" (")[0])
@@ -1571,7 +1590,7 @@ func _update_prompt() -> void:
 			info += "   Stove: %.0f min left" % (cb.stove_fuel_s / 60.0)
 	info += '   Cal %d (%s)  Water %d%% (%s)' % [int(needs.calories), needs.hunger_state(), int(needs.water), needs.thirst_state()]
 	if inv.count('rifle') > 0:
-		info += '   [%s] ammo %d' % ['RIFLE' if rifle_up else 'hatchet', inv.count('ammo')]
+		info += '   [%s] ammo %s' % ['RIFLE' if rifle_up else 'hatchet', 'INF' if player.god else str(inv.count('ammo'))]
 	info += '   Wt %.1f/%d kg' % [inv.total_weight(), int(Inventory.WEIGHT_SOFT)]
 	hud.info = info
 	hud.rifle_up = rifle_up
@@ -1793,9 +1812,12 @@ func _unhandled_input(e: InputEvent) -> void:
 			_sel_text = String(hud.actions[_sel_idx]).split(" (")[0]
 			_cur = _cands_cache[_sel_idx]
 		return
-	if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT and _mouse_ok():
+		_lmb_held = true
 		_attack()
 		return
+	if e is InputEventMouseButton and not e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+		_lmb_held = false
 	if not (e is InputEventKey and e.pressed and not e.echo):
 		return
 	if e.keycode == KEY_E and not _cur.is_empty():
@@ -2052,6 +2074,7 @@ func _attack() -> void:
 		return
 	var axe := inv.count("axe") > 0
 	_attack_cd = 0.9 if axe else 0.7
+	swing_n += 1
 	viewmodel.swing(axe)
 	var dmg := (AXE_DAMAGE * lerpf(0.5, 1.0, inv.condition("axe")) if axe else FIST_DAMAGE)
 	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_AXE if axe else 10.0, player)
@@ -2064,7 +2087,7 @@ func _attack() -> void:
 		best.call("hit", dmg, player.position)
 		_hit_feedback(best, false)
 		if axe:
-			inv.wear("axe", 0.004)
+			inv.wear("axe", 0.004)   # no-op while god
 		audio.hit(best.global_position + Vector3(0, 1.0, 0))
 		_say("Hit!")
 	else:
@@ -2073,6 +2096,153 @@ func _attack() -> void:
 			_say("Swing")
 		else:
 			_chop_hit(tr)
+
+
+var test_mouse := false   # tests: pretend the mouse is captured (headless cannot capture)
+
+
+func _mouse_ok() -> bool:
+	return test_mouse or Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+
+
+## Buildings with solid walls (bullets and swings stop at them).
+func _building_list() -> Array:
+	var out: Array = []
+	out.append_array(cabins)
+	out.append_array(huts)
+	out.append_array(stores)
+	return out
+
+
+var swing_n := 0   # melee swings started (tests)
+var _lmb_held := false   # LMB went down while the game had the mouse; auto-repeats the attack while held
+
+
+## Hold left mouse: keep swinging / chopping / firing as soon as the cooldown allows (a click is not required each time).
+func _hold_attack() -> void:
+	if not _lmb_held:
+		return
+	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_lmb_held = false
+		return
+	if not _mouse_ok() or player.ui_open or player.dead or not _act.is_empty() or _sl_on or get_tree().paused:
+		return
+	if inv == null or _attack_cd > 0.0:
+		return
+	if rifle_up and inv.count('rifle') > 0 and inv.count('ammo') == 0 and not player.god:
+		return  # do not machine-gun dry clicks
+	_attack()
+
+
+# ---- Storage chest
+var chests: Array[StorageChest] = []
+
+
+func _add_chest(p: Vector3, yaw: float) -> StorageChest:
+	var c := StorageChest.new()
+	add_child(c)
+	c.global_position = p
+	c.rotation.y = yaw
+	chests.append(c)
+	return c
+
+
+## Where a chest would go: 1.4 m ahead on the surface you stand on, not on top of another chest.
+func _chest_site() -> Dictionary:
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var p := player.position + fwd * 1.4
+	var h: float = player.ground_at(p.x, p.z)
+	if is_nan(h):
+		h = player.position.y - player.eye_h
+	if absf(h - (player.position.y - player.eye_h)) > 0.8:
+		return {'ok': false, 'msg': 'Too steep here'}
+	var pos := Vector3(p.x, h, p.z)
+	for c in chests:
+		if is_instance_valid(c) and c.global_position.distance_to(pos) < 1.1:
+			return {'ok': false, 'msg': 'Too close to another chest'}
+	if forest != null:
+		var q: Vector2 = forest.resolve_trunks(p.x, p.z, 0.5)
+		if q.distance_to(Vector2(p.x, p.z)) > 0.05:
+			return {'ok': false, 'msg': 'A tree is in the way'}
+	return {'ok': true, 'pos': pos, 'yaw': player.yaw}
+
+
+func _chest_cands(cands: Array) -> void:
+	for chx in chests:
+		var ch: StorageChest = chx
+		if not is_instance_valid(ch):
+			continue
+		var cp := ch.center_world()
+		if not _aim_ok(cp, 2.6, 0.7):
+			continue
+		var cdd := (cp - player.position).length()
+		cands.append({"d": cdd - 0.2, "text": "Open chest (%d stacks)" % ch.stack_count(), "act": func() -> void: gear.open_chest(ch)})
+		if ch.is_empty():
+			cands.append({"d": cdd + 0.1, "text": "Dismantle chest (+4 planks, +4 nails)", "hold": 4.0, "kcal": 6.0, "noise": 14.0, "act": func() -> void: _dismantle_chest(ch)})
+
+
+func _dismantle_chest(c: StorageChest) -> void:
+	if not is_instance_valid(c) or not c.is_empty():
+		return
+	chests.erase(c)
+	c.queue_free()
+	_give_or_drop('plank', 4, player.position)
+	_give_or_drop('nails', 4, player.position)
+	_say('Chest dismantled (+4 planks, +4 nails)')
+
+
+func chest_put(c: StorageChest, id: String, n: int) -> void:
+	if inv == null or not is_instance_valid(c):
+		return
+	var have := inv.count(id) - (1 if inv.is_worn(id) else 0)
+	n = mini(n, have)
+	if n <= 0:
+		_say('Take it off first' if inv.is_worn(id) else 'Nothing to store')
+		return
+	if not c.can_hold(id):
+		_say('The chest is full')
+		return
+	if id == 'rifle' and n >= inv.count(id):
+		rifle_up = false
+	var cd := inv.condition(id)
+	var ag := float(inv.age.get(id, 0.0))
+	if not inv.remove(id, n):
+		return
+	c.put(id, n, cd, ag)
+	_say('Stored %s%s' % [inv.name_of(id), ' x%d' % n if n > 1 else ''])
+
+
+func chest_take(c: StorageChest, id: String, n: int) -> void:
+	if inv == null or not is_instance_valid(c):
+		return
+	n = mini(n, c.count(id))
+	while n > 0 and not inv.can_add(id, n):
+		n -= 1
+	if n <= 0:
+		_say('Your pack is full' if c.count(id) > 0 else 'Nothing there')
+		return
+	var had := inv.count(id)
+	var cur_c := inv.condition(id)
+	var cur_a := float(inv.age.get(id, 0.0))
+	var c_c := float(c.cond.get(id, 1.0))
+	var c_a := float(c.age.get(id, 0.0))
+	inv.add(id, n)
+	c.remove(id, n)
+	if c_c < 0.999 or cur_c < 0.999:
+		inv.cond[id] = (cur_c * had + c_c * n) / float(had + n)
+	if Inventory.shelf_s(id) > 0.0:
+		inv.age[id] = (cur_a * had + c_a * n) / float(had + n)
+	_say('Took %s%s' % [inv.name_of(id), ' x%d' % n if n > 1 else ''])
+
+
+func _restore_chests(lst: Array) -> void:
+	for c in chests:
+		if is_instance_valid(c):
+			c.queue_free()
+	chests.clear()
+	for d: Dictionary in lst:
+		var ch := _add_chest(Vector3(float(d['x']), float(d['y']), float(d['z'])), float(d.get('yaw', 0.0)))
+		ch.load_dict(d)
 
 
 ## Melee target: a fan of rays from the camera (what the crosshair is over), then the old flat cone as a safety net
@@ -2084,7 +2254,7 @@ func _melee_pick(reach: float) -> Node3D:
 	var bt := INF
 	for off: Vector2 in [Vector2(0, 0), Vector2(0.1, 0), Vector2(-0.1, 0), Vector2(0, 0.1), Vector2(0, -0.12), Vector2(0.18, -0.1), Vector2(-0.18, -0.1), Vector2(0, -0.3)]:
 		var d := (cb * Vector3(off.x, off.y, -1.0)).normalized()
-		var r := HitZones.trace(get_tree(), terrain, forest, origin, d, reach, ['hostile'])
+		var r := HitZones.trace(get_tree(), terrain, forest, origin, d, reach, ['hostile'], _building_list())
 		if r.has('node') and float(r['t']) < bt:
 			bt = float(r['t'])
 			best = r['node']
@@ -2191,12 +2361,12 @@ func _add_deer(p: Vector3, idx: int) -> Deer:
 
 
 func _shoot() -> void:
-	if inv.count('ammo') == 0:
+	if inv.count('ammo') == 0 and not player.god:
 		_attack_cd = 0.4
 		viewmodel.dry()
 		_say('Click. No ammo')
 		return
-	inv.remove('ammo')
+	inv.remove('ammo')   # no-op while god (Inventory.infinite)
 	_attack_cd = 1.2
 	viewmodel.fire()
 	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_GUNSHOT, player)
@@ -2205,7 +2375,7 @@ func _shoot() -> void:
 	var dir := _shot_dir()
 	player.pitch += lerpf(0.022, 0.014, player.aim_k)  # recoil kick, player pulls it back down
 	player.yaw += randf_range(-0.004, 0.004)
-	var r := HitZones.trace(get_tree(), terrain, forest, eye, dir, 400.0)
+	var r := HitZones.trace(get_tree(), terrain, forest, eye, dir, 400.0, ['hostile', 'prey'], _building_list())
 	if r.has('node'):
 		var n: Node3D = r['node']
 		var head := String(r['zone']) == 'head'
@@ -2255,6 +2425,8 @@ func _deertest_step(delta: float) -> void:
 		print('DT t=%d state=%d dist=%.1f hp=%.0f ammo=%d' % [_dt_last, d0.state, d0.global_position.distance_to(player.position), d0.hp, inv.count('ammo')])
 	if d0.state == Deer.State.DEAD and _dt > 3.0:
 		player.position = d0.global_position + Vector3(1.0, 0.0, 0.0)
+		player.yaw = PI * 0.5   # face the carcass (-x)
+		player.pitch = 0.0
 		_update_prompt()
 		print('DEERTEST prompt=[%s]' % hud.prompt)
 		if _cur.has('act'):
@@ -2396,6 +2568,10 @@ func craft_start(rid: String) -> String:
 	if why != '':
 		_say(why)
 		return why
+	if r.has('place') and not bool(_chest_site()['ok']):
+		var why2 := String(_chest_site()['msg'])
+		_say(why2)
+		return why2
 	craft_job = {'r': r, 't': 0.0, 'hp': player.health, 'pos': player.position}
 	return ''
 
@@ -2422,6 +2598,12 @@ func _craft_update(delta: float) -> void:
 	if why != '':
 		_say(why)
 		return
+	var csite: Dictionary = {}
+	if r.has('place'):
+		csite = _chest_site()
+		if not bool(csite['ok']):
+			_say(String(csite['msg']))
+			return
 	for id in r['inputs'].keys():
 		inv.remove(String(id), int(r['inputs'][id]))
 	for tl in r.get('tools', []):
@@ -2433,6 +2615,9 @@ func _craft_update(delta: float) -> void:
 	for id in r['out'].keys():
 		_give_or_drop(String(id), int(r['out'][id]), player.position)
 		parts.append('%d %s' % [int(r['out'][id]), inv.name_of(String(id))])
+	if r.has('place'):
+		_add_chest(csite['pos'], float(csite['yaw']))
+		parts.append('a storage chest')
 	audio.play_at("rustle", player.position, -6.0, 1.0, 4.0, 40.0)
 	_say('Crafted: ' + ', '.join(parts))
 
@@ -2650,6 +2835,7 @@ func save_game() -> bool:
 		'cabins': cabs,
 		'huts': huts.map(func(h: Hut) -> Dictionary: return h.state_dict()),
 		'holes': ice_holes.map(func(h: IceHole) -> Dictionary: return h.to_dict()),
+		'chests': chests.map(func(c: StorageChest) -> Dictionary: return c.to_dict()),
 		'stores': stores.map(func(s: Store) -> Dictionary: return s.state_dict()),
 		'sheds': outbuildings.map(func(o: Outbuilding) -> int: return o.wood_left),
 		'fires': fires,
@@ -2780,6 +2966,7 @@ func _apply_save(sv: Dictionary) -> void:
 	for sj in range(mini(ssv.size(), stores.size())):
 		stores[sj].restore_state(ssv[sj])
 	_restore_holes(sv.get('holes', []))
+	_restore_chests(sv.get('chests', []))
 	var shs: Array = sv.get('sheds', [])
 	for si in range(mini(shs.size(), outbuildings.size())):
 		outbuildings[si].wood_left = int(shs[si])

@@ -113,9 +113,39 @@ static func _bisect(forest, eye: Vector3, dir: Vector3, a: float, b: float) -> f
 	return hi
 
 
+## Walls stop bullets. Steps along the ray through every nearby building; a point inside a wall rect is blocked unless
+## the ray goes through the open door gap or an uncovered window (same rule the zombies use for sight).
+static func building_block(blds: Array, eye: Vector3, dir: Vector3, max_t: float) -> float:
+	for b in blds:
+		var bn := b as Node3D
+		if bn == null or not is_instance_valid(bn) or bn.get("_walls") == null:
+			continue
+		var to := bn.global_position - eye
+		var mid := to.dot(dir)
+		if (to - dir * clampf(mid, 0.0, max_t)).length() > 5.0:
+			continue
+		var rects: Array = (bn.get("_walls") as Array).duplicate()
+		if not bool(bn.get("door_open")):
+			rects.append(bn.get("_door_rect"))
+		var t := clampf(mid - 5.0, 0.0, max_t)
+		var t1 := clampf(mid + 5.0, 0.0, max_t)
+		while t <= t1:
+			var p := eye + dir * t
+			var l := bn.to_local(p)
+			if l.y > 0.0 and l.y < 2.7:
+				var l2 := Vector2(l.x, l.z)
+				for w in rects:
+					if (w as Rect2).has_point(l2):
+						if not bn.call("sight_line_open", p - dir * 0.25, p + dir * 0.25):
+							return t
+						break
+			t += 0.07
+	return INF
+
+
 ## Full trace. Returns {} on nothing, {"world": true, "t": t} when ground/trunk ate the shot,
 ## or {"node", "zone", "mult", "t"} for a creature hit that is not occluded.
-static func trace(tree: SceneTree, terrain: Terrain3D, forest, eye: Vector3, dir: Vector3, max_t: float, groups: Array = ["hostile", "prey"]) -> Dictionary:
+static func trace(tree: SceneTree, terrain: Terrain3D, forest, eye: Vector3, dir: Vector3, max_t: float, groups: Array = ["hostile", "prey"], blds: Array = []) -> Dictionary:
 	var best := {}
 	var bt := max_t
 	for g in groups:
@@ -137,6 +167,8 @@ static func trace(tree: SceneTree, terrain: Terrain3D, forest, eye: Vector3, dir
 				bt = float(zr["t"])
 				best = {"node": n, "zone": zr["zone"], "mult": zr["mult"], "t": bt}
 	var wb := world_block(terrain, forest, eye, dir, bt) if bt > 0.5 else INF
+	if not blds.is_empty() and bt > 0.3:
+		wb = minf(wb, building_block(blds, eye, dir, minf(bt, max_t)))
 	if wb < bt:
 		return {"world": true, "t": wb}
 	return best

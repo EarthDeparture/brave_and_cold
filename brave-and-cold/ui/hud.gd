@@ -246,14 +246,26 @@ func _draw_actions(sz: Vector2, k: float) -> void:
 	var y := sz.y * 0.46
 	var lh := 26.0 * k
 	var fs := int(20.0 * k)
-	for i in actions.size():
+	var maxl := 7
+	var n := actions.size()
+	var first := clampi(action_sel - maxl / 2, 0, maxi(0, n - maxl))
+	var shown := mini(n, maxl)
+	if first > 0:
+		DZ.text(_ui, "^ %d more" % first, Vector2(x, y - lh), int(13.0 * k), DZ.DIM)
+	for j in shown:
+		var i := first + j
 		var sel: bool = i == action_sel
 		var col := DZ.ACCENT if sel else Color(0.78, 0.80, 0.74, 0.78)
 		if sel:
-			_ui.draw_colored_polygon(PackedVector2Array([Vector2(x - 26.0 * k, y + i * lh - 14.0 * k), Vector2(x - 26.0 * k, y + i * lh + 2.0 * k), Vector2(x - 12.0 * k, y + i * lh - 6.0 * k)]), DZ.ACCENT)
-		DZ.text(_ui, String(actions[i]), Vector2(x, y + i * lh), fs, col)
-	if actions.size() > 1:
-		DZ.text(_ui, "Mouse wheel: select     E: do", Vector2(x, y + actions.size() * lh + 6.0 * k), int(12.0 * k), DZ.DIM)
+			_ui.draw_colored_polygon(PackedVector2Array([Vector2(x - 26.0 * k, y + j * lh - 14.0 * k), Vector2(x - 26.0 * k, y + j * lh + 2.0 * k), Vector2(x - 12.0 * k, y + j * lh - 6.0 * k)]), DZ.ACCENT)
+		DZ.text(_ui, String(actions[i]), Vector2(x, y + j * lh), fs, col)
+	var below := n - first - shown
+	var yy := y + shown * lh
+	if below > 0:
+		DZ.text(_ui, "v %d more" % below, Vector2(x, yy - 4.0 * k), int(13.0 * k), DZ.DIM)
+		yy += lh * 0.6
+	if n > 1:
+		DZ.text(_ui, "Mouse wheel: select (%d/%d)     E: do" % [action_sel + 1, n], Vector2(x, yy + 6.0 * k), int(12.0 * k), DZ.DIM)
 	else:
 		DZ.text(_ui, "E: do", Vector2(x, y + lh + 2.0 * k), int(12.0 * k), DZ.DIM)
 

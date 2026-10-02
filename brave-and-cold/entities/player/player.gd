@@ -38,6 +38,9 @@ var sprinting := false
 var aim_req := false  # set by GameWorld: RMB held with rifle raised
 var aim_k := 0.0  # 0 hip .. 1 fully aimed
 var _sway_t := 0.0
+var _breath := 4.0      # seconds of held breath left (Shift while aimed steadies the rifle)
+var breath_held := false
+var _winded := false
 const AIM_FOV := 36.0
 const HIP_FOV := 70.0
 var moving := false
@@ -185,7 +188,15 @@ func _update_aim(delta: float) -> void:
 	aim_k = move_toward(aim_k, 1.0 if want else 0.0, delta * 5.0)
 	cam.fov = lerpf(HIP_FOV, AIM_FOV, aim_k * aim_k * (3.0 - 2.0 * aim_k))
 	_sway_t += delta
-	var amp := aim_k * (0.0016 if crouching else 0.0032) * (1.0 + (0.8 if sprinting else 0.0))
+	var shift := Input.is_key_pressed(KEY_SHIFT)
+	if not shift:
+		_winded = false
+	breath_held = aim_k > 0.8 and shift and not _winded and not dead
+	_breath = clampf(_breath + (-delta if breath_held else delta * 0.6), 0.0, 4.0)
+	if _breath <= 0.0:
+		_winded = true  # out of air: release Shift to recover
+		breath_held = false
+	var amp := aim_k * (0.0016 if crouching else 0.0032) * (1.0 + (0.8 if sprinting else 0.0)) * (0.12 if breath_held else 1.0)
 	var sw := Vector2(sin(_sway_t * 1.1) + 0.5 * sin(_sway_t * 2.3), cos(_sway_t * 0.9) + 0.5 * sin(_sway_t * 1.9 + 1.0)) * amp
 	cam.rotation = Vector3(pitch + sw.y, yaw + sw.x, 0.0)
 

@@ -84,6 +84,10 @@ func setup(w: Node) -> void:
 		_sleeptest()
 	if "fishtest=1" in ua:
 		_fishtest()
+	if "gearshot=1" in ua:
+		_gearshot()
+	if "interacttest=1" in ua:
+		_interacttest()
 	if "hittest=1" in ua:
 		_hittest()
 	if "injurytest=1" in ua:
@@ -560,6 +564,13 @@ func _feed() -> void:
 	needs.water = 100.0
 
 
+## Aim the view at a world point (yaw + pitch from the eye), like looking straight at it.
+func _look_at(p: Vector3) -> void:
+	var d := p - player.position
+	player.yaw = atan2(-d.x, -d.z)
+	player.pitch = atan2(d.y, Vector2(d.x, d.z).length())
+
+
 func _tp(x: float, z: float, face: Vector3 = Vector3.INF) -> void:
 	player.place(x, z)
 	if player.noclip:
@@ -811,6 +822,8 @@ func _carcasstest() -> void:
 		fails += 0 if ok else 1
 		_tp(pos.x + 1.2, pos.z, pos)
 		await get_tree().create_timer(0.8).timeout
+		_look_at(pos + Vector3(0.0, 0.3, 0.0))
+		await get_tree().process_frame
 		var tx := _steps_texts()
 		ok = tx.contains("needs a knife")
 		print("CARCASSTEST ", sp, " no tool -> ", tx)
@@ -845,6 +858,8 @@ func _carcasstest() -> void:
 	await get_tree().create_timer(0.6).timeout
 	_tp(zpos.x + 1.2, zpos.z, zpos)
 	await get_tree().create_timer(0.8).timeout
+	_look_at(zpos + Vector3(0.0, 0.3, 0.0))
+	await get_tree().process_frame
 	var tx2 := _steps_texts()
 	var ok2 := tx2.contains("Search body")
 	print("CARCASSTEST zombie search prompt=", ok2)
@@ -2722,6 +2737,7 @@ func _fishtest() -> void:
 	player.place(hole.global_position.x + 1.0, hole.global_position.z)
 	for k in 20:
 		await get_tree().process_frame
+	_look_at(hole.global_position)
 	inv.remove("tackle", inv.count("tackle"))
 	var c0: Array = []
 	world.call("_fish_cands", c0)
@@ -2803,6 +2819,254 @@ func _fishtest() -> void:
 	fails += 0 if ok else 1
 	print("FISHTEST failures=", fails)
 	get_tree().quit()
+
+## Screenshot helper (windowed): chest in the world, then the gear screen on the chest tab and on a 14-item ground row.
+func _gearshot() -> void:
+	await get_tree().create_timer(3.0).timeout
+	var inv: Inventory = world.get("inv")
+	player.god = true
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var feet := player.position.y - player.eye_h
+	inv.add("plank", 6)
+	inv.add("nails", 8)
+	inv.add("hammer")
+	world.call("craft_start", "storage_chest")
+	world.call("_craft_update", 31.0)
+	var ch: StorageChest = (world.get("chests") as Array)[0]
+	for id in ["beans", "wood", "matches", "rag", "bandage", "trout_raw", "ammo", "knife", "tackle"]:
+		inv.add(id, 3)
+		world.call("chest_put", ch, id, 3)
+	_look_at(ch.center_world())
+	player.pitch = deg_to_rad(-28.0)
+	await get_tree().create_timer(1.0).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/chest_world.png")
+	var gear: GearScreen = world.get("gear")
+	gear.open_chest(ch)
+	await get_tree().create_timer(0.8).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/gear_chest.png")
+	gear.close()
+	for i in 14:
+		var a := TAU * float(i) / 14.0
+		var pp := player.position + Vector3(cos(a), 0.0, sin(a)) * 1.7
+		pp.y = feet
+		ItemPickup.spawn(world, ["wood", "stick", "rag", "beans", "matches"][i % 5], 1 + i % 3, pp)
+	await get_tree().process_frame
+	gear.open()
+	gear._gscroll = 3
+	await get_tree().create_timer(0.8).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/gear_ground.png")
+	print("GEARSHOT done")
+	get_tree().quit()
+
+
+func _interacttest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var inv: Inventory = world.get("inv")
+	player.god = true
+	player.noclip = false
+	player.frozen = false
+	var yaw0 := player.yaw
+	var feet := player.position.y - player.eye_h
+	var fwd := Vector3(-sin(yaw0), 0.0, -cos(yaw0))
+	# ---- 1. aim test helper: point 1.5 m ahead at chest height vs behind / far / off to the side
+	player.pitch = 0.0
+	var ahead: Vector3 = player.position + fwd * 1.5
+	var ok: bool = bool(world.call("_aim_ok", ahead, 2.0, 0.5))
+	print("INTERACT aim ok ahead=", ok)
+	fails += 0 if ok else 1
+	player.yaw = yaw0 + deg_to_rad(70.0)
+	ok = not bool(world.call("_aim_ok", ahead + fwd * 0.5, 2.5, 0.5))
+	print("INTERACT aim rejects 70deg away=", ok)
+	fails += 0 if ok else 1
+	player.yaw = yaw0
+	ok = not bool(world.call("_aim_ok", player.position + fwd * 4.0, 2.0, 0.5))
+	print("INTERACT aim rejects out of reach=", ok)
+	fails += 0 if ok else 1
+	# ---- 2. ground items: only the looked-at, near one is offered
+	for pk in get_tree().get_nodes_in_group("pickups"):
+		pk.queue_free()
+	await get_tree().process_frame
+	var ipos := player.position + fwd * 1.3
+	ipos.y = feet
+	ItemPickup.spawn(world, "wood", 1, ipos)
+	var opos := player.position - fwd * 1.3
+	opos.y = feet
+	ItemPickup.spawn(world, "stick", 1, opos)
+	var fpos := player.position + fwd * 6.0
+	fpos.y = feet
+	ItemPickup.spawn(world, "rag", 1, fpos)
+	player.pitch = atan2(-(player.eye_h - 0.15), 1.3)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var texts: Array = world.get("_cands_cache").map(func(c) -> String: return String(c["text"]))
+	var has_wood := texts.any(func(t: String) -> bool: return t.begins_with("Take Wood") or t.begins_with("Take Firewood"))
+	var take_n := texts.filter(func(t: String) -> bool: return t.begins_with("Take ")).size()
+	ok = take_n == 1
+	print("INTERACT looking down at one item: take options=%d (want 1) texts=%s ok=%s" % [take_n, str(texts), str(ok)])
+	fails += 0 if ok else 1
+	player.pitch = 0.0
+	player.yaw = yaw0 + PI
+	player.pitch = atan2(-(player.eye_h - 0.15), 1.3)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	texts = world.get("_cands_cache").map(func(c) -> String: return String(c["text"]))
+	take_n = texts.filter(func(t: String) -> bool: return t.begins_with("Take ")).size()
+	ok = take_n == 1
+	print("INTERACT turned round: now the other item, take options=%d ok=%s" % [take_n, str(ok)])
+	fails += 0 if ok else 1
+	player.pitch = 0.0
+	player.yaw = yaw0 + deg_to_rad(90.0)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	texts = world.get("_cands_cache").map(func(c) -> String: return String(c["text"]))
+	take_n = texts.filter(func(t: String) -> bool: return t.begins_with("Take ")).size()
+	ok = take_n == 0
+	print("INTERACT looking at the horizon: take options=%d (want 0) ok=%s" % [take_n, str(ok)])
+	fails += 0 if ok else 1
+	# ---- 3. scrollable nearby row: 14 items, 8 visible, scroll reaches the rest
+	for pk in get_tree().get_nodes_in_group("pickups"):
+		pk.queue_free()
+	await get_tree().process_frame
+	for i in 14:
+		var a := TAU * float(i) / 14.0
+		var pp := player.position + Vector3(cos(a), 0.0, sin(a)) * 1.6
+		pp.y = feet
+		ItemPickup.spawn(world, "stick", 1 + i, pp)
+	await get_tree().process_frame
+	var gear: GearScreen = world.get("gear")
+	gear.open()
+	await get_tree().process_frame
+	var near_n: int = gear._nearby().size()
+	ok = near_n == 14
+	print("INTERACT nearby total=%d (want 14) ok=%s" % [near_n, str(ok)])
+	fails += 0 if ok else 1
+	var we := InputEventMouseButton.new()
+	we.button_index = MOUSE_BUTTON_WHEEL_DOWN
+	we.pressed = true
+	for k in 20:
+		gear._on_gui(we)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	ok = gear._gscroll == 14 - GearScreen.GROUND_N
+	print("INTERACT scroll clamps at %d (want %d) ok=%s" % [gear._gscroll, 14 - GearScreen.GROUND_N, str(ok)])
+	fails += 0 if ok else 1
+	var last_cell: Dictionary = gear._hits.filter(func(h: Dictionary) -> bool: return h.get("k", "") == "ground" and int(h.get("idx", -1)) == 13)[0]
+	ok = not last_cell.is_empty()
+	print("INTERACT 14th item reachable via scroll ok=", ok)
+	fails += 0 if ok else 1
+	gear.close()
+	for pk in get_tree().get_nodes_in_group("pickups"):
+		pk.queue_free()
+	# ---- 4. storage chest: craft, store, take, condition kept, save roundtrip, dismantle
+	inv.add("plank", 6)
+	inv.add("nails", 8)
+	inv.add("hammer")
+	player.yaw = yaw0
+	var why: String = world.call("craft_start", "storage_chest")
+	ok = why == ""
+	print("INTERACT chest craft starts why='%s' ok=%s" % [why, str(ok)])
+	fails += 0 if ok else 1
+	world.call("_craft_update", 31.0)
+	var chests: Array = world.get("chests")
+	ok = chests.size() == 1 and inv.count("plank") == 0 and inv.count("nails") == 0
+	print("INTERACT chest built chests=%d planks=%d nails=%d ok=%s" % [chests.size(), inv.count("plank"), inv.count("nails"), str(ok)])
+	fails += 0 if ok else 1
+	if chests.is_empty():
+		print("INTERACT failures=", fails)
+		get_tree().quit()
+		return
+	var ch: StorageChest = chests[0]
+	inv.add("axe")
+	inv.cond["axe"] = 0.5
+	inv.add("beans", 3)
+	world.call("chest_put", ch, "axe", 1)
+	world.call("chest_put", ch, "beans", 2)
+	ok = ch.count("axe") == 1 and ch.count("beans") == 2 and inv.count("axe") == 0 and inv.count("beans") == 1
+	print("INTERACT stored axe+2 beans ok=", ok)
+	fails += 0 if ok else 1
+	var js := JSON.stringify(ch.to_dict())
+	var back: Dictionary = JSON.parse_string(js)
+	world.call("_restore_chests", [back])
+	var ch2: StorageChest = (world.get("chests") as Array)[0]
+	ok = (world.get("chests") as Array).size() == 1 and ch2.count("axe") == 1 and ch2.count("beans") == 2 and absf(float(ch2.cond.get("axe", 1.0)) - 0.5) < 0.01
+	print("INTERACT chest survives save/load ok=", ok)
+	fails += 0 if ok else 1
+	world.call("chest_take", ch2, "axe", 1)
+	world.call("chest_take", ch2, "beans", 5)
+	ok = inv.count("axe") == 1 and absf(inv.condition("axe") - 0.5) < 0.01 and inv.count("beans") == 3 and ch2.is_empty()
+	print("INTERACT took back, condition kept %.2f ok=%s" % [inv.condition("axe"), str(ok)])
+	fails += 0 if ok else 1
+	gear.open_chest(ch2)
+	await get_tree().process_frame
+	ok = gear._tab == "chest" and gear._chest == ch2
+	print("INTERACT gear opens on chest tab ok=", ok)
+	fails += 0 if ok else 1
+	gear.close()
+	var pl0 := inv.count("plank")
+	world.call("_dismantle_chest", ch2)
+	ok = (world.get("chests") as Array).is_empty() and inv.count("plank") == pl0 + 4
+	print("INTERACT dismantle returns planks ok=", ok)
+	fails += 0 if ok else 1
+	# ---- 5. god mode: unlimited rifle rounds and no tool wear
+	inv.add("rifle")
+	inv.counts.erase("ammo")
+	world.set("rifle_up", true)
+	player.god = true
+	for k in 3:
+		await get_tree().process_frame
+	world.set("_attack_cd", 0.0)
+	world.set("last_shot", {})
+	world.call("_shoot")
+	ok = not (world.get("last_shot") as Dictionary).is_empty() and inv.count("ammo") == 0
+	print("INTERACT god fires with 0 ammo ok=", ok)
+	fails += 0 if ok else 1
+	inv.add("ammo", 5)
+	world.set("_attack_cd", 0.0)
+	world.call("_shoot")
+	ok = inv.count("ammo") == 5
+	print("INTERACT god keeps ammo=%d ok=%s" % [inv.count("ammo"), str(ok)])
+	fails += 0 if ok else 1
+	inv.cond["axe"] = 0.9
+	inv.wear("axe", 0.5)
+	ok = absf(inv.condition("axe") - 0.9) < 0.001
+	print("INTERACT god: no tool wear ok=", ok)
+	fails += 0 if ok else 1
+	player.god = false
+	for k in 3:
+		await get_tree().process_frame
+	world.set("_attack_cd", 0.0)
+	world.call("_shoot")
+	ok = inv.count("ammo") == 4
+	print("INTERACT mortal spends ammo=%d (want 4) ok=%s" % [inv.count("ammo"), str(ok)])
+	fails += 0 if ok else 1
+	player.god = true
+	# ---- 6. hold left mouse keeps swinging
+	world.set("rifle_up", false)
+	inv.add("axe")
+	world.set("test_mouse", true)
+	await get_tree().process_frame
+	world.set("_attack_cd", 0.0)
+	var n0: int = world.get("swing_n")
+	var mb := InputEventMouseButton.new()
+	mb.button_index = MOUSE_BUTTON_LEFT
+	mb.pressed = true
+	Input.parse_input_event(mb)
+	await get_tree().create_timer(3.4).timeout
+	var held_n: int = int(world.get("swing_n")) - n0
+	var mu := InputEventMouseButton.new()
+	mu.button_index = MOUSE_BUTTON_LEFT
+	mu.pressed = false
+	Input.parse_input_event(mu)
+	await get_tree().create_timer(0.3).timeout
+	var after_n: int = int(world.get("swing_n"))
+	await get_tree().create_timer(2.0).timeout
+	ok = held_n >= 3 and int(world.get("swing_n")) == after_n
+	print("INTERACT held LMB swings=%d (want >=3), none after release ok=%s" % [held_n, str(ok)])
+	fails += 0 if ok else 1
+	print("INTERACT failures=", fails)
+	get_tree().quit()
+
 
 func _hittest() -> void:
 	await get_tree().create_timer(2.5).timeout
@@ -2895,6 +3159,40 @@ func _hittest() -> void:
 	ok = is_inf(wb)
 	print("HITTEST sky free ok=", ok)
 	fails += 0 if ok else 1
+	# 4b. walls: a zombie inside a cabin cannot be shot through the back wall, but can through the open door
+	var cbn: Cabin = (world.get("cabins") as Array)[0]
+	var zin: Zombie = world.call("_add_zombie", cbn.to_global(Vector3(0.0, 0.3, 0.0)), 900)
+	zin.set_process(false)
+	zin.set_physics_process(false)
+	zin.global_position = Vector3(cbn.global_position.x, cbn.floor_y, cbn.global_position.z)
+	var blds: Array = world.call("_building_list")
+	cbn.door_open = true
+	var res_open: Dictionary = {}
+	var res_wall: Dictionary = {}
+	for side in [1.0, -1.0]:
+		var eye_w: Vector3 = cbn.to_global(Vector3(0.0, 0.0, 5.5 * side))
+		eye_w.y = cbn.floor_y + 1.7
+		var tgt := zin.global_position + Vector3(0, 1.2, 0)
+		var dd := (tgt - eye_w).normalized()
+		var rr3 := HitZones.trace(get_tree(), player.terrain, world.get("forest"), eye_w, dd, 40.0, ["hostile"], blds)
+		if side > 0.0:
+			res_open = rr3
+		else:
+			res_wall = rr3
+	ok = res_open.has("node") and res_open["node"] == zin
+	print("HITTEST shot through open cabin door hits zombie ok=", ok)
+	fails += 0 if ok else 1
+	ok = res_wall.has("world") and not res_wall.has("node")
+	print("HITTEST shot through back wall blocked ok=", ok, " ", res_wall)
+	fails += 0 if ok else 1
+	cbn.door_open = false
+	var eye_c: Vector3 = cbn.to_global(Vector3(0.0, 0.0, 5.5))
+	eye_c.y = cbn.floor_y + 1.7
+	var rrc := HitZones.trace(get_tree(), player.terrain, world.get("forest"), eye_c, (zin.global_position + Vector3(0, 1.2, 0) - eye_c).normalized(), 40.0, ["hostile"], blds)
+	ok = rrc.has("world")
+	print("HITTEST closed door blocks shot ok=", ok)
+	fails += 0 if ok else 1
+	zin.global_position = Vector3(5000, -500, 5000)
 	# 5. spread: aimed at 40 m ~always hits, hip at 20 m mostly hits, hip at 80 m often misses
 	var zc: Vector3 = player.position + fwd * 40.0
 	zc.y = player.terrain.data.get_height(zc)

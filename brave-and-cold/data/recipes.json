@@ -20,5 +20,6 @@
   {"id": "hide_leggings", "name": "Sew hide leggings", "desc": "Leather leggings.", "inputs": {"cured_hide": 2, "cordage": 3}, "tools": ["knife"], "station": "", "time_s": 25, "kcal": 12, "noise": 0, "out": {"hide_leggings": 1}},
   {"id": "wolf_hat", "name": "Sew wolf fur hat", "desc": "A warm fur hat.", "inputs": {"wolf_fur": 1, "cordage": 1}, "tools": ["knife"], "station": "", "time_s": 18, "kcal": 8, "noise": 0, "out": {"wolf_hat": 1}},
   {"id": "wolf_mitts", "name": "Sew wolf fur mitts", "desc": "Fur-lined mitts.", "inputs": {"wolf_fur": 1, "cordage": 2}, "tools": ["knife"], "station": "", "time_s": 20, "kcal": 8, "noise": 0, "out": {"wolf_mitts": 1}},
-  {"id": "bear_coat", "name": "Sew bear fur coat", "desc": "The warmest coat in the valley.", "inputs": {"bear_fur": 1, "cordage": 4}, "tools": ["knife"], "station": "", "time_s": 40, "kcal": 20, "noise": 0, "out": {"bear_coat": 1}}
+  {"id": "bear_coat", "name": "Sew bear fur coat", "desc": "The warmest coat in the valley.", "inputs": {"bear_fur": 1, "cordage": 4}, "tools": ["knife"], "station": "", "time_s": 40, "kcal": 20, "noise": 0, "out": {"bear_coat": 1}},
+  {"id": "storage_chest", "name": "Build storage chest", "desc": "A solid wooden chest set down in front of you. Store anything; it keeps its condition.", "inputs": {"plank": 6, "nails": 8}, "tools": ["hammer"], "station": "", "time_s": 30, "kcal": 20, "noise": 24, "out": {}, "place": "chest"}
 ]

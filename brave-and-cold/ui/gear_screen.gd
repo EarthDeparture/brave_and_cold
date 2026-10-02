@@ -15,7 +15,7 @@ const COLS := 8
 const PACK_O := Vector2(520, 196)
 const GROUND_O := Vector2(520, 560)
 const GROUND_N := 8
-const NEAR_R := 3.5
+const NEAR_R := 2.6
 const DOUBLE_S := 0.35
 const CRAFT_PER_PAGE := 18
 
@@ -43,6 +43,9 @@ var _prev_mouse_mode := Input.MOUSE_MODE_CAPTURED
 var _time := 0.0
 var _craft_mode := false
 var _craft_page := 0
+var _gscroll := 0                   # first visible cell of the nearby / chest row
+var _tab := "ground"                 # ground | chest
+var _chest: StorageChest = null     # chest within reach, if any
 
 
 func setup(w: Node, i: Inventory, p: Player, n: Needs, b: BodyTemperature, c: GameClock, h: Hud) -> void:
@@ -80,6 +83,16 @@ func open() -> void:
 	_menu = {}
 	_drag = {}
 	_dragging = false
+	_gscroll = 0
+	_tab = "ground"
+	_chest = _find_chest()
+
+
+func open_chest(c: StorageChest) -> void:
+	open()
+	if is_open and is_instance_valid(c):
+		_chest = c
+		_tab = "chest"
 
 
 func close() -> void:
@@ -124,6 +137,10 @@ func _process(delta: float) -> void:
 	if player.dead or player.struggling:
 		close()
 		return
+	if not is_instance_valid(_chest) or Vector2(_chest.global_position.x - player.position.x, _chest.global_position.z - player.position.z).length() > NEAR_R:
+		_chest = _find_chest()
+	if _chest == null:
+		_tab = "ground"
 	_validate_sel()
 	_c.queue_redraw()
 
@@ -153,7 +170,28 @@ func _nearby() -> Array:
 		if d <= NEAR_R:
 			out.append({"d": d, "node": p})
 	out.sort_custom(func(a, b) -> bool: return a["d"] < b["d"])
-	return out.slice(0, GROUND_N)
+	return out   # every item in reach; the row scrolls
+
+
+func _find_chest() -> StorageChest:
+	var best: StorageChest = null
+	var bd := NEAR_R
+	for n in get_tree().get_nodes_in_group("chests"):
+		var c := n as StorageChest
+		if c == null or c.is_queued_for_deletion():
+			continue
+		var d := Vector2(c.global_position.x - player.position.x, c.global_position.z - player.position.z).length()
+		if d <= bd:
+			bd = d
+			best = c
+	return best
+
+
+func _put(id: String, n: int) -> void:
+	if _tab == "chest" and is_instance_valid(_chest):
+		world.chest_put(_chest, id, n)
+	else:
+		world.drop_item(id, n)
 
 
 func _pack_rect(i: int) -> Rect2:
@@ -204,6 +242,8 @@ func _validate_sel() -> void:
 			ok = _slot_item(_sel["slot"]) == id
 		"ground":
 			ok = is_instance_valid(_sel.get("node")) and not (_sel["node"] as Node).is_queued_for_deletion()
+		"chest":
+			ok = is_instance_valid(_chest) and _chest.count(id) > 0
 	if not ok:
 		_sel = {}
 
@@ -226,6 +266,11 @@ func _entries(id: String, from: String, n: int, node: Node = null) -> Array:
 	if from == "ground":
 		out.append({"label": "Take", "act": func() -> void: _take(node)})
 		return out
+	if from == "chest":
+		out.append({"label": "Take all (%d)" % n if n > 1 else "Take", "act": func() -> void: world.chest_take(_chest, id, n)})
+		if n > 1:
+			out.append({"label": "Take one", "act": func() -> void: world.chest_take(_chest, id, 1)})
+		return out
 	match kind:
 		"food":
 			out.append({"label": "Eat", "act": func() -> void: world.gear_use(id)})
@@ -244,6 +289,10 @@ func _entries(id: String, from: String, n: int, node: Node = null) -> Array:
 		out.append({"label": "Drop one" if n > 1 else "Drop", "act": func() -> void: world.drop_item(id, 1)})
 		if n > 1:
 			out.append({"label": "Drop all (%d)" % n, "act": func() -> void: world.drop_item(id, n)})
+		if is_instance_valid(_chest):
+			out.append({"label": "Store one" if n > 1 else "Store in chest", "act": func() -> void: world.chest_put(_chest, id, 1)})
+			if n > 1:
+				out.append({"label": "Store all (%d)" % n, "act": func() -> void: world.chest_put(_chest, id, n)})
 	return out
 
 
@@ -271,25 +320,29 @@ func _drop_on(target: Dictionary) -> void:
 	var from: String = _drag["from"]
 	var n: int = _drag.get("n", 1)
 	var tk := _tk(target)
-	var to_ground := tk == "drop"
+	var chest_row := _tab == "chest" and is_instance_valid(_chest)
+	var to_ground := tk == "drop" or (chest_row and tk == "chest")
 	match from:
+		"chest":
+			if tk == "pack" and is_instance_valid(_chest):
+				world.chest_take(_chest, id, n)
 		"pack":
 			if tk == "equip" and Inventory.kind_of(id) == "clothing" and target["slot"] == Inventory.slot_of(id) and not inv.is_worn(id):
 				world.gear_use(id)
 			elif to_ground:
-				world.drop_item(id, n)
+				_put(id, n)
 		"equip":
 			var slot: String = _drag["slot"]
 			if slot == "body" or Inventory.EXTRA_SLOTS.has(slot):
 				if tk == "pack":
 					world.gear_use(id)   # take off
 				elif to_ground:
-					world.drop_item(id, 1)
+					_put(id, 1)
 			else:
 				if tk == "equip" and target["slot"] != slot:
 					world.gear_hands(target["slot"] == "primary")
 				elif to_ground:
-					world.drop_item(id, 1)
+					_put(id, 1)
 		"ground":
 			if tk == "pack" or (tk == "equip" and Inventory.kind_of(id) == "clothing" and target["slot"] == Inventory.slot_of(id)):
 				_take(_drag["node"])
@@ -321,6 +374,9 @@ func _on_gui(e: InputEvent) -> void:
 		var pages := maxi(1, ceili(float(RecipeDB.all().size()) / float(CRAFT_PER_PAGE)))
 		_craft_page = clampi(_craft_page + (1 if e.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, pages - 1)
 		return
+	if not _craft_mode and e.pressed and (e.button_index == MOUSE_BUTTON_WHEEL_UP or e.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+		_gscroll += 1 if e.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1   # clamped when drawn
+		return
 	var h := _hit_at(_mouse)
 	if e.button_index == MOUSE_BUTTON_LEFT and e.pressed:
 		if not _menu.is_empty():
@@ -331,7 +387,7 @@ func _on_gui(e: InputEvent) -> void:
 		var k: String = h.get("k", "")
 		if k == "btn":
 			(h["act"] as Callable).call()
-		elif k in ["pack", "equip", "ground"] and h.get("id", "") != "":
+		elif k in ["pack", "equip", "ground", "chest"] and h.get("id", "") != "":
 			_sel = {"id": h["id"], "from": k, "slot": h.get("slot", ""), "node": h.get("node"), "n": h.get("n", 1)}
 			_press = {"id": h["id"], "from": k, "slot": h.get("slot", ""), "node": h.get("node"), "n": h.get("n", 1), "v": _mouse}
 			var key := "%s/%s/%d" % [k, h["id"], h.get("idx", 0)]
@@ -353,7 +409,7 @@ func _on_gui(e: InputEvent) -> void:
 		_drag = {}
 	elif e.button_index == MOUSE_BUTTON_RIGHT and e.pressed:
 		var k2: String = h.get("k", "")
-		if k2 in ["pack", "equip", "ground"] and h.get("id", "") != "":
+		if k2 in ["pack", "equip", "ground", "chest"] and h.get("id", "") != "":
 			_sel = {"id": h["id"], "from": k2, "slot": h.get("slot", ""), "node": h.get("node"), "n": h.get("n", 1)}
 			_menu = {"pos": _mouse, "entries": _entries(h["id"], k2, h.get("n", 1), h.get("node"))}
 		else:
@@ -574,15 +630,57 @@ func _draw_pack() -> void:
 
 
 func _draw_ground() -> void:
-	DZ.text(_c, "NEARBY  (within %.1f m)" % NEAR_R, Vector2(GROUND_O.x, GROUND_O.y - 18), 16, DZ.DIM)
-	var near := _nearby()
+	var chest_mode := _tab == "chest" and is_instance_valid(_chest)
+	var items: Array = _chest.stacks() if chest_mode else _nearby()
+	var n := items.size()
+	_gscroll = clampi(_gscroll, 0, maxi(0, n - GROUND_N))
+	var ty := GROUND_O.y - 18.0
+	# tabs: GROUND / CHEST (chest only when one is in reach)
+	var gt := Rect2(Vector2(GROUND_O.x, ty - 20.0), Vector2(170, 26))
+	var gtxt := "NEARBY (%d)" % _nearby().size()
+	_c.draw_rect(gt, Color(0.2, 0.22, 0.17, 0.95) if not chest_mode else Color(0.09, 0.10, 0.09, 0.9))
+	_c.draw_rect(gt, DZ.ACCENT if not chest_mode else DZ.EDGE, false, 1.0)
+	DZ.text(_c, gtxt, gt.position + Vector2(10, 19), 15, DZ.TEXT if not chest_mode else DZ.DIM)
+	_hits.append({"k": "btn", "r": gt, "act": func() -> void:
+		_tab = "ground"
+		_gscroll = 0})
+	if is_instance_valid(_chest):
+		var ct := Rect2(Vector2(GROUND_O.x + 178.0, ty - 20.0), Vector2(230, 26))
+		var ctxt := "CHEST (%d/%d stacks)" % [_chest.stack_count(), StorageChest.CAP]
+		_c.draw_rect(ct, Color(0.2, 0.22, 0.17, 0.95) if chest_mode else Color(0.09, 0.10, 0.09, 0.9))
+		_c.draw_rect(ct, DZ.ACCENT if chest_mode else DZ.EDGE, false, 1.0)
+		DZ.text(_c, ctxt, ct.position + Vector2(10, 19), 15, DZ.TEXT if chest_mode else DZ.DIM)
+		_hits.append({"k": "btn", "r": ct, "act": func() -> void:
+			_tab = "chest"
+			_gscroll = 0})
+	var hint := "drag items here to store them" if chest_mode else "within %.1f m" % NEAR_R
+	if n > GROUND_N:
+		hint = "%d-%d of %d   (mouse wheel / arrows)" % [_gscroll + 1, mini(n, _gscroll + GROUND_N), n]
+	DZ.text(_c, hint, Vector2(GROUND_O.x + 1.0 * (GROUND_N * (CELL + GAP) - GAP) - DZ.text_w(hint, 14), ty), 14, DZ.DIM)
 	for i in GROUND_N:
 		var r := _ground_rect(i)
-		if i < near.size():
-			var p: ItemPickup = near[i]["node"]
-			_draw_item_cell(r, p.id, p.n, _is_sel(p.id, "ground", "", p), {"k": "ground", "id": p.id, "n": p.n, "node": p, "idx": i})
+		var idx := _gscroll + i
+		if idx < n:
+			if chest_mode:
+				var st: Dictionary = items[idx]
+				_draw_item_cell(r, st["id"], st["n"], _is_sel(st["id"], "chest"), {"k": "chest", "id": st["id"], "n": st["n"], "idx": idx})
+			else:
+				var p: ItemPickup = items[idx]["node"]
+				_draw_item_cell(r, p.id, p.n, _is_sel(p.id, "ground", "", p), {"k": "ground", "id": p.id, "n": p.n, "node": p, "idx": idx})
 		else:
 			_cell_bg(r, false, false, true)
+			if chest_mode:
+				_hits.append({"k": "chest", "id": "", "r": r})
+	if n > GROUND_N:
+		var lr := Rect2(Vector2(GROUND_O.x - 40.0, GROUND_O.y + 28.0), Vector2(32, 40))
+		var rr := Rect2(Vector2(GROUND_O.x + GROUND_N * (CELL + GAP) + 2.0, GROUND_O.y + 28.0), Vector2(32, 40))
+		for pair in [[lr, "<", -1], [rr, ">", 1]]:
+			var br: Rect2 = pair[0]
+			var step: int = pair[2]
+			_c.draw_rect(br, Color(0.15, 0.17, 0.14, 0.95) if br.has_point(_mouse) else Color(0.09, 0.10, 0.09, 0.92))
+			_c.draw_rect(br, DZ.ACCENT, false, 1.0)
+			DZ.text(_c, String(pair[1]), br.position + Vector2(11, 28), 22, DZ.TEXT)
+			_hits.append({"k": "btn", "r": br, "act": func() -> void: _gscroll += step})
 
 
 func _draw_info() -> void:
