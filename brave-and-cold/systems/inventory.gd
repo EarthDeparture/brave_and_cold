@@ -20,6 +20,13 @@ const ITEMS := {
 	"beans": {"name": "Canned Beans", "kind": "food", "stack": 4, "kcal": 650.0, "desc": "Tinned beans. Safe to eat cold."},
 	"venison_raw": {"shelf_h": 30.0, "name": "Raw Venison", "kind": "food", "stack": 4, "kcal": 350.0, "raw": true, "cooked": "venison_cooked", "desc": "Fresh meat. Cook it over a fire for more calories."},
 	"venison_cooked": {"shelf_h": 72.0, "name": "Cooked Venison", "kind": "food", "stack": 4, "kcal": 900.0, "desc": "Seared venison steak."},
+	"tackle": {"name": "Fishing Tackle", "kind": "tool", "stack": 1, "desc": "Line, hook and lure. Fish through a hole in the ice. Wears with use."},
+	"trout_raw": {"shelf_h": 24.0, "name": "Raw Trout", "kind": "food", "stack": 4, "kcal": 250.0, "raw": true, "cooked": "trout_cooked", "desc": "Fresh lake trout. Cook it."},
+	"trout_cooked": {"shelf_h": 60.0, "name": "Cooked Trout", "kind": "food", "stack": 4, "kcal": 600.0, "desc": "Flaky, fatty trout."},
+	"whitefish_raw": {"shelf_h": 24.0, "name": "Raw Whitefish", "kind": "food", "stack": 4, "kcal": 220.0, "raw": true, "cooked": "whitefish_cooked", "desc": "Lean lake whitefish. Cook it."},
+	"whitefish_cooked": {"shelf_h": 60.0, "name": "Cooked Whitefish", "kind": "food", "stack": 4, "kcal": 520.0, "desc": "Mild, filling whitefish."},
+	"pike_raw": {"shelf_h": 24.0, "name": "Raw Pike", "kind": "food", "stack": 2, "kcal": 450.0, "raw": true, "cooked": "pike_cooked", "desc": "A big, bony pike. Cook it."},
+	"pike_cooked": {"shelf_h": 60.0, "name": "Cooked Pike", "kind": "food", "stack": 2, "kcal": 1000.0, "desc": "A whole pike, roasted. A real meal."},
 	"hammer": {"name": "Hammer", "kind": "tool", "stack": 1, "desc": "Claw hammer. Needed to board up windows and doors. Loud."},
 	"bandage": {"name": "Bandage", "kind": "med", "stack": 6, "desc": "Clean cloth wrap. Stops bleeding."},
 	"antiseptic": {"name": "Antiseptic", "kind": "med", "stack": 3, "desc": "Disinfectant. Clean a wound within two hours or the infection takes hold."},
@@ -55,7 +62,7 @@ const ITEMS := {
 const KIND_ORDER := ["weapon", "tool", "ammo", "clothing", "food", "fuel", "misc"]
 const CAPACITY := 24          # backpack cells
 const EQUIP_ITEMS := ["rifle", "axe"]   # live in equipment slots, not backpack cells
-const WEIGHTS := {"wood": 1.2, "stick": 0.15, "thatch": 0.05, "cordage": 0.05, "kindling": 0.1, "bow_drill": 0.4, "jerky": 0.2, "reed": 0.06, "tinder": 0.02, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6, "cured_hide": 1.0, "wolf_fur": 0.7, "bear_fur": 3.0, "toque": 0.1, "hide_cap": 0.3, "wolf_hat": 0.3, "hide_mitts": 0.3, "wolf_mitts": 0.3, "hide_boots": 0.8, "hide_leggings": 0.8, "bear_coat": 4.5, "rotten_meat": 0.5, "hammer": 0.8, "nails": 0.01, "plank": 0.9, "bandage": 0.05, "antiseptic": 0.2, "antibiotics": 0.05, "rag": 0.05}
+const WEIGHTS := {"wood": 1.2, "stick": 0.15, "thatch": 0.05, "cordage": 0.05, "kindling": 0.1, "bow_drill": 0.4, "jerky": 0.2, "reed": 0.06, "tinder": 0.02, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6, "cured_hide": 1.0, "wolf_fur": 0.7, "bear_fur": 3.0, "toque": 0.1, "hide_cap": 0.3, "wolf_hat": 0.3, "hide_mitts": 0.3, "wolf_mitts": 0.3, "hide_boots": 0.8, "hide_leggings": 0.8, "bear_coat": 4.5, "rotten_meat": 0.5, "hammer": 0.8, "nails": 0.01, "plank": 0.9, "bandage": 0.05, "antiseptic": 0.2, "antibiotics": 0.05, "rag": 0.05, "tackle": 0.1, "trout_raw": 0.6, "trout_cooked": 0.45, "whitefish_raw": 0.5, "whitefish_cooked": 0.38, "pike_raw": 1.6, "pike_cooked": 1.2}
 const WEIGHT_SOFT := 30.0   # kg carried before you slow down
 const WEIGHT_HARD := 45.0   # kg hard cap (cannot pick up more)
 const BASE_WARMTH := 0.25

@@ -82,6 +82,8 @@ func setup(w: Node) -> void:
 		_walktest()
 	if "sleeptest=1" in ua:
 		_sleeptest()
+	if "fishtest=1" in ua:
+		_fishtest()
 	if "injurytest=1" in ua:
 		_injurytest()
 	if "popperf=1" in ua:
@@ -2571,6 +2573,9 @@ func _sleeptest() -> void:
 	var body: BodyTemperature = world.get("body")
 	var cb: Cabin = cabins[0]
 	world.set("sleep_rate", 4000.0)
+	var popn: Population = world.get("pop")
+	if popn != null:
+		popn.hordes.clear()   # wandering hordes would (correctly) wake the sleeper: keep the test deterministic
 	if not cb.door_open:
 		cb.toggle_door()
 	for w in 5:
@@ -2601,7 +2606,7 @@ func _sleeptest() -> void:
 		t += get_process_delta_time()
 	var hrs := clock.hour
 	ok = not bool(world.get("_sl_on")) and absf(fposmod(hrs - 6.0, 24.0)) < 0.35 and clock.day == day0 + 1
-	print("SLEEPTEST 8h slept real_s=%.1f hour=%.2f day=%d->%d ok=%s" % [t, hrs, day0, clock.day, str(ok)])
+	print("SLEEPTEST 8h slept real_s=%.1f hour=%.2f day=%d->%d reason='%s' ok=%s" % [t, hrs, day0, clock.day, str(world.get("sleep_last")), str(ok)])
 	fails += 0 if ok else 1
 	ok = player.health > hp0 + 15.0 and player.health <= 100.0
 	print("SLEEPTEST heal %.1f -> %.1f ok=%s" % [hp0, player.health, str(ok)])
@@ -2654,6 +2659,143 @@ func _sleeptest() -> void:
 	print("SLEEPTEST refuse cold: '", why, "' ok=", ok)
 	fails += 0 if ok else 1
 	print("SLEEPTEST failures=", fails)
+	get_tree().quit()
+
+## Ice camp + fishing: walkable ice, camp huts/holes exist, fishing odds + catch, hatchet hole, refreeze, save/restore.
+func _fishtest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var inv: Inventory = world.get("inv")
+	var ice: IceField = world.get("ice")
+	var holes: Array = world.get("ice_holes")
+	var huts: Array = world.get("huts")
+	var ice_huts: Array = huts.filter(func(h: Hut) -> bool: return h.on_ice)
+	var ok := ice_huts.size() >= 2
+	print("FISHTEST ice huts=", ice_huts.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	ok = holes.size() >= 4
+	print("FISHTEST camp holes=", holes.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	if ice_huts.is_empty():
+		print("FISHTEST failures=", fails)
+		get_tree().quit()
+		return
+	var h0: Hut = ice_huts[0]
+	var iy := ice.ice_at(h0.global_position.x, h0.global_position.z)
+	ok = not is_nan(iy) and absf(h0.floor_y - (iy + 0.2)) < 0.05
+	print("FISHTEST hut stands on ice y=%.2f floor=%.2f ok=%s" % [iy, h0.floor_y, str(ok)])
+	fails += 0 if ok else 1
+	# walkable ice: a spot on the lake, player ground = ice surface (bed is lower)
+	var hp: Vector3 = holes[0].global_position
+	player.god = true
+	player.place(hp.x + 2.0, hp.z)
+	for k in 25:
+		await get_tree().process_frame
+	var bed: float = player.terrain.data.get_height(Vector3(player.position.x, 0.0, player.position.z))
+	var iy2 := ice.ice_at(player.position.x, player.position.z)
+	ok = not is_nan(iy2) and bed < iy2 - 0.4 and absf(player.position.y - (iy2 + player.eye_h)) < 0.15
+	print("FISHTEST walk on ice bed=%.2f ice=%.2f eye_y=%.2f ok=%s" % [bed, iy2, player.position.y, str(ok)])
+	fails += 0 if ok else 1
+	# walk a straight line across ice: no stalls, stays on the surface
+	player.yaw = 0.0
+	var t := 0.0
+	var start := player.position
+	player.sim_dir = Vector3(0, 0, -1)
+	player.sim_on = true
+	while t < 3.0:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+	player.sim_on = false
+	var iy3 := ice.ice_at(player.position.x, player.position.z)
+	var moved := Vector2(player.position.x - start.x, player.position.z - start.z).length()
+	ok = moved > 5.0 and (is_nan(iy3) or absf(player.position.y - (iy3 + player.eye_h)) < 0.2)
+	print("FISHTEST ice walk moved=%.1f ok=%s" % [moved, str(ok)])
+	fails += 0 if ok else 1
+	# fishing at a camp hole
+	var hole: IceHole = holes[0]
+	player.place(hole.global_position.x + 1.0, hole.global_position.z)
+	for k in 20:
+		await get_tree().process_frame
+	inv.remove("tackle", inv.count("tackle"))
+	var c0: Array = []
+	world.call("_fish_cands", c0)
+	ok = c0.size() == 1 and String(c0[0]["text"]).contains("needs fishing tackle")
+	print("FISHTEST no tackle prompt ok=", ok)
+	fails += 0 if ok else 1
+	inv.add("tackle")
+	var c1: Array = []
+	world.call("_fish_cands", c1)
+	ok = c1.size() == 1 and String(c1[0]["text"]) == "Fish through the hole"
+	print("FISHTEST tackle prompt ok=", ok)
+	fails += 0 if ok else 1
+	clock.hour = 6.0
+	var caught := 0
+	var n0 := 0
+	for id in inv.counts:
+		if String(id).ends_with("_raw") and (String(id).begins_with("trout") or String(id).begins_with("whitefish") or String(id).begins_with("pike")):
+			n0 += int(inv.counts[id])
+	var attempts := 0
+	for i in 60:
+		hole.spooked_until = 0.0
+		world.call("_fish_at", hole)
+		attempts += 1
+		if inv.count("tackle") == 0:
+			inv.add("tackle")
+			inv.cond.erase("tackle")
+		inv.cond["tackle"] = 1.0
+	var n1 := 0
+	for id in inv.counts:
+		if String(id).ends_with("_raw") and (String(id).begins_with("trout") or String(id).begins_with("whitefish") or String(id).begins_with("pike")):
+			n1 += int(inv.counts[id])
+	caught = n1 - n0
+	var rate := float(caught) / float(attempts)
+	ok = rate > 0.45 and rate < 0.95
+	print("FISHTEST dawn catch rate=%.2f (%d/%d, pack may cap) ok=%s" % [rate, caught, attempts, str(ok)])
+	fails += 0 if ok else 1
+	ok = Fishing.bite_chance(6.0, 1.0) > Fishing.bite_chance(12.0, 1.0) and Fishing.bite_chance(12.0, 1.0) > Fishing.bite_chance(2.0, 1.0) and Fishing.bite_chance(12.0, 0.2) < Fishing.bite_chance(12.0, 1.0) and Fishing.bite_chance(12.0, 1.0, 0, true) < Fishing.bite_chance(12.0, 1.0)
+	print("FISHTEST odds ordering (dawn>noon>night, worn<new, spooked<fresh) ok=", ok)
+	fails += 0 if ok else 1
+	# catch spooks the hole; cooked fish exist
+	hole.spooked_until = clock.total_game_s + 100.0
+	ok = inv.ITEMS.has("trout_cooked") and inv.ITEMS["trout_raw"]["cooked"] == "trout_cooked" and inv.ITEMS["pike_raw"]["cooked"] == "pike_cooked"
+	print("FISHTEST fish items ok=", ok)
+	fails += 0 if ok else 1
+	# chop a hole on open ice
+	inv.add("axe")
+	var spot: Vector3 = ice_huts[0].to_global(Vector3(6.0, 0.0, 10.0))
+	player.place(spot.x, spot.z)
+	for k in 25:
+		await get_tree().process_frame
+	player.yaw = 0.0
+	var c2: Array = []
+	world.call("_fish_cands", c2)
+	var chop: Dictionary = {}
+	for c in c2:
+		if String(c["text"]) == "Chop a fishing hole":
+			chop = c
+	ok = not chop.is_empty()
+	print("FISHTEST chop prompt ok=", ok)
+	fails += 0 if ok else 1
+	var nh := holes.size()
+	if not chop.is_empty():
+		(chop["act"] as Callable).call()
+	ok = holes.size() == nh + 1 and not holes[holes.size() - 1].perm
+	print("FISHTEST chopped hole added %d->%d ok=%s" % [nh, holes.size(), str(ok)])
+	fails += 0 if ok else 1
+	# save/restore round trip for the player hole + spooked state
+	var dicts: Array = holes.map(func(h: IceHole) -> Dictionary: return h.to_dict())
+	var cnt := holes.size()
+	world.call("_restore_holes", dicts)
+	ok = holes.size() == cnt
+	print("FISHTEST holes restore count=%d ok=%s" % [holes.size(), str(ok)])
+	fails += 0 if ok else 1
+	# freeze over
+	clock.total_game_s += 13.0 * 3600.0
+	world.call("_hole_upkeep")
+	ok = holes.size() == nh   # only camp holes remain
+	print("FISHTEST player hole froze over, camp holes stay: %d ok=%s" % [holes.size(), str(ok)])
+	fails += 0 if ok else 1
+	print("FISHTEST failures=", fails)
 	get_tree().quit()
 
 func _storetest() -> void:

@@ -18,6 +18,8 @@ var huts: Array = []
 var trailnet: TrailNet
 var colliders: Array = []
 var hut_sites: Array = []
+var ice: IceField
+var ice_holes: Array = []
 var body := BodyTemperature.new()
 var snow := SnowField.new()
 var noise_bus := NoiseBus.new()
@@ -56,10 +58,14 @@ func _ready() -> void:
 	add_child(trailnet)
 	if opts.get('road', '1') == '1':
 		road.plan()
+	ice = IceField.new()
+	ice.load_map()
 	if road.points.size() > 40 and opts.get('huts', '1') == '1':
 		var wimg := MapIO.load_png('res://data/maps/valley_b/water_mask.png')
 		wimg.convert(Image.FORMAT_L8)
 		hut_sites = Hut.find_sites(terrain, road, wimg, int(opts.get('hutn', 5)))
+		if opts.get('icecamp', '1') == '1':
+			hut_sites.append_array(_plan_ice_camps())
 		print('HUT_SITES ', hut_sites.size(), ' ', hut_sites)
 		if opts.get('hamlet', '1') == '1':
 			_plan_hamlet(wimg)
@@ -118,6 +124,7 @@ func _ready() -> void:
 	snowfall.follow = player
 	snowfall.weather = weather
 	player.forest = forest
+	player.ice = ice
 	sky_rig.clouds.follow = player
 	sky_rig.apply_hour(clock.hour)
 	footprints = Footprints.new()
@@ -147,6 +154,7 @@ func _ready() -> void:
 	_build_hamlet(home)
 	_build_store()
 	_build_huts()
+	_build_ice_holes()
 	if plants != null:
 		for cb in cabins:
 			plants.suppress_near(cb.global_position.x, cb.global_position.z, 9.0)
@@ -198,6 +206,15 @@ func _ready() -> void:
 		var hdir: Vector3 = hu0.global_position - hwp
 		opts['yaw'] = rad_to_deg(atan2(-hdir.x, -hdir.z))
 		opts['pitch'] = -4.0
+	if opts.has('icepos'):
+		for ih in huts:
+			if ih.on_ice:
+				var iwp: Vector3 = ih.to_global(Vector3(float(opts.get('icex', 1.0)), 0.0, float(opts.get('iced', 8.0))))
+				player.place(iwp.x, iwp.z)
+				var idir: Vector3 = ih.global_position - iwp
+				opts['yaw'] = rad_to_deg(atan2(-idir.x, -idir.z))
+				opts['pitch'] = float(opts.get('icepitch', -6.0))
+				break
 	if opts.has('storepos') and not stores.is_empty():
 		var sp0: Store = stores[0]
 		var swp: Vector3 = sp0.to_global(Vector3(float(opts.get('storex', 0.0)), 0.0, float(opts.get('stored', 9.0))))
@@ -369,6 +386,8 @@ func _process(delta: float) -> void:
 	_attack_cd = maxf(0.0, _attack_cd - delta)
 	Carcass.wind_dir = weather.wind_dir
 	_craft_update(delta)
+	if Engine.get_process_frames() % 90 == 0:
+		_hole_upkeep()
 	if plants != null and Engine.get_process_frames() % 120 == 0:
 		plants.update_regrow(clock.total_game_s)
 	_autosave_t += delta
@@ -573,11 +592,162 @@ func _road_edge_toward(p: Vector2) -> Vector2:
 	return best + (p - best).normalized() * 5.0
 
 
+# ---- Ice camp + ice fishing: huts stand ON the ice; holes beside them; chop your own with a hatchet
+## Interior water far from shore (>=24 m clear), nearest the road: one camp per water body. Returns hut sites [{x,z,yaw,y}].
+func _plan_ice_camps() -> Array:
+	var cands: Array = []
+	var gx := -1000.0
+	while gx <= 1000.0:
+		var gz := -1000.0
+		while gz <= 1000.0:
+			if not is_nan(ice.ice_at(gx, gz)) and ice.clearance(gx, gz, 26.0) >= 24.0:
+				cands.append(Vector2(gx, gz))
+			gz += 10.0
+		gx += 10.0
+	var out: Array = []
+	if cands.is_empty() or road.points.size() < 8:
+		print('ICECAMP no interior water found')
+		return out
+	var rp: Array = []
+	var ri := 0
+	while ri < road.points.size():
+		rp.append(road.points[ri])
+		ri += 4
+	var scored: Array = []
+	for c: Vector2 in cands:
+		var bd := 1e9
+		for q: Vector2 in rp:
+			bd = minf(bd, c.distance_squared_to(q))
+		scored.append({"c": c, "d": sqrt(bd)})
+	scored.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a["d"]) < float(b["d"]))
+	var centres: Array = []
+	for s in scored:
+		var c: Vector2 = s["c"]
+		var far := true
+		for o: Vector2 in centres:
+			if o.distance_to(c) < 150.0:
+				far = false
+		if far and centres.size() < 2:
+			centres.append(c)
+	for c: Vector2 in centres:
+		var nearest: Vector2 = rp[0]
+		for q: Vector2 in rp:
+			if q.distance_squared_to(c) < nearest.distance_squared_to(c):
+				nearest = q
+		var d := (nearest - c).normalized()
+		var tang := Vector2(-d.y, d.x)
+		var yaw := rad_to_deg(atan2(d.x, d.y))   # doorway (+Z) faces the road
+		for k in 2:
+			var p := c + tang * (float(k) * 14.0 - 7.0)
+			var iy := ice.ice_at(p.x, p.y)
+			if not is_nan(iy):
+				out.append({"x": p.x, "z": p.y, "yaw": yaw, "y": iy})
+	print('ICECAMP sites=', out.size(), ' ', out)
+	return out
+
+
+func _make_hole(x: float, z: float, perm: bool, born: float = -1.0) -> IceHole:
+	var iy := ice.ice_at(x, z)
+	if is_nan(iy):
+		return null
+	var h := IceHole.new()
+	h.position = Vector3(x, 0.0, z)
+	add_child(h)
+	h.setup(iy, perm, clock.total_game_s if born < 0.0 else born)
+	ice_holes.append(h)
+	return h
+
+
+func _build_ice_holes() -> void:
+	for hu in huts:
+		var h: Hut = hu
+		if not h.on_ice:
+			continue
+		for sx in [-1.0, 1.0]:
+			var wp: Vector3 = h.to_global(Vector3(sx * 1.1, 0.0, Hut.HZ + 2.4 + (0.6 if sx > 0.0 else 0.0)))
+			_make_hole(wp.x, wp.z, true)
+	print('ICECAMP holes=', ice_holes.size())
+
+
+func _restore_holes(lst: Array) -> void:
+	for h in ice_holes.duplicate():
+		if not h.perm:
+			ice_holes.erase(h)
+			h.queue_free()
+	for d: Dictionary in lst:
+		if bool(d.get('perm', false)):
+			for h in ice_holes:
+				if Vector2(h.position.x - float(d['x']), h.position.z - float(d['z'])).length() < 0.2:
+					h.spooked_until = float(d.get('spooked', 0.0))
+		else:
+			var nh := _make_hole(float(d['x']), float(d['z']), false, float(d.get('born', 0.0)))
+			if nh != null:
+				nh.spooked_until = float(d.get('spooked', 0.0))
+
+
+func _hole_upkeep() -> void:
+	for h in ice_holes.duplicate():
+		if h.expired(clock.total_game_s):
+			ice_holes.erase(h)
+			h.queue_free()
+
+
+func _hole_near(x: float, z: float, r: float) -> IceHole:
+	for h in ice_holes:
+		if Vector2(h.position.x - x, h.position.z - z).length() < r:
+			return h
+	return null
+
+
+func _fish_cands(cands: Array) -> void:
+	if inv == null or ice == null:
+		return
+	var pp := player.position
+	var hole := _hole_near(pp.x, pp.z, 2.3)
+	if hole != null:
+		var hd := Vector2(hole.position.x - pp.x, hole.position.z - pp.z).length()
+		if inv.count('tackle') > 0:
+			var tgt: IceHole = hole
+			cands.append({'d': hd, 'text': 'Fish through the hole', 'hold': 10.0, 'kcal': 10.0, 'act': func() -> void: _fish_at(tgt)})
+		else:
+			cands.append({'d': hd, 'text': 'Fishing hole (needs fishing tackle)', 'act': func() -> void: _say('You need fishing tackle')})
+		return
+	if is_nan(ice.ice_at(pp.x, pp.z)):
+		return
+	if inv.count('axe') > 0 and _hole_near(pp.x, pp.z, 4.0) == null:
+		var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+		var hx := pp.x + fwd.x * 1.3
+		var hz := pp.z + fwd.z * 1.3
+		if not is_nan(ice.ice_at(hx, hz)):
+			cands.append({'d': 1.3, 'text': 'Chop a fishing hole', 'hold': 12.0, 'kcal': 25.0, 'noise': 32.0, 'act': func() -> void:
+				if _make_hole(hx, hz, false) != null:
+					_say('Hole chopped through the ice')})
+
+
+func _fish_at(hole: IceHole) -> void:
+	var cond := inv.condition('tackle')
+	var spooked := clock.total_game_s < hole.spooked_until
+	var p := Fishing.bite_chance(clock.hour, cond, 0, spooked)
+	if inv.wear('tackle', 0.03) <= 0.0:
+		inv.remove('tackle')
+		inv.cond.erase('tackle')
+		_say('Your tackle snaps')
+	if randf() < p:
+		var id := Fishing.pick(randf())
+		if inv.can_add(id):
+			inv.add(id)
+			hole.spooked_until = clock.total_game_s + Fishing.SPOOK_S
+			_say('Caught a %s' % inv.name_of(id).replace('Raw ', '').to_lower())
+		else:
+			_say('A fish on the line, but your pack is full')
+	else:
+		_say('Nothing bites' if not spooked else 'Quiet: the fish are spooked')
+
 func _build_huts() -> void:
 	for hs in hut_sites:
 		var h := Hut.new()
 		add_child(h)
-		if h.setup(terrain, float(hs['x']), float(hs['z']), float(hs['yaw'])):
+		if h.setup(terrain, float(hs['x']), float(hs['z']), float(hs['yaw']), float(hs.get('y', NAN))):
 			huts.append(h)
 			print('HUT at ', Vector2(float(hs['x']), float(hs['z'])))
 		else:
@@ -666,7 +836,7 @@ func _loot_store(st: Store, i: int) -> void:
 	rng.seed = int(absf(st.position.x) * 13.0 + absf(st.position.z) * 7.0) + i * 101
 	var tables := [
 		[['beans', 3, 30], ['matches', 3, 20], ['flare', 1, 8], ['rag', 2, 10], ['bandage', 1, 8]],
-		[['ammo', 8, 25], ['bandage', 2, 16], ['antiseptic', 1, 12], ['antibiotics', 1, 8], ['matches', 2, 14], ['knife', 1, 5]],
+		[['ammo', 8, 25], ['bandage', 2, 16], ['antiseptic', 1, 12], ['antibiotics', 1, 8], ['matches', 2, 14], ['knife', 1, 5], ['tackle', 1, 10]],
 		[['sweater', 1, 12], ['toque', 1, 12], ['hammer', 1, 8], ['nails', 15, 14], ['plank', 3, 14], ['rag', 3, 12], ['axe', 1, 3]],
 	]
 	var table: Array = tables[i]
@@ -1176,7 +1346,9 @@ func _update_prompt() -> void:
 					inv.add('beans', 1)
 					inv.add('flare', 1)
 					inv.add('knife', 1)
-					_say('Found: 2 matches, beans, flare, knife')})
+					inv.add('tackle', 1)
+					_say('Found: 2 matches, beans, flare, knife, fishing tackle')})
+	_fish_cands(cands)
 	for stx in stores:
 		var sto: Store = stx
 		var sdd: float = sto.to_global(Vector3(0.0, 1.0, Store.HZ)).distance_to(player.position)
@@ -2241,6 +2413,7 @@ var _autosave_t := 0.0
 const SLEEP_FADE := 1.1
 var sleep_rate := 1200.0   # game seconds per real second while asleep (8 h ~ 24 s)
 var _sl_on := false
+var sleep_last := ''   # why the last sleep ended (tests, HUD)
 var _sl: Dictionary = {}
 
 
@@ -2396,6 +2569,7 @@ func _sleep_restore_clock() -> void:
 
 
 func _sleep_wake(why: String) -> void:
+	sleep_last = why
 	_sleep_restore_clock()
 	var hrs := (clock.total_game_s - float(_sl["start_s"])) / 3600.0
 	player.position = _sl["stand"]
@@ -2433,6 +2607,7 @@ func save_game() -> bool:
 		'inv': {'counts': inv.counts, 'worn': inv.equipped_body, 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age},
 		'cabins': cabs,
 		'huts': huts.map(func(h: Hut) -> Dictionary: return h.state_dict()),
+		'holes': ice_holes.map(func(h: IceHole) -> Dictionary: return h.to_dict()),
 		'stores': stores.map(func(s: Store) -> Dictionary: return s.state_dict()),
 		'sheds': outbuildings.map(func(o: Outbuilding) -> int: return o.wood_left),
 		'fires': fires,
@@ -2562,6 +2737,7 @@ func _apply_save(sv: Dictionary) -> void:
 	var ssv: Array = sv.get('stores', [])
 	for sj in range(mini(ssv.size(), stores.size())):
 		stores[sj].restore_state(ssv[sj])
+	_restore_holes(sv.get('holes', []))
 	var shs: Array = sv.get('sheds', [])
 	for si in range(mini(shs.size(), outbuildings.size())):
 		outbuildings[si].wood_left = int(shs[si])

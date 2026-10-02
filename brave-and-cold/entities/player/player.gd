@@ -27,6 +27,7 @@ var cam: Camera3D
 var forest: ForestScatter
 var cabins: Array = []
 var footprints: Footprints
+var ice: IceField   # frozen water is walkable: the surface, not the carved bed under it
 
 var yaw := 0.0
 var pitch := 0.0
@@ -137,8 +138,17 @@ func place(x: float, z: float) -> void:
 	_last_pos = position
 
 
-func ground_at(x: float, z: float) -> float:
+func _terrain_h(x: float, z: float) -> float:
 	var th: float = terrain.data.get_height(Vector3(x, 0.0, z))
+	if ice != null:
+		var iy := ice.ice_at(x, z)
+		if not is_nan(iy) and (is_nan(th) or iy > th):
+			return iy
+	return th
+
+
+func ground_at(x: float, z: float) -> float:
+	var th: float = _terrain_h(x, z)
 	for cb in cabins:
 		var f: float = cb.floor_at(x, z, th)
 		if not is_nan(f):
@@ -288,7 +298,7 @@ func _slope_step(step: Vector2) -> Vector2:
 
 ## Camera ground height: structures exact, open terrain low-passed over ~1.5 m so lidar-scale bumps don't shake the view.
 func _eye_ground(x: float, z: float) -> float:
-	var th: float = terrain.data.get_height(Vector3(x, 0.0, z))
+	var th: float = _terrain_h(x, z)
 	for cb in cabins:
 		var f: float = cb.floor_at(x, z, th)
 		if not is_nan(f):
@@ -298,7 +308,7 @@ func _eye_ground(x: float, z: float) -> float:
 	var s := th
 	var n := 1
 	for o in BLUR_OFFSETS:
-		var h: float = terrain.data.get_height(Vector3(x + o.x, 0.0, z + o.y))
+		var h: float = _terrain_h(x + o.x, z + o.y)
 		if not is_nan(h):
 			s += h
 			n += 1

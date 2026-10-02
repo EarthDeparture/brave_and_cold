@@ -88,7 +88,12 @@ static func _score(terrain: Terrain3D, road: RoadNet, water: Image, x: float, z:
 	return nearest + rng * 20.0
 
 
-func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
+var on_ice := false
+
+
+## base_y given = stand on the ice surface at that height (ice camp) instead of the terrain.
+func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float, base_y: float = NAN) -> bool:
+	on_ice = not is_nan(base_y)
 	var hmax := -1e9
 	for cx in [-1.9, 0.0, 1.9]:
 		for cz in [-1.6, 0.0, 1.6]:
@@ -97,7 +102,7 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 			if is_nan(h):
 				return false
 			hmax = maxf(hmax, h)
-	position = Vector3(x, hmax - 0.1, z)
+	position = Vector3(x, (hmax if is_nan(base_y) else base_y) - 0.1, z)
 	rotation_degrees = Vector3(0, yaw_deg, 0)
 	floor_y = position.y + FLOOR_LOCAL_Y
 	var scene := load(MODEL) as PackedScene
