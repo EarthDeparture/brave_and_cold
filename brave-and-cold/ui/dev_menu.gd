@@ -96,6 +96,8 @@ func setup(w: Node) -> void:
 		_clipstest()
 	if "sfxlevels=1" in ua:
 		_sfxlevels()
+	if "interiorshot=1" in ua:
+		_interiorshot()
 	if "weathershot=1" in ua:
 		_weathershot()
 	if "audiostress=1" in ua:
@@ -3151,6 +3153,36 @@ func _sfxlevels() -> void:
 		print("SFXLEVELS sfx %s recorded=%s rms rec=%.1f synth=%.1f diff=%.1f loop=%s ok=%s" % [id, str(is_rec), rr, sr, rr - sr, str(looped), str(ok3)])
 		fails += 0 if ok3 else 1
 	print("SFXLEVELS failures=", fails)
+	get_tree().quit()
+
+
+## Windowed art check: cabin interior, stove lit/unlit, day/dusk/night, blizzard. Shots to shots/int_*.png
+func _interiorshot() -> void:
+	await get_tree().create_timer(3.0).timeout
+	player.god = true
+	var weather = world.get("weather")
+	weather.lock_state(4)
+	weather.precip = 1.0
+	var cabins: Array = world.get("cabins")
+	var cb: Cabin = cabins[0]
+	var S := "C:/Users/parst/Development/game/brave_and_cold/shots/"
+	var inside := cb.to_global(Vector3(1.2, 0.0, 1.2))
+	player.place(inside.x, inside.z)
+	player.yaw = cb.rotation.y + deg_to_rad(35.0)   # toward the stove corner (back-left)
+	player.pitch = deg_to_rad(-4.0)
+	for spec in [["a_day_cold", 16.5, 0.0], ["b_day_lit", 16.5, 100000.0], ["c_night_lit", 22.0, 100000.0], ["d_dusk_lit", 17.2, 100000.0]]:
+		cb.stove_fuel_s = float(spec[2])
+		clock.hour = float(spec[1])
+		_frozen_hour = clock.hour
+		await get_tree().create_timer(2.5).timeout
+		get_viewport().get_texture().get_image().save_png(S + "int_" + String(spec[0]) + ".png")
+	# closer look at the wall for the thin bright lines
+	cb.stove_fuel_s = 100000.0
+	clock.hour = 16.5
+	player.yaw = cb.rotation.y + deg_to_rad(180.0)
+	await get_tree().create_timer(1.5).timeout
+	get_viewport().get_texture().get_image().save_png(S + "int_e_wall.png")
+	print("INTERIORSHOT done")
 	get_tree().quit()
 
 

@@ -16,6 +16,7 @@ OUT = argv[0] if argv else "."
 
 HX, HY = 3.0, 2.5           # wall centre-line half extents
 LOG_R = 0.15
+WALL_R = 0.172   # wall logs are fatter than the course step (0.29) so neighbouring courses overlap: no see-through chinking gaps
 FLOOR_TOP = 0.3
 COURSES = 9
 STEP = 0.29
@@ -75,7 +76,7 @@ class Mesh:
 
     def log(self, axis, a0, a1, fixed, z, r=LOG_R, c=WOOD, sides=8):
         """Cylinder along X (axis='x', at y=fixed) or Y (axis='y', at x=fixed) from a0 to a1."""
-        r = r * (0.94 + rng.random() * 0.12)
+        r = r * (0.98 + rng.random() * 0.07)
         cc = col(c, 0.18)
         ring = []
         for i in range(sides):
@@ -123,11 +124,11 @@ def split_log(m, axis, fixed, z, lo, hi, opening):
         a0, a1, zlo, zhi = opening
         if zlo - LOG_R * 0.5 <= z <= zhi + LOG_R * 0.5:
             if lo < a0:
-                m.log(axis, lo, a0, fixed, z)
+                m.log(axis, lo, a0, fixed, z, r=WALL_R, sides=10)
             if a1 < hi:
-                m.log(axis, a1, hi, fixed, z)
+                m.log(axis, a1, hi, fixed, z, r=WALL_R, sides=10)
             return
-    m.log(axis, lo, hi, fixed, z)
+    m.log(axis, lo, hi, fixed, z, r=WALL_R, sides=10)
 
 
 def build_cabin():

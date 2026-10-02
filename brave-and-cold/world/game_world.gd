@@ -363,6 +363,10 @@ func _build_environment() -> void:
 	add_child(we)
 
 
+var _indoor_k := 0.0            # 0 outside .. 1 inside a cabin (smoothed)
+const INDOOR_FOG_MULT := 0.12
+
+
 func _process(delta: float) -> void:
 	if hud == null:
 		return
@@ -380,6 +384,15 @@ func _process(delta: float) -> void:
 	wind = weather.wind
 	clock.weather_offset_c = weather.temp_off
 	sky_rig.apply_hour(clock.hour)
+	# inside a cabin the world fog (blizzard haze, aerial perspective) must not veil the room: fade it right down, ease in/out at the door
+	var in_cabin := false
+	for cb in cabins:
+		if cb.contains_xz(player.position.x, player.position.z):
+			in_cabin = true
+			break
+	_indoor_k = move_toward(_indoor_k, 1.0 if in_cabin else 0.0, delta * 2.0)
+	if _indoor_k > 0.0:
+		env.fog_density *= lerpf(1.0, INDOOR_FOG_MULT, _indoor_k)
 	var night := clampf(1.0 - sun.light_energy / 0.7, 0.0, 1.0)
 	Zombie.night_factor = night
 	Zombie.ambient_c = clock.ambient_c()
