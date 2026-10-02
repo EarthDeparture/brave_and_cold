@@ -1,0 +1,18 @@
+creatures/wolf/growl_01.wav         5.60s  rms  -20.0 dBFS  peak  -7.1    <- Epic Stock Media - Halloween Game - Haunted House and Horror Audio Scare Kit
+creatures/wolf/attack_01.wav        4.88s  rms  -20.0 dBFS  peak  -7.1    <- Epic Stock Media - Halloween Game - Haunted House and Horror Audio Scare Kit
+creatures/wolf/hurt_01.wav          3.94s  rms  -20.0 dBFS  peak  -6.8    <- 344 Audio - Dog Vocalisations Vol. 1
+creatures/bear/roar_01.wav          6.90s  rms  -20.0 dBFS  peak  -4.4    <- 344 Audio - Dinosaurs Vol. 2
+creatures/bear/growl_01.wav         7.44s  rms  -20.0 dBFS  peak  -7.2    <- Epic Stock Media - Halloween Game - Haunted House and Horror Audio Scare Kit
+creatures/bear/attack_01.wav        3.89s  rms  -20.0 dBFS  peak  -8.4    <- 344 Audio - Dinosaurs Vol. 1
+creatures/zombie/attack_01.wav      2.81s  rms  -20.0 dBFS  peak  -8.2    <- Epic Stock Media - Humanoid Creatures Vol 4 - Monstrous and Undead Creature Vocalization Sound Sets
+creatures/zombie/death_01.wav       4.80s  rms  -20.0 dBFS  peak  -6.1    <- Epic Stock Media - Humanoid Creatures Vol 4 - Monstrous and Undead Creature Vocalization Sound Sets
+creatures/zombie/hurt_01.wav        4.44s  rms  -20.0 dBFS  peak  -4.2    <- Epic Stock Media - Humanoid Creatures Vol 4 - Monstrous and Undead Creature Vocalization Sound Sets
+creatures/zombie/idle_01.wav        1.15s  rms  -20.0 dBFS  peak  -8.2    <- Epic Stock Media - Humanoid Creatures Vol 4 - Monstrous and Undead Creature Vocalization Sound Sets
+creatures/zombie/idle_02.wav        0.51s  rms  -20.0 dBFS  peak  -7.4    <- SoundBits - Vox Bestiae - Source Elements
+creatures/zombie/idle_03.wav        6.25s  rms  -20.0 dBFS  peak  -5.4    <- SoundBits - Vox Hominis - Human Effort Voices
+sfx/wind.wav                       24.00s  rms  -19.0 dBFS  peak  -4.7    <- 344 Audio - Extreme Winds Vol. 1
+sfx/fire.wav                       24.00s  rms  -20.2 dBFS  peak  -3.0  PEAK-LIMITED  <- Ivo Vicic - Campfire - Bonfire FX
+sfx/rustle.wav                      0.93s  rms  -21.2 dBFS  peak  -3.0  PEAK-LIMITED  <- InMotionAudio - Foley T-Shirt
+sfx/thud.wav                        0.44s  rms  -12.1 dBFS  peak  -3.1  PEAK-LIMITED  <- 344 Audio - Cinematic Fight Vol. 1
+sfx/chop.wav                        0.27s  rms  -14.1 dBFS  peak  -3.0  PEAK-LIMITED  <- 344 Audio - Historical Weapons Vol. 2
+sfx/hammer.wav                      0.35s  rms  -16.1 dBFS  peak  -3.0  PEAK-LIMITED  <- Epic Stock Media - HD Game Materials

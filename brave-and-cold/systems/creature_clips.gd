@@ -21,6 +21,7 @@ const CHAIN := {
 	"snort": ["snort", "alert"],
 }
 
+static var root := ROOT           # tests point this at a scratch folder
 static var _paths: Dictionary = {}    # kind -> {event -> [path]}
 static var _streams: Dictionary = {}  # path -> AudioStream
 static var _scanned := false
@@ -30,9 +31,9 @@ static func rescan() -> void:
 	_paths.clear()
 	_streams.clear()
 	_scanned = true
-	for kind in DirAccess.get_directories_at(ROOT):
+	for kind in DirAccess.get_directories_at(root):
 		var ev: Dictionary = {}
-		for f in DirAccess.get_files_at(ROOT + kind):
+		for f in DirAccess.get_files_at(root + kind):
 			var fn: String = f
 			if fn.ends_with(".import"):
 				fn = fn.trim_suffix(".import")
@@ -43,7 +44,7 @@ static func rescan() -> void:
 			var e := event_of(fn)
 			if e == "":
 				continue
-			var path: String = ROOT + kind + "/" + fn
+			var path: String = root + kind + "/" + fn
 			if not ev.has(e):
 				ev[e] = []
 			if not (ev[e] as Array).has(path):

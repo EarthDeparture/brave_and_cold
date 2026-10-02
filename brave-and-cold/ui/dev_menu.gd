@@ -94,6 +94,8 @@ func setup(w: Node) -> void:
 		_audiotest()
 	if "clipstest=1" in ua:
 		_clipstest()
+	if "sfxlevels=1" in ua:
+		_sfxlevels()
 	if "weathershot=1" in ua:
 		_weathershot()
 	if "audiostress=1" in ua:
@@ -3010,7 +3012,10 @@ func _clipstest() -> void:
 	await get_tree().create_timer(2.5).timeout
 	var fails := 0
 	player.god = true
-	var root := ProjectSettings.globalize_path(CreatureClips.ROOT)
+	CreatureClips.root = "user://clipstest/"   # scratch folder: the real shipped clips must not leak into this test
+	for k in ["zombie", "wolf", "bear"]:
+		DirAccess.make_dir_recursive_absolute(CreatureClips.root + k)
+	var root := ProjectSettings.globalize_path(CreatureClips.root)
 	var made: Array[String] = []
 	for spec in [["zombie", "idle_01.wav", 120.0], ["zombie", "idle-b.wav", 150.0], ["zombie", "death3.wav", 90.0], ["wolf", "howl_01.wav", 500.0]]:
 		var f := FileAccess.open(root + String(spec[0]) + "/" + String(spec[1]), FileAccess.WRITE)
@@ -3062,7 +3067,90 @@ func _clipstest() -> void:
 	ok = CreatureClips.count("zombie") == 0 and CreatureClips.pick("zombie", "idle") == null
 	print("CLIPSTEST back to synth with no files ok=", ok)
 	fails += 0 if ok else 1
+	CreatureClips.root = CreatureClips.ROOT
+	CreatureClips.rescan()
 	print("CLIPSTEST failures=", fails)
+	get_tree().quit()
+
+
+## Loudness (gated RMS in dBFS, 2048-sample blocks within 20 dB of the loudest block) of a 16-bit mono AudioStreamWAV.
+func _clip_rms_db(w: AudioStreamWAV) -> float:
+	var d := w.data
+	var n := d.size() / 2
+	var blk := 2048
+	var ps: Array[float] = []
+	var i := 0
+	while i + blk <= n:
+		var acc := 0.0
+		for k in range(blk):
+			var x := float(d.decode_s16((i + k) * 2)) / 32768.0
+			acc += x * x
+		ps.append(acc / blk)
+		i += blk
+	if ps.is_empty():
+		return -99.0
+	var mx: float = ps.max()
+	var sum := 0.0
+	var cnt := 0
+	for p in ps:
+		if p >= mx * 0.1:
+			sum += p
+			cnt += 1
+	return 10.0 * log(maxf(sum / maxf(cnt, 1), 1e-12)) / log(10.0)
+
+
+func _clip_peak(w: AudioStreamWAV) -> float:
+	var d := w.data
+	var pk := 0
+	for i in range(d.size() / 2):
+		pk = maxi(pk, absi(d.decode_s16(i * 2)))
+	return float(pk) / 32768.0
+
+
+## Every shipped recorded clip: mono 16-bit 44.1k, sane length, loudness inside a tight band; loops loop; level vs the synth stand-ins.
+func _sfxlevels() -> void:
+	await get_tree().create_timer(1.5).timeout
+	var fails := 0
+	var lo := 99.0
+	var hi := -99.0
+	var n := 0
+	var root := "res://assets/audio/creatures/"
+	for kind in DirAccess.get_directories_at(root):
+		for f in DirAccess.get_files_at(root + kind):
+			if not f.ends_with(".wav"):
+				continue
+			var w := AudioStreamWAV.load_from_file(root + kind + "/" + f)
+			var secs := float(w.data.size()) / 2.0 / float(w.mix_rate)
+			var r := _clip_rms_db(w)
+			var pk := _clip_peak(w)
+			var ok := (not w.stereo) and w.mix_rate == 44100 and secs > 0.2 and secs < 12.0 and absf(r + 20.0) < 1.5 and pk < 0.72
+			print("SFXLEVELS %s/%s %.2fs rms=%.1f peak=%.2f ok=%s" % [kind, f, secs, r, pk, str(ok)])
+			fails += 0 if ok else 1
+			lo = minf(lo, r)
+			hi = maxf(hi, r)
+			n += 1
+	var ok2 := n >= 10 and hi - lo < 2.5
+	print("SFXLEVELS creature clips=%d spread=%.2f dB ok=%s" % [n, hi - lo, str(ok2)])
+	fails += 0 if ok2 else 1
+	for id: String in ["wind", "fire", "rustle", "thud", "chop", "hammer"]:
+		Sfx.recorded_enabled = true
+		Sfx._cache.erase(id)
+		var rec := Sfx.get_stream(id)
+		Sfx.recorded_enabled = false
+		Sfx._cache.erase(id)
+		var syn := Sfx.get_stream(id)
+		Sfx.recorded_enabled = true
+		Sfx._cache.erase(id)
+		var rr := _clip_rms_db(AudioStreamWAV.load_from_file(Sfx.REC_DIR + id + ".wav"))   # raw file (the imported copy is QOA)
+		var want_frames := int(round(rec.get_length() * float(rec.mix_rate)))
+		var sr := _clip_rms_db(syn)
+		var looped := rec.loop_mode == AudioStreamWAV.LOOP_FORWARD
+		var want_loop := id == "wind" or id == "fire"
+		var is_rec := rec.mix_rate == 44100 and rec != syn
+		var ok3 := is_rec and looped == want_loop and absf(rr - sr) < 3.0 and (not looped or rec.loop_end == want_frames)
+		print("SFXLEVELS sfx %s recorded=%s rms rec=%.1f synth=%.1f diff=%.1f loop=%s ok=%s" % [id, str(is_rec), rr, sr, rr - sr, str(looped), str(ok3)])
+		fails += 0 if ok3 else 1
+	print("SFXLEVELS failures=", fails)
 	get_tree().quit()
 
 

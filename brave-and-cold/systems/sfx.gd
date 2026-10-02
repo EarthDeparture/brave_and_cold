@@ -10,7 +10,10 @@ static var _cache: Dictionary = {}
 static func get_stream(id: String) -> AudioStreamWAV:
 	if _cache.has(id):
 		return _cache[id]
-	var s: AudioStreamWAV
+	var s: AudioStreamWAV = _recorded(id)
+	if s != null:
+		_cache[id] = s
+		return s
 	match id:
 		"wind": s = _wav(_wind(), true)
 		"fire": s = _wav(_fire(), true)
@@ -38,6 +41,32 @@ static func get_stream(id: String) -> AudioStreamWAV:
 				s = _wav(PackedFloat32Array([0.0]))
 	_cache[id] = s
 	return s
+
+
+const REC_DIR := "res://assets/audio/sfx/"
+const REC_LOOPS := ["wind", "fire"]
+static var recorded_enabled := true
+
+
+## A recorded replacement (res://assets/audio/sfx/<id>.wav, mono 16-bit, level-matched by tools/audio/sonniss_import.py), or null.
+static func _recorded(id: String) -> AudioStreamWAV:
+	if not recorded_enabled:
+		return null
+	var path := REC_DIR + id + ".wav"
+	var w: AudioStreamWAV = null
+	if ResourceLoader.exists(path):
+		w = load(path) as AudioStreamWAV
+	elif FileAccess.file_exists(path):
+		w = AudioStreamWAV.load_from_file(path)
+	if w == null:
+		return null
+	w = w.duplicate() as AudioStreamWAV
+	if id in REC_LOOPS:
+		var frames := int(round(w.get_length() * float(w.mix_rate)))   # imported clips are QOA-compressed: data.size() is not the frame count
+		w.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		w.loop_begin = 0
+		w.loop_end = frames
+	return w
 
 
 static func _wav(d: PackedFloat32Array, loop: bool = false) -> AudioStreamWAV:
