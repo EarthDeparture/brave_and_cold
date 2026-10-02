@@ -329,7 +329,7 @@ func _move(want: float, delta: float) -> void:
 			else:
 				_stuck_t = maxf(0.0, _stuck_t - delta)
 			pos = np
-	var h: float = terrain.data.get_height(Vector3(pos.x, 0.0, pos.z))
+	var h: float = IceField.lift(terrain.data.get_height(Vector3(pos.x, 0.0, pos.z)), pos.x, pos.z)
 	if not is_nan(h):
 		pos.y = lerpf(pos.y, h, minf(1.0, delta * 14.0))
 	global_position = pos

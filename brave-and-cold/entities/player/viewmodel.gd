@@ -265,7 +265,11 @@ func _pose_rifle(base: Transform3D) -> void:
 			elif t >= 0.78 and t < 0.9:
 				bolt_roll = 70.0 * (1.0 - _sstep((t - 0.78) / 0.12))
 	var ak := player.aim_k
-	var rpos := Vector3(0.13, -0.085, -0.40).lerp(AIM_POS, ak)
+	# The narrow aim FOV magnifies the gun along with the world. Slide it away along the view axis (the sight line IS the axis,
+	# so the sight picture stays true) so the receiver does not swallow the bottom of the screen: farther the more you zoom.
+	var mag := tan(deg_to_rad(Player.AIM_FOV * 0.5)) / tan(deg_to_rad(player.cam.fov * 0.5))
+	var apos := Vector3(AIM_POS.x, AIM_POS.y, AIM_POS.z - 0.12 - 0.17 * clampf(mag - 1.0, 0.0, 1.8))
+	var rpos := Vector3(0.13, -0.085, -0.40).lerp(apos, ak)
 	var rb := Basis(Vector3.UP, deg_to_rad(16.0 * (1.0 - ak))) * Basis(Vector3.RIGHT, deg_to_rad(lerpf(-2.0, 2.7, ak)))   # +2.7 deg levels the sight line (rear->front slopes down 2.7 deg in the model)
 	var butt := rpos + Vector3(0.0, 0.0, 0.4)
 	var kb := Basis(Vector3.RIGHT, deg_to_rad(lerpf(9.0, 5.0, ak) * kick))

@@ -92,6 +92,8 @@ func setup(w: Node) -> void:
 		_sightshot()
 	if "audiotest=1" in ua:
 		_audiotest()
+	if "audiostress=1" in ua:
+		_audiostress()
 	if "spawntest=1" in ua:
 		_spawntest()
 	if "aimtest=1" in ua:
@@ -2909,6 +2911,16 @@ func _gearshot() -> void:
 	player.pitch = deg_to_rad(-28.0)
 	await get_tree().create_timer(1.0).timeout
 	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/chest_world.png")
+	ch.set_process(false)   # the world re-closes the lid every frame unless the gear screen is on it: hold it open by hand
+	ch.lid_k = 1.0
+	(ch.get("_lid") as Node3D).rotation.x = -deg_to_rad(StorageChest.LID_OPEN_DEG)
+	ch._update_pile()
+	player.pitch = deg_to_rad(-48.0)
+	await get_tree().create_timer(1.2).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/chest_open.png")
+	ch.set_process(true)
+	ch.lid_k = 0.0
+	(ch.get("_lid") as Node3D).rotation.x = 0.0
 	var gear: GearScreen = world.get("gear")
 	gear.open_chest(ch)
 	await get_tree().create_timer(0.8).timeout
@@ -2963,6 +2975,70 @@ func _sightshot() -> void:
 	await get_tree().create_timer(1.0).timeout
 	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/sight_zoom.png")
 	print("SIGHTSHOT done fov=", player.cam.fov)
+	get_tree().quit()
+
+
+## Audio cost with a crowd: 100 voiced zombies within hearing range, all talking. Prints the per-frame cost of the creature audio pass.
+func _audiostress() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var audio = world.get("audio")
+	var zs: Array = []
+	for i in 100:
+		var a := TAU * float(i) / 100.0
+		var r := 12.0 + float((i * 37) % 90)
+		var p := player.position + Vector3(cos(a) * r, 0.0, sin(a) * r)
+		p.y = player.terrain.data.get_height(p)
+		if is_nan(p.y):
+			p.y = player.position.y - 1.7
+		var z: Zombie = world.call("_add_zombie", p, 5000 + i)
+		z.set_physics_process(false)
+		z.global_position = p
+		zs.append(z)
+	for k in 5:
+		await get_tree().process_frame
+	# every voice talks, so every voice runs its occlusion refresh
+	for z in zs:
+		var v := z.get_node_or_null("Voice") as CreatureVoice
+		if v != null:
+			v.say("groan", 3.0, 1.0, 5.0, 110.0)
+	var voiced := 0
+	for z in zs:
+		if z.get_node_or_null("Voice") != null:
+			voiced += 1
+	var t0 := Time.get_ticks_usec()
+	for k in 60:
+		audio._creatures(0.016)
+	var per_pass := float(Time.get_ticks_usec() - t0) / 60.0 / 1000.0
+	var t1 := Time.get_ticks_usec()
+	for k in 200:
+		audio.occlusion(player.position + Vector3(60.0, 1.6, 20.0))
+	var per_occ := float(Time.get_ticks_usec() - t1) / 200.0 / 1000.0
+	# real frames while all of them keep talking
+	var worst := 0.0
+	var sum := 0.0
+	var nf := 0
+	var tn := Time.get_ticks_usec()
+	for k in 180:
+		await get_tree().process_frame
+		var tt := Time.get_ticks_usec()
+		var dtf := float(tt - tn) / 1000.0
+		tn = tt
+		sum += dtf
+		nf += 1
+		worst = maxf(worst, dtf)
+		if k % 20 == 0:
+			for z in zs:
+				var v2 := z.get_node_or_null("Voice") as CreatureVoice
+				if v2 != null:
+					v2.say("groan", 3.0, 1.0, 5.0, 110.0)
+	var ok := voiced >= 80 and per_pass < 3.0 and per_occ < 0.4
+	print("AUDIOSTRESS voiced=%d  creature pass=%.3f ms  occlusion one=%.3f ms  avg frame=%.2f ms worst=%.1f ms ok=%s" % [voiced, per_pass, per_occ, sum / maxf(nf, 1), worst, str(ok)])
+	fails += 0 if ok else 1
+	for z in zs:
+		z.global_position = Vector3(5000, -500, 5000)
+	print("AUDIOSTRESS failures=", fails)
 	get_tree().quit()
 
 
@@ -3374,6 +3450,36 @@ func _interacttest() -> void:
 	ok = gear._tab == "chest" and gear._chest == ch2
 	print("INTERACT gear opens on chest tab ok=", ok)
 	fails += 0 if ok else 1
+	# chest: turn it, contents blocks show while the lid is up and track put/take
+	var cyaw0 := ch2.rotation.y
+	ch2.rotate_quarter()
+	ok = absf(absf(wrapf(ch2.rotation.y - cyaw0, -PI, PI)) - PI * 0.5) < 0.01
+	print("INTERACT chest turns 90 deg ok=", ok)
+	fails += 0 if ok else 1
+	ch2.put("beans", 4, 1.0, 0.0)
+	ch2.put("axe", 1, 1.0, 0.0)
+	ch2.want_open = true
+	for k in 8:
+		ch2._process(0.1)
+	var pile: Node3D = ch2.get("_pile")
+	ok = pile != null and pile.visible and pile.get_child_count() == 2
+	print("INTERACT chest pile blocks=", pile.get_child_count() if pile != null else -1, " ok=", ok)
+	fails += 0 if ok else 1
+	ch2.put("matches", 2, 1.0, 0.0)
+	ch2._process(0.1)
+	pile = ch2.get("_pile")
+	ok = pile.get_child_count() == 3
+	print("INTERACT chest pile updates while open blocks=", pile.get_child_count(), " ok=", ok)
+	fails += 0 if ok else 1
+	ch2.want_open = false
+	for k in 8:
+		ch2._process(0.1)
+	ok = not (ch2.get("_pile") as Node3D).visible
+	print("INTERACT chest pile hidden when shut ok=", ok)
+	ch2.remove("beans", 4)
+	ch2.remove("axe", 1)
+	ch2.remove("matches", 2)
+	fails += 0 if ok else 1
 	gear.close()
 	var pl0 := inv.count("plank")
 	world.call("_dismantle_chest", ch2)
@@ -3627,6 +3733,58 @@ func _hittest() -> void:
 	print("HITTEST crawler head y=%.2f ok=%s" % [crawl_head.y - gp.y, str(ok)])
 	fails += 0 if ok else 1
 	zs.global_position = Vector3(5000, -500, 5000)
+	# 6a2. animal legs are limb-following spheres: hit as "legs", and they move when the leg swings
+	for akind in ["wolf", "bear", "deer"]:
+		var ap: Vector3 = player.position + fwd * 12.0
+		ap.y = player.terrain.data.get_height(ap)
+		var an: Node3D
+		if akind == "deer":
+			an = world.call("_add_deer", ap, 61)
+		else:
+			an = world.call("_add_wolf", ap, 61, akind == "bear")
+		an.set_process(false)
+		an.set_physics_process(false)
+		await get_tree().process_frame
+		var pre: String = "deer" if akind == "deer" else akind
+		var leg := an.find_child(pre + "_leg_fl", true, false) as Node3D
+		var found := leg != null
+		var a_ok := found
+		if found:
+			var low := HitZones.spheres(an)
+			var legcount := 0
+			for sp: Dictionary in low:
+				if sp["zone"] == "legs":
+					legcount += 1
+			var c0: Vector3 = leg.global_transform * Vector3(0.0, -0.42 if akind == "wolf" else -0.62, 0.0)
+			var side: Vector3 = leg.global_transform.basis.x.normalized()
+			var rz := HitZones.ray(an, c0 - side * 3.0, side, 10.0)
+			leg.rotation.x = 0.6
+			var c1: Vector3 = leg.global_transform * Vector3(0.0, -0.42 if akind == "wolf" else -0.62, 0.0)
+			a_ok = legcount == 8 and String(rz.get("zone", "")) == "legs" and c0.distance_to(c1) > 0.12
+			print("HITTEST ", akind, " limbs: spheres_legs=", legcount, " zone=", rz.get("zone", "-"), " swing=", c0.distance_to(c1), " ok=", a_ok)
+		else:
+			print("HITTEST ", akind, " leg node missing")
+		fails += 0 if a_ok else 1
+		an.global_position = Vector3(5000, -500, 5000)
+	# 6a3. creatures stand on the ice sheet, not on the lake bed under it
+	var icef: IceField = world.get("ice")
+	var holes: Array = world.get("ice_holes")
+	if icef == null or holes.is_empty():
+		print("HITTEST ice-walk SKIP (no ice holes)")
+	else:
+		var hp: Vector3 = (holes[0] as Node3D).global_position
+		var iy := icef.ice_at(hp.x, hp.z)
+		var bed: float = player.terrain.data.get_height(Vector3(hp.x, 0.0, hp.z))
+		var lifted := IceField.lift(bed, hp.x, hp.z)
+		ok = not is_nan(iy) and absf(lifted - iy) < 0.001 and (is_nan(bed) or bed <= iy)
+		print("HITTEST ice lift bed=%.2f ice=%.2f lifted=%.2f ok=%s" % [bed, iy, lifted, str(ok)])
+		fails += 0 if ok else 1
+		var dice: Deer = world.call("_add_deer", Vector3(hp.x + 3.0, bed if not is_nan(bed) else iy - 2.0, hp.z), 77)
+		await get_tree().create_timer(1.2).timeout
+		var onice: bool = absf(dice.global_position.y - icef.ice_at(dice.global_position.x, dice.global_position.z)) < 0.4 if not is_nan(icef.ice_at(dice.global_position.x, dice.global_position.z)) else true
+		print("HITTEST deer on ice y=%.2f ice=%.2f ok=%s" % [dice.global_position.y, icef.ice_at(dice.global_position.x, dice.global_position.z), str(onice)])
+		fails += 0 if onice else 1
+		dice.global_position = Vector3(5000, -500, 5000)
 	# 6b. ballistics: gravity drop and flight time
 	var eye0: Vector3 = player.cam.global_position + Vector3(0, 40.0, 0)
 	var dirb := Vector3(-sin(player.yaw) * cos(0.09), sin(0.09), -cos(player.yaw) * cos(0.09))

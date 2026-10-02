@@ -9,15 +9,45 @@ const OUT_H := 2.4  # outbuilding solid height
 
 # Numbers come from the actual glb part bounds (models face -Z; zombie arms reach out at y~1.44).
 const SPECS := {
-	"deer": [["head", 0.85, 1.6, 0.27, 2.5], ["neck", 0.6, 1.45, 0.24, 1.5], ["chest", 0.1, 1.12, 0.46, 1.0], ["chest", 0.1, 0.85, 0.42, 1.0], ["hind", -0.4, 1.0, 0.42, 0.4], ["hind", -0.4, 0.78, 0.36, 0.4], ["legs", 0.0, 0.4, 0.26, 0.3]],
-	"wolf": [["head", 0.75, 0.85, 0.22, 2.5], ["chest", 0.3, 0.75, 0.3, 1.0], ["chest", 0.3, 0.5, 0.27, 1.0], ["hind", -0.3, 0.7, 0.3, 0.6], ["hind", -0.3, 0.42, 0.27, 0.6], ["legs", 0.0, 0.25, 0.32, 0.4]],
-	"bear": [["head", 1.25, 1.25, 0.38, 2.0], ["chest", 0.55, 1.05, 0.6, 1.0], ["chest", 0.55, 0.7, 0.52, 1.0], ["hind", -0.3, 1.0, 0.58, 0.7], ["hind", -0.3, 0.65, 0.52, 0.7], ["legs", 0.0, 0.3, 0.46, 0.4]],
+	"deer": [["head", 0.85, 1.6, 0.27, 2.5], ["neck", 0.6, 1.45, 0.24, 1.5], ["chest", 0.1, 1.12, 0.46, 1.0], ["chest", 0.1, 0.85, 0.42, 1.0], ["hind", -0.4, 1.0, 0.42, 0.4], ["hind", -0.4, 0.78, 0.36, 0.4]],
+	"wolf": [["head", 0.75, 0.85, 0.22, 2.5], ["chest", 0.3, 0.75, 0.3, 1.0], ["chest", 0.3, 0.5, 0.27, 1.0], ["hind", -0.3, 0.7, 0.3, 0.6], ["hind", -0.3, 0.42, 0.27, 0.6]],
+	"bear": [["head", 1.25, 1.25, 0.38, 2.0], ["chest", 0.55, 1.05, 0.6, 1.0], ["chest", 0.55, 0.7, 0.52, 1.0], ["hind", -0.3, 1.0, 0.58, 0.7], ["hind", -0.3, 0.65, 0.52, 0.7]],
 	"zombie": [["head", 0.0, 1.76, 0.26, 2.5], ["chest", 0.0, 1.44, 0.34, 1.0], ["chest", 0.0, 1.12, 0.34, 1.0], ["chest", 0.0, 0.85, 0.3, 0.8]],
 }
 
 ## Spheres glued to an animated limb node (they swing with it): [zone, limb node name, offset in limb space, radius m, multiplier].
 ## Offsets come from the glb part bounds (zombie arms are 0.72 m long pointing -Z from the shoulder, legs hang 1.0 m below the hip).
 const LIMBS := {
+	"wolf": [
+		["legs", "wolf_leg_fl", Vector3(0.0, -0.2, 0.0), 0.09, 0.4],
+		["legs", "wolf_leg_fl", Vector3(0.0, -0.42, 0.0), 0.09, 0.4],
+		["legs", "wolf_leg_fr", Vector3(0.0, -0.2, 0.0), 0.09, 0.4],
+		["legs", "wolf_leg_fr", Vector3(0.0, -0.42, 0.0), 0.09, 0.4],
+		["legs", "wolf_leg_bl", Vector3(0.0, -0.2, 0.0), 0.09, 0.4],
+		["legs", "wolf_leg_bl", Vector3(0.0, -0.42, 0.0), 0.09, 0.4],
+		["legs", "wolf_leg_br", Vector3(0.0, -0.2, 0.0), 0.09, 0.4],
+		["legs", "wolf_leg_br", Vector3(0.0, -0.42, 0.0), 0.09, 0.4],
+	],
+	"deer": [
+		["legs", "deer_leg_fl", Vector3(0.0, -0.3, 0.0), 0.075, 0.3],
+		["legs", "deer_leg_fl", Vector3(0.0, -0.62, 0.0), 0.075, 0.3],
+		["legs", "deer_leg_fr", Vector3(0.0, -0.3, 0.0), 0.075, 0.3],
+		["legs", "deer_leg_fr", Vector3(0.0, -0.62, 0.0), 0.075, 0.3],
+		["legs", "deer_leg_bl", Vector3(0.0, -0.3, 0.0), 0.075, 0.3],
+		["legs", "deer_leg_bl", Vector3(0.0, -0.62, 0.0), 0.075, 0.3],
+		["legs", "deer_leg_br", Vector3(0.0, -0.3, 0.0), 0.075, 0.3],
+		["legs", "deer_leg_br", Vector3(0.0, -0.62, 0.0), 0.075, 0.3],
+	],
+	"bear": [
+		["legs", "bear_leg_fl", Vector3(0.0, -0.3, 0.0), 0.17, 0.4],
+		["legs", "bear_leg_fl", Vector3(0.0, -0.62, 0.0), 0.17, 0.4],
+		["legs", "bear_leg_fr", Vector3(0.0, -0.3, 0.0), 0.17, 0.4],
+		["legs", "bear_leg_fr", Vector3(0.0, -0.62, 0.0), 0.17, 0.4],
+		["legs", "bear_leg_bl", Vector3(0.0, -0.3, 0.0), 0.17, 0.4],
+		["legs", "bear_leg_bl", Vector3(0.0, -0.62, 0.0), 0.17, 0.4],
+		["legs", "bear_leg_br", Vector3(0.0, -0.3, 0.0), 0.17, 0.4],
+		["legs", "bear_leg_br", Vector3(0.0, -0.62, 0.0), 0.17, 0.4],
+	],
 	"zombie": [
 		["arm", "zombie_arm_l", Vector3(0.0, -0.03, -0.40), 0.15, 0.5],
 		["arm", "zombie_arm_r", Vector3(0.0, -0.03, -0.40), 0.15, 0.5],

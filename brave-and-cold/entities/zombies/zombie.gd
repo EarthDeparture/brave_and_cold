@@ -494,7 +494,7 @@ func _move(want: float, delta: float) -> void:
 	if mx * mx + mz * mz > 0.16:            # height + snow tier only re-sampled after 0.4 m of travel
 		_hx = pos.x
 		_hz = pos.z
-		var hq: float = terrain.data.get_height(Vector3(pos.x, 0.0, pos.z))
+		var hq: float = IceField.lift(terrain.data.get_height(Vector3(pos.x, 0.0, pos.z)), pos.x, pos.z)
 		_hcache = hq
 		_mcache = snow.zombie_speed_mult(pos.x, pos.z)
 	var mult := _mcache * _cold_mult() * (0.35 if crawling else 1.0) * (0.9 if kind == Kind.HEAVY else 1.0)

@@ -20,6 +20,11 @@ var age: Dictionary = {}        # id -> age seconds (perishables)
 var want_open := false          # set by GameWorld while the gear screen is on this chest
 var lid_k := 0.0                # 0 shut .. 1 open
 var _lid: Node3D
+var _pile: Node3D               # little coloured blocks for what is inside (only built while the lid is up)
+var _pile_dirty := true
+const KIND_COL := {"weapon": Color(0.35, 0.36, 0.38), "tool": Color(0.5, 0.42, 0.3), "ammo": Color(0.62, 0.5, 0.2),
+	"clothing": Color(0.3, 0.38, 0.5), "food": Color(0.55, 0.28, 0.2), "fuel": Color(0.3, 0.22, 0.14), "misc": Color(0.45, 0.45, 0.4)}
+const PILE_MAX := 14
 
 
 func _ready() -> void:
@@ -80,12 +85,54 @@ func _box(size: Vector3, pos: Vector3, mat: Material, parent: Node) -> void:
 
 func _process(delta: float) -> void:
 	var tgt := 1.0 if want_open else 0.0
+	if _pile_dirty and lid_k > 0.15:
+		_update_pile()
 	if is_equal_approx(lid_k, tgt):
 		return
 	lid_k = move_toward(lid_k, tgt, delta * 2.6)
+	_update_pile()
 	if _lid != null:
 		var e := lid_k * lid_k * (3.0 - 2.0 * lid_k)
 		_lid.rotation.x = -deg_to_rad(LID_OPEN_DEG) * e
+
+
+## Contents blocks: one per stack (max PILE_MAX), sized by count, coloured by kind, laid in a grid on the chest floor.
+## Built lazily and only while the lid is lifted, so a closed chest costs nothing.
+func _update_pile() -> void:
+	var show_it := lid_k > 0.15
+	if _pile != null:
+		_pile.visible = show_it
+	if not show_it or not _pile_dirty:
+		return
+	_pile_dirty = false
+	if _pile != null:
+		_pile.queue_free()
+	_pile = Node3D.new()
+	add_child(_pile)
+	var ids := stacks()
+	var cols := 5
+	for i in mini(ids.size(), PILE_MAX):
+		var st: Dictionary = ids[i]
+		var n: int = st["n"]
+		var sz := clampf(0.07 + 0.012 * float(n), 0.07, 0.15)
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = KIND_COL.get(Inventory.kind_of(String(st["id"])), KIND_COL["misc"])
+		mat.roughness = 0.9
+		var bm := BoxMesh.new()
+		bm.size = Vector3(sz, sz * 0.8, sz)
+		var mi := MeshInstance3D.new()
+		mi.mesh = bm
+		mi.material_override = mat
+		var gx := (float(i % cols) - float(cols - 1) * 0.5) * 0.15
+		var gz := (float(i / cols) - 1.0) * 0.14
+		mi.position = Vector3(gx, 0.05 + sz * 0.4, gz)
+		mi.rotation.y = float((i * 37) % 17) * 0.05
+		_pile.add_child(mi)
+
+
+## Quarter turn (the player turns a placed chest to face the way they want).
+func rotate_quarter() -> void:
+	rotation.y = wrapf(rotation.y + PI * 0.5, -PI, PI)
 
 
 func center_world() -> Vector3:
@@ -132,6 +179,7 @@ func tick(game_s: float) -> void:
 		cond.erase(id)
 		age.erase(id)
 		contents["rotten_meat"] = count("rotten_meat") + n
+		_pile_dirty = true
 
 
 func count(id: String) -> int:
@@ -170,6 +218,7 @@ func put(id: String, n: int, c: float, a: float) -> void:
 	if a > 0.0 or age.has(id):
 		age[id] = (float(age.get(id, 0.0)) * old + a * n) / float(old + n)
 	contents[id] = old + n
+	_pile_dirty = true
 
 
 func remove(id: String, n: int) -> void:
@@ -180,6 +229,7 @@ func remove(id: String, n: int) -> void:
 		age.erase(id)
 	else:
 		contents[id] = left
+	_pile_dirty = true
 
 
 func to_dict() -> Dictionary:
@@ -192,3 +242,4 @@ func load_dict(d: Dictionary) -> void:
 		contents[String(k)] = int(d["c"][k])
 	cond = (d.get("cond", {}) as Dictionary).duplicate()
 	age = (d.get("age", {}) as Dictionary).duplicate()
+	_pile_dirty = true

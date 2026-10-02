@@ -2261,6 +2261,12 @@ func _chest_cands(cands: Array) -> void:
 			continue
 		var cdd := (cp - player.position).length()
 		cands.append({"m": _lm, "d": cdd - 0.2, "text": "Open chest (%d stacks)" % ch.stack_count(), "act": func() -> void: gear.open_chest(ch)})
+		cands.append({"m": _lm, "d": cdd + 0.05, "text": "Turn chest", "act": func() -> void:
+			ch.rotate_quarter()
+			if audio != null:
+				audio.play_at("thud", ch.global_position, -8.0, randf_range(0.9, 1.1), 3.0, 30.0)})
+		if not ch.is_empty():
+			cands.append({"m": _lm, "d": cdd + 0.2, "text": "Chest holds %d stacks (empty it to dismantle)" % ch.stack_count(), "act": func() -> void: _say("Empty the chest first")})
 		if ch.is_empty():
 			cands.append({"m": _lm, "d": cdd + 0.1, "text": "Dismantle chest (+4 planks, +4 nails)", "hold": 4.0, "kcal": 6.0, "noise": 14.0, "act": func() -> void: _dismantle_chest(ch)})
 

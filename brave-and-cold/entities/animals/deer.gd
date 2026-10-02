@@ -174,7 +174,7 @@ func _move(want: float, delta: float) -> void:
 		np.x = clampf(np.x, -980.0, 980.0)
 		np.z = clampf(np.z, -980.0, 980.0)
 		pos = np
-	var h: float = terrain.data.get_height(Vector3(pos.x, 0.0, pos.z))
+	var h: float = IceField.lift(terrain.data.get_height(Vector3(pos.x, 0.0, pos.z)), pos.x, pos.z)
 	if not is_nan(h):
 		pos.y = lerpf(pos.y, h, minf(1.0, delta * 14.0))
 	global_position = pos

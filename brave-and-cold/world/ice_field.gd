@@ -2,6 +2,7 @@ class_name IceField
 extends RefCounted
 ## Walkable ice: the water mask + authored surface level (same data WaterSurfaces draws). ice_at() = surface y, or NAN off the water.
 
+static var current: IceField   # the loaded map's ice, so creatures can stand ON it without being handed a reference
 var mask: Image
 var buf: PackedByteArray
 var n := 2048
@@ -10,6 +11,7 @@ var span := 1.0
 
 
 func load_map(dir: String = "res://data/maps/valley_b") -> void:
+	current = self
 	var data = JSON.parse_string(FileAccess.get_file_as_string(dir + "/water.json"))
 	span = float(data["z_max_m"]) - float(data["z_min_m"])
 	n = int(data["size_m"])
@@ -29,6 +31,16 @@ func ice_at(x: float, z: float) -> float:
 	if mask.get_pixel(px, py).r < 0.5:
 		return NAN
 	return float(buf.decode_u16((py * n + px) * 2)) / 65535.0 * span
+
+
+## Ground height for a walker: the terrain, or the ice sheet when that is higher (lake bed is far below the surface).
+static func lift(h: float, x: float, z: float) -> float:
+	if current == null or current.mask == null:
+		return h
+	var iy := current.ice_at(x, z)
+	if not is_nan(iy) and (is_nan(h) or iy > h):
+		return iy
+	return h
 
 
 ## Metres from (x,z) to the nearest shore along 16 rays (capped): how far out on the ice a spot is.
