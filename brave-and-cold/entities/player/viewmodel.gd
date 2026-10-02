@@ -14,6 +14,7 @@ const WRIST_L := Vector3(-0.075, -0.005, 0.05)
 const SLEEVE_R := Vector3(0.25, -0.12, 1.0)
 const SLEEVE_L := Vector3(-0.25, -0.12, 1.0)
 const FIST_ROLL := -32.0
+const AIM_POS := Vector3(0.0, -0.10, -0.44)
 const BOLT_ORIGIN := Vector3(0.0, 0.046, 0.06)
 
 var player: Player
@@ -43,6 +44,7 @@ var _sway := Vector2.ZERO
 var _sprint_k := 0.0
 var _flash: OmniLight3D
 var _push := 0.0
+var _was_dead := false
 
 
 func _ready() -> void:
@@ -130,7 +132,13 @@ func _process(delta: float) -> void:
 	_clock += delta
 	if player.dead:
 		visible = false
+		_was_dead = true
 		return
+	if _was_dead:  # revived: the old code never un-hid the hands/gun
+		_was_dead = false
+		visible = true
+		_cur = ''
+		_equip = 0.0
 	# equip / mode switching: lower the old thing, raise the new
 	if mode != _cur:
 		_equip -= delta * 3.2
@@ -256,10 +264,11 @@ func _pose_rifle(base: Transform3D) -> void:
 				bolt_slide = 0.055 * (1.0 - _sstep((t - 0.68) / 0.10))
 			elif t >= 0.78 and t < 0.9:
 				bolt_roll = 70.0 * (1.0 - _sstep((t - 0.78) / 0.12))
-	var rpos := Vector3(0.13, -0.085, -0.40)
-	var rb := Basis(Vector3.UP, deg_to_rad(16.0)) * Basis(Vector3.RIGHT, deg_to_rad(-2.0))
+	var ak := player.aim_k
+	var rpos := Vector3(0.13, -0.085, -0.40).lerp(AIM_POS, ak)
+	var rb := Basis(Vector3.UP, deg_to_rad(16.0 * (1.0 - ak))) * Basis(Vector3.RIGHT, deg_to_rad(-2.0))
 	var butt := rpos + Vector3(0.0, 0.0, 0.4)
-	var kb := Basis(Vector3.RIGHT, deg_to_rad(9.0 * kick))
+	var kb := Basis(Vector3.RIGHT, deg_to_rad(lerpf(9.0, 5.0, ak) * kick))
 	var w := base * _about(butt, kb) * Transform3D(rb, rpos + Vector3(0.0, 0.01 * kick, 0.0))
 	_rifle.transform = w
 	_bolt.transform = w * Transform3D(Basis(Vector3.BACK, deg_to_rad(bolt_roll)), BOLT_ORIGIN + Vector3(0.0, 0.0, bolt_slide))

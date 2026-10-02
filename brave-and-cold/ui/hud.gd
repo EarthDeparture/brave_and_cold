@@ -42,6 +42,11 @@ var action_label := ""
 var sleep_fade := 0.0      # 0..1 black-out while sleeping
 var sleep_text := ""
 var rifle_up := false
+var aim_k := 0.0  # rifle aim blend, from the player
+var hit_ms := -9999  # last confirmed hit (ticks ms)
+var hit_kill := false
+var hit_head := false
+var miss_ms := -9999
 var kills := 0
 var show_monitor := true
 var show_dev := false
@@ -109,6 +114,7 @@ func _process(delta: float) -> void:
 	_fx_mat.set_shader_parameter("dark", (1.0 - smoothstep(0.0, 0.7, h)) * 0.85)
 	_fx_mat.set_shader_parameter("cold", clampf((36.0 - body.core) / 3.0, 0.0, 1.0))
 	_fx_mat.set_shader_parameter("flash", _flash)
+	aim_k = player.aim_k if player != null else 0.0
 	_ui.queue_redraw()
 
 
@@ -252,9 +258,43 @@ func _draw_actions(sz: Vector2, k: float) -> void:
 		DZ.text(_ui, "E: do", Vector2(x, y + lh + 2.0 * k), int(12.0 * k), DZ.DIM)
 
 
+func _draw_hitmarker(c: Vector2, k: float) -> void:
+	var age := float(Time.get_ticks_msec() - hit_ms) / 1000.0
+	if age < 0.0 or age > 0.35:
+		return
+	var a := 1.0 - age / 0.35
+	var col := (Color(0.95, 0.2, 0.15, a) if hit_kill else (Color(1.0, 0.85, 0.3, a) if hit_head else Color(0.95, 0.95, 0.95, a)))
+	var g := (6.0 + 5.0 * age / 0.35) * k
+	var l := 8.0 * k
+	for d in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
+		_ui.draw_line(c + d * g, c + d * (g + l), col, 2.5)
+
+
+func _draw_aim_overlay(sz: Vector2, c: Vector2, ak: float) -> void:
+	# smooth dark vignette (clear centre -> black edge), like looking down the rifle
+	var r0 := sz.y * 0.42
+	var r1 := sz.y * 0.62
+	var r2 := sz.length()
+	var n := 72
+	var clear := Color(0, 0, 0, 0)
+	var dark := Color(0, 0, 0, 0.82 * ak)
+	for i in n:
+		var a0 := TAU * float(i) / float(n)
+		var a1 := TAU * float(i + 1) / float(n)
+		var d0 := Vector2(cos(a0), sin(a0))
+		var d1 := Vector2(cos(a1), sin(a1))
+		_ui.draw_polygon(PackedVector2Array([c + d0 * r0, c + d0 * r1, c + d1 * r1, c + d1 * r0]), PackedColorArray([clear, dark, dark, clear]))
+		_ui.draw_polygon(PackedVector2Array([c + d0 * r1, c + d0 * r2, c + d1 * r2, c + d1 * r1]), PackedColorArray([dark, dark, dark, dark]))
+	_ui.draw_circle(c, 1.8, Color(0.9, 0.2, 0.15, 0.85 * ak))
+
+
 func _draw_crosshair(sz: Vector2, k: float) -> void:
 	var c := sz * 0.5
 	var col := Color(0.9, 0.92, 0.86, 0.6)
+	_draw_hitmarker(c, k)
+	if aim_k > 0.15:
+		_draw_aim_overlay(sz, c, aim_k)
+		return
 	if rifle_up and inv != null and inv.count("rifle") > 0:
 		var g := 7.0 * k
 		var l := 9.0 * k

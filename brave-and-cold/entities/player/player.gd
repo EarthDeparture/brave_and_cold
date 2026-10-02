@@ -35,6 +35,11 @@ var stamina := 100.0
 var exhausted := false
 var crouching := false
 var sprinting := false
+var aim_req := false  # set by GameWorld: RMB held with rifle raised
+var aim_k := 0.0  # 0 hip .. 1 fully aimed
+var _sway_t := 0.0
+const AIM_FOV := 36.0
+const HIP_FOV := 70.0
 var moving := false
 var activity := 0
 var speed_now := 0.0
@@ -175,6 +180,16 @@ func noise_radius() -> float:
 	return r * (1.0 - 0.06 * tier)  # deep snow muffles steps
 
 
+func _update_aim(delta: float) -> void:
+	var want := aim_req and not dead and not sleeping and not struggling and not sprinting
+	aim_k = move_toward(aim_k, 1.0 if want else 0.0, delta * 5.0)
+	cam.fov = lerpf(HIP_FOV, AIM_FOV, aim_k * aim_k * (3.0 - 2.0 * aim_k))
+	_sway_t += delta
+	var amp := aim_k * (0.0016 if crouching else 0.0032) * (1.0 + (0.8 if sprinting else 0.0))
+	var sw := Vector2(sin(_sway_t * 1.1) + 0.5 * sin(_sway_t * 2.3), cos(_sway_t * 0.9) + 0.5 * sin(_sway_t * 1.9 + 1.0)) * amp
+	cam.rotation = Vector3(pitch + sw.y, yaw + sw.x, 0.0)
+
+
 func _process(delta: float) -> void:
 	if terrain == null or terrain.data == null:
 		return
@@ -184,7 +199,7 @@ func _process(delta: float) -> void:
 			return
 		position.y = h0 + eye_h
 		_ready_ground = true
-	cam.rotation = Vector3(pitch, yaw, 0.0)
+	_update_aim(delta)
 	if struggling:
 		_struggle_update(delta)
 	if noclip and not dead:
@@ -228,14 +243,14 @@ func _move(delta: float) -> void:
 		dir = sim_dir
 	crouching = Input.is_key_pressed(KEY_C)
 	var wish := dir.length() > 0.01
-	var want_sprint := (Input.is_key_pressed(KEY_SHIFT) or (sim_on and sim_sprint)) and not crouching and not exhausted and stamina > 0.0
+	var want_sprint := (Input.is_key_pressed(KEY_SHIFT) or (sim_on and sim_sprint)) and not crouching and not exhausted and stamina > 0.0 and aim_k < 0.3
 	var base := CROUCH if crouching else (SPRINT if (want_sprint and wish) else WALK)
 	# deep snow: a slight, smoothly blended slowdown (no hard steps when the tier flips under the boots)
 	var tier: int = snow.tier_at(position.x, position.z)
 	_snow_mult = lerpf(_snow_mult, SnowField.PLAYER_SPEED[tier], minf(1.0, delta * 2.5))
 	var want := Vector2.ZERO
 	if wish:
-		want = Vector2(dir.x, dir.z).normalized() * base * _snow_mult * speed_mult
+		want = Vector2(dir.x, dir.z).normalized() * base * _snow_mult * speed_mult * lerpf(1.0, 0.55, aim_k)
 	var rate := ACCEL if want.length_squared() > _vel.length_squared() else DECEL
 	_vel = _vel.move_toward(want, rate * delta)
 	var sp := _vel.length()
@@ -360,8 +375,9 @@ func _footsteps(delta: float) -> void:
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		yaw -= e.relative.x * Settings.sensitivity
-		pitch = clampf(pitch - e.relative.y * Settings.sensitivity, -1.5, 1.5)
+		var ss: float = Settings.sensitivity * lerpf(1.0, 0.45, aim_k)
+		yaw -= e.relative.x * ss
+		pitch = clampf(pitch - e.relative.y * ss, -1.5, 1.5)
 	elif e is InputEventKey and e.pressed and not e.echo:
 		match e.keycode:
 			KEY_G:

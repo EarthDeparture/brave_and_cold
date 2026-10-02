@@ -1575,6 +1575,7 @@ func _update_prompt() -> void:
 	info += '   Wt %.1f/%d kg' % [inv.total_weight(), int(Inventory.WEIGHT_SOFT)]
 	hud.info = info
 	hud.rifle_up = rifle_up
+	player.aim_req = aim_override or rifle_up and inv != null and inv.count('rifle') > 0 and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
 	player.speed_mult = inv.speed_mult()
 	hud.kills = _count_kills()
 
@@ -2058,18 +2059,10 @@ func _attack() -> void:
 	if player.dead:
 		return
 	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
-	var best: Node3D = null
-	var bd := 2.1
-	for h in get_tree().get_nodes_in_group("hostile"):
-		var n := h as Node3D
-		var to := n.global_position - player.position
-		to.y = 0.0
-		var d := to.length()
-		if d < bd and (d < 0.6 or fwd.dot(to / maxf(d, 0.001)) > 0.5):
-			bd = d
-			best = n
+	var best: Node3D = _melee_pick(2.3 if axe else 1.8)
 	if best != null:
 		best.call("hit", dmg, player.position)
+		_hit_feedback(best, false)
 		if axe:
 			inv.wear("axe", 0.004)
 		audio.hit(best.global_position + Vector3(0, 1.0, 0))
@@ -2080,6 +2073,54 @@ func _attack() -> void:
 			_say("Swing")
 		else:
 			_chop_hit(tr)
+
+
+## Melee target: a fan of rays from the camera (what the crosshair is over), then the old flat cone as a safety net
+## so a swing at anything adjacent in front of you cannot whiff.
+func _melee_pick(reach: float) -> Node3D:
+	var origin := player.cam.global_position
+	var cb := player.cam.global_transform.basis
+	var best: Node3D = null
+	var bt := INF
+	for off: Vector2 in [Vector2(0, 0), Vector2(0.1, 0), Vector2(-0.1, 0), Vector2(0, 0.1), Vector2(0, -0.12), Vector2(0.18, -0.1), Vector2(-0.18, -0.1), Vector2(0, -0.3)]:
+		var d := (cb * Vector3(off.x, off.y, -1.0)).normalized()
+		var r := HitZones.trace(get_tree(), terrain, forest, origin, d, reach, ['hostile'])
+		if r.has('node') and float(r['t']) < bt:
+			bt = float(r['t'])
+			best = r['node']
+	if best != null:
+		return best
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var bd := reach
+	for h in get_tree().get_nodes_in_group('hostile'):
+		var n := h as Node3D
+		if n == null or (n.has_method('is_dead') and n.call('is_dead')):
+			continue
+		var to := n.global_position - player.position
+		to.y = 0.0
+		var dd := to.length()
+		if dd < bd and (dd < 0.7 or fwd.dot(to / maxf(dd, 0.001)) > 0.5):
+			bd = dd
+			best = n
+	return best
+
+
+func _hit_feedback(n: Node3D, head: bool) -> void:
+	hud.hit_ms = Time.get_ticks_msec()
+	hud.hit_head = head
+	hud.hit_kill = n.has_method('is_dead') and bool(n.call('is_dead'))
+
+
+## Shot direction: camera forward + random cone. Hip fire is loose, aimed is tight, moving/sprinting widens it.
+func _shot_dir() -> Vector3:
+	var cb := player.cam.global_transform.basis
+	var deg := lerpf(2.2, 0.12, player.aim_k)
+	deg *= 0.7 if player.crouching else 1.0
+	deg += minf(player._vel.length(), 6.0) * lerpf(0.35, 0.12, player.aim_k)
+	var sp := deg_to_rad(deg)
+	var ang := randf() * TAU
+	var rad := sqrt(randf()) * sp
+	return (cb * Vector3(cos(ang) * rad, sin(ang) * rad, -1.0)).normalized()
 
 
 func _zombietest_step(delta: float) -> void:
@@ -2160,29 +2201,29 @@ func _shoot() -> void:
 	viewmodel.fire()
 	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_GUNSHOT, player)
 	audio.gunshot()
-	var eye := player.position + Vector3(0, 1.6, 0)
-	var dir := Vector3(-sin(player.yaw) * cos(player.pitch), sin(player.pitch), -cos(player.yaw) * cos(player.pitch)).normalized()
-	var best: Node3D = null
-	var bt := 150.0
-	var bz := {}
-	for g in ['hostile', 'prey']:
-		for h in get_tree().get_nodes_in_group(g):
-			var n := h as Node3D
-			if n == null:
-				continue
-			if n.has_method('is_dead') and n.call('is_dead'):
-				continue
-			var zr := HitZones.ray(n, eye, dir, bt)
-			if not zr.is_empty() and float(zr["t"]) < bt:
-				bt = float(zr["t"])
-				best = n
-				bz = zr
-	if best != null:
-		best.call('hit', RIFLE_DAMAGE * float(bz["mult"]), player.position)
-		audio.hit(best.global_position + Vector3(0, 1.0, 0))
-		_say('Headshot!' if String(bz["zone"]) == 'head' else 'Shot hit (%s)' % String(bz["zone"]))
+	var eye := player.cam.global_position
+	var dir := _shot_dir()
+	player.pitch += lerpf(0.022, 0.014, player.aim_k)  # recoil kick, player pulls it back down
+	player.yaw += randf_range(-0.004, 0.004)
+	var r := HitZones.trace(get_tree(), terrain, forest, eye, dir, 400.0)
+	if r.has('node'):
+		var n: Node3D = r['node']
+		var head := String(r['zone']) == 'head'
+		n.call('hit', RIFLE_DAMAGE * float(r['mult']), player.position)
+		audio.hit(n.global_position + Vector3(0, 1.0, 0))
+		_hit_feedback(n, head)
+		_say('Headshot!' if head else 'Shot hit (%s)' % String(r['zone']))
+		last_shot = {'hit': true, 'zone': r['zone'], 't': r['t']}
+	elif r.has('world'):
+		_say('Bang. Hit the terrain')
+		last_shot = {'hit': false, 'world': true, 't': r['t']}
 	else:
 		_say('Bang. Miss')
+		last_shot = {'hit': false, 't': 0.0}
+
+
+var last_shot := {}
+var aim_override := false  # tests hold the rifle aimed
 
 
 func _deertest_step(delta: float) -> void:
@@ -2195,6 +2236,7 @@ func _deertest_step(delta: float) -> void:
 		inv.add('ammo', 3)
 		inv.add('knife')
 		rifle_up = true
+		aim_override = true
 		var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
 		var dp := player.position + fwd * 40.0
 		dp.y = terrain.data.get_height(dp)
@@ -2204,7 +2246,7 @@ func _deertest_step(delta: float) -> void:
 	var d0: Deer = deer[0]
 	_attack_cd = maxf(0.0, _attack_cd - delta)
 	if _dt > 2.0 and d0.state != Deer.State.DEAD and _attack_cd <= 0.0 and inv.count('ammo') > 0:
-		var to := d0.global_position + Vector3(0, 0.9, 0) - (player.position + Vector3(0, 1.6, 0))
+		var to := d0.global_position + Vector3(0, 0.9, 0) - player.cam.global_position
 		player.yaw = atan2(-to.x, -to.z)
 		player.pitch = atan2(to.y, Vector2(to.x, to.z).length())
 		_attack()
@@ -2798,3 +2840,6 @@ func _run_vmtest() -> void:
 		viewmodel.swing(_vmtest == 'axe')
 	elif act == 'fire':
 		viewmodel.fire()
+	elif act == 'aim':
+		aim_override = true
+		player.aim_k = 1.0

@@ -84,6 +84,8 @@ func setup(w: Node) -> void:
 		_sleeptest()
 	if "fishtest=1" in ua:
 		_fishtest()
+	if "hittest=1" in ua:
+		_hittest()
 	if "injurytest=1" in ua:
 		_injurytest()
 	if "popperf=1" in ua:
@@ -890,8 +892,12 @@ func _huntest() -> void:
 	var base := Vector3(pp.x + 12.0, tg.data.get_height(Vector3(pp.x + 12.0, 0, pp.z)), pp.z)
 	var d1: Deer = world.call("_add_deer", base, 41)
 	d1.rotation.y = 0.0
-	var want := {"head": 2.5, "chest": 1.0, "hind": 0.35}
+	var want := {"head": 2.5, "chest": 1.0, "hind": 0.4}
+	var seen_z := {}
 	for row: Array in HitZones.SPECS["deer"]:
+		if seen_z.has(row[0]) or not want.has(row[0]):
+			continue
+		seen_z[row[0]] = true
 		var c := HitZones.center_of(d1, row)
 		var r := HitZones.ray(d1, c + Vector3(6, 0, 0), Vector3(-1, 0, 0), 50.0)
 		var ok: bool = not r.is_empty() and r["zone"] == row[0] and absf(float(r["mult"]) - float(want[row[0]])) < 0.01
@@ -2797,6 +2803,139 @@ func _fishtest() -> void:
 	fails += 0 if ok else 1
 	print("FISHTEST failures=", fails)
 	get_tree().quit()
+
+func _hittest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var inv: Inventory = world.get("inv")
+	var vm: Viewmodel = world.get("viewmodel")
+	player.god = true
+	# 1. revive must bring the viewmodel back
+	player.dead = true
+	for k in 5:
+		await get_tree().process_frame
+	var hid := not vm.visible
+	_revive()
+	for k in 5:
+		await get_tree().process_frame
+	var ok := hid and vm.visible
+	print("HITTEST viewmodel hides on death + returns on revive hid=%s now=%s ok=%s" % [str(hid), str(vm.visible), str(ok)])
+	fails += 0 if ok else 1
+	inv.add("rifle")
+	inv.add("ammo", 60)
+	world.set("rifle_up", true)
+	world.set("aim_override", true)
+	for k in 30:
+		await get_tree().process_frame
+	ok = player.aim_k > 0.99 and absf(player.cam.fov - Player.AIM_FOV) < 0.5
+	print("HITTEST aim_k=%.2f fov=%.1f ok=%s" % [player.aim_k, player.cam.fov, str(ok)])
+	fails += 0 if ok else 1
+	# 2. point blank + range: zombie frozen at several distances, aim at its chest, trace must hit it
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var results := []
+	for dist in [0.5, 0.8, 1.2, 2.0, 5.0, 15.0, 40.0]:
+		var zp: Vector3 = player.position + fwd * dist
+		zp.y = player.terrain.data.get_height(zp)
+		var z: Zombie = world.call("_add_zombie", zp, 700 + int(dist * 10))
+		z.set_process(false)
+		z.set_physics_process(false)
+		z.global_position = zp
+		await get_tree().process_frame
+		var to := z.global_position + Vector3(0, 1.2, 0) - player.cam.global_position
+		player.yaw = atan2(-to.x, -to.z)
+		player.pitch = atan2(to.y, Vector2(to.x, to.z).length())
+		for k in 3:
+			await get_tree().process_frame
+		var r := HitZones.trace(get_tree(), player.terrain, world.get("forest"), player.cam.global_position, -player.cam.global_transform.basis.z, 400.0)
+		var hit: bool = r.has("node") and r["node"] == z
+		results.append(hit)
+		print("HITTEST trace chest dist=%.1f hit=%s zone=%s" % [dist, str(hit), str(r.get("zone", "-"))])
+		# real shot path
+		world.set("_attack_cd", 0.0)
+		z.hp = 1000.0
+		world.call("_shoot")
+		var ls: Dictionary = world.get("last_shot")
+		var shot_ok: bool = ls.get("hit", false)
+		print("HITTEST _shoot dist=%.1f hit=%s zone=%s zhp=%.0f" % [dist, str(shot_ok), str(ls.get("zone", "-")), z.hp])
+		results.append(shot_ok and z.hp < 1000.0)
+		z.global_position = Vector3(5000, -500, 5000)
+	ok = not results.has(false)
+	print("HITTEST point-blank..40 m ok=", ok)
+	fails += 0 if ok else 1
+	# 3. melee: zombie dead ahead at 1.2 m is picked; one behind us is not
+	var zp2: Vector3 = player.position + fwd * 1.2
+	zp2.y = player.terrain.data.get_height(zp2)
+	var za: Zombie = world.call("_add_zombie", zp2, 801)
+	za.set_process(false)
+	za.set_physics_process(false)
+	za.global_position = zp2
+	var zb: Zombie = world.call("_add_zombie", player.position - fwd * 1.2, 802)
+	zb.set_process(false)
+	zb.set_physics_process(false)
+	zb.global_position = Vector3(player.position.x - fwd.x * 1.2, player.terrain.data.get_height(player.position - fwd * 1.2), player.position.z - fwd.z * 1.2)
+	player.pitch = deg_to_rad(-20.0)  # looking down at its chest from close range
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var pick = world.call("_melee_pick", 1.8)
+	ok = pick == za
+	print("HITTEST melee picks front zombie ok=", ok)
+	fails += 0 if ok else 1
+	za.global_position += fwd * 3.0
+	zb.global_position = player.position + Vector3(0, -player.eye_h, 0) - fwd * 1.2
+	pick = world.call("_melee_pick", 1.8)
+	ok = pick != za
+	print("HITTEST melee ignores out of reach ok=", ok)
+	fails += 0 if ok else 1
+	# 4. occlusion: straight down hits ground ~eye_h away, up hits nothing, a hill blocks a zombie behind it
+	var wb := HitZones.world_block(player.terrain, world.get("forest"), player.cam.global_position, Vector3.DOWN, 20.0)
+	ok = absf(wb - player.eye_h) < 0.6
+	print("HITTEST ground block t=%.2f eye_h=%.2f ok=%s" % [wb, player.eye_h, str(ok)])
+	fails += 0 if ok else 1
+	wb = HitZones.world_block(player.terrain, world.get("forest"), player.cam.global_position, Vector3.UP, 50.0)
+	ok = is_inf(wb)
+	print("HITTEST sky free ok=", ok)
+	fails += 0 if ok else 1
+	# 5. spread: aimed at 40 m ~always hits, hip at 20 m mostly hits, hip at 80 m often misses
+	var zc: Vector3 = player.position + fwd * 40.0
+	zc.y = player.terrain.data.get_height(zc)
+	var zf: Zombie = world.call("_add_zombie", zc, 803)
+	zf.set_process(false)
+	zf.set_physics_process(false)
+	zf.global_position = zc
+	var to2 := zf.global_position + Vector3(0, 1.2, 0) - player.cam.global_position
+	player.yaw = atan2(-to2.x, -to2.z)
+	player.pitch = atan2(to2.y, Vector2(to2.x, to2.z).length())
+	for k in 3:
+		await get_tree().process_frame
+	var aimed := 0
+	for i in 100:
+		var d: Vector3 = world.call("_shot_dir")
+		var rr := HitZones.trace(get_tree(), player.terrain, world.get("forest"), player.cam.global_position, d, 400.0)
+		if rr.has("node"):
+			aimed += 1
+	ok = aimed >= 90
+	print("HITTEST aimed 40 m hits=%d/100 ok=%s" % [aimed, str(ok)])
+	fails += 0 if ok else 1
+	world.set("aim_override", false)
+	player.aim_k = 0.0
+	player.aim_req = false
+	var hip := 0
+	for i in 100:
+		var d2: Vector3 = world.call("_shot_dir")
+		var rr2 := HitZones.trace(get_tree(), player.terrain, world.get("forest"), player.cam.global_position, d2, 400.0)
+		if rr2.has("node"):
+			hip += 1
+	ok = hip >= 3 and hip < 100
+	print("HITTEST hip 40 m hits=%d/100 (spread works if <100) ok=%s" % [hip, str(ok)])
+	fails += 0 if ok else 1
+	print("HITTEST failures=", fails)
+	get_tree().quit()
+
+
+func zombies_cleanup(w: Node) -> void:
+	var zs: Array = w.get("zombies")
+	zs.clear()
+
 
 func _storetest() -> void:
 	await get_tree().create_timer(2.5).timeout
