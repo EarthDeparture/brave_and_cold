@@ -92,6 +92,10 @@ func setup(w: Node) -> void:
 		_sightshot()
 	if "audiotest=1" in ua:
 		_audiotest()
+	if "clipstest=1" in ua:
+		_clipstest()
+	if "weathershot=1" in ua:
+		_weathershot()
 	if "audiostress=1" in ua:
 		_audiostress()
 	if "spawntest=1" in ua:
@@ -2975,6 +2979,126 @@ func _sightshot() -> void:
 	await get_tree().create_timer(1.0).timeout
 	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/sight_zoom.png")
 	print("SIGHTSHOT done fov=", player.cam.fov)
+	get_tree().quit()
+
+
+## Recorded creature clips: dropped files are found by name, picked per event, played from the body; missing ones fall back to synth.
+func _wav_bytes(freq: float, secs: float) -> PackedByteArray:
+	var sr := 22050
+	var n := int(sr * secs)
+	var b := PackedByteArray()
+	b.resize(44 + n * 2)
+	b.encode_u32(0, 0x46464952)   # RIFF
+	b.encode_u32(4, 36 + n * 2)
+	b.encode_u32(8, 0x45564157)   # WAVE
+	b.encode_u32(12, 0x20746d66)  # fmt
+	b.encode_u32(16, 16)
+	b.encode_u16(20, 1)
+	b.encode_u16(22, 1)
+	b.encode_u32(24, sr)
+	b.encode_u32(28, sr * 2)
+	b.encode_u16(32, 2)
+	b.encode_u16(34, 16)
+	b.encode_u32(36, 0x61746164)  # data
+	b.encode_u32(40, n * 2)
+	for i in n:
+		b.encode_s16(44 + i * 2, int(sin(TAU * freq * float(i) / float(sr)) * 8000.0))
+	return b
+
+
+func _clipstest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var root := ProjectSettings.globalize_path(CreatureClips.ROOT)
+	var made: Array[String] = []
+	for spec in [["zombie", "idle_01.wav", 120.0], ["zombie", "idle-b.wav", 150.0], ["zombie", "death3.wav", 90.0], ["wolf", "howl_01.wav", 500.0]]:
+		var f := FileAccess.open(root + String(spec[0]) + "/" + String(spec[1]), FileAccess.WRITE)
+		f.store_buffer(_wav_bytes(float(spec[2]), 0.3))
+		f.close()
+		made.append(root + String(spec[0]) + "/" + String(spec[1]))
+	CreatureClips.rescan()
+	var ok := CreatureClips.event_of("Idle_03.ogg") == "idle" and CreatureClips.event_of("growl2.wav") == "growl" and CreatureClips.event_of("howl-long.mp3") == "howl"
+	print("CLIPSTEST event names parsed ok=", ok)
+	fails += 0 if ok else 1
+	ok = CreatureClips.count("zombie") == 3 and CreatureClips.count("wolf") == 1 and CreatureClips.count("bear") == 0
+	print("CLIPSTEST files found zombie=%d wolf=%d bear=%d ok=%s" % [CreatureClips.count("zombie"), CreatureClips.count("wolf"), CreatureClips.count("bear"), str(ok)])
+	fails += 0 if ok else 1
+	var s1 := CreatureClips.pick("zombie", "idle")
+	ok = s1 != null and CreatureClips.pick("zombie", "death") != null and CreatureClips.pick("zombie", "hurt") == null and CreatureClips.pick("bear", "roar") == null
+	print("CLIPSTEST pick idle=%s death=%s hurt(missing)=%s bear=%s ok=%s" % [str(s1 != null), str(CreatureClips.pick("zombie", "death") != null), str(CreatureClips.pick("zombie", "hurt") != null), str(CreatureClips.pick("bear", "roar") != null), str(ok)])
+	fails += 0 if ok else 1
+	ok = CreatureClips.pick("zombie", "alert") != null   # alert chain ends at idle
+	print("CLIPSTEST alert falls back to idle ok=", ok)
+	fails += 0 if ok else 1
+	# played from the body through the real wiring
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var zp: Vector3 = player.position + fwd * 15.0
+	zp.y = player.terrain.data.get_height(zp)
+	var z: Zombie = world.call("_add_zombie", zp, 1300)
+	z.set_process(false)
+	z.set_physics_process(false)
+	world.get("audio")._creatures(0.016)
+	var v := z.get_node_or_null("Voice") as CreatureVoice
+	ok = v != null and v.kind == "zombie"
+	print("CLIPSTEST zombie voice knows its kind ok=", ok)
+	fails += 0 if ok else 1
+	if v != null:
+		v.say("groan", 3.0, 1.0, 5.0, 110.0, "idle")
+		var c_idle := v.last_clip
+		var pl: AudioStreamPlayer3D = v.get("_voices")[0]
+		var is_clip := pl.stream != null and not (pl.stream is AudioStreamWAV and pl.stream == Sfx.get_stream("groan"))
+		z.damaged.emit()
+		var c_hurt := v.last_clip
+		z.died.emit()
+		var c_death := v.last_clip
+		ok = c_idle and is_clip and (not c_hurt) and c_death
+		print("CLIPSTEST idle=%s hurt(synth fallback)=%s death=%s ok=%s" % [str(c_idle), str(not c_hurt), str(c_death), str(ok)])
+		fails += 0 if ok else 1
+	z.global_position = Vector3(5000, -500, 5000)
+	for p in made:
+		DirAccess.remove_absolute(p)
+	CreatureClips.rescan()
+	ok = CreatureClips.count("zombie") == 0 and CreatureClips.pick("zombie", "idle") == null
+	print("CLIPSTEST back to synth with no files ok=", ok)
+	fails += 0 if ok else 1
+	print("CLIPSTEST failures=", fails)
+	get_tree().quit()
+
+
+## Windowed: blizzard, standing inside a cabin (no flakes may be there), then outside and looking across the roof.
+func _weathershot() -> void:
+	await get_tree().create_timer(3.0).timeout
+	player.god = true
+	var weather = world.get("weather")
+	weather.lock_state(4)
+	weather.precip = 1.0
+	var cabins: Array = world.get("cabins")
+	var cb: Node3D = cabins[0]
+	var S := "C:/Users/parst/Development/game/brave_and_cold/shots/"
+	# outside first: flakes must still fall
+	_tp_cabin()
+	await get_tree().create_timer(3.5).timeout
+	player.pitch = deg_to_rad(8.0)
+	await get_tree().create_timer(0.6).timeout
+	get_viewport().get_texture().get_image().save_png(S + "snow_out.png")
+	# looking along the roofline from the side
+	var side := cb.to_global(Vector3(9.0, 0.0, 0.0))
+	_tp(side.x, side.z, cb.global_position + Vector3(0, 3.0, 0))
+	player.pitch = deg_to_rad(12.0)
+	await get_tree().create_timer(1.5).timeout
+	get_viewport().get_texture().get_image().save_png(S + "snow_roof.png")
+	# inside
+	var inside := cb.to_global(Vector3(0.0, 0.0, 0.0))
+	player.place(inside.x, inside.z)
+	await get_tree().create_timer(3.0).timeout
+	player.pitch = deg_to_rad(40.0)
+	await get_tree().create_timer(0.8).timeout
+	get_viewport().get_texture().get_image().save_png(S + "snow_in_up.png")
+	player.pitch = deg_to_rad(-5.0)
+	await get_tree().create_timer(0.8).timeout
+	get_viewport().get_texture().get_image().save_png(S + "snow_in_level.png")
+	print("WEATHERSHOT done precip=", weather.precip)
 	get_tree().quit()
 
 

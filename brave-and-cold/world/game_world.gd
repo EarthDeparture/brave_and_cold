@@ -123,6 +123,7 @@ func _ready() -> void:
 	add_child(snowfall)
 	snowfall.follow = player
 	snowfall.weather = weather
+	snowfall.buildings = Callable(self, "_building_list")
 	player.forest = forest
 	player.ice = ice
 	sky_rig.clouds.follow = player

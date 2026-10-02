@@ -7,3 +7,7 @@ tools/terrain/out/
 shots/
 
 brave-and-cold/build/
+
+# raw downloaded audio (licences / size): only processed clips under assets/audio are tracked
+audio_in/*
+!audio_in/.gitkeep

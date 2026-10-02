@@ -165,26 +165,27 @@ func voice_of(n: Node3D, head: float) -> CreatureVoice:
 
 
 func _wire(n: Node3D, v: CreatureVoice, kind: String) -> void:
+	v.kind = kind
 	var id := n.get_instance_id()
 	if _wired.has(id):
 		return
 	_wired[id] = true
 	match kind:
 		"zombie":
-			n.connect("attacked", func() -> void: v.say("grunt", 3.0, _rng.randf_range(0.9, 1.1), 4.0, 70.0))
-			n.connect("damaged", func() -> void: v.say("grunt", 0.0, _rng.randf_range(0.7, 0.85), 4.0, 60.0))
-			n.connect("died", func() -> void: v.say("zdeath", 3.0, _rng.randf_range(0.9, 1.1), 5.0, 90.0))
+			n.connect("attacked", func() -> void: v.say("grunt", 3.0, _rng.randf_range(0.9, 1.1), 4.0, 70.0, "attack"))
+			n.connect("damaged", func() -> void: v.say("grunt", 0.0, _rng.randf_range(0.7, 0.85), 4.0, 60.0, "hurt"))
+			n.connect("died", func() -> void: v.say("zdeath", 3.0, _rng.randf_range(0.9, 1.1), 5.0, 90.0, "death"))
 		"wolf":
-			n.connect("attacked", func() -> void: v.say("growl", 5.0, _rng.randf_range(1.2, 1.4), 5.0, 100.0))
-			n.connect("damaged", func() -> void: v.say("yelp", 4.0, _rng.randf_range(0.95, 1.1), 6.0, 110.0))
-			n.connect("died", func() -> void: v.say("yelp", 4.0, _rng.randf_range(0.6, 0.7), 6.0, 110.0))
+			n.connect("attacked", func() -> void: v.say("growl", 5.0, _rng.randf_range(1.2, 1.4), 5.0, 100.0, "attack"))
+			n.connect("damaged", func() -> void: v.say("yelp", 4.0, _rng.randf_range(0.95, 1.1), 6.0, 110.0, "hurt"))
+			n.connect("died", func() -> void: v.say("yelp", 4.0, _rng.randf_range(0.6, 0.7), 6.0, 110.0, "death"))
 		"bear":
-			n.connect("attacked", func() -> void: v.say("roar", 8.0, _rng.randf_range(1.0, 1.15), 9.0, 200.0))
-			n.connect("damaged", func() -> void: v.say("roar", 4.0, _rng.randf_range(1.25, 1.4), 9.0, 180.0))
-			n.connect("died", func() -> void: v.say("roar", 6.0, _rng.randf_range(0.6, 0.7), 9.0, 180.0))
+			n.connect("attacked", func() -> void: v.say("roar", 8.0, _rng.randf_range(1.0, 1.15), 9.0, 200.0, "roar"))
+			n.connect("damaged", func() -> void: v.say("roar", 4.0, _rng.randf_range(1.25, 1.4), 9.0, 180.0, "hurt"))
+			n.connect("died", func() -> void: v.say("roar", 6.0, _rng.randf_range(0.6, 0.7), 9.0, 180.0, "death"))
 		"deer":
-			n.connect("damaged", func() -> void: v.say("yelp", 2.0, _rng.randf_range(0.55, 0.65), 5.0, 90.0))
-			n.connect("died", func() -> void: v.say("yelp", 2.0, _rng.randf_range(0.4, 0.5), 5.0, 90.0))
+			n.connect("damaged", func() -> void: v.say("yelp", 2.0, _rng.randf_range(0.55, 0.65), 5.0, 90.0, "hurt"))
+			n.connect("died", func() -> void: v.say("yelp", 2.0, _rng.randf_range(0.4, 0.5), 5.0, 90.0, "death"))
 
 
 ## Footfalls come from the creature's own movement: one every `stride` metres, loudness by speed, from the feet.
@@ -257,14 +258,14 @@ func _creatures(delta: float) -> void:
 		_wire(z, v, "zombie")
 		var st: int = z.state
 		if _zstate.get(id, -1) != st and st == Zombie.State.CHASE and d < 70.0:
-			v.say("groan", 6.0, _rng.randf_range(1.05, 1.25), 6.0, 140.0)
+			v.say("groan", 6.0, _rng.randf_range(1.05, 1.25), 6.0, 140.0, "alert")
 		_zstate[id] = st
 		if st != Zombie.State.DEAD and st != Zombie.State.SLEEP:
 			if d < STEP_R:
 				_footsteps(z, v, id, "zombie", bool(z.crawling))
 			var cd: float = _zgroan.get(id, _rng.randf_range(4.0, 14.0)) - delta
 			if cd <= 0.0:
-				v.say("groan", 3.0, _rng.randf_range(0.8, 1.0), 5.0, 110.0)
+				v.say("groan", 3.0, _rng.randf_range(0.8, 1.0), 5.0, 110.0, "idle")
 				cd = _rng.randf_range(9.0, 22.0)
 			_zgroan[id] = cd
 	for w in world.get("wolves"):
@@ -279,9 +280,9 @@ func _creatures(delta: float) -> void:
 		var wst: int = w.state
 		if _wstate.get(wid, -1) != wst:
 			if wst == Wolf.State.ALERT and wd < 400.0:
-				wv.say("howl", 10.0, _rng.randf_range(0.95, 1.1), 16.0, 450.0)
+				wv.say("howl", 10.0, _rng.randf_range(0.95, 1.1), 16.0, 450.0, "howl")
 			elif wst == Wolf.State.CHASE and wd < 120.0:
-				wv.say("growl", 6.0, _rng.randf_range(0.9, 1.1), 5.0, 130.0)
+				wv.say("growl", 6.0, _rng.randf_range(0.9, 1.1), 5.0, 130.0, "growl")
 		_wstate[wid] = wst
 		if wd < STEP_R:
 			_footsteps(w, wv, wid, "wolf", false)
@@ -297,7 +298,7 @@ func _creatures(delta: float) -> void:
 		var bst: int = bw.state
 		if _wstate.get(bid, -1) != bst:
 			if (bst == Wolf.State.ALERT or bst == Wolf.State.CHASE) and bd < 200.0:
-				bv.say("roar", 10.0, _rng.randf_range(0.9, 1.05), 10.0, 230.0)
+				bv.say("roar", 10.0, _rng.randf_range(0.9, 1.05), 10.0, 230.0, "roar")
 		_wstate[bid] = bst
 		if bd < STEP_R:
 			_footsteps(bw, bv, bid, "bear", false)
@@ -312,7 +313,7 @@ func _creatures(delta: float) -> void:
 		_wire(dr, dv, "deer")
 		var dst: int = dr.state
 		if _wstate.get(did, -1) != dst and dst == Deer.State.ALERT:
-			dv.say("snort", 5.0, _rng.randf_range(0.9, 1.1), 6.0, 100.0)
+			dv.say("snort", 5.0, _rng.randf_range(0.9, 1.1), 6.0, 100.0, "snort")
 		_wstate[did] = dst
 		if dst != Deer.State.DEAD and dd2 < STEP_R:
 			_footsteps(dr, dv, did, "deer", false)

@@ -10,6 +10,8 @@ const VOICES := 2
 static var occlusion_fn: Callable = Callable()   # (Vector3) -> Vector2(extra_db, cutoff_hz); set by GameAudio
 
 var head_h := 1.6
+var kind := ""         # zombie | wolf | bear | deer: which CreatureClips folder this body draws recordings from
+var last_clip := false  # the last say() used a recorded clip (tests, debug)
 var occ_db := 0.0
 var occ_cut := 5000.0
 var _occ_t := 0.0
@@ -39,9 +41,13 @@ func _mk() -> AudioStreamPlayer3D:
 	return p
 
 
-func _play(p: AudioStreamPlayer3D, id: String, db: float, pitch: float, unit: float, maxd: float) -> void:
-	p.stream = Sfx.get_stream(id)
-	p.pitch_scale = pitch
+func _play(p: AudioStreamPlayer3D, id: String, db: float, pitch: float, unit: float, maxd: float, clip: AudioStream = null) -> void:
+	if clip != null:
+		p.stream = clip
+		p.pitch_scale = lerpf(1.0, pitch, 0.3) * randf_range(0.96, 1.04)   # the procedural pitches were tuned for synth; a recording only needs variety
+	else:
+		p.stream = Sfx.get_stream(id)
+		p.pitch_scale = pitch
 	p.unit_size = unit
 	p.max_distance = maxd
 	_base[p] = db
@@ -51,13 +57,16 @@ func _play(p: AudioStreamPlayer3D, id: String, db: float, pitch: float, unit: fl
 
 
 ## A call / grunt / roar. Cuts off the older of the two voice players if both are busy.
-func say(id: String, db: float = 0.0, pitch: float = 1.0, unit: float = 5.0, maxd: float = 110.0) -> void:
+## `ev` is the recorded-clip event (idle alert attack hurt death howl growl roar snort); `id` is the procedural stand-in.
+func say(id: String, db: float = 0.0, pitch: float = 1.0, unit: float = 5.0, maxd: float = 110.0, ev: String = "") -> void:
 	var pick: AudioStreamPlayer3D = _voices[0]
 	for v in _voices:
 		if not v.playing:
 			pick = v
 			break
-	_play(pick, id, db, pitch, unit, maxd)
+	var clip: AudioStream = CreatureClips.pick(kind, ev if ev != "" else id) if kind != "" else null
+	last_clip = clip != null
+	_play(pick, id, db, pitch, unit, maxd, clip)
 	last_say = id
 	say_count += 1
 

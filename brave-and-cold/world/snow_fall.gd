@@ -4,6 +4,17 @@ extends GPUParticles3D
 
 var follow: Node3D
 var weather: Weather
+## Returns the buildings (Array of Node3D) whose roofs must stop the snow. Set by GameWorld.
+var buildings: Callable
+## Visual layer 20 carries "this mesh shelters you". The heightfield below only sees that layer, so trees and ground
+## do not eat snow; every building's meshes get the bit (their normal layer 1 is untouched).
+const COVER_BIT := 1 << 19
+const HF_SIZE := Vector3(64.0, 44.0, 64.0)
+const HF_SNAP := 8.0
+var _hf: GPUParticlesCollisionHeightField3D
+var _tagged: Dictionary = {}
+var _tag_t := 0.0
+var _refresh := 0
 const MAX_AMOUNT := 12000
 var _pm: ParticleProcessMaterial
 var _placed := false
@@ -32,7 +43,15 @@ func _ready() -> void:
 	_pm.turbulence_influence_max = 0.09
 	_pm.scale_min = 0.6
 	_pm.scale_max = 1.4
+	_pm.collision_mode = ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT   # dies on a roof, on the ceiling it is under, anywhere under cover
 	process_material = _pm
+	_hf = GPUParticlesCollisionHeightField3D.new()
+	_hf.top_level = true
+	_hf.size = HF_SIZE
+	_hf.resolution = GPUParticlesCollisionHeightField3D.RESOLUTION_1024
+	_hf.heightfield_mask = COVER_BIT
+	_hf.update_mode = GPUParticlesCollisionHeightField3D.UPDATE_MODE_ALWAYS
+	add_child(_hf)
 	var q := QuadMesh.new()
 	q.size = Vector2(0.10, 0.10)
 	var m := StandardMaterial3D.new()
@@ -61,9 +80,37 @@ func _ready() -> void:
 	emitting = false
 
 
-func _process(_delta: float) -> void:
+## Give every building mesh the cover bit. New buildings (late spawns, tests) are picked up within a couple of seconds.
+func _tag_buildings() -> void:
+	if not buildings.is_valid():
+		return
+	for b in buildings.call():
+		var bn := b as Node3D
+		if bn == null or not is_instance_valid(bn) or _tagged.has(bn.get_instance_id()):
+			continue
+		_tagged[bn.get_instance_id()] = true
+		for gi in bn.find_children("*", "GeometryInstance3D", true, false):
+			(gi as GeometryInstance3D).layers |= COVER_BIT
+		_refresh = 3   # re-render the heightfield with the new roofs
+
+
+func _process(delta: float) -> void:
 	if follow == null or weather == null:
 		return
+	_tag_t -= delta
+	if _tag_t <= 0.0:
+		_tag_t = 2.0
+		_tag_buildings()
+	# the collider tracks the player on a coarse grid (re-render only when it jumps), centred so roofs 20 m up and the ground fit
+	var fp := follow.global_position
+	var snapped := Vector3(roundf(fp.x / HF_SNAP) * HF_SNAP, roundf((fp.y + 8.0) / 4.0) * 4.0, roundf(fp.z / HF_SNAP) * HF_SNAP)
+	if _hf != null:
+		_hf.global_position = snapped
+		if _refresh > 0:
+			_refresh -= 1
+			_hf.update_mode = GPUParticlesCollisionHeightField3D.UPDATE_MODE_ALWAYS
+		else:
+			_hf.update_mode = GPUParticlesCollisionHeightField3D.UPDATE_MODE_WHEN_MOVED
 	var p := weather.precip
 	emitting = p > 0.02
 	amount_ratio = clampf(p, 0.05, 1.0)
