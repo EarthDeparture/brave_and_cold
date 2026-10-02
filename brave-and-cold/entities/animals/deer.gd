@@ -4,6 +4,8 @@ extends Node3D
 ## Dead deer leave a carcass that can be harvested for venison.
 
 enum State { GRAZE, ALERT, FLEE, DEAD }
+signal damaged   # for GameAudio
+signal died
 
 const MODEL := "res://assets/models/animals/deer.glb"
 const GRAZE_SPEED := 0.8
@@ -81,6 +83,7 @@ func hit(dmg: float, from: Vector3) -> void:
 	if hp <= 0.0:
 		_die()
 	else:
+		damaged.emit()
 		if dmg >= 15.0:
 			bleed = true
 		_set_state(State.FLEE)
@@ -88,6 +91,7 @@ func hit(dmg: float, from: Vector3) -> void:
 
 func _die() -> void:
 	state = State.DEAD
+	died.emit()
 	remove_from_group("prey")
 	add_to_group("carcasses")
 	set_meta("born", Time.get_ticks_msec())

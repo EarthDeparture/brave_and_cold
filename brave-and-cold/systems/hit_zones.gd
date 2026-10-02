@@ -12,7 +12,20 @@ const SPECS := {
 	"deer": [["head", 0.85, 1.6, 0.27, 2.5], ["neck", 0.6, 1.45, 0.24, 1.5], ["chest", 0.1, 1.12, 0.46, 1.0], ["chest", 0.1, 0.85, 0.42, 1.0], ["hind", -0.4, 1.0, 0.42, 0.4], ["hind", -0.4, 0.78, 0.36, 0.4], ["legs", 0.0, 0.4, 0.26, 0.3]],
 	"wolf": [["head", 0.75, 0.85, 0.22, 2.5], ["chest", 0.3, 0.75, 0.3, 1.0], ["chest", 0.3, 0.5, 0.27, 1.0], ["hind", -0.3, 0.7, 0.3, 0.6], ["hind", -0.3, 0.42, 0.27, 0.6], ["legs", 0.0, 0.25, 0.32, 0.4]],
 	"bear": [["head", 1.25, 1.25, 0.38, 2.0], ["chest", 0.55, 1.05, 0.6, 1.0], ["chest", 0.55, 0.7, 0.52, 1.0], ["hind", -0.3, 1.0, 0.58, 0.7], ["hind", -0.3, 0.65, 0.52, 0.7], ["legs", 0.0, 0.3, 0.46, 0.4]],
-	"zombie": [["head", 0.0, 1.76, 0.26, 2.5], ["chest", 0.0, 1.44, 0.34, 1.0], ["chest", 0.0, 1.12, 0.34, 1.0], ["chest", 0.0, 0.85, 0.3, 0.8], ["arm", 0.42, 1.44, 0.2, 0.5], ["legs", 0.0, 0.55, 0.28, 0.6], ["legs", 0.0, 0.2, 0.24, 0.6]],
+	"zombie": [["head", 0.0, 1.76, 0.26, 2.5], ["chest", 0.0, 1.44, 0.34, 1.0], ["chest", 0.0, 1.12, 0.34, 1.0], ["chest", 0.0, 0.85, 0.3, 0.8]],
+}
+
+## Spheres glued to an animated limb node (they swing with it): [zone, limb node name, offset in limb space, radius m, multiplier].
+## Offsets come from the glb part bounds (zombie arms are 0.72 m long pointing -Z from the shoulder, legs hang 1.0 m below the hip).
+const LIMBS := {
+	"zombie": [
+		["arm", "zombie_arm_l", Vector3(0.0, -0.03, -0.40), 0.15, 0.5],
+		["arm", "zombie_arm_r", Vector3(0.0, -0.03, -0.40), 0.15, 0.5],
+		["legs", "zombie_leg_l", Vector3(0.0, -0.32, -0.03), 0.17, 0.6],
+		["legs", "zombie_leg_l", Vector3(0.0, -0.78, -0.03), 0.16, 0.6],
+		["legs", "zombie_leg_r", Vector3(0.0, -0.32, -0.03), 0.17, 0.6],
+		["legs", "zombie_leg_r", Vector3(0.0, -0.78, -0.03), 0.16, 0.6],
+	],
 }
 
 
@@ -46,17 +59,39 @@ static func center_of(n: Node3D, row: Array, xf: Transform3D = Transform3D.IDENT
 	return t * Vector3(0.0, float(row[2]), -float(row[1]))
 
 
-## Nearest zone hit by the ray, or {}. {t, mult, zone}. An origin inside a sphere counts as t = 0 (point blank).
-static func ray(n: Node3D, eye: Vector3, dir: Vector3, max_t: float) -> Dictionary:
+static func _limb(n: Node3D, nm: String) -> Node3D:
+	var cache: Dictionary = n.get_meta("_hz_limbs") if n.has_meta("_hz_limbs") else {}
+	if not cache.has(nm):
+		cache[nm] = n.find_child(nm, true, false)
+		n.set_meta("_hz_limbs", cache)
+	return cache[nm] as Node3D
+
+
+## Every hit sphere of a creature right now: [{c, r, zone, mult}] (body rows in model space, limb rows on the limb nodes).
+static func spheres(n: Node3D) -> Array:
+	var out: Array = []
 	var key := kind_of(n)
 	if key == "":
-		return {}
-	var best := {}
+		return out
 	var xf := model_xf(n)
 	var sc := xf.basis.x.length()
 	for row: Array in SPECS[key]:
-		var c := center_of(n, row, xf)
-		var r := float(row[3]) * sc + PAD
+		out.append({"c": center_of(n, row, xf), "r": float(row[3]) * sc + PAD, "zone": String(row[0]), "mult": float(row[4])})
+	for lrow: Array in LIMBS.get(key, []):
+		var limb := _limb(n, String(lrow[1]))
+		if limb == null or not limb.visible:
+			continue
+		var lx := limb.global_transform
+		out.append({"c": lx * (lrow[2] as Vector3), "r": float(lrow[3]) * lx.basis.x.length() + PAD, "zone": String(lrow[0]), "mult": float(lrow[4])})
+	return out
+
+
+## Nearest zone hit by the ray, or {}. {t, mult, zone}. An origin inside a sphere counts as t = 0 (point blank).
+static func ray(n: Node3D, eye: Vector3, dir: Vector3, max_t: float) -> Dictionary:
+	var best := {}
+	for sp: Dictionary in spheres(n):
+		var c: Vector3 = sp["c"]
+		var r: float = sp["r"]
 		var oc := eye - c
 		var b := oc.dot(dir)
 		var disc := b * b - (oc.dot(oc) - r * r)
@@ -70,8 +105,8 @@ static func ray(n: Node3D, eye: Vector3, dir: Vector3, max_t: float) -> Dictiona
 			t = 0.0
 		if t > max_t:
 			continue
-		if best.is_empty() or t < float(best["t"]) or (is_equal_approx(t, float(best["t"])) and float(row[4]) > float(best["mult"])):
-			best = {"t": t, "mult": float(row[4]), "zone": String(row[0])}
+		if best.is_empty() or t < float(best["t"]) or (is_equal_approx(t, float(best["t"])) and float(sp["mult"]) > float(best["mult"])):
+			best = {"t": t, "mult": float(sp["mult"]), "zone": String(sp["zone"])}
 	return best
 
 

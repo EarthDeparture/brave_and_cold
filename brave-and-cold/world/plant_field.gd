@@ -133,7 +133,8 @@ func build(t: Terrain3D, exclude: Callable, map_dir := "res://data/maps/valley_b
 	print("PLANTS ", counts)
 
 
-func nearest(pos: Vector3, fwd: Vector3, reach: float) -> Dictionary:
+## `accept` (optional) gets the plant dict and may veto it (the game: is the crosshair near it).
+func nearest(pos: Vector3, fwd: Vector3, reach: float, accept: Callable = Callable()) -> Dictionary:
 	var f2 := Vector2(fwd.x, fwd.z)
 	f2 = f2.normalized() if f2.length() > 0.001 else Vector2(0, -1)
 	var cx := int(floor(pos.x / CELL))
@@ -155,9 +156,15 @@ func nearest(pos: Vector3, fwd: Vector3, reach: float) -> Dictionary:
 					continue
 				if d > 0.8 and to.normalized().dot(f2) < 0.3:
 					continue
+				if accept.is_valid() and not accept.call(p):
+					continue
 				bd = d
 				best = {"key": key, "kind": p["kind"], "d": d}
 	return best
+
+
+func get_plant(key: String) -> Dictionary:
+	return _plants.get(key, {})
 
 
 func _hide(key: String) -> void:

@@ -18,6 +18,11 @@ static func get_stream(id: String) -> AudioStreamWAV:
 		"thud": s = _wav(_thud())
 		"groan": s = _wav(_groan())
 		"howl": s = _wav(_howl())
+		"grunt": s = _wav(_grunt())
+		"zdeath": s = _wav(_zdeath())
+		"yelp": s = _wav(_yelp())
+		"roar": s = _wav(_roar())
+		"snort": s = _wav(_snort())
 		"growl": s = _wav(_growl())
 		"chop": s = _wav(_chop())
 		"crash": s = _wav(_crash())
@@ -367,4 +372,62 @@ static func _howl() -> PackedFloat32Array:
 		var env := pow(sin(PI * u), 0.55)
 		s[i] = (v * 0.5 + br * 0.08) * env
 	_norm(s, 0.8)
+	return s
+
+
+## Shared vocal synth: harmonic series shaped by one formant, f0 glides a -> b, plus breath noise, asymmetric envelope.
+static func _vocal(seed_v: int, dur: float, fa: float, fb: float, formant: float, breath: float, rasp_hz: float, attack: float) -> PackedFloat32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_v
+	var s := _buf(dur)
+	var ph := 0.0
+	var br := 0.0
+	for i in range(s.size()):
+		var t := float(i) / RATE
+		var u := t / dur
+		var f0 := lerpf(fa, fb, u) + 3.0 * sin(TAU * 6.0 * t)
+		ph += TAU * f0 / RATE
+		var v := 0.0
+		for k in range(1, 13):
+			var fk := f0 * float(k)
+			var w := exp(-pow((fk - formant) / (formant * 0.5), 2.0)) + 0.05
+			v += sin(ph * float(k)) * w / pow(float(k), 0.45)
+		br += 0.3 * (rng.randf_range(-1.0, 1.0) - br)
+		var rasp := 1.0 - 0.5 * (0.5 + 0.5 * sin(TAU * rasp_hz * t))
+		var env := minf(1.0, u / attack) * pow(maxf(0.0, 1.0 - u), 0.8)
+		s[i] = (v * 0.3 + br * breath * rasp) * env
+	_norm(s, 0.85)
+	return s
+
+
+static func _grunt() -> PackedFloat32Array:
+	return _vocal(61, 0.5, 95.0, 60.0, 480.0, 0.7, 31.0, 0.08)
+
+
+static func _zdeath() -> PackedFloat32Array:
+	return _vocal(62, 1.5, 105.0, 32.0, 420.0, 0.8, 22.0, 0.05)
+
+
+static func _yelp() -> PackedFloat32Array:
+	return _vocal(63, 0.45, 760.0, 430.0, 1500.0, 0.12, 14.0, 0.04)
+
+
+static func _roar() -> PackedFloat32Array:
+	return _vocal(64, 1.7, 78.0, 58.0, 380.0, 0.95, 36.0, 0.12)
+
+
+## Deer alarm: a short breathy blow through the nose.
+static func _snort() -> PackedFloat32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 65
+	var s := _buf(0.4)
+	var y1 := 0.0
+	var y2 := 0.0
+	for i in range(s.size()):
+		var t := float(i) / RATE
+		var x := rng.randf_range(-1.0, 1.0)
+		y1 += 0.35 * (x - y1)
+		y2 += 0.06 * (x - y2)
+		s[i] = (y1 - y2) * exp(-t / 0.09) * minf(1.0, t / 0.02) * 2.0
+	_norm(s, 0.7)
 	return s

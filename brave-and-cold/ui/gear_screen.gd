@@ -205,15 +205,13 @@ func _ground_rect(i: int) -> Rect2:
 func _slot_rect(slot: String) -> Rect2:
 	var ci := Inventory.EXTRA_SLOTS.find(slot)
 	if ci >= 0:
-		return Rect2(Vector2(140 + ci * 84, 330), Vector2(72, 72))
-	var i := {"body": 0, "primary": 1, "tool": 2}[slot] as int
+		return Rect2(Vector2(140 + ci * 62, 330), Vector2(56, 56))
+	var i := {"primary": 0, "tool": 1}[slot] as int
 	return Rect2(Vector2(140 + i * 112, 196), Vector2(CELL, CELL))
 
 
 func _slot_item(slot: String) -> String:
 	match slot:
-		"body":
-			return inv.equipped_body
 		"primary":
 			return "rifle" if inv.count("rifle") > 0 else ""
 		"tool":
@@ -333,7 +331,7 @@ func _drop_on(target: Dictionary) -> void:
 				_put(id, n)
 		"equip":
 			var slot: String = _drag["slot"]
-			if slot == "body" or Inventory.EXTRA_SLOTS.has(slot):
+			if Inventory.EXTRA_SLOTS.has(slot):
 				if tk == "pack":
 					world.gear_use(id)   # take off
 				elif to_ground:
@@ -539,8 +537,8 @@ func _draw_item_cell(r: Rect2, id: String, n: int, selected: bool, hit: Dictiona
 
 func _draw_equipment() -> void:
 	DZ.text(_c, "EQUIPMENT", Vector2(140, 178), 16, DZ.DIM)
-	var names := {"body": "BODY", "primary": "PRIMARY", "tool": "TOOL"}
-	for slot in ["body", "primary", "tool"]:
+	var names := {"primary": "PRIMARY", "tool": "TOOL"}
+	for slot in ["primary", "tool"]:
 		var r := _slot_rect(slot)
 		var id := _slot_item(slot)
 		if id == "":
@@ -554,7 +552,7 @@ func _draw_equipment() -> void:
 			lab += "  (in hands)"
 			col = DZ.ACCENT
 		DZ.text(_c, lab, Vector2(r.position.x, r.end.y + 20), 13, col)
-	var cn := {"head": "HEAD", "legs": "LEGS", "hands": "HANDS", "feet": "FEET"}
+	var cn := {"head": "HEAD", "top": "TOP", "jacket": "JACKET", "legs": "LEGS", "hands": "HANDS", "feet": "FEET"}
 	for slot in Inventory.EXTRA_SLOTS:
 		var r2 := _slot_rect(slot)
 		var id2 := _slot_item(slot)
@@ -564,9 +562,9 @@ func _draw_equipment() -> void:
 		else:
 			var hover := r2.has_point(_mouse) and not _dragging
 			_cell_bg(r2, hover, _is_sel(id2, "equip", slot))
-			DZ.item_icon(_c, id2, r2.grow(-10))
+			DZ.item_icon(_c, id2, r2.grow(-7))
 			_hits.append({"k": "equip", "slot": slot, "id": id2, "n": 1, "r": r2})
-		DZ.text(_c, String(cn[slot]), Vector2(r2.position.x, r2.end.y + 16), 12, DZ.DIM)
+		DZ.text(_c, String(cn[slot]), Vector2(r2.position.x, r2.end.y + 15), 11, DZ.DIM)
 
 
 func _bar(pos: Vector2, w: float, label: String, frac: float, value: String) -> void:

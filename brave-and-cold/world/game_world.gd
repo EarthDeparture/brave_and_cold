@@ -728,7 +728,7 @@ func _fish_cands(cands: Array) -> void:
 		var hx := pp.x + fwd.x * 1.3
 		var hz := pp.z + fwd.z * 1.3
 		if not is_nan(ice.ice_at(hx, hz)):
-			cands.append({"m": _lm, 'd': 1.3, 'text': 'Chop a fishing hole', 'hold': 12.0, 'kcal': 25.0, 'noise': 32.0, 'act': func() -> void:
+			cands.append({"m": 0.3, 'd': 1.3, 'text': 'Chop a fishing hole', 'hold': 12.0, 'kcal': 25.0, 'noise': 32.0, 'act': func() -> void:
 				if _make_hole(hx, hz, false) != null:
 					_say('Hole chopped through the ice')})
 
@@ -1130,7 +1130,7 @@ func _run_geartest() -> void:
 	take_pickup(node)
 	var c5 := inv.count('wood') == 9 and node.is_queued_for_deletion()
 	drop_item('parka', 1)
-	var c6 := inv.equipped_body == '' and inv.count('parka') == 0 and is_equal_approx(body.warmth, 0.25)
+	var c6 := inv.jacket() == '' and inv.count('parka') == 0 and is_equal_approx(body.warmth, 0.25)
 	gear.setup(self, inv, player, needs, body, clock, hud)
 	gear.open()
 	var c7 := gear.is_open and player.ui_open
@@ -1153,8 +1153,8 @@ func _run_geartest() -> void:
 	await _sim_double(gear._pack_rect(1).get_center())       # stacks: parka, beans, wood4, wood1, matches
 	var u1ok := inv.count('beans') == 1
 	await _frames_wait(2)
-	await _sim_drag(gear._pack_rect(0).get_center(), gear._slot_rect('body').get_center())
-	var u2ok := inv.equipped_body == 'parka'
+	await _sim_drag(gear._pack_rect(0).get_center(), gear._slot_rect('jacket').get_center())
+	var u2ok := inv.jacket() == 'parka'
 	await _frames_wait(2)
 	var pk1 := get_tree().get_nodes_in_group('pickups').size()
 	await _sim_drag(gear._pack_rect(1).get_center(), gear._ground_rect(2).get_center())   # wood x4 -> ground
@@ -1272,6 +1272,46 @@ func _aim_miss(p: Vector3) -> float:
 
 ## Is p under the crosshair? Within `reach` metres (3D, from the eye) AND within `tol` metres of the view ray.
 ## Standing practically on top of it (< 0.8 m) counts without looking.
+func _ground_y(x: float, z: float) -> float:
+	var h: float = terrain.data.get_height(Vector3(x, 0.0, z))
+	return 0.0 if is_nan(h) else h
+
+
+## Is the crosshair on this tree trunk (x, z, r)? The view ray must pass within r + 0.4 m of the trunk's axis somewhere
+## between the ground and 5 m up, or you are standing right against it. Sets _lm to that miss.
+var _tree_aimed := func(tv: Vector3) -> bool:
+	return _trunk_aimed(tv)
+
+var _plant_aimed := func(p: Dictionary) -> bool:
+	if p.is_empty():
+		return false
+	return _aim_ok(Vector3(float(p["x"]), _ground_y(float(p["x"]), float(p["z"])) + 0.25, float(p["z"])), 2.3, 0.8)
+
+
+func _trunk_aimed(tv: Vector3) -> bool:
+	var eye := player.position
+	var to := Vector2(tv.x - eye.x, tv.y - eye.z)
+	if to.length() < tv.z + 0.9:
+		_lm = 0.2
+		return true
+	var v := _view_dir()
+	var vh := Vector2(v.x, v.z)
+	if vh.length() < 0.05:
+		return false
+	var t := to.dot(vh) / vh.length_squared()
+	if t <= 0.0:
+		return false
+	var pt := eye + v * t
+	var gy := _ground_y(tv.x, tv.y)
+	if pt.y < gy - 0.3 or pt.y > gy + 5.0:
+		return false
+	var miss := Vector2(pt.x - tv.x, pt.z - tv.y).length() - tv.z
+	if miss <= 0.4 * aim_tol_scale:
+		_lm = maxf(miss, 0.0)
+		return true
+	return false
+
+
 var aim_tol_scale := 1.0   # playtest knob: multiplies every interaction tolerance (0.8 tighter, 1.25 looser)
 var _lm := 0.5             # crosshair miss (m) of the target the last passing _aim_ok() looked at
 
@@ -1557,8 +1597,9 @@ func _update_prompt() -> void:
 			var pmiss := _aim_miss(pc)
 			cands.append({"m": _lm, "d": 0.5 + (pmiss if pmiss < 50.0 else 0.0) * 1.5 + (pc - player.position).length() * 0.1, "text": "Take %s%s" % [inv.name_of(ip.id), " x%d" % ip.n if ip.n > 1 else ""], "act": func() -> void: take_pickup(pick)})
 	if plants != null:
-		var pl: Dictionary = plants.nearest(player.position, fwd, 1.8)
+		var pl: Dictionary = plants.nearest(player.position, fwd, 1.8, _plant_aimed)
 		if not pl.is_empty():
+			_plant_aimed.call(plants.get_plant(pl["key"]))   # sets _lm for the plant actually chosen
 			var kd: Dictionary = PlantField.KINDS[pl["kind"]]
 			var iid: String = kd["item"]
 			var pn: int = int(kd["n"])
@@ -1572,8 +1613,9 @@ func _update_prompt() -> void:
 					_give_or_drop(iid, pn, player.position + fwd * 0.8)})
 	var axe_up := inv.count('axe') > 0 and not rifle_up
 	if forest != null and axe_up:
-		var tr: Dictionary = forest.nearest_tree(player.position, fwd, 2.0, true)
+		var tr: Dictionary = forest.nearest_tree(player.position, fwd, 2.0, true, _tree_aimed)
 		if not tr.is_empty():
+			_tree_aimed.call(Vector3(tr["x"], tr["z"], tr["r"]))
 			var tk: String = ForestScatter.tree_key(float(tr["x"]), float(tr["z"]))
 			var pw := lerpf(0.55, 1.0, inv.condition('axe'))
 			var left := float(forest.chop_hp.get(tk, ForestScatter.hits_total(float(tr["h"]))))
@@ -1615,10 +1657,13 @@ func _update_prompt() -> void:
 	_cands_cache = cands
 	hud.prompt = String(best.get("text", ""))
 	var info := "Wood %d  Matches %d" % [inv.count("wood"), inv.count("matches")]
-	if inv.equipped_body != "":
-		info += "  [%s]" % inv.name_of(inv.equipped_body)
-	if inv.extra.size() > 0:
-		info += " +%d" % inv.extra.size()
+	if inv.jacket() != "":
+		info += "  [%s]" % inv.name_of(inv.jacket())
+	if inv.top() != "":
+		info += "  [%s]" % inv.name_of(inv.top())
+	var other := inv.extra.size() - (1 if inv.jacket() != "" else 0) - (1 if inv.top() != "" else 0)
+	if other > 0:
+		info += " +%d" % other
 	for cb in cabins:
 		if cb.is_lit():
 			info += "   Stove: %.0f min left" % (cb.stove_fuel_s / 60.0)
@@ -2128,7 +2173,7 @@ func _attack() -> void:
 		audio.hit(best.global_position + Vector3(0, 1.0, 0))
 		_say("Hit!")
 	else:
-		var tr: Dictionary = forest.nearest_tree(player.position, fwd, 2.0, true) if axe and forest != null else {}
+		var tr: Dictionary = forest.nearest_tree(player.position, fwd, 2.0, true, _tree_aimed) if axe and forest != null else {}
 		if tr.is_empty():
 			_say("Swing")
 		else:
@@ -2456,6 +2501,7 @@ func _step_bullet(b: Dictionary, dt: float) -> Dictionary:
 	b['dist'] = d0 + sl
 	b['t'] = float(b['t']) + dt
 	if not r.is_empty():
+		r['pos'] = p0 + (seg / sl) * float(r.get('t', 0.0))
 		r['t'] = d0 + float(r.get('t', 0.0))
 		r['flight'] = float(b['t'])
 		return r
@@ -2487,14 +2533,61 @@ func _bullet_result(r: Dictionary) -> void:
 		n.call('hit', RIFLE_DAMAGE * float(r['mult']), player.position)
 		audio.hit(n.global_position + Vector3(0, 1.0, 0))
 		_hit_feedback(n, head)
+		_impact_fx('flesh', r.get('pos', n.global_position + Vector3(0, 1.2, 0)))
 		_say('Headshot!' if head else 'Shot hit (%s)' % String(r['zone']))
 		last_shot = {'hit': true, 'zone': r['zone'], 't': r['t'], 'flight': r.get('flight', 0.0)}
 	elif r.has('world'):
+		if r.has('pos'):
+			var ip: Vector3 = r['pos']
+			_impact_fx('snow' if ip.y - _ground_y(ip.x, ip.z) < 0.6 else 'wood', ip)
 		_say('Bang. Hit the terrain')
 		last_shot = {'hit': false, 'world': true, 't': r['t']}
 	else:
 		_say('Bang. Miss')
 		last_shot = {'hit': false, 't': 0.0}
+
+
+## Puff where a bullet lands: red droplets in flesh, snow kicked up from the ground, splinters from walls / trunks.
+func _impact_fx(kind: String, pos: Vector3) -> void:
+	var ps := CPUParticles3D.new()
+	var sm := SphereMesh.new()
+	sm.radius = 0.03
+	sm.height = 0.06
+	sm.radial_segments = 6
+	sm.rings = 3
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	match kind:
+		'flesh':
+			m.albedo_color = Color(0.55, 0.04, 0.04)
+			ps.amount = 12
+			ps.initial_velocity_min = 1.0
+			ps.initial_velocity_max = 3.0
+		'snow':
+			m.albedo_color = Color(0.92, 0.94, 1.0)
+			ps.amount = 20
+			ps.initial_velocity_min = 1.5
+			ps.initial_velocity_max = 4.0
+		_:
+			m.albedo_color = Color(0.45, 0.32, 0.2)
+			ps.amount = 10
+			ps.initial_velocity_min = 2.0
+			ps.initial_velocity_max = 5.0
+	sm.material = m
+	ps.mesh = sm
+	ps.one_shot = true
+	ps.explosiveness = 1.0
+	ps.lifetime = 0.55
+	ps.direction = Vector3.UP
+	ps.spread = 70.0
+	ps.gravity = Vector3(0, -9.0, 0)
+	ps.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(ps)
+	ps.global_position = pos
+	ps.emitting = true
+	get_tree().create_timer(1.2).timeout.connect(func() -> void:
+		if is_instance_valid(ps):
+			ps.queue_free())
 
 
 var last_shot := {}
@@ -2936,7 +3029,7 @@ func save_game() -> bool:
 		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
 		'body': {'core': body.core, 'wet': body.wetness},
 		'needs': {'cal': needs.calories, 'water': needs.water},
-		'inv': {'counts': inv.counts, 'worn': inv.equipped_body, 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age},
+		'inv': {'counts': inv.counts, 'worn': inv.jacket(), 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age},
 		'cabins': cabs,
 		'huts': huts.map(func(h: Hut) -> Dictionary: return h.state_dict()),
 		'holes': ice_holes.map(func(h: IceHole) -> Dictionary: return h.to_dict()),
@@ -3100,7 +3193,7 @@ var _savetest := ''
 
 
 func _print_state() -> void:
-	print('STATE pos=(%.1f,%.1f) hp=%.0f cal=%.0f core=%.2f hour=%.2f wood=%d matches=%d worn=%s fires=%d fuel=%.0f wolves=%d zombies=%d deer=%d deer0hp=%.0f' % [player.position.x, player.position.z, player.health, needs.calories, body.core, clock.hour, inv.count('wood') if inv else -1, inv.count('matches') if inv else -1, inv.equipped_body if inv else '?', campfires.size(), campfires[0].fuel_s if campfires.size() > 0 else -1.0, wolves.size(), zombies.size(), deer.size(), deer[0].hp if deer.size() > 0 else -1.0])
+	print('STATE pos=(%.1f,%.1f) hp=%.0f cal=%.0f core=%.2f hour=%.2f wood=%d matches=%d worn=%s fires=%d fuel=%.0f wolves=%d zombies=%d deer=%d deer0hp=%.0f' % [player.position.x, player.position.z, player.health, needs.calories, body.core, clock.hour, inv.count('wood') if inv else -1, inv.count('matches') if inv else -1, inv.jacket() if inv else '?', campfires.size(), campfires[0].fuel_s if campfires.size() > 0 else -1.0, wolves.size(), zombies.size(), deer.size(), deer[0].hp if deer.size() > 0 else -1.0])
 
 
 func _update_viewmodel() -> void:

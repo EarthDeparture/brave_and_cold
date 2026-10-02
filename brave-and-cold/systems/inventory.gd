@@ -54,10 +54,10 @@ const ITEMS := {
 	"wolf_mitts": {"name": "Wolf Fur Mitts", "kind": "clothing", "stack": 1, "slot": "hands", "warmth": 0.10, "windproof": 0.12, "waterproof": 0.05, "desc": "Fur-lined mitts. Hands stay alive."},
 	"hide_boots": {"name": "Hide Boots", "kind": "clothing", "stack": 1, "slot": "feet", "warmth": 0.08, "windproof": 0.10, "waterproof": 0.10, "desc": "Laced leather boots. Not pretty, dry-ish."},
 	"hide_leggings": {"name": "Hide Leggings", "kind": "clothing", "stack": 1, "slot": "legs", "warmth": 0.10, "windproof": 0.10, "waterproof": 0.05, "desc": "Leather leggings tied at the knee."},
-	"bear_coat": {"name": "Bear Fur Coat", "kind": "clothing", "stack": 1, "slot": "body", "warmth": 0.95, "windproof": 0.75, "waterproof": 0.45, "desc": "Heavy as sin, warmest thing you can wear. Weaker against rain than the parka."},
+	"bear_coat": {"name": "Bear Fur Coat", "kind": "clothing", "stack": 1, "slot": "jacket", "warmth": 0.95, "windproof": 0.75, "waterproof": 0.45, "desc": "Heavy as sin, warmest thing you can wear. Weaker against rain than the parka."},
 	"rotten_meat": {"name": "Rotten Meat", "kind": "misc", "stack": 4, "desc": "Spoiled. Slimy and green. Do not eat it; drop it before wolves smell it on you."},
-	"sweater": {"name": "Wool Sweater", "kind": "clothing", "stack": 1, "slot": "body", "warmth": 0.55, "windproof": 0.2, "waterproof": 0.1, "desc": "Warm but lets the wind straight through."},
-	"parka": {"name": "Down Parka", "kind": "clothing", "stack": 1, "slot": "body", "warmth": 0.85, "windproof": 0.8, "waterproof": 0.6, "desc": "Heavy insulated parka. Wind and water resistant."},
+	"sweater": {"name": "Wool Sweater", "kind": "clothing", "stack": 1, "slot": "top", "warmth": 0.55, "windproof": 0.2, "waterproof": 0.1, "desc": "Warm but lets the wind straight through."},
+	"parka": {"name": "Down Parka", "kind": "clothing", "stack": 1, "slot": "jacket", "warmth": 0.85, "windproof": 0.8, "waterproof": 0.6, "desc": "Heavy insulated parka. Wind and water resistant."},
 }
 ## God mode (set by GameWorld every frame from Player.god): ammo, flares and matches are never used up, nothing wears.
 static var infinite := false
@@ -73,13 +73,16 @@ const BASE_WINDPROOF := 0.1
 const BASE_WATERPROOF := 0.1
 const WARM_CAP := 0.97
 const PROOF_CAP := 0.95
-const EXTRA_SLOTS := ["head", "legs", "hands", "feet"]
+## Clothing slots, in the order the gear screen draws them. TOP (sweater) goes under JACKET (parka / coat) and the two
+## layer: a jacket alone is as warm as before, a top alone replaces the bare base, both together beat either one.
+const EXTRA_SLOTS := ["head", "top", "jacket", "legs", "hands", "feet"]
+const WORN_ORDER := ["jacket", "top", "head", "legs", "hands", "feet"]
+const LAYER_K := 0.4          # share of the top's warmth above bare that survives under a jacket (compression)
 
 var counts: Dictionary = {}
 var cond: Dictionary = {}       # id -> 0..1 condition for tools/weapons (missing = 1.0)
 var age: Dictionary = {}           # perishable id -> average age of the stack, game seconds
-var equipped_body: String = ""      # torso slot (also the one that sets the base insulation)
-var extra: Dictionary = {}          # slot (head/legs/hands/feet) -> id, adds to the torso insulation
+var extra: Dictionary = {}          # slot (head/top/jacket/legs/hands/feet) -> id
 var body: BodyTemperature
 var needs: Needs
 
@@ -163,19 +166,25 @@ static func kind_of(id: String) -> String:
 	return String(ITEMS[id].get("kind", "misc")) if ITEMS.has(id) else "misc"
 
 
-## Ids currently worn: torso first, then head/legs/hands/feet.
+## Ids currently worn, outermost first (jacket, top, head, legs, hands, feet).
 func worn_list() -> Array:
 	var out: Array = []
-	if equipped_body != "":
-		out.append(equipped_body)
-	for s in EXTRA_SLOTS:
+	for s in WORN_ORDER:
 		if extra.has(s):
 			out.append(extra[s])
 	return out
 
 
 func is_worn(id: String) -> bool:
-	return id != "" and (equipped_body == id or extra.values().has(id))
+	return id != "" and extra.values().has(id)
+
+
+func jacket() -> String:
+	return String(extra.get("jacket", ""))
+
+
+func top() -> String:
+	return String(extra.get("top", ""))
 
 
 ## Backpack cells: [{id, n}] sorted by kind. Worn clothing (one unit each) and equipment-slot items are not counted.
@@ -239,13 +248,10 @@ func remove(id: String, n: int = 1) -> bool:
 		counts.erase(id)
 		cond.erase(id)
 		age.erase(id)
-		if equipped_body == id:
-			_apply("")
-		else:
-			for s in EXTRA_SLOTS:
-				if extra.get(s, "") == id:
-					extra.erase(s)
-			_recompute()
+		for s in EXTRA_SLOTS:
+			if extra.get(s, "") == id:
+				extra.erase(s)
+		_recompute()
 	return true
 
 
@@ -318,39 +324,41 @@ func use(id: String) -> String:
 	if not is_wearable(id):
 		return "%s: nothing to do" % name_of(id)
 	var slot := slot_of(id)
-	if slot != "body":
-		if extra.get(slot, "") == id:
-			extra.erase(slot)
-			_recompute()
-			return "Took off %s" % name_of(id)
-		extra[slot] = id
+	if extra.get(slot, "") == id:
+		extra.erase(slot)
 		_recompute()
-		return "Wearing %s" % name_of(id)
-	if equipped_body == id:
-		_apply("")
 		return "Took off %s" % name_of(id)
-	_apply(id)
+	extra[slot] = id
+	_recompute()
 	return "Wearing %s" % name_of(id)
 
 
-func _apply(id: String) -> void:
-	equipped_body = id
-	_recompute()
-
-
-## Torso item sets the base, head/legs/hands/feet add on top (capped so no outfit is a perfect shell).
+## Torso layers set the base: jacket alone, top alone, or both layered (the top is squashed under the jacket, so it adds
+## LAYER_K of its warmth above bare and a little wind / water resistance). Head / legs / hands / feet add on top.
+## Capped so no outfit is a perfect shell.
 func _recompute() -> void:
 	if body == null:
 		return
 	var w := BASE_WARMTH
 	var wp := BASE_WINDPROOF
 	var wa := BASE_WATERPROOF
-	if equipped_body != "":
-		var d: Dictionary = ITEMS[equipped_body]
-		w = float(d["warmth"])
-		wp = float(d["windproof"])
-		wa = float(d["waterproof"])
+	var jd: Dictionary = ITEMS[extra["jacket"]] if extra.has("jacket") else {}
+	var td: Dictionary = ITEMS[extra["top"]] if extra.has("top") else {}
+	if not jd.is_empty() and not td.is_empty():
+		w = float(jd["warmth"]) + (float(td["warmth"]) - BASE_WARMTH) * LAYER_K
+		wp = float(jd["windproof"]) + (1.0 - float(jd["windproof"])) * float(td["windproof"]) * 0.5
+		wa = float(jd["waterproof"]) + (1.0 - float(jd["waterproof"])) * float(td["waterproof"]) * 0.5
+	elif not jd.is_empty():
+		w = float(jd["warmth"])
+		wp = float(jd["windproof"])
+		wa = float(jd["waterproof"])
+	elif not td.is_empty():
+		w = float(td["warmth"])
+		wp = float(td["windproof"])
+		wa = float(td["waterproof"])
 	for s in EXTRA_SLOTS:
+		if s == "top" or s == "jacket":
+			continue
 		if extra.has(s):
 			var e: Dictionary = ITEMS[extra[s]]
 			w += float(e["warmth"])

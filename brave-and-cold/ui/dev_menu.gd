@@ -29,6 +29,8 @@ var _info_t := 0.0
 var _look := false
 var _wx_btns: Array[Button] = []
 var _item_opt: OptionButton
+var spawner: ItemSpawner
+var zone_dbg: ZoneDebug
 
 
 func _init() -> void:
@@ -88,6 +90,12 @@ func setup(w: Node) -> void:
 		_gearshot()
 	if "sightshot=1" in ua:
 		_sightshot()
+	if "audiotest=1" in ua:
+		_audiotest()
+	if "spawntest=1" in ua:
+		_spawntest()
+	if "aimtest=1" in ua:
+		_aimtest()
 	if "interacttest=1" in ua:
 		_interacttest()
 	if "hittest=1" in ua:
@@ -374,6 +382,8 @@ func _build() -> void:
 	_btn(crow2, "+Bear", func() -> void: _spawn("bear", 1))
 
 	_head(box, "ITEMS")
+	box.add_child(UiKit.label("Full item list: spawner panel on the right", 12, DZ.DIM))
+	_check(box, "Show item spawner", true, func(v: bool) -> void: spawner.visible = v)
 	var irow := _flow(box)
 	_btn(irow, "Survival kit", func() -> void: _kit())
 	_btn(irow, "+10 wood", func() -> void: _give("wood", 10))
@@ -398,6 +408,7 @@ func _build() -> void:
 
 	_head(box, "RENDER / DEBUG")
 	var rrow := _flow(box)
+	_check(rrow, "Show hit zones", false, func(v: bool) -> void: zone_dbg.visible = v)
 	_check(rrow, "Hide HUD", false, func(v: bool) -> void: world.get("hud").visible = not v)
 	_check(rrow, "Hide trees", false, func(v: bool) -> void: world.get("forest").visible = not v)
 	_check(rrow, "Shadows", true, func(v: bool) -> void: world.get("sun").shadow_enabled = v)
@@ -409,6 +420,29 @@ func _build() -> void:
 	var drow := _flow(box)
 	_btn(drow, "Screenshot", func() -> void: _shot())
 	_btn(drow, "Copy coords", func() -> void: _copy_coords())
+	var tol := HBoxContainer.new()
+	tol.add_child(UiKit.label("Aim tolerance x", 13, DZ.DIM))
+	var ts := HSlider.new()
+	ts.min_value = 0.4
+	ts.max_value = 2.5
+	ts.step = 0.05
+	ts.value = 1.0
+	ts.focus_mode = Control.FOCUS_NONE
+	ts.custom_minimum_size = Vector2(170, 20)
+	var tl := UiKit.label("1.00", 13, DZ.TEXT)
+	ts.value_changed.connect(func(v: float) -> void:
+		world.set("aim_tol_scale", v)
+		tl.text = "%.2f" % v)
+	tol.add_child(ts)
+	tol.add_child(tl)
+	box.add_child(tol)
+	spawner = ItemSpawner.new()
+	add_child(spawner)
+	spawner.setup(world, player)
+	zone_dbg = ZoneDebug.new()
+	zone_dbg.player = player
+	zone_dbg.visible = false
+	world.add_child(zone_dbg)
 
 
 func _fit() -> void:
@@ -584,6 +618,11 @@ func _tp(x: float, z: float, face: Vector3 = Vector3.INF) -> void:
 		player.pitch = deg_to_rad(-4.0)
 
 
+func _aim_pt(p: Vector3) -> void:
+	var eye: float = player.position.y
+	player.pitch = atan2(float(world.call("_ground_y", p.x, p.z)) + 0.25 - eye, Vector2(p.x - player.position.x, p.z - player.position.z).length())
+
+
 func _tp_cabin() -> void:
 	var cabins: Array = world.get("cabins")
 	if cabins.is_empty():
@@ -681,6 +720,7 @@ func _kit() -> void:
 
 func _shot() -> void:
 	_panel.visible = false
+	spawner.visible = false
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var img := get_viewport().get_texture().get_image()
@@ -688,6 +728,7 @@ func _shot() -> void:
 	img.save_png(path)
 	print("DEV_SHOT ", ProjectSettings.globalize_path(path))
 	_panel.visible = true
+	spawner.visible = true
 	world.call("_say", "Saved " + path.get_file())
 
 
@@ -1014,6 +1055,7 @@ func _gathertest() -> void:
 		var kd: Dictionary = PlantField.KINDS[kind]
 		var iid: String = kd["item"]
 		var n0 := inv.count(iid)
+		_aim_pt(pp)
 		world.call("_update_prompt")
 		var cand := {}
 		for c in world.get("_cands_cache"):
@@ -1045,6 +1087,7 @@ func _gathertest() -> void:
 			var p2 := pf.pos_of(key2)
 			_tp(p2.x, p2.z + 1.2, p2)
 			await get_tree().create_timer(1.0).timeout
+			_aim_pt(p2)
 			world.call("_update_prompt")
 			var kh := -1.0
 			for c in world.get("_cands_cache"):
@@ -1250,7 +1293,7 @@ func _weartest() -> void:
 	# head slot adds on top of base
 	inv.add("toque")
 	inv.use("toque")
-	ok = is_equal_approx(body.warmth, 0.33) and inv.extra.get("head", "") == "toque" and inv.equipped_body == ""
+	ok = is_equal_approx(body.warmth, 0.33) and inv.extra.get("head", "") == "toque" and inv.jacket() == ""
 	print("WEARTEST toque on base warmth=", body.warmth, " ", ok)
 	fails += 0 if ok else 1
 	# worn item leaves its pack cell
@@ -1268,7 +1311,7 @@ func _weartest() -> void:
 	for id in ["hide_boots", "hide_leggings", "hide_mitts", "wolf_hat"]:
 		inv.add(id)
 		inv.use(id)
-	ok = body.warmth <= 0.97 + 0.0001 and body.windproof <= 0.95 + 0.0001 and body.waterproof <= 0.95 + 0.0001 and inv.extra.size() == 4
+	ok = body.warmth <= 0.97 + 0.0001 and body.windproof <= 0.95 + 0.0001 and body.waterproof <= 0.95 + 0.0001 and inv.extra.size() == 5
 	print("WEARTEST capped warmth=", body.warmth, " wind=", body.windproof, " water=", body.waterproof, " ", ok)
 	fails += 0 if ok else 1
 	# same slot replaces
@@ -1293,7 +1336,7 @@ func _weartest() -> void:
 	# bear coat replaces torso
 	inv.add("bear_coat")
 	inv.use("bear_coat")
-	ok = inv.equipped_body == "bear_coat" and not inv.is_worn("parka")
+	ok = inv.jacket() == "bear_coat" and not inv.is_worn("parka")
 	print("WEARTEST torso swap=", ok)
 	fails += 0 if ok else 1
 	# strip back to bare
@@ -1302,6 +1345,30 @@ func _weartest() -> void:
 	ok = is_equal_approx(body.warmth, 0.25) and inv.worn_list().is_empty()
 	print("WEARTEST bare again=", ok, " ", body.warmth)
 	fails += 0 if ok else 1
+	# layering: top alone, jacket alone, both together
+	inv.add("sweater")
+	inv.add("parka")
+	inv.use("sweater")
+	ok = is_equal_approx(body.warmth, 0.55) and inv.top() == "sweater" and inv.jacket() == ""
+	print("WEARTEST top alone warmth=", body.warmth, " ", ok)
+	fails += 0 if ok else 1
+	inv.use("parka")
+	ok = inv.top() == "sweater" and inv.jacket() == "parka" and inv.worn_list() == ["parka", "sweater"]
+	print("WEARTEST sweater + parka both worn ", inv.worn_list(), " ", ok)
+	fails += 0 if ok else 1
+	ok = is_equal_approx(body.warmth, 0.97) and body.warmth > 0.85 and body.windproof > 0.8 and body.windproof < 0.9
+	print("WEARTEST layered warmth=%.3f wind=%.3f water=%.3f %s" % [body.warmth, body.windproof, body.waterproof, str(ok)])
+	fails += 0 if ok else 1
+	inv.use("parka")
+	ok = is_equal_approx(body.warmth, 0.55) and inv.top() == "sweater"
+	print("WEARTEST parka off leaves sweater warmth=", body.warmth, " ", ok)
+	fails += 0 if ok else 1
+	inv.use("parka")
+	inv.use("sweater")
+	ok = is_equal_approx(body.warmth, 0.85) and inv.jacket() == "parka" and Inventory.slot_of("sweater") == "top" and Inventory.slot_of("parka") == "jacket"
+	print("WEARTEST sweater off leaves parka warmth=", body.warmth, " ", ok)
+	fails += 0 if ok else 1
+	inv.use("parka")
 	# slot_of / drag-target logic
 	ok = Inventory.slot_of("hide_cap") == "head" and Inventory.slot_of("hide_boots") == "feet" and Inventory.slot_of("beans") == ""
 	print("WEARTEST slot_of=", ok)
@@ -2857,6 +2924,14 @@ func _gearshot() -> void:
 	gear._gscroll = 3
 	await get_tree().create_timer(0.8).timeout
 	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/gear_ground.png")
+	for cid in ["sweater", "parka", "toque", "hide_boots", "wolf_mitts"]:
+		inv.add(cid)
+		inv.use(cid)
+	gear.close()
+	gear.open()
+	gear._gscroll = 0
+	await get_tree().create_timer(0.8).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/gear_worn.png")
 	print("GEARSHOT done")
 	get_tree().quit()
 
@@ -2889,6 +2964,271 @@ func _sightshot() -> void:
 	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/sight_zoom.png")
 	print("SIGHTSHOT done fov=", player.cam.fov)
 	get_tree().quit()
+
+
+## Creature audio: every voice is attached to its creature, follows it, falls off physically, is muffled by walls.
+func _audiotest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var audio = world.get("audio")
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var zp: Vector3 = player.position + fwd * 20.0
+	zp.y = player.terrain.data.get_height(zp)
+	var z: Zombie = world.call("_add_zombie", zp, 1100)
+	z.set_process(false)
+	z.set_physics_process(false)
+	z.global_position = zp
+	for k in 3:
+		await get_tree().process_frame
+	var v := z.get_node_or_null("Voice") as CreatureVoice
+	var ok := v != null and v.get_parent() == z
+	print("AUDIOTEST zombie has attached Voice node ok=", ok)
+	fails += 0 if ok else 1
+	# follows the body
+	z.global_position = zp + Vector3(12.0, 0.0, 3.0)
+	await get_tree().process_frame
+	ok = v != null and v.global_position.distance_to(z.global_position + Vector3(0, 1.6, 0)) < 0.05
+	print("AUDIOTEST voice follows moving zombie (dist %.3f) ok=%s" % [v.global_position.distance_to(z.global_position + Vector3(0, 1.6, 0)), str(ok)])
+	fails += 0 if ok else 1
+	# events -> sounds from this body
+	var n0 := v.say_count
+	z.attacked.emit()
+	var a_ok := v.last_say == "grunt"
+	z.damaged.emit()
+	z.died.emit()
+	ok = a_ok and v.last_say == "zdeath" and v.say_count == n0 + 3
+	print("AUDIOTEST attack/hurt/death voiced (last=%s n=%d) ok=%s" % [v.last_say, v.say_count - n0, str(ok)])
+	fails += 0 if ok else 1
+	# physical falloff settings
+	v.say("groan", 3.0, 1.0, 5.0, 110.0)
+	var pl: AudioStreamPlayer3D = v.get("_voices")[0]
+	ok = pl.unit_size <= 8.0 and pl.max_distance <= 150.0 and pl.attenuation_model == AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+	print("AUDIOTEST groan falloff unit=%.1f max=%.0f ok=%s" % [pl.unit_size, pl.max_distance, str(ok)])
+	fails += 0 if ok else 1
+	# footsteps come from walking
+	var s0 := v.step_count
+	for k in 12:
+		z.global_position += Vector3(0.5, 0.0, 0.0)
+		await get_tree().process_frame
+	ok = v.step_count - s0 >= 3
+	print("AUDIOTEST zombie footsteps while walking steps=%d ok=%s" % [v.step_count - s0, str(ok)])
+	fails += 0 if ok else 1
+	var s1 := v.step_count
+	for k in 12:
+		await get_tree().process_frame
+	ok = v.step_count == s1
+	print("AUDIOTEST no footsteps when standing ok=", ok)
+	fails += 0 if ok else 1
+	# no flat 2D players anywhere under a creature
+	var flat := 0
+	for c in z.find_children("*", "AudioStreamPlayer", true, false):
+		flat += 1
+	print("AUDIOTEST 2D (global) players under zombie = %d ok=%s" % [flat, str(flat == 0)])
+	fails += 0 if flat == 0 else 1
+	z.global_position = Vector3(5000, -500, 5000)
+	# wolf howl + bear roar come from the animal
+	var wp: Vector3 = player.position + fwd * 40.0
+	wp.y = player.terrain.data.get_height(wp)
+	var w: Wolf = world.call("_add_wolf", wp, 1101, false)
+	var b: Wolf = world.call("_add_wolf", wp + Vector3(6, 0, 0), 1102, true)
+	for k in 3:
+		await get_tree().process_frame
+	w.state = Wolf.State.ALERT
+	b.state = Wolf.State.CHASE
+	for k in 3:
+		await get_tree().process_frame
+	var wv := w.get_node_or_null("Voice") as CreatureVoice
+	var bv := b.get_node_or_null("Voice") as CreatureVoice
+	ok = wv != null and wv.last_say == "howl" and bv != null and bv.last_say == "roar"
+	print("AUDIOTEST wolf howl=%s bear roar=%s ok=%s" % [wv.last_say if wv else "-", bv.last_say if bv else "-", str(ok)])
+	fails += 0 if ok else 1
+	w.global_position = Vector3(5000, -500, 5000)
+	b.global_position = Vector3(5000, -500, 5000)
+	# occlusion: wall muffles, open door does not
+	var cbn: Cabin = (world.get("cabins") as Array)[0]
+	var inside: Vector3 = cbn.to_global(Vector3(0.0, 1.2, 0.0))
+	player.position = cbn.to_global(Vector3(0.0, 0.0, 5.5))
+	player.position.y = cbn.floor_y + 1.7
+	cbn.door_open = true
+	await get_tree().process_frame
+	var oo: Vector2 = audio.call("occlusion", inside)
+	cbn.door_open = false
+	var oc: Vector2 = audio.call("occlusion", inside)
+	var back := cbn.to_global(Vector3(0.0, 1.2, -5.5))
+	var ow: Vector2 = audio.call("occlusion", inside)
+	ok = oo.x > oc.x and oc.x <= -9.0 and oc.y <= 800.0 and oo.y > 3000.0
+	print("AUDIOTEST occlusion open door %s closed door %s ok=%s" % [str(oo), str(oc), str(ok)])
+	fails += 0 if ok else 1
+	# deer snort + yelp
+	var dp: Vector3 = player.position + fwd * 30.0
+	dp.y = player.terrain.data.get_height(dp)
+	var dr: Deer = world.call("_add_deer", dp, 5)
+	for k in 3:
+		await get_tree().process_frame
+	dr.state = Deer.State.ALERT
+	for k in 3:
+		await get_tree().process_frame
+	var dv := dr.get_node_or_null("Voice") as CreatureVoice
+	ok = dv != null and dv.last_say == "snort"
+	print("AUDIOTEST deer snort ok=", ok)
+	fails += 0 if ok else 1
+	print("AUDIOTEST failures=", fails)
+	get_tree().quit()
+
+
+## Item spawner: filters, give to pack, drop at feet, every item can be built as a cell; windowed screenshot.
+func _spawntest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	open()
+	await get_tree().process_frame
+	var sp := spawner
+	var total := Inventory.ITEMS.size()
+	sp.set_category("all")
+	sp._search.text = ""
+	sp.rebuild()
+	var ok: bool = sp.matches().size() == total and total > 40
+	print("SPAWNTEST all items listed %d/%d ok=%s" % [sp.matches().size(), total, str(ok)])
+	fails += 0 if ok else 1
+	sp.set_category("clothing")
+	var cl: Array = sp.matches()
+	ok = cl.has("sweater") and cl.has("parka") and not cl.has("beans")
+	print("SPAWNTEST clothing filter n=%d ok=%s" % [cl.size(), str(ok)])
+	fails += 0 if ok else 1
+	sp.set_category("all")
+	sp._search.text = "SWEAT"
+	var sm: Array = sp.matches()
+	ok = sm == ["sweater"]
+	print("SPAWNTEST search 'SWEAT' -> ", sm, " ok=", ok)
+	fails += 0 if ok else 1
+	sp._search.text = "zzznothing"
+	ok = sp.matches().is_empty()
+	print("SPAWNTEST search no match ok=", ok)
+	fails += 0 if ok else 1
+	sp._search.text = ""
+	sp.rebuild()
+	await get_tree().process_frame
+	ok = sp._grid.get_child_count() >= total
+	print("SPAWNTEST grid cells=%d ok=%s" % [sp._grid.get_child_count(), str(ok)])
+	fails += 0 if ok else 1
+	var b0 := inv.count("sweater")
+	sp.set_qty(5)
+	sp.give("sweater", sp.qty)
+	ok = inv.count("sweater") == b0 + 5
+	print("SPAWNTEST give x5 sweater -> ", inv.count("sweater"), " ok=", ok)
+	fails += 0 if ok else 1
+	var pk0 := get_tree().get_nodes_in_group("pickups").size()
+	sp.at_feet = true
+	sp.give("parka", 1)
+	ok = get_tree().get_nodes_in_group("pickups").size() == pk0 + 1 and inv.count("parka") == 0
+	print("SPAWNTEST drop at feet ok=", ok)
+	fails += 0 if ok else 1
+	sp.at_feet = false
+	sp.give("not_an_item", 3)
+	ok = not inv.counts.has("not_an_item")
+	print("SPAWNTEST unknown id ignored ok=", ok)
+	fails += 0 if ok else 1
+	# typing must not walk the player
+	var fr0 := player.frozen
+	sp._on_focus()
+	var fr1 := player.frozen
+	sp._on_unfocus()
+	ok = fr1 and player.frozen == fr0
+	print("SPAWNTEST search focus freezes player ok=", ok)
+	fails += 0 if ok else 1
+	await get_tree().create_timer(0.6).timeout
+	if DisplayServer.get_name() != "headless":
+		get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/spawner.png")
+	print("SPAWNTEST failures=", fails)
+	get_tree().quit()
+
+
+## Trees and plants are offered only when the crosshair is on them (not just somewhere in front of you).
+func _aimtest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	var forest = world.get("forest")
+	player.god = true
+	inv.add("axe", 1)
+	world.set("rifle_up", false)
+	var t0: Dictionary = forest.nearest_tree(player.position, Vector3.FORWARD, 80.0, false)
+	var tx := float(t0["x"])
+	var tz := float(t0["z"])
+	var r := float(t0["r"])
+	_tp(tx + 1.5 + r, tz, Vector3(tx, 0.0, tz))
+	await get_tree().create_timer(1.0).timeout
+	var gy: float = world.call("_ground_y", tx, tz)
+	player.pitch = 0.0
+	player.yaw = atan2(-(tx - player.position.x), -(tz - player.position.z))
+	world.call("_update_prompt")
+	var txt := _prompt_text()
+	var ok := txt.contains("Chop tree")
+	print("AIMTEST tree under crosshair offers chop ok=", ok, " [", txt, "]")
+	fails += 0 if ok else 1
+	var yaw0 := player.yaw
+	player.yaw = yaw0 + deg_to_rad(35.0)
+	world.call("_update_prompt")
+	txt = _prompt_text()
+	ok = not txt.contains("Chop tree")
+	print("AIMTEST tree 35 deg off crosshair NOT offered ok=", ok, " [", txt, "]")
+	fails += 0 if ok else 1
+	player.yaw = yaw0
+	player.pitch = deg_to_rad(-75.0)
+	world.call("_update_prompt")
+	txt = _prompt_text()
+	ok = not txt.contains("Chop tree")
+	print("AIMTEST looking at the ground in front of the tree NOT offered ok=", ok)
+	fails += 0 if ok else 1
+	player.pitch = 0.0
+	world.set("aim_tol_scale", 0.01)
+	var tdist := Vector2(tx - player.position.x, tz - player.position.z).length()
+	player.yaw = yaw0 + atan((r + 0.2) / tdist)   # crosshair passes 0.2 m outside the bark
+	world.call("_update_prompt")
+	var strict := _prompt_text().contains("Chop tree")
+	world.set("aim_tol_scale", 1.0)
+	world.call("_update_prompt")
+	var normal := _prompt_text().contains("Chop tree")
+	ok = normal and not strict
+	print("AIMTEST aim_tol_scale knob tightens (6 deg off: normal=%s strict=%s) ok=%s" % [str(normal), str(strict), str(ok)])
+	fails += 0 if ok else 1
+	# plants
+	var plants = world.get("plants")
+	var pkeys: Array = plants._plants.keys() if plants != null else []
+	if pkeys.is_empty():
+		print("AIMTEST plants SKIP (none)")
+	else:
+		var pd: Dictionary = plants.get_plant(pkeys[0])
+		var px := float(pd["x"])
+		var pz := float(pd["z"])
+		_tp(px + 1.2, pz, Vector3(px, 0.0, pz))
+		await get_tree().create_timer(1.0).timeout
+		var py: float = world.call("_ground_y", px, pz) + 0.25
+		_look_at(Vector3(px, py, pz))
+		world.call("_update_prompt")
+		txt = _prompt_text()
+		ok = txt.contains("Gather")
+		print("AIMTEST plant under crosshair offers gather ok=", ok, " [", txt, "]")
+		fails += 0 if ok else 1
+		player.yaw += deg_to_rad(70.0)
+		world.call("_update_prompt")
+		txt = _prompt_text()
+		ok = not txt.contains("Gather")
+		print("AIMTEST plant behind your shoulder NOT offered ok=", ok)
+		fails += 0 if ok else 1
+	print("AIMTEST failures=", fails)
+	get_tree().quit()
+
+
+func _prompt_text() -> String:
+	var t := ""
+	for c in world.get("_cands_cache"):
+		t += String(c["text"]) + " | "
+	return t
 
 
 func _interacttest() -> void:

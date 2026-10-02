@@ -4,6 +4,9 @@ extends Node3D
 ## Procedural leg/tail animation on the segmented model.
 
 enum State { WANDER, INVESTIGATE, ALERT, CHASE, RETREAT }
+signal attacked   # for GameAudio
+signal damaged
+signal died
 
 var WALK_SPEED := 1.6
 var TROT_SPEED := 3.4
@@ -78,6 +81,7 @@ func hit(dmg: float, from: Vector3) -> void:
 	hp -= dmg
 	if hp <= 0.0:
 		dead = true
+		died.emit()
 		remove_from_group("hostile")
 		add_to_group("carcasses")
 		set_meta("born", Time.get_ticks_msec())
@@ -86,6 +90,7 @@ func hit(dmg: float, from: Vector3) -> void:
 		var tw := create_tween()
 		tw.tween_property(self, "rotation:z", PI / 2.0, 0.5)
 		return
+	damaged.emit()
 	_target = from
 	_set_state(State.CHASE)
 
@@ -270,6 +275,7 @@ func _process(delta: float) -> void:
 				elif _bite_cd <= 0.0:
 					_bite_cd = BITE_COOLDOWN
 					bites += 1
+					attacked.emit()
 					if not player.struggling and _struggle_cd <= 0.0 and not player.dead:
 						player.start_struggle(self, struggle_gain)
 						_tick = 1.3

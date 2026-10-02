@@ -5,6 +5,9 @@ extends Node3D
 
 enum State { IDLE, INVESTIGATE, CHASE, DEAD, SLEEP }
 enum Kind { SHAMBLER, HEAVY, SLEEPER }
+signal attacked   # for GameAudio: grunt from this body
+signal damaged
+signal died
 
 const MODEL := "res://assets/models/animals/zombie.glb"
 const IDLE_SPEED := 0.8
@@ -284,6 +287,7 @@ func hit(dmg: float, from: Vector3) -> void:
 	if hp <= 0.0:
 		_die()
 	else:
+		damaged.emit()
 		if state == State.SLEEP:
 			_wake()
 		if not crawling and hp < 40.0 and randf() < 0.5:
@@ -295,6 +299,7 @@ func hit(dmg: float, from: Vector3) -> void:
 
 func _die() -> void:
 	state = State.DEAD
+	died.emit()
 	_release()
 	_vault_t = -1.0
 	remove_from_group("hostile")
@@ -377,6 +382,7 @@ func _process(delta: float) -> void:
 				if _cd <= 0.0 and _stagger <= 0.0:
 					_cd = COOLDOWN
 					grabs += 1
+					attacked.emit()
 					player.hurt(DAMAGE, "Torn apart by the infected")
 					player.injury.wound(0.45, 0.30)
 			var cb = _shut_cabin_with_player()

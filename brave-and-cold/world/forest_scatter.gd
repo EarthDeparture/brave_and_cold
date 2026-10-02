@@ -47,7 +47,8 @@ func tree_mat() -> StandardMaterial3D:
 
 
 ## Nearest standing tree trunk surface within reach (xz). With need_facing the tree must be in front of fwd.
-func nearest_tree(pos: Vector3, fwd: Vector3, reach: float, need_facing: bool = true) -> Dictionary:
+## `accept` (optional) gets Vector3(x, z, r) of a candidate trunk and may veto it (the game uses it for "is the crosshair on it").
+func nearest_tree(pos: Vector3, fwd: Vector3, reach: float, need_facing: bool = true, accept: Callable = Callable()) -> Dictionary:
 	var best := {}
 	var bd := 1e9
 	var f2 := Vector2(fwd.x, fwd.z)
@@ -66,6 +67,8 @@ func nearest_tree(pos: Vector3, fwd: Vector3, reach: float, need_facing: bool = 
 				if d > reach or d >= bd:
 					continue
 				if need_facing and to.length() > 0.001 and to.normalized().dot(f2) < 0.55:
+					continue
+				if accept.is_valid() and not accept.call(tv):
 					continue
 				bd = d
 				best = {"x": tv.x, "z": tv.y, "r": tv.z, "h": tree_height_from_r(tv.z), "d": d}
