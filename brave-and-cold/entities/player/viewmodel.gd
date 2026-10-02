@@ -14,7 +14,7 @@ const WRIST_L := Vector3(-0.075, -0.005, 0.05)
 const SLEEVE_R := Vector3(0.25, -0.12, 1.0)
 const SLEEVE_L := Vector3(-0.25, -0.12, 1.0)
 const FIST_ROLL := -32.0
-const AIM_POS := Vector3(0.0, -0.10, -0.44)
+const AIM_POS := Vector3(0.0, -0.098, -0.16)   # rear sight 0.35 m ahead of the eye, sight line on the view axis
 const BOLT_ORIGIN := Vector3(0.0, 0.046, 0.06)
 
 var player: Player
@@ -266,7 +266,7 @@ func _pose_rifle(base: Transform3D) -> void:
 				bolt_roll = 70.0 * (1.0 - _sstep((t - 0.78) / 0.12))
 	var ak := player.aim_k
 	var rpos := Vector3(0.13, -0.085, -0.40).lerp(AIM_POS, ak)
-	var rb := Basis(Vector3.UP, deg_to_rad(16.0 * (1.0 - ak))) * Basis(Vector3.RIGHT, deg_to_rad(-2.0))
+	var rb := Basis(Vector3.UP, deg_to_rad(16.0 * (1.0 - ak))) * Basis(Vector3.RIGHT, deg_to_rad(lerpf(-2.0, 2.7, ak)))   # +2.7 deg levels the sight line (rear->front slopes down 2.7 deg in the model)
 	var butt := rpos + Vector3(0.0, 0.0, 0.4)
 	var kb := Basis(Vector3.RIGHT, deg_to_rad(lerpf(9.0, 5.0, ak) * kick))
 	var w := base * _about(butt, kb) * Transform3D(rb, rpos + Vector3(0.0, 0.01 * kick, 0.0))

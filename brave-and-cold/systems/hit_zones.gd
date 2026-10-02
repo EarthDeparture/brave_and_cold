@@ -5,6 +5,7 @@ extends RefCounted
 ## Spec rows: [zone, forward offset m, height m, radius m, damage multiplier].
 
 const PAD := 0.06  # forgiveness added to every sphere radius
+const OUT_H := 2.4  # outbuilding solid height
 
 # Numbers come from the actual glb part bounds (models face -Z; zombie arms reach out at y~1.44).
 const SPECS := {
@@ -27,19 +28,22 @@ static func kind_of(n: Node) -> String:
 	return ""
 
 
-## Creatures scale their model (zombie variants 0.94-1.15); the zones must follow.
-static func scale_of(n: Node3D) -> float:
-	var s := n.scale.x
+## Zones live in MODEL space, so they follow whatever the creature does to its model: variant scale (0.94-1.15),
+## crawler tilt/drop, sleeper lying flat, window lean.
+static func model_xf(n: Node3D) -> Transform3D:
 	var m = n.get("_model")
-	if m is Node3D:
-		s *= (m as Node3D).scale.x
-	return s
+	if m is Node3D and (m as Node3D).is_inside_tree():
+		return (m as Node3D).global_transform
+	return n.global_transform
 
 
-static func center_of(n: Node3D, row: Array) -> Vector3:
-	var fwd := Vector3(-sin(n.rotation.y), 0.0, -cos(n.rotation.y))
-	var s := scale_of(n)
-	return n.global_position + fwd * float(row[1]) * s + Vector3(0.0, float(row[2]) * s, 0.0)
+static func scale_of(n: Node3D) -> float:
+	return model_xf(n).basis.x.length()
+
+
+static func center_of(n: Node3D, row: Array, xf: Transform3D = Transform3D.IDENTITY) -> Vector3:
+	var t := xf if xf != Transform3D.IDENTITY else model_xf(n)
+	return t * Vector3(0.0, float(row[2]), -float(row[1]))
 
 
 ## Nearest zone hit by the ray, or {}. {t, mult, zone}. An origin inside a sphere counts as t = 0 (point blank).
@@ -48,9 +52,11 @@ static func ray(n: Node3D, eye: Vector3, dir: Vector3, max_t: float) -> Dictiona
 	if key == "":
 		return {}
 	var best := {}
+	var xf := model_xf(n)
+	var sc := xf.basis.x.length()
 	for row: Array in SPECS[key]:
-		var c := center_of(n, row)
-		var r := float(row[3]) * scale_of(n) + PAD
+		var c := center_of(n, row, xf)
+		var r := float(row[3]) * sc + PAD
 		var oc := eye - c
 		var b := oc.dot(dir)
 		var disc := b * b - (oc.dot(oc) - r * r)
@@ -118,20 +124,41 @@ static func _bisect(forest, eye: Vector3, dir: Vector3, a: float, b: float) -> f
 static func building_block(blds: Array, eye: Vector3, dir: Vector3, max_t: float) -> float:
 	for b in blds:
 		var bn := b as Node3D
-		if bn == null or not is_instance_valid(bn) or bn.get("_walls") == null:
+		if bn == null or not is_instance_valid(bn):
 			continue
 		var to := bn.global_position - eye
 		var mid := to.dot(dir)
 		if (to - dir * clampf(mid, 0.0, max_t)).length() > 5.0:
 			continue
+		if bn is Outbuilding:
+			var ob := bn as Outbuilding
+			var tb := clampf(mid - 5.0, 0.0, max_t)
+			var tb1 := clampf(mid + 5.0, 0.0, max_t)
+			while tb <= tb1:
+				var lb := bn.to_local(eye + dir * tb)
+				if lb.y > -0.3 and lb.y < OUT_H and absf(lb.x) < ob.hx and absf(lb.z) < ob.hz:
+					return tb
+				tb += 0.07
+			continue
+		if bn.get("_walls") == null:
+			continue
 		var rects: Array = (bn.get("_walls") as Array).duplicate()
 		if not bool(bn.get("door_open")):
 			rects.append(bn.get("_door_rect"))
+		var foot := Rect2()
+		var first := true
+		for wr in (bn.get("_walls") as Array):
+			var gr := (wr as Rect2).grow(0.3)
+			foot = gr if first else foot.merge(gr)
+			first = false
+		var roof_lo := 2.45 if bn is Cabin else (2.25 if bn is Hut else 2.35)
 		var t := clampf(mid - 5.0, 0.0, max_t)
 		var t1 := clampf(mid + 5.0, 0.0, max_t)
 		while t <= t1:
 			var p := eye + dir * t
 			var l := bn.to_local(p)
+			if l.y > roof_lo and l.y < roof_lo + 0.9 and foot.has_point(Vector2(l.x, l.z)):
+				return t   # the roof is solid
 			if l.y > 0.0 and l.y < 2.7:
 				var l2 := Vector2(l.x, l.z)
 				for w in rects:

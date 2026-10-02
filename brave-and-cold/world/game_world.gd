@@ -412,7 +412,12 @@ func _process(delta: float) -> void:
 	needs.update(gs, player.activity, body.core)
 	_act_update(delta, Input.is_key_pressed(KEY_E))
 	Inventory.infinite = player.god
+	for chx in chests:
+		var cc: StorageChest = chx
+		cc.want_open = gear != null and gear.is_open and gear._chest == cc and gear._tab == "chest"
+		cc.tick(gs)
 	_hold_attack()
+	_bullets_update(delta)
 	player.injury.update(gs, delta)
 	var sd := needs.damage_per_s()
 	if sd > 0.0 and not player.dead:
@@ -712,9 +717,9 @@ func _fish_cands(cands: Array) -> void:
 			return
 		if inv.count('tackle') > 0:
 			var tgt: IceHole = hole
-			cands.append({'d': hd, 'text': 'Fish through the hole', 'hold': 10.0, 'kcal': 10.0, 'act': func() -> void: _fish_at(tgt)})
+			cands.append({"m": _lm, 'd': hd, 'text': 'Fish through the hole', 'hold': 10.0, 'kcal': 10.0, 'act': func() -> void: _fish_at(tgt)})
 		else:
-			cands.append({'d': hd, 'text': 'Fishing hole (needs fishing tackle)', 'act': func() -> void: _say('You need fishing tackle')})
+			cands.append({"m": _lm, 'd': hd, 'text': 'Fishing hole (needs fishing tackle)', 'act': func() -> void: _say('You need fishing tackle')})
 		return
 	if is_nan(ice.ice_at(pp.x, pp.z)):
 		return
@@ -723,7 +728,7 @@ func _fish_cands(cands: Array) -> void:
 		var hx := pp.x + fwd.x * 1.3
 		var hz := pp.z + fwd.z * 1.3
 		if not is_nan(ice.ice_at(hx, hz)):
-			cands.append({'d': 1.3, 'text': 'Chop a fishing hole', 'hold': 12.0, 'kcal': 25.0, 'noise': 32.0, 'act': func() -> void:
+			cands.append({"m": _lm, 'd': 1.3, 'text': 'Chop a fishing hole', 'hold': 12.0, 'kcal': 25.0, 'noise': 32.0, 'act': func() -> void:
 				if _make_hole(hx, hz, false) != null:
 					_say('Hole chopped through the ice')})
 
@@ -1234,16 +1239,16 @@ func _door_cands(cands: Array, cb: Cabin, fwd: Vector3) -> void:
 		return
 	if cb.door_boards < 3:
 		if inv.count("hammer") > 0 and inv.count("plank") > 0 and inv.count("nails") >= 2:
-			cands.append({"d": dd + 0.04, "text": "Barricade door (%d/3)" % cb.door_boards, "hold": 6.0, "kcal": 8.0, "noise": 22.0, "act": func() -> void:
+			cands.append({"m": _lm, "d": dd + 0.04, "text": "Barricade door (%d/3)" % cb.door_boards, "hold": 6.0, "kcal": 8.0, "noise": 22.0, "act": func() -> void:
 				if inv.remove("plank") and inv.remove("nails", 2):
 					cb.add_door_board()
 					if audio != null:
 						audio.play_at("hammer", dp, 2.0, randf_range(0.9, 1.0), 6.0, 70.0)
 					_say("Door barricaded: %d/3" % cb.door_boards)})
 		else:
-			cands.append({"d": dd + 0.1, "text": "Barricade door (needs hammer, plank, 2 nails)", "act": func() -> void: _say("Need a hammer, a plank and 2 nails")})
+			cands.append({"m": _lm, "d": dd + 0.1, "text": "Barricade door (needs hammer, plank, 2 nails)", "act": func() -> void: _say("Need a hammer, a plank and 2 nails")})
 	if cb.door_boards > 0:
-		cands.append({"d": dd + 0.03, "text": "Pull off door plank", "hold": 3.0, "kcal": 4.0, "noise": 14.0, "act": func() -> void:
+		cands.append({"m": _lm, "d": dd + 0.03, "text": "Pull off door plank", "hold": 3.0, "kcal": 4.0, "noise": 14.0, "act": func() -> void:
 			if cb.remove_door_board():
 				inv.add("plank")
 				inv.add("nails", 1)
@@ -1267,13 +1272,22 @@ func _aim_miss(p: Vector3) -> float:
 
 ## Is p under the crosshair? Within `reach` metres (3D, from the eye) AND within `tol` metres of the view ray.
 ## Standing practically on top of it (< 0.8 m) counts without looking.
+var aim_tol_scale := 1.0   # playtest knob: multiplies every interaction tolerance (0.8 tighter, 1.25 looser)
+var _lm := 0.5             # crosshair miss (m) of the target the last passing _aim_ok() looked at
+
+
 func _aim_ok(p: Vector3, reach: float, tol: float) -> bool:
 	var dist := (p - player.position).length()
 	if dist > reach:
 		return false
+	var miss := _aim_miss(p)
 	if dist < 0.8:
+		_lm = minf(miss, 1.5)
 		return true
-	return _aim_miss(p) <= tol
+	if miss <= tol * aim_tol_scale:
+		_lm = miss
+		return true
+	return false
 
 
 ## Board / unboard / curtain actions for windows within reach, from the INSIDE of cabins and huts.
@@ -1292,9 +1306,9 @@ func _opening_cands(cands: Array, fwd: Vector3) -> void:
 				continue
 			# either side: smash intact glass, climb through a clear gap, sweep up shards
 			if not o.glass_broken and inv.count("axe") > 0:
-				cands.append({"d": od + 0.08, "text": "Smash window (loud)", "hold": 1.0, "kcal": 3.0, "act": func() -> void: o.smash()})
+				cands.append({"m": _lm, "d": od + 0.08, "text": "Smash window (loud)", "hold": 1.0, "kcal": 3.0, "act": func() -> void: o.smash()})
 			if o.passable():
-				cands.append({"d": od - 0.05, "text": "Climb through window" + (" (glass!)" if o.shards else ""), "hold": 1.6, "kcal": 6.0, "noise": 8.0, "act": func() -> void:
+				cands.append({"m": _lm, "d": od - 0.05, "text": "Climb through window" + (" (glass!)" if o.shards else ""), "hold": 1.6, "kcal": 6.0, "noise": 8.0, "act": func() -> void:
 					var dest: Vector3 = o.outside_pos() if inside else o.inside_pos()
 					if o.shards:
 						player.hurt(3.0, "Bled out on broken glass")
@@ -1303,40 +1317,59 @@ func _opening_cands(cands: Array, fwd: Vector3) -> void:
 					player.position.x = dest.x
 					player.position.z = dest.z})
 			if o.shards:
-				cands.append({"d": od + 0.03, "text": "Clear glass shards", "hold": 3.0, "kcal": 3.0, "act": func() -> void:
+				cands.append({"m": _lm, "d": od + 0.03, "text": "Clear glass shards", "hold": 3.0, "kcal": 3.0, "act": func() -> void:
 					if o.clear_shards():
 						_say("Sill cleared")})
 			if not inside:
 				continue
 			if o.boards < Opening.MAX_BOARDS:
 				if inv.count("hammer") > 0 and inv.count("plank") > 0 and inv.count("nails") >= 2:
-					cands.append({"d": od, "text": "Board up window (%d/%d)" % [o.boards, Opening.MAX_BOARDS], "hold": 5.0, "kcal": 6.0, "noise": 22.0, "act": func() -> void:
+					cands.append({"m": _lm, "d": od, "text": "Board up window (%d/%d)" % [o.boards, Opening.MAX_BOARDS], "hold": 5.0, "kcal": 6.0, "noise": 22.0, "act": func() -> void:
 						if inv.remove("plank") and inv.remove("nails", 2):
 							o.add_board()
 							if audio != null:
 								audio.play_at("hammer", o.center_world(), 2.0, randf_range(0.95, 1.05), 6.0, 70.0)
 							_say("Boarded: %d/%d" % [o.boards, Opening.MAX_BOARDS])})
 				else:
-					cands.append({"d": od + 0.05, "text": "Board up window (needs hammer, plank, 2 nails)", "act": func() -> void: _say("Need a hammer, a plank and 2 nails")})
+					cands.append({"m": _lm, "d": od + 0.05, "text": "Board up window (needs hammer, plank, 2 nails)", "act": func() -> void: _say("Need a hammer, a plank and 2 nails")})
 			if o.boards > 0:
-				cands.append({"d": od + 0.02, "text": "Pull off a plank", "hold": 3.0, "kcal": 4.0, "noise": 14.0, "act": func() -> void:
+				cands.append({"m": _lm, "d": od + 0.02, "text": "Pull off a plank", "hold": 3.0, "kcal": 4.0, "noise": 14.0, "act": func() -> void:
 					if o.remove_board():
 						inv.add("plank")
 						inv.add("nails", 1)
 						_say("Plank off (+1 plank, +1 nail)")})
 			if not o.curtain:
 				if inv.count("rag") >= 2:
-					cands.append({"d": od + 0.01, "text": "Hang curtain (2 rags)", "hold": 4.0, "kcal": 3.0, "act": func() -> void:
+					cands.append({"m": _lm, "d": od + 0.01, "text": "Hang curtain (2 rags)", "hold": 4.0, "kcal": 3.0, "act": func() -> void:
 						if inv.remove("rag", 2):
 							o.hang_curtain()
 							_say("Curtain hung: light and eyes blocked")})
 				else:
-					cands.append({"d": od + 0.06, "text": "Hang curtain (needs 2 rags)", "act": func() -> void: _say("Need 2 rags")})
+					cands.append({"m": _lm, "d": od + 0.06, "text": "Hang curtain (needs 2 rags)", "act": func() -> void: _say("Need 2 rags")})
 			else:
-				cands.append({"d": od + 0.01, "text": "Take down curtain", "hold": 2.0, "act": func() -> void:
+				cands.append({"m": _lm, "d": od + 0.01, "text": "Take down curtain", "hold": 2.0, "act": func() -> void:
 					if o.remove_curtain():
 						inv.add("rag", 2)
 						_say("+2 rags")})
+
+
+## Crosshair ranking. A thing behind a nearer thing on the same line of sight is not offered (the window hides the
+## stove behind it); what is best centred on the crosshair comes first, distance second.
+func _rank_cands(cands: Array) -> Array:
+	var keep: Array = []
+	for c in cands:
+		var cm := float(c.get("m", -1.0))
+		var hidden := false
+		if cm >= 0.0:
+			for a in cands:
+				var am := float(a.get("m", -1.0))
+				if am >= 0.0 and am < 0.35 and float(a["d"]) + 0.8 < float(c["d"]) and absf(am - cm) < 0.3:
+					hidden = true
+					break
+		if not hidden:
+			keep.append(c)
+	keep.sort_custom(func(x, y) -> bool: return float(x["d"]) + 1.2 * minf(float(x.get("m", 0.4)), 1.5) < float(y["d"]) + 1.2 * minf(float(y.get("m", 0.4)), 1.5))
+	return keep
 
 
 func _update_prompt() -> void:
@@ -1357,12 +1390,12 @@ func _update_prompt() -> void:
 		var hud: Hut = hu
 		var hdd: float = hud.to_global(Vector3(0.0, 1.0, Hut.HZ)).distance_to(player.position)
 		if not hud.door_broken and _aim_ok(hud.to_global(Vector3(0.0, 1.0, Hut.HZ)), 2.2, 1.0):
-			cands.append({'d': hdd, 'text': 'Close door' if hud.door_open else 'Open door', 'act': hud.toggle_door})
+			cands.append({"m": _lm, 'd': hdd, 'text': 'Close door' if hud.door_open else 'Open door', 'act': hud.toggle_door})
 		if not hu.crate_looted:
 			var hh: Hut = hu
 			var hd: float = hh.tackle_world_pos().distance_to(player.position)
 			if _aim_ok(hh.tackle_world_pos(), 1.8, 0.6):
-				cands.append({'d': hd, 'text': 'Search tackle box', 'hold': 2.0, 'act': func() -> void:
+				cands.append({"m": _lm, 'd': hd, 'text': 'Search tackle box', 'hold': 2.0, 'act': func() -> void:
 					hh.crate_looted = true
 					inv.add('matches', 2)
 					inv.add('beans', 1)
@@ -1375,19 +1408,19 @@ func _update_prompt() -> void:
 		var sto: Store = stx
 		var sdd: float = sto.to_global(Vector3(0.0, 1.0, Store.HZ)).distance_to(player.position)
 		if not sto.door_broken and _aim_ok(sto.to_global(Vector3(0.0, 1.0, Store.HZ)), 2.2, 1.0):
-			cands.append({'d': sdd, 'text': 'Close door' if sto.door_open else 'Open door', 'act': sto.toggle_door})
+			cands.append({"m": _lm, 'd': sdd, 'text': 'Close door' if sto.door_open else 'Open door', 'act': sto.toggle_door})
 		for li in 3:
 			if not sto.looted[li]:
 				var lpd: float = sto.loot_world_pos(li).distance_to(player.position)
 				if _aim_ok(sto.loot_world_pos(li), 1.7, 0.6):
 					var lidx: int = li
-					cands.append({'d': lpd, 'text': String(Store.LOOT_NAMES[li]), 'hold': 2.5, 'act': func() -> void: _loot_store(sto, lidx)})
+					cands.append({"m": _lm, 'd': lpd, 'text': String(Store.LOOT_NAMES[li]), 'hold': 2.5, 'act': func() -> void: _loot_store(sto, lidx)})
 	for ob in outbuildings:
 		if ob.wood_left > 0:
 			var obb: Outbuilding = ob
 			var od: float = obb.wood_world_pos().distance_to(player.position)
 			if _aim_ok(obb.wood_world_pos(), 2.0, 0.8):
-				cands.append({'d': od, 'text': 'Take firewood (%d left)' % obb.wood_left, 'hold': 1.0, 'act': func() -> void:
+				cands.append({"m": _lm, 'd': od, 'text': 'Take firewood (%d left)' % obb.wood_left, 'hold': 1.0, 'act': func() -> void:
 					if obb.wood_left > 0:
 						obb.wood_left -= 1
 						inv.add('wood')
@@ -1457,6 +1490,7 @@ func _update_prompt() -> void:
 			if not _aim_ok(ipos, float(it["r"]), float(it.get("tol", 0.9))):
 				continue
 			it["d"] = d + float(it.get("dbias", 0.0))
+			it["m"] = _lm
 			cands.append(it)
 	_chest_cands(cands)
 	_opening_cands(cands, fwd)
@@ -1467,21 +1501,21 @@ func _update_prompt() -> void:
 			var ctext := 'Add log to fire (%d)' % inv.count('wood')
 			if inv.count('wood') == 0:
 				ctext = 'Fire needs wood'
-			cands.append({"d": cd, "text": ctext, "act": func() -> void:
+			cands.append({"m": _lm, "d": cd, "text": ctext, "act": func() -> void:
 				if inv.remove('wood'):
 					cfire.add_wood()
 					_say('Added log: %d min of fuel' % int(cfire.fuel_s / 60.0))
 				else:
 					_say('No firewood')})
 			if cfire.is_lit() and inv.has_raw() and cfire.free_slots() > 0 and cd < 1.8:
-				cands.append({"d": cd - 0.01, "text": "Put meat on the fire (%d free)" % cfire.free_slots(), "hold": 1.5, "act": func() -> void:
+				cands.append({"m": _lm, "d": cd - 0.01, "text": "Put meat on the fire (%d free)" % cfire.free_slots(), "hold": 1.5, "act": func() -> void:
 					_say('%d on the fire: ready in ~20 min' % _cook_start(cfire))})
 			if cfire.done_count() > 0 and cd < 1.8:
-				cands.append({"d": cd - 0.02, "text": "Take cooked meat (%d)" % cfire.done_count(), "act": func() -> void: _take_cooked(cfire)})
+				cands.append({"m": _lm, "d": cd - 0.02, "text": "Take cooked meat (%d)" % cfire.done_count(), "act": func() -> void: _take_cooked(cfire)})
 			elif cfire.cooking_count() > 0 and cd < 1.8:
-				cands.append({"d": cd + 0.05, "text": "Meat cooking (%d min left)" % int(ceil(cfire.min_left() / 60.0)), "act": func() -> void: _say('Still cooking')})
+				cands.append({"m": _lm, "d": cd + 0.05, "text": "Meat cooking (%d min left)" % int(ceil(cfire.min_left() / 60.0)), "act": func() -> void: _say('Still cooking')})
 			if cfire.is_lit() and needs.water < 90.0 and cd < 1.8:
-				cands.append({"d": cd + 0.01, "text": "Melt snow and drink", "hold": 4.0, "act": func() -> void:
+				cands.append({"m": _lm, "d": cd + 0.01, "text": "Melt snow and drink", "hold": 4.0, "act": func() -> void:
 					needs.drink(35.0)
 					_say('Drank melted snow (+35 water)')})
 	for cn in get_tree().get_nodes_in_group("carcasses"):
@@ -1500,11 +1534,11 @@ func _update_prompt() -> void:
 			var lab := "%s %s" % [Carcass.STEP_VERB[step], Carcass.SPECIES[sp]["label"]]
 			si += 1
 			if not bool(info["ok"]):
-				cands.append({"d": cdist + si * 0.01, "text": "%s (needs a %s)" % [lab, info["need"]], "act": func() -> void: _say('You need a knife for that')})
+				cands.append({"m": _lm, "d": cdist + si * 0.01, "text": "%s (needs a %s)" % [lab, info["need"]], "act": func() -> void: _say('You need a knife for that')})
 				continue
 			var yid: String = info["id"]
 			var yn: int = int(info["n"])
-			cands.append({"d": cdist + si * 0.01, "text": "%s (+%d %s)" % [lab, yn, inv.name_of(yid)], "hold": float(info["time"]), "kcal": 30.0, "label": lab,
+			cands.append({"m": _lm, "d": cdist + si * 0.01, "text": "%s (+%d %s)" % [lab, yn, inv.name_of(yid)], "hold": float(info["time"]), "kcal": 30.0, "label": lab,
 				"act": func() -> void: _carcass_step(cnode, sp, step, yid, yn)})
 	for bn in get_tree().get_nodes_in_group("bodies"):
 		var bz := bn as Node3D
@@ -1512,7 +1546,7 @@ func _update_prompt() -> void:
 			continue
 		var bd := bz.global_position.distance_to(player.position)
 		if _aim_ok(bz.global_position + Vector3(0.0, 0.3, 0.0), 2.4, 1.0):
-			cands.append({"d": bd, "text": "Search body", "hold": 3.0, "kcal": 5.0, "act": func() -> void: _search_body(bz)})
+			cands.append({"m": _lm, "d": bd, "text": "Search body", "hold": 3.0, "kcal": 5.0, "act": func() -> void: _search_body(bz)})
 	for pk in get_tree().get_nodes_in_group("pickups"):
 		var ip := pk as ItemPickup
 		if ip == null:
@@ -1521,7 +1555,7 @@ func _update_prompt() -> void:
 		if _aim_ok(pc, 2.8, 0.55):
 			var pick: ItemPickup = ip
 			var pmiss := _aim_miss(pc)
-			cands.append({"d": 0.5 + (pmiss if pmiss < 50.0 else 0.0) * 1.5 + (pc - player.position).length() * 0.1, "text": "Take %s%s" % [inv.name_of(ip.id), " x%d" % ip.n if ip.n > 1 else ""], "act": func() -> void: take_pickup(pick)})
+			cands.append({"m": _lm, "d": 0.5 + (pmiss if pmiss < 50.0 else 0.0) * 1.5 + (pc - player.position).length() * 0.1, "text": "Take %s%s" % [inv.name_of(ip.id), " x%d" % ip.n if ip.n > 1 else ""], "act": func() -> void: take_pickup(pick)})
 	if plants != null:
 		var pl: Dictionary = plants.nearest(player.position, fwd, 1.8)
 		if not pl.is_empty():
@@ -1532,7 +1566,7 @@ func _update_prompt() -> void:
 			if inv.count('knife') > 0 and kd.has("knife_hold"):
 				phold = float(kd["knife_hold"])
 			var pkey: String = pl["key"]
-			cands.append({"d": float(pl["d"]) + 0.2, "text": "Gather %s (+%d %s)" % [kd["label"], pn, inv.name_of(iid)], "hold": phold, "kcal": 3.0, "act": func() -> void:
+			cands.append({"m": _lm, "d": float(pl["d"]) + 0.2, "text": "Gather %s (+%d %s)" % [kd["label"], pn, inv.name_of(iid)], "hold": phold, "kcal": 3.0, "act": func() -> void:
 				if plants.pick(pkey, clock.total_game_s):
 					audio.play_at("rustle", player.position, -4.0, randf_range(0.85, 1.2), 4.0, 40.0)
 					_give_or_drop(iid, pn, player.position + fwd * 0.8)})
@@ -1543,7 +1577,7 @@ func _update_prompt() -> void:
 			var tk: String = ForestScatter.tree_key(float(tr["x"]), float(tr["z"]))
 			var pw := lerpf(0.55, 1.0, inv.condition('axe'))
 			var left := float(forest.chop_hp.get(tk, ForestScatter.hits_total(float(tr["h"]))))
-			cands.append({"d": float(tr["d"]) + 0.3, "text": "Chop tree (%d hits)" % int(ceil(left / pw)), "label": "Chopping", "hold": 0.85,
+			cands.append({"m": _lm, "d": float(tr["d"]) + 0.3, "text": "Chop tree (%d hits)" % int(ceil(left / pw)), "label": "Chopping", "hold": 0.85,
 				"start": func() -> void:
 					get_tree().create_timer(0.55).timeout.connect(func() -> void:
 						if not _act.is_empty():
@@ -1557,10 +1591,10 @@ func _update_prompt() -> void:
 		var ld := wl.dist_to(player.position)
 		if ld < 2.2 and _aim_ok(wl.global_position, 2.6, 1.2):
 			if axe_up:
-				cands.append({"d": ld + 0.2, "text": "Split log (+%d firewood)" % wl.firewood, "hold": 5.0, "kcal": 25.0, "noise": 20.0, "act": func() -> void: _split_log(wl)})
+				cands.append({"m": _lm, "d": ld + 0.2, "text": "Split log (+%d firewood)" % wl.firewood, "hold": 5.0, "kcal": 25.0, "noise": 20.0, "act": func() -> void: _split_log(wl)})
 			else:
-				cands.append({"d": ld + 0.2, "text": "Log (needs a hatchet equipped)", "act": func() -> void: _say('Need a hatchet to split this')})
-	cands.sort_custom(func(x, y) -> bool: return float(x["d"]) < float(y["d"]))
+				cands.append({"m": _lm, "d": ld + 0.2, "text": "Log (needs a hatchet equipped)", "act": func() -> void: _say('Need a hatchet to split this')})
+	cands = _rank_cands(cands)
 	if cands.size() > 40:
 		cands.resize(40)
 	var texts: Array = []
@@ -1805,6 +1839,9 @@ func _unhandled_input(e: InputEvent) -> void:
 		get_tree().reload_current_scene()
 		return
 	if e is InputEventMouseButton and e.pressed and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and (e.button_index == MOUSE_BUTTON_WHEEL_UP or e.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+		if player.aim_k > 0.6:
+			player.zoom_step(1 if e.button_index == MOUSE_BUTTON_WHEEL_UP else -1)   # scope zoom while aimed
+			return
 		if _n_actions > 1:
 			var stepv := -1 if e.button_index == MOUSE_BUTTON_WHEEL_UP else 1
 			_sel_idx = posmod(_sel_idx + stepv, _n_actions)
@@ -2111,6 +2148,7 @@ func _building_list() -> Array:
 	out.append_array(cabins)
 	out.append_array(huts)
 	out.append_array(stores)
+	out.append_array(outbuildings)
 	return out
 
 
@@ -2144,6 +2182,7 @@ func _add_chest(p: Vector3, yaw: float) -> StorageChest:
 	c.global_position = p
 	c.rotation.y = yaw
 	chests.append(c)
+	player.chests = chests
 	return c
 
 
@@ -2176,9 +2215,9 @@ func _chest_cands(cands: Array) -> void:
 		if not _aim_ok(cp, 2.6, 0.7):
 			continue
 		var cdd := (cp - player.position).length()
-		cands.append({"d": cdd - 0.2, "text": "Open chest (%d stacks)" % ch.stack_count(), "act": func() -> void: gear.open_chest(ch)})
+		cands.append({"m": _lm, "d": cdd - 0.2, "text": "Open chest (%d stacks)" % ch.stack_count(), "act": func() -> void: gear.open_chest(ch)})
 		if ch.is_empty():
-			cands.append({"d": cdd + 0.1, "text": "Dismantle chest (+4 planks, +4 nails)", "hold": 4.0, "kcal": 6.0, "noise": 14.0, "act": func() -> void: _dismantle_chest(ch)})
+			cands.append({"m": _lm, "d": cdd + 0.1, "text": "Dismantle chest (+4 planks, +4 nails)", "hold": 4.0, "kcal": 6.0, "noise": 14.0, "act": func() -> void: _dismantle_chest(ch)})
 
 
 func _dismantle_chest(c: StorageChest) -> void:
@@ -2375,15 +2414,81 @@ func _shoot() -> void:
 	var dir := _shot_dir()
 	player.pitch += lerpf(0.022, 0.014, player.aim_k)  # recoil kick, player pulls it back down
 	player.yaw += randf_range(-0.004, 0.004)
-	var r := HitZones.trace(get_tree(), terrain, forest, eye, dir, 400.0, ['hostile', 'prey'], _building_list())
-	if r.has('node'):
+	_spawn_bullet(eye, dir)
+
+
+# ---- Ballistics: a real projectile (muzzle speed + gravity), rifle zeroed at ZERO_M. Resolved a few metres per
+# frame so a moving target can walk out of the way. Tests resolve the whole flight inside the shot.
+const MUZZLE_V := 760.0
+const ZERO_M := 100.0
+const GRAV := 9.8
+const BULLET_RANGE := 600.0
+var bullets: Array = []
+var instant_bullets: bool = "autostart" in OS.get_cmdline_user_args()
+
+
+func _spawn_bullet(eye: Vector3, dir: Vector3) -> void:
+	var d := dir
+	var rt := dir.cross(Vector3.UP)
+	if rt.length() > 0.01:
+		d = dir.rotated(rt.normalized(), 0.5 * GRAV * ZERO_M / (MUZZLE_V * MUZZLE_V))
+	var b := {'p': eye, 'v': d * MUZZLE_V, 'dist': 0.0, 't': 0.0}
+	if instant_bullets:
+		var res := {}
+		while res.is_empty():
+			res = _step_bullet(b, 0.01)
+		_bullet_result(res)
+	else:
+		bullets.append(b)
+
+
+## Advance one bullet by dt. {} while still flying, else the HitZones result / {'gone': true}.
+func _step_bullet(b: Dictionary, dt: float) -> Dictionary:
+	var p0: Vector3 = b['p']
+	var v: Vector3 = b['v']
+	v.y -= GRAV * dt
+	var seg := v * dt
+	var sl := seg.length()
+	var r := HitZones.trace(get_tree(), terrain, forest, p0, seg / sl, sl, ['hostile', 'prey'], _building_list())
+	var d0 := float(b['dist'])
+	b['v'] = v
+	b['p'] = p0 + seg
+	b['dist'] = d0 + sl
+	b['t'] = float(b['t']) + dt
+	if not r.is_empty():
+		r['t'] = d0 + float(r.get('t', 0.0))
+		r['flight'] = float(b['t'])
+		return r
+	if float(b['dist']) > BULLET_RANGE or (b['p'] as Vector3).y < -80.0:
+		return {'gone': true, 't': float(b['dist'])}
+	return {}
+
+
+func _bullets_update(delta: float) -> void:
+	if bullets.is_empty():
+		return
+	var steps := maxi(1, ceili(delta / 0.02))
+	var dt := delta / float(steps)
+	for b in bullets.duplicate():
+		var res := {}
+		for i in steps:
+			res = _step_bullet(b, dt)
+			if not res.is_empty():
+				break
+		if not res.is_empty():
+			bullets.erase(b)
+			_bullet_result(res)
+
+
+func _bullet_result(r: Dictionary) -> void:
+	if r.has('node') and is_instance_valid(r['node']):
 		var n: Node3D = r['node']
 		var head := String(r['zone']) == 'head'
 		n.call('hit', RIFLE_DAMAGE * float(r['mult']), player.position)
 		audio.hit(n.global_position + Vector3(0, 1.0, 0))
 		_hit_feedback(n, head)
 		_say('Headshot!' if head else 'Shot hit (%s)' % String(r['zone']))
-		last_shot = {'hit': true, 'zone': r['zone'], 't': r['t']}
+		last_shot = {'hit': true, 'zone': r['zone'], 't': r['t'], 'flight': r.get('flight', 0.0)}
 	elif r.has('world'):
 		_say('Bang. Hit the terrain')
 		last_shot = {'hit': false, 'world': true, 't': r['t']}

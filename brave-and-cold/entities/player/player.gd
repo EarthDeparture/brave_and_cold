@@ -26,6 +26,7 @@ var noise: NoiseBus
 var cam: Camera3D
 var forest: ForestScatter
 var cabins: Array = []
+var chests: Array = []   # StorageChest colliders
 var footprints: Footprints
 var ice: IceField   # frozen water is walkable: the surface, not the carved bed under it
 
@@ -42,6 +43,9 @@ var _breath := 4.0      # seconds of held breath left (Shift while aimed steadie
 var breath_held := false
 var _winded := false
 const AIM_FOV := 36.0
+const AIM_FOVS := [36.0, 22.0, 13.0]   # wheel while aimed: iron sights -> 2x -> 3x style zoom
+var zoom_i := 0
+var _aim_fov := 36.0
 const HIP_FOV := 70.0
 var moving := false
 var activity := 0
@@ -183,10 +187,15 @@ func noise_radius() -> float:
 	return r * (1.0 - 0.06 * tier)  # deep snow muffles steps
 
 
+func zoom_step(s: int) -> void:
+	zoom_i = clampi(zoom_i + s, 0, AIM_FOVS.size() - 1)
+
+
 func _update_aim(delta: float) -> void:
 	var want := aim_req and not dead and not sleeping and not struggling and not sprinting
 	aim_k = move_toward(aim_k, 1.0 if want else 0.0, delta * 5.0)
-	cam.fov = lerpf(HIP_FOV, AIM_FOV, aim_k * aim_k * (3.0 - 2.0 * aim_k))
+	_aim_fov = move_toward(_aim_fov, float(AIM_FOVS[zoom_i]), delta * 90.0)
+	cam.fov = lerpf(HIP_FOV, _aim_fov, aim_k * aim_k * (3.0 - 2.0 * aim_k))
 	_sway_t += delta
 	var shift := Input.is_key_pressed(KEY_SHIFT)
 	if not shift:
@@ -289,6 +298,10 @@ func _move(delta: float) -> void:
 				var q2: Vector2 = cb.resolve(position.x, position.z, 0.35)
 				position.x = q2.x
 				position.z = q2.y
+			for ch in chests:
+				var q3: Vector2 = ch.resolve(position.x, position.z, 0.35)
+				position.x = q3.x
+				position.z = q3.y
 			var push := Vector2(position.x - ax, position.z - az)
 			if push.length_squared() > 1e-8:
 				# slide: drop the velocity component pointing into whatever pushed us out
@@ -386,7 +399,7 @@ func _footsteps(delta: float) -> void:
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		var ss: float = Settings.sensitivity * lerpf(1.0, 0.45, aim_k)
+		var ss: float = Settings.sensitivity * lerpf(1.0, 0.45 * _aim_fov / AIM_FOV, aim_k)
 		yaw -= e.relative.x * ss
 		pitch = clampf(pitch - e.relative.y * ss, -1.5, 1.5)
 	elif e is InputEventKey and e.pressed and not e.echo:

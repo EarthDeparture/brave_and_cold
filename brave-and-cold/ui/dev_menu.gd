@@ -86,6 +86,8 @@ func setup(w: Node) -> void:
 		_fishtest()
 	if "gearshot=1" in ua:
 		_gearshot()
+	if "sightshot=1" in ua:
+		_sightshot()
 	if "interacttest=1" in ua:
 		_interacttest()
 	if "hittest=1" in ua:
@@ -2859,6 +2861,36 @@ func _gearshot() -> void:
 	get_tree().quit()
 
 
+## Windowed screenshots of the rifle at the hip, down the iron sights, and zoomed. Target post 30 m out.
+func _sightshot() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var inv: Inventory = world.get("inv")
+	player.god = true
+	inv.add("rifle")
+	inv.add("ammo", 20)
+	world.set("rifle_up", true)
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var zp: Vector3 = player.position + fwd * 30.0
+	zp.y = player.terrain.data.get_height(zp)
+	var z: Zombie = world.call("_add_zombie", zp, 970)
+	z.set_process(false)
+	z.set_physics_process(false)
+	z.global_position = zp
+	var to := z.global_position + Vector3(0, 1.4, 0) - player.cam.global_position
+	player.yaw = atan2(-to.x, -to.z)
+	player.pitch = atan2(to.y, Vector2(to.x, to.z).length())
+	await get_tree().create_timer(0.8).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/sight_hip.png")
+	world.set("aim_override", true)
+	await get_tree().create_timer(1.2).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/sight_aim.png")
+	player.zoom_step(2)
+	await get_tree().create_timer(1.0).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/sight_zoom.png")
+	print("SIGHTSHOT done fov=", player.cam.fov)
+	get_tree().quit()
+
+
 func _interacttest() -> void:
 	await get_tree().create_timer(2.5).timeout
 	var fails := 0
@@ -3225,6 +3257,145 @@ func _hittest() -> void:
 			hip += 1
 	ok = hip >= 3 and hip < 100
 	print("HITTEST hip 40 m hits=%d/100 (spread works if <100) ok=%s" % [hip, str(ok)])
+	fails += 0 if ok else 1
+	# 6. weak-point fixes ------------------------------------------------------------------------------------
+	world.set("aim_override", false)
+	# 6a. zones follow the pose: sleeper lies flat, crawler is low
+	var zs: Zombie = world.call("_add_zombie", player.position + fwd * 6.0 + Vector3(0, 0, 0), 950)
+	zs.set_process(false)
+	zs.set_physics_process(false)
+	var gp: Vector3 = zs.global_position
+	var head_row: Array = (HitZones.SPECS["zombie"] as Array)[0]
+	var stand_head := HitZones.center_of(zs, head_row)
+	zs.get("_model").rotation.x = -PI * 0.5
+	zs.get("_model").position.y = 0.12
+	await get_tree().process_frame
+	var lie_head := HitZones.center_of(zs, head_row)
+	ok = stand_head.y - gp.y > 1.5 and lie_head.y - gp.y < 0.6
+	print("HITTEST sleeper head standing y=%.2f lying y=%.2f ok=%s" % [stand_head.y - gp.y, lie_head.y - gp.y, str(ok)])
+	fails += 0 if ok else 1
+	var down := HitZones.ray(zs, lie_head + Vector3(0, 3, 0), Vector3.DOWN, 10.0)
+	var ghost := HitZones.ray(zs, stand_head + Vector3(3, 0, 0), Vector3.LEFT, 10.0)
+	ok = String(down.get("zone", "")) == "head" and ghost.is_empty()
+	print("HITTEST sleeper zones follow pose (head hit from above, nothing at old standing height) ok=%s" % str(ok))
+	fails += 0 if ok else 1
+	zs.get("_model").rotation.x = 0.35
+	zs.get("_model").position.y = -0.55
+	await get_tree().process_frame
+	var crawl_head := HitZones.center_of(zs, head_row)
+	ok = crawl_head.y - gp.y < stand_head.y - gp.y - 0.5
+	print("HITTEST crawler head y=%.2f ok=%s" % [crawl_head.y - gp.y, str(ok)])
+	fails += 0 if ok else 1
+	zs.global_position = Vector3(5000, -500, 5000)
+	# 6b. ballistics: gravity drop and flight time
+	var eye0: Vector3 = player.cam.global_position + Vector3(0, 40.0, 0)
+	var dirb := Vector3(-sin(player.yaw) * cos(0.09), sin(0.09), -cos(player.yaw) * cos(0.09))
+	var rtb := dirb.cross(Vector3.UP).normalized()
+	var d0 := dirb.rotated(rtb, 0.5 * 9.8 * 100.0 / (760.0 * 760.0))
+	var bb := {"p": eye0, "v": d0 * 760.0, "dist": 0.0, "t": 0.0}
+	for i in 40:
+		world.call("_step_bullet", bb, 0.01)
+	var straight := eye0 + d0 * 760.0 * 0.4
+	var dropped: float = straight.y - (bb["p"] as Vector3).y
+	ok = absf(dropped - 0.5 * 9.8 * 0.16) < 0.06
+	print("HITTEST bullet drop in 0.4 s = %.3f m (0.784 expected) ok=%s" % [dropped, str(ok)])
+	fails += 0 if ok else 1
+	# 6c. a bullet takes time: zombie 40 m out is hit only after ~0.05 s of flight
+	world.set("instant_bullets", false)
+	zf.global_position = Vector3(5000, -500, 5000)
+	var zt: Vector3 = player.position + fwd * 40.0
+	zt.y = player.terrain.data.get_height(zt)
+	var zfar: Zombie = world.call("_add_zombie", zt, 960)
+	zfar.set_process(false)
+	zfar.set_physics_process(false)
+	zfar.global_position = zt
+	zfar.hp = 1000.0
+	await get_tree().process_frame
+	var toz := zfar.global_position + Vector3(0, 1.2, 0) - player.cam.global_position
+	player.yaw = atan2(-toz.x, -toz.z)
+	player.pitch = atan2(toz.y, Vector2(toz.x, toz.z).length())
+	for k in 3:
+		await get_tree().process_frame
+	world.set("last_shot", {})
+	world.set("aim_override", true)
+	for k in 20:
+		await get_tree().process_frame
+	world.call("_spawn_bullet", player.cam.global_position, -player.cam.global_transform.basis.z)
+	var instantly: bool = not (world.get("last_shot") as Dictionary).is_empty()
+	var inflight: int = (world.get("bullets") as Array).size()
+	await get_tree().create_timer(1.0).timeout
+	var lsf: Dictionary = world.get("last_shot")
+	ok = (not instantly) and inflight == 1 and lsf.get("hit", false) and float(lsf.get("flight", 0.0)) > 0.03 and float(lsf.get("flight", 0.0)) < 0.5
+	print("HITTEST bullet travel inflight=%d instant=%s last=%s ok=%s" % [inflight, str(instantly), str(lsf), str(ok)])
+	fails += 0 if ok else 1
+	world.set("instant_bullets", true)
+	zfar.global_position = Vector3(5000, -500, 5000)
+	# 6d. roof and outbuildings are solid
+	var eye_r: Vector3 = cbn.to_global(Vector3(0.0, 6.0, 0.0))
+	var tr_roof := HitZones.building_block([cbn], eye_r, Vector3.DOWN, 20.0)
+	ok = tr_roof > 2.0 and tr_roof < 3.5
+	print("HITTEST roof blocks shot from above t=%.2f ok=%s" % [tr_roof, str(ok)])
+	fails += 0 if ok else 1
+	var obs: Array = world.get("outbuildings")
+	if obs.is_empty():
+		print("HITTEST outbuilding block SKIP (none in world)")
+	else:
+		var ob: Outbuilding = obs[0]
+		var eye_o := ob.to_global(Vector3(0.0, 1.0, ob.hz + 4.0))
+		var dir_o := (ob.to_global(Vector3(0.0, 1.0, 0.0)) - eye_o).normalized()
+		var tob := HitZones.building_block([ob], eye_o, dir_o, 20.0)
+		ok = tob > 3.0 and tob < 5.5
+		print("HITTEST outbuilding blocks shot t=%.2f ok=%s" % [tob, str(ok)])
+		fails += 0 if ok else 1
+	# 6e. chest: solid, lid animates, perishables spoil slowly
+	var chp: Vector3 = player.position + fwd * 8.0
+	chp.y = player.terrain.data.get_height(chp)
+	var chest: StorageChest = world.call("_add_chest", chp, 0.0)
+	await get_tree().process_frame
+	var pushed: Vector2 = chest.resolve(chp.x, chp.z, 0.35)
+	ok = Vector2(pushed.x - chp.x, pushed.y - chp.z).length() > 0.3
+	print("HITTEST chest is solid (pushed %.2f m) ok=%s" % [Vector2(pushed.x - chp.x, pushed.y - chp.z).length(), str(ok)])
+	fails += 0 if ok else 1
+	var lid: Node3D = chest.get("_lid")
+	ok = lid != null and lid.get_parent() != chest
+	print("HITTEST chest uses Blender model (lid pivot found) ok=%s" % str(ok))
+	fails += 0 if ok else 1
+	chest.want_open = true
+	for k in 6:
+		chest._process(0.1)
+	ok = absf(chest.lid_k - 1.0) < 0.01 and lid != null and absf(rad_to_deg(lid.rotation.x) + StorageChest.LID_OPEN_DEG) < 1.0
+	print("HITTEST chest lid opens lid_k=%.2f rot=%.1f ok=%s" % [chest.lid_k, rad_to_deg(lid.rotation.x), str(ok)])
+	fails += 0 if ok else 1
+	chest.want_open = false
+	chest.put("venison_raw", 2, 1.0, 0.0)
+	chest.put("beans", 3, 1.0, 0.0)
+	var shelf := Inventory.shelf_s("venison_raw")
+	chest.tick(shelf * 0.5)
+	var mid_ok := chest.count("venison_raw") == 2
+	chest.tick(shelf * 3.0)
+	ok = mid_ok and chest.count("venison_raw") == 0 and chest.count("rotten_meat") == 2 and chest.count("beans") == 3
+	print("HITTEST chest spoilage (cold rate) mid_ok=%s rotten=%d beans=%d ok=%s" % [str(mid_ok), chest.count("rotten_meat"), chest.count("beans"), str(ok)])
+	fails += 0 if ok else 1
+	# 6f. prompt ranking: stove behind the window is hidden, off-axis things stay, centred thing first
+	var rk: Array = world.call("_rank_cands", [
+		{"m": 0.4, "d": 0.9, "text": "off to the side"},
+		{"m": 0.05, "d": 2.6, "text": "Stove behind window"},
+		{"m": 0.05, "d": 1.0, "text": "Board up window"},
+		{"m": 0.5, "d": 2.6, "text": "Far but off-axis"},
+	])
+	var names: Array = rk.map(func(c): return String(c["text"]))
+	ok = not names.has("Stove behind window") and names.has("Far but off-axis") and names[0] == "Board up window"
+	print("HITTEST prompt ranking ", names, " ok=", ok)
+	fails += 0 if ok else 1
+	# 6g. scope zoom steps and clamps
+	player.zoom_i = 0
+	player.zoom_step(1)
+	player.zoom_step(1)
+	player.zoom_step(1)
+	var z_top: int = player.zoom_i
+	player.zoom_step(-9)
+	ok = z_top == Player.AIM_FOVS.size() - 1 and player.zoom_i == 0
+	print("HITTEST zoom steps clamp top=%d bottom=%d ok=%s" % [z_top, player.zoom_i, str(ok)])
 	fails += 0 if ok else 1
 	print("HITTEST failures=", fails)
 	get_tree().quit()
