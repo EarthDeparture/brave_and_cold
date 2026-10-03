@@ -26,6 +26,7 @@ var noise: NoiseBus
 var cam: Camera3D
 var forest: ForestScatter
 var cabins: Array = []
+var spatial_structures: Array[Node3D] = [] # Optional height-aware surfaces, separate from ground cabins.
 var chests: Array = []   # StorageChest colliders
 var footprints: Footprints
 var ice: IceField   # frozen water is walkable: the surface, not the carved bed under it
@@ -165,14 +166,34 @@ func ground_at(x: float, z: float) -> float:
 		var f: float = cb.floor_at(x, z, th)
 		if not is_nan(f):
 			return f
+	for structure in spatial_structures:
+		var f: float = structure.call("floor_at_world", Vector3(x, position.y - eye_h, z), th)
+		if not is_nan(f):
+			return f
 	return th
 
 
 func is_sheltered() -> bool:
+	for structure in spatial_structures:
+		if bool(structure.call("is_sheltered_at", position)):
+			return true
 	for cb in cabins:
 		if cb.contains_xz(position.x, position.z):
 			return true
 	return snow.canopy_height_at(position.x, position.z) >= 10.0
+
+
+func _on_spatial_surface() -> bool:
+	for structure in spatial_structures:
+		var floor_y: float = structure.call("floor_at_world", position - Vector3.UP * eye_h, NAN)
+		if not is_nan(floor_y):
+			return true
+	return false
+
+
+func _step_snow_tier() -> int:
+	# The new deck/stair floor is not the deep snow at the same X/Z below it.
+	return 0 if _on_spatial_surface() else snow.tier_at(position.x, position.z)
 
 
 func noise_radius() -> float:
@@ -183,7 +204,7 @@ func noise_radius() -> float:
 		r = NoiseBus.RADIUS_RUN
 	elif crouching:
 		r = NoiseBus.RADIUS_CROUCH
-	var tier: int = snow.tier_at(position.x, position.z)
+	var tier: int = _step_snow_tier()
 	return r * (1.0 - 0.06 * tier)  # deep snow muffles steps
 
 
@@ -266,7 +287,7 @@ func _move(delta: float) -> void:
 	var want_sprint := (Input.is_key_pressed(KEY_SHIFT) or (sim_on and sim_sprint)) and not crouching and not exhausted and stamina > 0.0 and aim_k < 0.3
 	var base := CROUCH if crouching else (SPRINT if (want_sprint and wish) else WALK)
 	# deep snow: a slight, smoothly blended slowdown (no hard steps when the tier flips under the boots)
-	var tier: int = snow.tier_at(position.x, position.z)
+	var tier: int = _step_snow_tier()
 	_snow_mult = lerpf(_snow_mult, SnowField.PLAYER_SPEED[tier], minf(1.0, delta * 2.5))
 	var want := Vector2.ZERO
 	if wish:
@@ -286,6 +307,7 @@ func _move(delta: float) -> void:
 			moving = false
 			sprinting = false
 		else:
+			var prior_foot := position - Vector3.UP * eye_h
 			position.x += step.x
 			position.z += step.y
 			var ax := position.x
@@ -302,6 +324,10 @@ func _move(delta: float) -> void:
 				var q3: Vector2 = ch.resolve(position.x, position.z, 0.35)
 				position.x = q3.x
 				position.z = q3.y
+			for structure in spatial_structures:
+				var q4: Vector2 = structure.call("resolve_at", position - Vector3.UP * eye_h, prior_foot, 0.35)
+				position.x = q4.x
+				position.z = q4.y
 			var push := Vector2(position.x - ax, position.z - az)
 			if push.length_squared() > 1e-8:
 				# slide: drop the velocity component pointing into whatever pushed us out
@@ -342,6 +368,10 @@ func _eye_ground(x: float, z: float) -> float:
 		var f: float = cb.floor_at(x, z, th)
 		if not is_nan(f):
 			return f
+	for structure in spatial_structures:
+		var f: float = structure.call("floor_at_world", Vector3(x, position.y - eye_h, z), th)
+		if not is_nan(f):
+			return f
 	if is_nan(th):
 		return th
 	var s := th
@@ -363,7 +393,7 @@ func _head_bob(delta: float, sp: float) -> void:
 	cam.position = Vector3(sin(_bob_t) * 0.011 * _bob_amp, absf(sin(_bob_t)) * -0.016 * _bob_amp, 0.0)
 
 func _stamina(delta: float) -> void:
-	var tier: int = snow.tier_at(position.x, position.z)
+	var tier: int = _step_snow_tier()
 	if sprinting:
 		stamina -= STAMINA_DRAIN * SnowField.PLAYER_STAMINA_COST[tier] * delta
 		if stamina <= 0.0:
@@ -385,9 +415,11 @@ func _footsteps(delta: float) -> void:
 	_last_pos = position
 	if _since_trample >= TRAMPLE_STEP:
 		_since_trample = 0.0
-		snow.trample(position.x, position.z, 0.5)
-		stepped.emit(snow.tier_at(position.x, position.z), noise_radius())
-		if footprints != null:
+		var on_structure := _on_spatial_surface()
+		if not on_structure:
+			snow.trample(position.x, position.z, 0.5)
+		stepped.emit(_step_snow_tier(), noise_radius())
+		if footprints != null and not on_structure:
 			var gy: float = ground_at(position.x, position.z)
 			if not is_nan(gy):
 				footprints.step(position.x, gy, position.z, yaw, snow.tier_at(position.x, position.z))

@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "name": "fire_lookout",
+  "seed": 2103,
+  "units": "metres",
+  "up_axis": "Godot +Y",
+  "floor_y": 8.64,
+  "deck_half": [
+    3.8,
+    3.3
+  ],
+  "cabin_half": [
+    2.7,
+    2.2
+  ],
+  "deck_height": 8.64,
+  "deck_bounds": [
+    -3.8,
+    -3.3,
+    3.8,
+    3.3
+  ],
+  "room_bounds": [
+    -2.7,
+    -2.2,
+    2.7,
+    2.2
+  ],
+  "door_width": 1.1,
+  "supports": [
+    [
+      -2.95,
+      -2.45,
+      0.3
+    ],
+    [
+      -2.95,
+      2.45,
+      0.3
+    ],
+    [
+      2.95,
+      -2.45,
+      0.3
+    ],
+    [
+      2.95,
+      2.45,
+      0.3
+    ],
+    [
+      3.74,
+      -2.2,
+      0.2
+    ],
+    [
+      3.74,
+      2.2,
+      0.2
+    ],
+    [
+      6.44,
+      -2.2,
+      0.2
+    ],
+    [
+      6.44,
+      2.2,
+      0.2
+    ]
+  ],
+  "door": {
+    "x": 0,
+    "z": 2.2,
+    "width": 1.1
+  },
+  "stairs": {
+    "flights": 4,
+    "steps_per_flight": 12,
+    "riser": 0.18,
+    "run": 0.3,
+    "width": 1.1,
+    "lane_x": [
+      4.45,
+      5.8,
+      4.45,
+      5.8
+    ],
+    "z_start": [
+      1.8,
+      -1.8,
+      1.8,
+      -1.8
+    ],
+    "z_end": [
+      -1.8,
+      1.8,
+      -1.8,
+      1.8
+    ],
+    "landing_x": [
+      3.7,
+      6.5
+    ],
+    "landing_depth": 0.8,
+    "landing_z": [
+      -2.2,
+      2.2,
+      -2.2,
+      2.2
+    ]
+  },
+  "mesh_objects": 7,
+  "triangles": 6790,
+  "vertices": 13524,
+  "material_count": 7,
+  "file_bytes": 534172,
+  "sha256": "acbeba08b406b50cb05bdc7c586c1a7a6667aec9f3a82608de541389fd28083a",
+  "source": "Original procedural geometry: tools/blender/gen_fire_lookout.py",
+  "generator_sha256": "4d66440171aa468bf92587483670f8ef434e40bca753f05c39efb19f1bfe3578",
+  "license": "Project-authored original asset; same ownership as repository",
+  "blender_version": "5.2.2 LTS",
+  "design": "Winter forestry lookout on timber stilts, glazed elevated room, snow hip roof, continuous switchback access, muted wood/green/blue palette",
+  "negative_constraints": "No copied meshes/textures, no terrain edits, no external paid generation, no more than 15000 triangles"
+}

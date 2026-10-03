@@ -29,6 +29,7 @@ var forest: ForestScatter
 var plants: PlantField
 var footprints: Footprints
 var cabins: Array[Cabin] = []
+var fire_lookout: FireLookout # Standalone additive mountain structure; never a ground cabin collider.
 var out_path := ""
 var walk_secs := 0.0
 var _t := 0.0
@@ -156,6 +157,7 @@ func _ready() -> void:
 	_build_store()
 	_build_huts()
 	_build_ice_holes()
+	_build_fire_lookout(opts)
 	if plants != null:
 		for cb in cabins:
 			plants.suppress_near(cb.global_position.x, cb.global_position.z, 9.0)
@@ -332,6 +334,49 @@ func _args() -> Dictionary:
 	return d
 
 
+## Added only after the existing map has finished placing roads, trees and buildings.
+## The optional camera helpers do not change the default spawn.
+func _build_fire_lookout(opts: Dictionary) -> void:
+	if String(opts.get('lookout', '1')) == '0':
+		return
+	if not FileAccess.file_exists(FireLookout.SITE_PATH):
+		push_warning('Fire lookout site has not been generated yet')
+		return
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(FireLookout.SITE_PATH))
+	if not parsed is Dictionary:
+		push_error('Fire lookout site data is invalid')
+		return
+	fire_lookout = FireLookout.new()
+	add_child(fire_lookout)
+	fire_lookout.build(parsed)
+	var stair_base := fire_lookout.to_global(Vector3(4.45, 0.0, 1.8))
+	var stair_ground: float = terrain.data.get_height(stair_base)
+	if not is_nan(stair_ground):
+		# Imported terrain sampling takes priority over raster quantization. Only
+		# the new structure moves; existing terrain and map contents remain intact.
+		fire_lookout.position.y = stair_ground + 0.03
+	fire_lookout.build_foundations(terrain)
+	fire_lookout.build_access_path(terrain)
+	player.spatial_structures.append(fire_lookout)
+	print('FIRE_LOOKOUT at ', fire_lookout.position, ' yaw=', fire_lookout.rotation_degrees.y)
+	if opts.has('lookoutpos'):
+		var mode := String(opts['lookoutpos'])
+		if mode == 'deck' or mode == 'room':
+			var local := Vector3(0.0, FireLookout.DECK_Y, 2.75 if mode == 'deck' else 0.0)
+			player.position = fire_lookout.to_global(local) + Vector3.UP * player.eye_h
+			player._ready_ground = true
+			player._last_pos = player.position
+			opts['yaw'] = str(fire_lookout.rotation_degrees.y + (0.0 if mode == 'deck' else 180.0))
+			opts['pitch'] = '0'
+		else:
+			var point := fire_lookout.approach_point(float(opts.get('lookoutdist', 17.0)))
+			player.place(point.x, point.z)
+			var target := fire_lookout.to_global(Vector3(0.0, 6.0, 0.0))
+			var direction := target - Vector3(point.x, fire_lookout.position.y + player.eye_h, point.z)
+			opts['yaw'] = str(rad_to_deg(atan2(-direction.x, -direction.z)))
+			opts['pitch'] = str(rad_to_deg(atan2(direction.y, Vector2(direction.x, direction.z).length())))
+
+
 func _build_environment() -> void:
 	sun = DirectionalLight3D.new()
 	sun.shadow_enabled = true
@@ -391,6 +436,8 @@ func _process(delta: float) -> void:
 		if cb.contains_xz(player.position.x, player.position.z):
 			in_cabin = true
 			break
+	if fire_lookout != null and fire_lookout.contains_room(player.position):
+		in_cabin = true
 	_indoor_k = move_toward(_indoor_k, 1.0 if in_cabin else 0.0, delta * 2.0)
 	if _indoor_k > 0.0:
 		env.fog_density *= lerpf(1.0, INDOOR_FOG_MULT, _indoor_k)
@@ -2248,6 +2295,8 @@ func _mouse_ok() -> bool:
 func _building_list() -> Array:
 	var out: Array = []
 	out.append_array(cabins)
+	if fire_lookout != null:
+		out.append(fire_lookout)
 	out.append_array(huts)
 	out.append_array(stores)
 	out.append_array(outbuildings)
@@ -3113,6 +3162,10 @@ func save_game() -> bool:
 		'carcasses': _carcass_list(),
 		'picked': plants.picked if plants != null else {},
 	}
+	if fire_lookout != null:
+		var elevated_location := fire_lookout.saved_location(player.position, player.eye_h)
+		if not elevated_location.is_empty():
+			d['lookout_location'] = elevated_location
 	return SaveGame.write(d)
 
 
@@ -3200,6 +3253,8 @@ func _apply_save(sv: Dictionary) -> void:
 	player.pitch = float(p['pitch'])
 	player.health = float(p['hp'])
 	player.stamina = float(p['stam'])
+	if fire_lookout != null:
+		fire_lookout.restore_location(player, sv.get('lookout_location', {}))
 	body.core = float(sv['body']['core'])
 	body.wetness = float(sv['body']['wet'])
 	needs.calories = float(sv['needs']['cal'])
