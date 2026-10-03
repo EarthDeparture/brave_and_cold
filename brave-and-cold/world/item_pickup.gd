@@ -4,12 +4,14 @@ extends Node3D
 
 var id := ""
 var n := 1
+var cond := -1.0   # worn tools keep their condition on the ground (-1 = pristine); dropping must not repair them
 
 
-static func spawn(parent: Node, item_id: String, count: int, pos: Vector3) -> ItemPickup:
+static func spawn(parent: Node, item_id: String, count: int, pos: Vector3, condition := -1.0) -> ItemPickup:
 	var p := ItemPickup.new()
 	p.id = item_id
 	p.n = count
+	p.cond = condition
 	parent.add_child(p)
 	p.global_position = pos
 	return p

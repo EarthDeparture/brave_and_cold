@@ -27,11 +27,11 @@ const ITEMS := {
 	"whitefish_cooked": {"shelf_h": 60.0, "name": "Cooked Whitefish", "kind": "food", "stack": 4, "kcal": 520.0, "desc": "Mild, filling whitefish."},
 	"pike_raw": {"shelf_h": 24.0, "name": "Raw Pike", "kind": "food", "stack": 2, "kcal": 450.0, "raw": true, "cooked": "pike_cooked", "desc": "A big, bony pike. Cook it."},
 	"pike_cooked": {"shelf_h": 60.0, "name": "Cooked Pike", "kind": "food", "stack": 2, "kcal": 1000.0, "desc": "A whole pike, roasted. A real meal."},
-	"hammer": {"name": "Hammer", "kind": "tool", "stack": 1, "desc": "Claw hammer. Needed to board up windows and doors. Loud."},
+	"hammer": {"name": "Hammer", "kind": "tool", "stack": 1, "desc": "Claw hammer. Needed to board up windows and doors. Wears a little with every board (about six fully boarded houses) and breaks at 0%. Loud."},
 	"bandage": {"name": "Bandage", "kind": "med", "stack": 6, "desc": "Clean cloth wrap. Stops bleeding."},
 	"antiseptic": {"name": "Antiseptic", "kind": "med", "stack": 3, "desc": "Disinfectant. Clean a wound within two hours or the infection takes hold."},
 	"antibiotics": {"name": "Antibiotics", "kind": "med", "stack": 2, "desc": "A full course. Cures an infection at any stage."},
-	"nails": {"name": "Nails", "kind": "misc", "stack": 25, "desc": "Box of nails. Two per plank."},
+	"nails": {"name": "Nails", "kind": "misc", "stack": 50, "desc": "Box of nails. One per board."},
 	"plank": {"name": "Plank", "kind": "misc", "stack": 8, "desc": "Rough plank. Board windows from the inside (4 per window)."},
 	"rag": {"name": "Rags", "kind": "misc", "stack": 10, "desc": "Cloth strips. Two make a curtain that hides your light and your silhouette."},
 	"knife": {"name": "Hunting Knife", "kind": "tool", "stack": 1, "desc": "Sharp skinning knife. Needed to skin, gut and fully butcher animals."},
@@ -80,6 +80,7 @@ const WORN_ORDER := ["jacket", "top", "head", "legs", "hands", "feet"]
 const LAYER_K := 0.4          # share of the top's warmth above bare that survives under a jacket (compression)
 
 var counts: Dictionary = {}
+const WEAR_IDS := ["axe", "knife", "hammer", "bow_drill", "tackle"]   # items whose condition is tracked and shown in the Gear screen
 var cond: Dictionary = {}       # id -> 0..1 condition for tools/weapons (missing = 1.0)
 var age: Dictionary = {}           # perishable id -> average age of the stack, game seconds
 var extra: Dictionary = {}          # slot (head/top/jacket/legs/hands/feet) -> id
@@ -160,6 +161,10 @@ func wear(id: String, amt: float) -> float:
 	var c := clampf(condition(id) - amt, 0.0, 1.0)
 	cond[id] = c
 	return c
+
+
+static func wears(id: String) -> bool:
+	return WEAR_IDS.has(id)
 
 
 static func kind_of(id: String) -> String:

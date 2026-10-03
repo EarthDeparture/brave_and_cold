@@ -528,11 +528,31 @@ func _draw_item_cell(r: Rect2, id: String, n: int, selected: bool, hit: Dictiona
 	var hover := r.has_point(_mouse) and not _dragging
 	_cell_bg(r, hover, selected)
 	DZ.item_icon(_c, id, r.grow(-16), dim)
+	var wf := _hit_cond(id, hit)
+	if wf >= 0.0:   # condition bar under worn tools (hammer, hatchet, knife...)
+		var bw := r.size.x - 16.0
+		_c.draw_rect(Rect2(r.position + Vector2(8, r.size.y - 9.0), Vector2(bw, 5.0)), Color(0.02, 0.02, 0.02, 0.9))
+		_c.draw_rect(Rect2(r.position + Vector2(8, r.size.y - 9.0), Vector2(bw * clampf(wf, 0.0, 1.0), 5.0)), DZ.status_color(wf))
 	if n > 1:
 		var cnt := "x%d" % n
 		DZ.text(_c, cnt, r.position + Vector2(CELL - 8 - DZ.text_w(cnt, 18), CELL - 8), 18, DZ.TEXT)
 	hit["r"] = r
 	_hits.append(hit)
+
+
+## Condition 0..1 of a worn-tool cell, or -1 when the item has no tracked condition.
+func _hit_cond(id: String, hit: Dictionary) -> float:
+	if not Inventory.wears(id):
+		return -1.0
+	match String(hit.get("k", hit.get("from", ""))):
+		"pack", "equip":
+			return inv.condition(id)
+		"chest":
+			return float(_chest.cond.get(id, 1.0)) if is_instance_valid(_chest) else 1.0
+		"ground":
+			var p := hit.get("node") as ItemPickup
+			return p.cond if p != null and p.cond >= 0.0 else 1.0
+	return -1.0
 
 
 func _draw_equipment() -> void:
@@ -700,6 +720,9 @@ func _draw_info() -> void:
 	if d.has("shelf_h") and _sel["from"] == "pack":
 		var fr := inv.freshness(id)
 		DZ.text(_c, "Freshness %d%%" % int(fr * 100.0), r.position + Vector2(200, 82), 13, DZ.status_color(fr))
+	var wf := _hit_cond(id, _sel)
+	if wf >= 0.0:
+		DZ.text(_c, "Condition %d%%" % int(round(wf * 100.0)), r.position + Vector2(200, 82), 13, DZ.status_color(wf))
 	# buttons
 	var entries := _entries(id, _sel["from"], n, _sel.get("node"))
 	var bx := r.end.x - 12.0
@@ -763,6 +786,9 @@ func _draw_tooltip() -> void:
 	var n: int = h.get("n", 1)
 	if n > 1:
 		t += "  x%d" % n
+	var tf := _hit_cond(id, h)
+	if tf >= 0.0:
+		t += "   (%d%%)" % int(round(tf * 100.0))
 	var w := DZ.text_w(t, 15) + 20.0
 	var r := Rect2(_mouse + Vector2(18, 18), Vector2(w, 30))
 	DZ.panel(_c, r, Color(0.04, 0.045, 0.04, 0.96))

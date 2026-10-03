@@ -41,8 +41,8 @@ func _ready() -> void:
 	_pm.turbulence_noise_scale = 2.5
 	_pm.turbulence_influence_min = 0.03
 	_pm.turbulence_influence_max = 0.09
-	_pm.scale_min = 0.6
-	_pm.scale_max = 1.4
+	_pm.scale_min = 0.28   # mostly small flakes with a few big ones: uniform 10 cm discs read as bokeh, not snow
+	_pm.scale_max = 1.25
 	_pm.collision_mode = ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT   # dies on a roof, on the ceiling it is under, anywhere under cover
 	process_material = _pm
 	_hf = GPUParticlesCollisionHeightField3D.new()
@@ -63,7 +63,7 @@ func _ready() -> void:
 	var g := Gradient.new()
 	g.set_color(0, Color(1, 1, 1, 1))
 	g.set_color(1, Color(1, 1, 1, 0))
-	g.add_point(0.55, Color(1, 1, 1, 1))
+	g.add_point(0.35, Color(1, 1, 1, 0.8))   # soft edge instead of a crisp disc
 	var gt := GradientTexture2D.new()
 	gt.gradient = g
 	gt.fill = GradientTexture2D.FILL_RADIAL

@@ -139,6 +139,12 @@ def build_cabin():
     for i in range(12):
         y = -2.3 + i * 0.4 + 0.2
         m.box(0, y, FLOOR_TOP - 0.03, 5.8, 0.38, 0.06, WOOD_LIGHT, top=WOOD_LIGHT, j=0.12)
+    # baseboards: dark skirting along the inside foot of the walls hides the floor/wall seam (no light slit at the base)
+    m.box(0, HY - 0.22, FLOOR_TOP + 0.06, 2 * HX - 0.3, 0.12, 0.14, WOOD_DARK)
+    for sx in (-HX + 0.22, HX - 0.22):
+        m.box(sx, 0, FLOOR_TOP + 0.06, 0.12, 2 * HY - 0.3, 0.14, WOOD_DARK)
+    for fx in (-1.7, 1.7):
+        m.box(fx, -HY + 0.22, FLOOR_TOP + 0.06, 2.2 - 0.1, 0.12, 0.14, WOOD_DARK)
     # walls
     for i in range(COURSES):
         z = Z0 + i * STEP

@@ -98,6 +98,8 @@ func setup(w: Node) -> void:
 		_sfxlevels()
 	if "interiorshot=1" in ua:
 		_interiorshot()
+	if "hammertest=1" in ua:
+		_hammertest()
 	if "weathershot=1" in ua:
 		_weathershot()
 	if "audiostress=1" in ua:
@@ -1695,7 +1697,7 @@ func _wintest() -> void:
 		var pl0 := inv.count("plank")
 		var n0 := inv.count("nails")
 		board_c["act"].call()
-		ok = o.boards == 1 and inv.count("plank") == pl0 - 1 and inv.count("nails") == n0 - 2
+		ok = o.boards == 1 and inv.count("plank") == pl0 - 1 and inv.count("nails") == n0 - 1
 		var r0 := inv.count("rag")
 		curt_c["act"].call()
 		ok = ok and o.curtain and inv.count("rag") == r0 - 2
@@ -2947,6 +2949,11 @@ func _gearshot() -> void:
 	for cid in ["sweater", "parka", "toque", "hide_boots", "wolf_mitts"]:
 		inv.add(cid)
 		inv.use(cid)
+	inv.add("axe")
+	inv.add("knife")
+	inv.cond["hammer"] = 0.62
+	inv.cond["axe"] = 0.35
+	inv.cond["knife"] = 0.12
 	gear.close()
 	gear.open()
 	gear._gscroll = 0
@@ -3156,6 +3163,81 @@ func _sfxlevels() -> void:
 	get_tree().quit()
 
 
+## Hammer: wear per board, 15 boards = a fully boarded cabin, ~6 cabins per hammer, breaks at 0, wear survives drop/pickup/save, shown in the Gear screen.
+func _hammertest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var inv: Inventory = world.get("inv")
+	var consts: Dictionary = world.get_script().get_script_constant_map()
+	var wb: float = consts["HAMMER_WEAR_BOARD"]
+	inv.infinite = false
+	var cb: Cabin = (world.get("cabins") as Array)[0]
+	for o in cb.openings:
+		o.boards = 0
+	cb.door_boards = 0
+	inv.remove("hammer", inv.count("hammer"))
+	inv.cond.erase("hammer")
+	inv.add("hammer")
+	inv.add("plank", 200)
+	inv.add("nails", 300)
+	var pl0 := inv.count("plank")
+	var n0 := inv.count("nails")
+	var placed := 0
+	for i in 3:
+		if world.call("_nail_board"):
+			cb.add_door_board()
+			placed += 1
+	for o in cb.openings:
+		for i in Opening.MAX_BOARDS:
+			if world.call("_nail_board"):
+				o.add_board()
+				placed += 1
+	var ok := placed == 15 and cb.door_boards == 3 and inv.count("plank") == pl0 - 15 and inv.count("nails") == n0 - 15 and absf(inv.condition("hammer") - (1.0 - 15.0 * wb)) < 0.0005
+	print("HAMMERTEST one full cabin boards=%d planks used=%d nails used=%d hammer=%.3f ok=%s" % [placed, pl0 - inv.count("plank"), n0 - inv.count("nails"), inv.condition("hammer"), str(ok)])
+	fails += 0 if ok else 1
+	var boards := placed
+	while inv.count("hammer") > 0 and boards < 200:
+		if not world.call("_nail_board"):
+			break
+		boards += 1
+	ok = inv.count("hammer") == 0 and boards >= 89 and boards <= 91 and not world.call("_nail_board")
+	print("HAMMERTEST breaks after %d boards (about %.1f cabins) ok=%s" % [boards, float(boards) / 15.0, str(ok)])
+	fails += 0 if ok else 1
+	inv.remove("plank", inv.count("plank"))   # the test stuffed the pack: leave room for the pickup
+	inv.remove("nails", inv.count("nails"))
+	inv.add("hammer")
+	inv.cond["hammer"] = 0.5
+	var pk0 := get_tree().get_nodes_in_group("pickups").size()
+	world.call("drop_item", "hammer", 1)
+	var pks := get_tree().get_nodes_in_group("pickups")
+	var pk: ItemPickup = pks[pks.size() - 1]
+	var sv: Array = world.call("_pickup_list")
+	var saved_c := -2.0
+	for e: Dictionary in sv:
+		if e["id"] == "hammer":
+			saved_c = float(e["c"])
+	ok = pks.size() == pk0 + 1 and absf(pk.cond - 0.5) < 0.01 and inv.count("hammer") == 0 and absf(saved_c - 0.5) < 0.01
+	print("HAMMERTEST dropped keeps wear pickup=%.2f saved=%.2f ok=%s" % [pk.cond, saved_c, str(ok)])
+	fails += 0 if ok else 1
+	world.call("take_pickup", pk)
+	ok = inv.count("hammer") == 1 and absf(inv.condition("hammer") - 0.5) < 0.01
+	print("HAMMERTEST picked up keeps wear %.2f ok=%s" % [inv.condition("hammer"), str(ok)])
+	fails += 0 if ok else 1
+	var g: GearScreen = world.get("gear")
+	var f1: float = g._hit_cond("hammer", {"k": "pack"})
+	var f2: float = g._hit_cond("beans", {"k": "pack"})
+	ok = absf(f1 - 0.5) < 0.01 and f2 < 0.0 and Inventory.wears("hammer") and Inventory.wears("axe")
+	print("HAMMERTEST gear shows condition hammer=%.2f beans=%.2f ok=%s" % [f1, f2, str(ok)])
+	fails += 0 if ok else 1
+	inv.cond["hammer"] = 0.02
+	world.call("_hammer_wear", 0.05)
+	ok = inv.count("hammer") == 0
+	print("HAMMERTEST worn to zero breaks it ok=", ok)
+	fails += 0 if ok else 1
+	print("HAMMERTEST failures=", fails)
+	get_tree().quit()
+
+
 ## Windowed art check: cabin interior, stove lit/unlit, day/dusk/night, blizzard. Shots to shots/int_*.png
 func _interiorshot() -> void:
 	await get_tree().create_timer(3.0).timeout
@@ -3182,6 +3264,12 @@ func _interiorshot() -> void:
 	player.yaw = cb.rotation.y + deg_to_rad(180.0)
 	await get_tree().create_timer(1.5).timeout
 	get_viewport().get_texture().get_image().save_png(S + "int_e_wall.png")
+	var near := cb.to_global(Vector3(-1.9, 0.0, 0.2))
+	player.place(near.x, near.z)
+	player.yaw = cb.rotation.y + deg_to_rad(90.0)
+	player.pitch = deg_to_rad(-38.0)
+	await get_tree().create_timer(1.5).timeout
+	get_viewport().get_texture().get_image().save_png(S + "int_f_base.png")
 	print("INTERIORSHOT done")
 	get_tree().quit()
 

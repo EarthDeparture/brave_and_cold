@@ -63,7 +63,11 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	mat.vertex_color_use_as_albedo = true
 	mat.roughness = 0.95
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat.albedo_color = tint
+	mat.albedo_color = tint * 1.12   # the grain texture below averages ~0.85
+	mat.albedo_texture = _grain_tex()
+	mat.uv1_triplanar = true          # the generated mesh has no UVs: project the grain from object space
+	mat.uv1_scale = Vector3(0.35, 3.2, 0.35)   # stretched vertically => horizontal streaks along the logs on every wall
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	glass_mat = StandardMaterial3D.new()
 	glass_mat.albedo_color = Color(0.25, 0.32, 0.42)
 	glass_mat.roughness = 0.2
@@ -97,7 +101,81 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	_build_door()
 	_build_stove_fire()
 	_build_openings()
+	_build_dust()
 	return true
+
+
+static var _grain: NoiseTexture2D
+
+
+## Soft wood-grain / weathering noise (greys 0.68..1.0) multiplied over the vertex colours.
+static func _grain_tex() -> Texture2D:
+	if _grain == null:
+		var n := FastNoiseLite.new()
+		n.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+		n.frequency = 0.035
+		n.fractal_type = FastNoiseLite.FRACTAL_FBM
+		n.fractal_octaves = 4
+		var gr := Gradient.new()
+		gr.set_color(0, Color(0.66, 0.64, 0.62))
+		gr.set_color(1, Color(1.0, 1.0, 1.0))
+		var t := NoiseTexture2D.new()
+		t.noise = n
+		t.width = 256
+		t.height = 256
+		t.seamless = true
+		t.color_ramp = gr
+		_grain = t
+	return _grain
+
+
+## A few dozen dust motes hanging in the room: lit by the stove / window light, invisible in the dark.
+func _build_dust() -> void:
+	var p := GPUParticles3D.new()
+	p.amount = 40
+	p.lifetime = 12.0
+	p.preprocess = 12.0
+	p.local_coords = true
+	p.visibility_aabb = AABB(Vector3(-4.0, -2.0, -3.5), Vector3(8.0, 4.0, 7.0))
+	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var pm := ParticleProcessMaterial.new()
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	pm.emission_box_extents = Vector3(2.7, 1.0, 2.2)
+	pm.direction = Vector3.UP
+	pm.spread = 180.0
+	pm.initial_velocity_min = 0.0
+	pm.initial_velocity_max = 0.03
+	pm.gravity = Vector3(0.0, -0.006, 0.0)
+	pm.turbulence_enabled = true
+	pm.turbulence_noise_strength = 0.2
+	pm.turbulence_noise_scale = 1.5
+	pm.turbulence_influence_min = 0.03
+	pm.turbulence_influence_max = 0.08
+	pm.scale_min = 0.5
+	pm.scale_max = 1.5
+	p.process_material = pm
+	var q := QuadMesh.new()
+	q.size = Vector2(0.02, 0.02)
+	var m := StandardMaterial3D.new()
+	var gd := Gradient.new()
+	gd.set_color(0, Color(1, 1, 1, 1))
+	gd.set_color(1, Color(1, 1, 1, 0))
+	var gt := GradientTexture2D.new()
+	gt.gradient = gd
+	gt.fill = GradientTexture2D.FILL_RADIAL
+	gt.fill_from = Vector2(0.5, 0.5)
+	gt.fill_to = Vector2(1.0, 0.5)
+	gt.width = 16
+	gt.height = 16
+	m.albedo_texture = gt   # round soft mote, not a square
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_color = Color(0.95, 0.88, 0.76, 0.55)
+	m.roughness = 1.0
+	q.material = m
+	p.draw_pass_1 = q
+	p.position = Vector3(0.0, FLOOR_LOCAL_Y + 1.2, 0.0)
+	add_child(p)
 
 
 func _build_openings() -> void:

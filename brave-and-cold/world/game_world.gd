@@ -365,6 +365,7 @@ func _build_environment() -> void:
 
 var _indoor_k := 0.0            # 0 outside .. 1 inside a cabin (smoothed)
 const INDOOR_FOG_MULT := 0.12
+const INDOOR_AMBIENT_MULT := 1.6
 
 
 func _process(delta: float) -> void:
@@ -393,6 +394,9 @@ func _process(delta: float) -> void:
 	_indoor_k = move_toward(_indoor_k, 1.0 if in_cabin else 0.0, delta * 2.0)
 	if _indoor_k > 0.0:
 		env.fog_density *= lerpf(1.0, INDOOR_FOG_MULT, _indoor_k)
+		# a cold dark cabin must still read: lift ambient and warm it a touch (stove / window light adds on top)
+		env.ambient_light_energy *= lerpf(1.0, INDOOR_AMBIENT_MULT, _indoor_k)
+		env.ambient_light_color = env.ambient_light_color.lerp(Color(0.62, 0.50, 0.42), 0.3 * _indoor_k)
 	var night := clampf(1.0 - sun.light_energy / 0.7, 0.0, 1.0)
 	Zombie.night_factor = night
 	Zombie.ambient_c = clock.ambient_c()
@@ -860,7 +864,7 @@ func _loot_store(st: Store, i: int) -> void:
 	var tables := [
 		[['beans', 3, 30], ['matches', 3, 20], ['flare', 1, 8], ['rag', 2, 10], ['bandage', 1, 8]],
 		[['ammo', 8, 25], ['bandage', 2, 16], ['antiseptic', 1, 12], ['antibiotics', 1, 8], ['matches', 2, 14], ['knife', 1, 5], ['tackle', 1, 10]],
-		[['sweater', 1, 12], ['toque', 1, 12], ['hammer', 1, 8], ['nails', 15, 14], ['plank', 3, 14], ['rag', 3, 12], ['axe', 1, 3]],
+		[['sweater', 1, 12], ['toque', 1, 12], ['hammer', 1, 8], ['nails', 30, 14], ['plank', 6, 14], ['rag', 3, 12], ['axe', 1, 3]],
 	]
 	var table: Array = tables[i]
 	var total := 0
@@ -997,7 +1001,7 @@ func _loot_hamlet_crate(cb: Cabin) -> void:
 	cb.crate_looted = true
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(absf(cb.position.x) * 31.0 + absf(cb.position.z) * 17.0)
-	var table := [['matches', 3, 22], ['beans', 2, 20], ['ammo', 5, 12], ['bandage', 1, 14], ['rag', 2, 14], ['antiseptic', 1, 8], ['antibiotics', 1, 5], ['nails', 12, 9], ['plank', 2, 8], ['flare', 1, 7], ['sweater', 1, 4], ['toque', 1, 4], ['knife', 1, 3], ['hammer', 1, 3]]
+	var table := [['matches', 3, 22], ['beans', 2, 20], ['ammo', 5, 12], ['bandage', 1, 14], ['rag', 2, 14], ['antiseptic', 1, 8], ['antibiotics', 1, 5], ['nails', 20, 9], ['plank', 3, 8], ['flare', 1, 7], ['sweater', 1, 4], ['toque', 1, 4], ['knife', 1, 3], ['hammer', 1, 3]]
 	var total := 0
 	for e in table:
 		total += int(e[2])
@@ -1101,6 +1105,7 @@ func drop_item(id: String, n: int) -> void:
 	if id == 'rifle' and n >= inv.count(id):
 		rifle_up = false
 	var nm := inv.name_of(id)
+	var cd := inv.condition(id)
 	if not inv.remove(id, n):
 		return
 	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
@@ -1108,7 +1113,7 @@ func drop_item(id: String, n: int) -> void:
 	var h: float = player.ground_at(p.x, p.z)
 	if is_nan(h):
 		h = player.position.y - player.eye_h
-	ItemPickup.spawn(self, id, n, Vector3(p.x, h, p.z))
+	ItemPickup.spawn(self, id, n, Vector3(p.x, h, p.z), cd if cd < 0.999 else -1.0)
 	_say('Dropped %s%s' % [nm, ' x%d' % n if n > 1 else ''])
 
 
@@ -1119,7 +1124,11 @@ func take_pickup(node: Node) -> void:
 	if not inv.can_add(p.id, p.n):
 		_say('Your pack is full')
 		return
+	var had := inv.count(p.id)
+	var cur_c := inv.condition(p.id)
 	inv.add(p.id, p.n)
+	if p.cond >= 0.0 or cur_c < 0.999:
+		inv.cond[p.id] = (cur_c * float(had) + (p.cond if p.cond >= 0.0 else 1.0) * float(p.n)) / float(had + p.n)
 	_say('Picked up %s%s' % [inv.name_of(p.id), ' x%d' % p.n if p.n > 1 else ''])
 	p.queue_free()
 
@@ -1246,24 +1255,57 @@ func _on_opening_event(ev: String, pos: Vector3) -> void:
 			audio.play_at("chop", pos, 2.0, randf_range(0.6, 0.75), 8.0, 100.0)
 
 
+const HAMMER_WEAR_BOARD := 1.0 / 90.0   # per board nailed: 90 boards = 6 fully boarded cabins (door 3 + 3 windows x 4 = 15)
+const HAMMER_WEAR_PULL := 1.0 / 250.0   # per plank pulled with the claw
+
+
+## Wear the hammer; at 0% it breaks and is gone.
+func _hammer_wear(amt: float) -> void:
+	_wear_tool("hammer", amt)
+
+
+func _wear_tool(id: String, amt: float) -> void:
+	if inv == null or inv.count(id) <= 0:
+		return
+	var before := inv.condition(id)
+	var after := inv.wear(id, amt)
+	if id == "hammer":
+		if after <= 0.0 and not inv.infinite:
+			inv.remove("hammer", inv.count("hammer"))
+			_say("The hammer broke!")
+		elif after < 0.2 and before >= 0.2:
+			_say("The hammer is badly worn")
+
+
+## One board nailed up: a plank + a nail, and the hammer wears. False (nothing used) when something is missing.
+func _nail_board() -> bool:
+	if inv.count("hammer") <= 0 or inv.count("plank") < 1 or inv.count("nails") < 1:
+		return false
+	if not (inv.remove("plank") and inv.remove("nails", 1)):
+		return false
+	_hammer_wear(HAMMER_WEAR_BOARD)
+	return true
+
+
 func _door_cands(cands: Array, cb: Cabin, fwd: Vector3) -> void:
 	var dp: Vector3 = cb.door_inside_pos()
 	var dd := (dp - player.position).length()
 	if cb.door_open or cb.door_broken or not _aim_ok(dp, 2.2, 1.0):
 		return
 	if cb.door_boards < 3:
-		if inv.count("hammer") > 0 and inv.count("plank") > 0 and inv.count("nails") >= 2:
+		if inv.count("hammer") > 0 and inv.count("plank") > 0 and inv.count("nails") >= 1:
 			cands.append({"m": _lm, "d": dd + 0.04, "text": "Barricade door (%d/3)" % cb.door_boards, "hold": 6.0, "kcal": 8.0, "noise": 22.0, "act": func() -> void:
-				if inv.remove("plank") and inv.remove("nails", 2):
+				if _nail_board():
 					cb.add_door_board()
 					if audio != null:
 						audio.play_at("hammer", dp, 2.0, randf_range(0.9, 1.0), 6.0, 70.0)
 					_say("Door barricaded: %d/3" % cb.door_boards)})
 		else:
-			cands.append({"m": _lm, "d": dd + 0.1, "text": "Barricade door (needs hammer, plank, 2 nails)", "act": func() -> void: _say("Need a hammer, a plank and 2 nails")})
+			cands.append({"m": _lm, "d": dd + 0.1, "text": "Barricade door (needs hammer, plank, nail)", "act": func() -> void: _say("Need a hammer, a plank and a nail")})
 	if cb.door_boards > 0:
 		cands.append({"m": _lm, "d": dd + 0.03, "text": "Pull off door plank", "hold": 3.0, "kcal": 4.0, "noise": 14.0, "act": func() -> void:
 			if cb.remove_door_board():
+				_hammer_wear(HAMMER_WEAR_PULL)
 				inv.add("plank")
 				inv.add("nails", 1)
 				_say("Door plank off")})
@@ -1377,18 +1419,19 @@ func _opening_cands(cands: Array, fwd: Vector3) -> void:
 			if not inside:
 				continue
 			if o.boards < Opening.MAX_BOARDS:
-				if inv.count("hammer") > 0 and inv.count("plank") > 0 and inv.count("nails") >= 2:
+				if inv.count("hammer") > 0 and inv.count("plank") > 0 and inv.count("nails") >= 1:
 					cands.append({"m": _lm, "d": od, "text": "Board up window (%d/%d)" % [o.boards, Opening.MAX_BOARDS], "hold": 5.0, "kcal": 6.0, "noise": 22.0, "act": func() -> void:
-						if inv.remove("plank") and inv.remove("nails", 2):
+						if _nail_board():
 							o.add_board()
 							if audio != null:
 								audio.play_at("hammer", o.center_world(), 2.0, randf_range(0.95, 1.05), 6.0, 70.0)
 							_say("Boarded: %d/%d" % [o.boards, Opening.MAX_BOARDS])})
 				else:
-					cands.append({"m": _lm, "d": od + 0.05, "text": "Board up window (needs hammer, plank, 2 nails)", "act": func() -> void: _say("Need a hammer, a plank and 2 nails")})
+					cands.append({"m": _lm, "d": od + 0.05, "text": "Board up window (needs hammer, plank, nail)", "act": func() -> void: _say("Need a hammer, a plank and a nail")})
 			if o.boards > 0:
 				cands.append({"m": _lm, "d": od + 0.02, "text": "Pull off a plank", "hold": 3.0, "kcal": 4.0, "noise": 14.0, "act": func() -> void:
 					if o.remove_board():
+						_hammer_wear(HAMMER_WEAR_PULL)
 						inv.add("plank")
 						inv.add("nails", 1)
 						_say("Plank off (+1 plank, +1 nail)")})
@@ -1528,8 +1571,8 @@ func _update_prompt() -> void:
 				inv.add("ammo", 6)
 				inv.add("beans", 2)
 				inv.add("hammer")
-				inv.add("nails", 20)
-				inv.add("plank", 3)
+				inv.add("nails", 40)
+				inv.add("plank", 8)
 				inv.add("rag", 4)
 				inv.add("bandage", 2)
 				inv.add("antiseptic", 1)
@@ -2825,7 +2868,7 @@ func _craft_update(delta: float) -> void:
 	for id in r['inputs'].keys():
 		inv.remove(String(id), int(r['inputs'][id]))
 	for tl in r.get('tools', []):
-		inv.wear(String(tl), 0.01)
+		_wear_tool(String(tl), 0.01)
 	needs.calories = maxf(0.0, needs.calories - float(r.get('kcal', 5.0)))
 	if float(r.get('noise', 0.0)) > 0.0:
 		noise_bus.emit_noise(player.position, float(r['noise']), player)
@@ -3078,7 +3121,7 @@ func _pickup_list() -> Array:
 	for pk in get_tree().get_nodes_in_group('pickups'):
 		var ip := pk as ItemPickup
 		if ip != null and not ip.is_queued_for_deletion():
-			out.append({'id': ip.id, 'n': ip.n, 'x': ip.global_position.x, 'z': ip.global_position.z})
+			out.append({'id': ip.id, 'n': ip.n, 'x': ip.global_position.x, 'z': ip.global_position.z, 'c': ip.cond})
 	return out
 
 
@@ -3117,7 +3160,7 @@ func _restore_creatures(sv: Dictionary) -> void:
 		wl.setup(terrain, float(e['x']), float(e['z']), Vector3(float(e['dx']), 0.0, float(e['dz'])), float(e['h']), float(e['r']))
 	for e in sv.get('pickups', []):
 		if Inventory.ITEMS.has(String(e['id'])):
-			ItemPickup.spawn(self, String(e['id']), int(e['n']), _ground(float(e['x']), float(e['z'])))
+			ItemPickup.spawn(self, String(e['id']), int(e['n']), _ground(float(e['x']), float(e['z'])), float(e.get('c', -1.0)))
 	var i := 0
 	for e in sv.get('wolves', []):
 		var w := _add_wolf(_ground(float(e['x']), float(e['z'])), i)
