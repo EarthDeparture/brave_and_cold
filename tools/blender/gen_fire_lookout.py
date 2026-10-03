@@ -20,7 +20,16 @@ import bpy
 from mathutils import Vector
 
 SEED = 2103
-FLOOR = 8.64
+ORIGINAL_ROOF_HEIGHT = 12.77
+ROOM_ROOF_HEIGHT = 4.13
+ROOF_HEIGHT = ORIGINAL_ROOF_HEIGHT * 2
+FLOOR = ROOF_HEIGHT - ROOM_ROOF_HEIGHT
+FLIGHTS = 10
+STEPS_PER_FLIGHT = 12
+FLIGHT_RISE = FLOOR / FLIGHTS
+RISER = FLIGHT_RISE / STEPS_PER_FLIGHT
+STAIR_POST_X = (3.40, 6.80)
+STAIR_POST_Y = (-2.90, 2.90)
 RNG = random.Random(SEED)
 PALETTE = {
     "timber": (0.27, 0.19, 0.125, 1),
@@ -113,16 +122,18 @@ def structure(b):
         for sy in [-1,1]:
             foot=(sx*2.95,sy*2.45,-.28)
             top=(sx*2.6,sy*2.1,FLOOR-.12)
-            t.beam(foot,top,.36)
+            t.beam(foot,top,.44)
             metal.box((foot[0],foot[1],-.20),(.72,.72,.55),(0.26,.29,.32,1))
             metal.box((foot[0],foot[1],.15),(.43,.43,.24))
-    for z in [2.88,5.76,8.43]:
+    bay_height = (FLOOR - .50) / 8
+    for z in [(.25 + i * bay_height) for i in range(1, 9)]:
         for sy in [-1,1]:
             t.beam((-2.9,sy*2.38,z),(2.9,sy*2.38,z),.22)
         for sx in [-1,1]:
             t.beam((sx*2.88,-2.4,z),(sx*2.88,2.4,z),.22)
-    for z0 in [.40,3.05,5.94]:
-        z1=min(z0+2.58,8.35)
+    for i in range(8):
+        z0 = .30 + i * bay_height
+        z1 = min(z0 + bay_height - .12, FLOOR - .35)
         for sy in [-1,1]:
             t.beam((-2.8,sy*2.37,z0),(2.8,sy*2.37,z1),.16)
             t.beam((2.8,sy*2.37,z0),(-2.8,sy*2.37,z1),.16)
@@ -130,12 +141,14 @@ def structure(b):
             t.beam((sx*2.78,-2.3,z0),(sx*2.78,2.3,z1),.16)
             t.beam((sx*2.78,2.3,z0),(sx*2.78,-2.3,z1),.16)
     # Solid top floor; planks carry subtle per-board values rather than a noisy texture.
-    wood.box((0,0,FLOOR-.15),(7.6,6.6,.30))
+    # A 14cm deck with inset joists leaves 2m of headroom over the ninth landing.
+    wood.box((0,0,FLOOR-.07),(7.6,6.6,.14))
     for i in range(42):
         x=-3.7+i*(7.4/41)
         wood.box((x,0,FLOOR+.006),(.174,6.50,.012))
     for y in [-2.45,0,2.45]:
-        t.box((0,y,FLOOR-.32),(7.7,.24,.24))
+        # Keep underside joists clear of the adjacent staircase's standing aisle.
+        t.box(((-3.85 + 3.42)*.5,y,FLOOR-.32),(3.42 + 3.85,.24,.24))
     # Continuous perimeter rails, except the stair connector on the right/front corner.
     for y in [-3.25,3.25]:
         for x in [-3.7,-1.85,0,1.85,3.7]:
@@ -158,54 +171,69 @@ def structure(b):
 
 def stairs(b):
     t, wood, trim, metal, snow=[b[k] for k in ["timber","boards","trim","metal","snow"]]
-    for f in range(4):
+    for f in range(FLIGHTS):
         x=4.45 if f%2==0 else 5.8
         direction=1 if f%2==0 else -1
         ys=-1.8*direction
-        base=f*2.16
-        for i in range(12):
+        base=f*FLIGHT_RISE
+        for i in range(STEPS_PER_FLIGHT):
             y=ys+direction*(i+.5)*.30
-            z=base+(i+1)*.18
+            z=base+(i+1)*RISER
             wood.box((x,y,z-.075),(1.1,.32,.15))
-            wood.box((x,y-direction*.155,z-.09),(1.08,.025,.18))
+            wood.box((x,y-direction*.155,z-RISER*.5),(1.08,.025,RISER))
             # Thin quiet frost at tread edges; leave the walking lane readable.
             for xx in [x-.48,x+.48]:
                 snow.box((xx,y,z+.015),(.10,.28,.025))
         for xx in [x-.56,x+.56]:
-            t.beam((xx,ys,base-.12),(xx,-ys,base+2.04),.16)
-            trim.beam((xx,ys,base+1.02),(xx,-ys,base+3.18),.075)
-            for u in [0,.333,.666,1]:
+            t.beam((xx,ys,base-.12),(xx,-ys,base+FLIGHT_RISE-.12),.16)
+            # Retract rail ends from the turn so shoulders can pass the corner posts.
+            rail_inset = .12 / 3.60
+            trim.beam((xx,ys+direction*.12,base+FLIGHT_RISE*rail_inset+1.02),
+                      (xx,-ys-direction*.12,base+FLIGHT_RISE*(1-rail_inset)+1.02),.075)
+            for u in [rail_inset,.333,.666,1-rail_inset]:
                 yy=ys+direction*3.6*u
-                zz=base+2.16*u
+                zz=base+FLIGHT_RISE*u
                 trim.box((xx,yy,zz+.48),(.075,.075,.96))
-    # Four broad landings join flights; upper landing bridges directly to the deck.
-    for f in range(4):
+    # Ten broad landings join flights; posts/braces stay outside their walking volume.
+    for f in range(FLIGHTS):
         y=2.20 if f%2==0 else -2.20
-        z=(f+1)*2.16
-        wood.box((5.10,y,z-.09),(2.8,.8,.18))
-        for yy in [y-.36,y+.36]:
+        z=(f+1)*FLIGHT_RISE
+        # Small edge aprons support rails outside the 2.8m x .8m usable aisle.
+        wood.box((5.10,y,z-.09),(2.92,.84,.18))
+        for yy in [y-.44,y+.44]:
             # opening toward flights is left clear; fence the outer edge.
             if (y>0 and yy<y) or (y<0 and yy>y):
                 continue
-            trim.box((5.1,yy,z+1.0),(2.8,.08,.10))
-            for xx in [3.72,5.1,6.48]:
+            trim.box((5.1,yy,z+1.0),(2.94,.08,.10))
+            # The turn aisle stays clear: no centre post above the landing floor.
+            for xx in [3.63,6.57]:
                 trim.box((xx,yy,z+.50),(.09,.09,1.0))
         # Close the outer landing sides; leave the final connection to the deck open.
-        for xx in [3.72,6.48]:
-            if f==3 and xx<4:
+        for xx in [3.63,6.57]:
+            if f==FLIGHTS-1 and xx<4:
                 continue
             for zz in [z+.45,z+1.0]:
-                trim.box((xx,y,zz),(.08,.8,.08))
-            for yy in [y-.36,y+.36]:
+                trim.box((xx,y,zz),(.08,.88,.08))
+            for yy in [y-.44,y+.44]:
                 trim.box((xx,yy,z+.50),(.09,.09,1.0))
-        t.beam((6.44,y,-.25),(6.44,y,z),.22)
-        t.beam((3.74,y,-.25),(3.74,y,z),.22)
+        # Landing joists sit beneath the floor and cantilever from exterior columns.
+        t.beam((STAIR_POST_X[0],y,z-.25),(STAIR_POST_X[1],y,z-.25),.22)
+        for x in STAIR_POST_X:
+            outer_y = math.copysign(2.90, y)
+            inner_y = math.copysign(1.90, y)
+            t.beam((x,outer_y,z-.25),(x,inner_y,z-.25),.22)
     wood.box((4.20,-2.30,FLOOR-.08),(1.30,1.0,.16))
-    # Landing support cross-braces, small steel anchor shoes.
-    for y in [-2.2,2.2]:
-        for x in [3.74,6.44]:
+    # Four continuous columns replace repeated overlapping posts. All X-bracing
+    # is in exterior planes, beyond the outer landing rails and the player's body.
+    for y in STAIR_POST_Y:
+        for x in STAIR_POST_X:
+            t.beam((x,y,-.25),(x,y,FLOOR-.22),.28)
             metal.box((x,y,-.12),(.5,.5,.35),(0.26,.29,.32,1))
-        t.beam((3.74,y,.3),(6.44,y,4.0),.12)
+        for f in range(FLIGHTS):
+            low=f*FLIGHT_RISE+.15
+            high=(f+1)*FLIGHT_RISE-.35
+            t.beam((STAIR_POST_X[0],y,low),(STAIR_POST_X[1],y,high),.14)
+            t.beam((STAIR_POST_X[1],y,low),(STAIR_POST_X[0],y,high),.14)
 
 
 def cabin(b):
@@ -344,7 +372,7 @@ def render_previews(out):
     m=bpy.data.materials.new('preview_snow')
     m.diffuse_color=(.60,.70,.81,1)
     ground.data.materials.append(m)
-    bpy.ops.object.light_add(type='AREA',location=(6,-10,19))
+    bpy.ops.object.light_add(type='AREA',location=(6,-10,ROOF_HEIGHT+7))
     light=bpy.context.object
     light.data.energy=2300
     light.data.shape='DISK'
@@ -359,10 +387,10 @@ def render_previews(out):
     cam=bpy.context.object
     scene.camera=cam
     cam.data.type='ORTHO'
-    cam.data.ortho_scale=19
-    for name,pos in [('exterior',(23,-30,21)),('rear',(-21,26,18))]:
+    cam.data.ortho_scale=ROOF_HEIGHT+4.0
+    for name,pos in [('exterior',(32,-42,34)),('rear',(-30,38,31))]:
         cam.location=pos
-        point_camera(cam,(1,0,6.4))
+        point_camera(cam,(1,0,ROOF_HEIGHT*.5))
         scene.render.filepath=str(out/f'{name}.png')
         bpy.ops.render.render(write_still=True)
     cam.data.type='PERSP'
@@ -406,16 +434,20 @@ def main():
     if triangles>15000:
         raise RuntimeError(f'Triangle budget exceeded: {triangles}')
     spec={
-        'schema':1,'name':'fire_lookout','seed':SEED,'units':'metres','up_axis':'Godot +Y',
+        'schema':2,'name':'fire_lookout','seed':SEED,'units':'metres','up_axis':'Godot +Y',
+        'roof_height':ROOF_HEIGHT,'original_roof_height':ORIGINAL_ROOF_HEIGHT,
         'floor_y':FLOOR,'deck_half':[3.8,3.3],'cabin_half':[2.7,2.2],
         'deck_height':FLOOR,'deck_bounds':[-3.8,-3.3,3.8,3.3],
         'room_bounds':[-2.7,-2.2,2.7,2.2],'door_width':1.1,
-        'supports':[[x,z,.30] for x in [-2.95,2.95] for z in [-2.45,2.45]]+[[x,z,.20] for x in [3.74,6.44] for z in [-2.2,2.2]],
+        'supports':[[x,z,.30] for x in [-2.95,2.95] for z in [-2.45,2.45]]+[[x,z,.20] for x in STAIR_POST_X for z in STAIR_POST_Y],
         'door':{'x':0,'z':2.2,'width':1.1},
-        'stairs':{'flights':4,'steps_per_flight':12,'riser':.18,'run':.30,'width':1.1,
-                  'lane_x':[4.45,5.8,4.45,5.8],'z_start':[1.8,-1.8,1.8,-1.8],
-                  'z_end':[-1.8,1.8,-1.8,1.8],'landing_x':[3.7,6.5],
-                  'landing_depth':.8,'landing_z':[-2.2,2.2,-2.2,2.2]},
+        'stairs':{'flights':FLIGHTS,'steps_per_flight':STEPS_PER_FLIGHT,'riser':RISER,'run':.30,'width':1.1,
+                  'lane_x':[4.45 if f%2==0 else 5.8 for f in range(FLIGHTS)],
+                  'z_start':[1.8 if f%2==0 else -1.8 for f in range(FLIGHTS)],
+                  'z_end':[-1.8 if f%2==0 else 1.8 for f in range(FLIGHTS)],'landing_x':[3.7,6.5],
+                  'landing_depth':.8,'landing_z':[-2.2 if f%2==0 else 2.2 for f in range(FLIGHTS)],
+                  'standing_clearance_m':2.0,'support_planes_z':[-2.90,2.90],
+                  'rail_end_inset_m':.12,'visual_landing_x':[3.64,6.56],'visual_landing_depth':.84},
         'mesh_objects':len(objs),'triangles':triangles,'vertices':vertices,
         'material_count':len(objs),'file_bytes':glb.stat().st_size,
         'sha256':hashlib.sha256(glb.read_bytes()).hexdigest(),

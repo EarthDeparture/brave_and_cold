@@ -29,7 +29,10 @@ TREE_WALK_MARGIN = 0.35
 MAX_GRADE = 0.30
 YAW_DEGREES = (0, 30, 60, 90, 120, 150)
 # Precise model extents, rather than a larger clearing that would alter trees.
-MODEL_RECT = (-4.0, 6.7, -3.4, 3.4)
+MODEL_RECT = (-4.0, 7.15, -3.4, 3.4)
+# Largest spruce radial reach (0.21328934) times maximum scatter girth (1.3),
+# rounded upward so the surveyed envelope contains every source variant.
+CANOPY_RADIUS_PER_HEIGHT = 0.27728
 
 
 def load_map():
@@ -91,13 +94,13 @@ def site_candidates(height, masks, trunks, road, buildings):
         heights = (nearby[:, 2] - .12) / .012
         # Includes the largest spruce source reach, random branch spread and
         # the scatter's maximum 1.3 horizontal girth multiplier.
-        canopy_radii = heights * .30
+        canopy_radii = heights * CANOPY_RADIUS_PER_HEIGHT
         for yaw in YAW_DEGREES:
             local = world_to_local(nearby[:, :2], origin, yaw)
             distances = rect_distance(local, MODEL_RECT)
             if np.any(distances < canopy_radii):
                 continue
-            xx, zz = np.meshgrid(np.linspace(-4, 6.7, 23), np.linspace(-3.4, 3.4, 15))
+            xx, zz = np.meshgrid(np.linspace(MODEL_RECT[0], MODEL_RECT[1], 23), np.linspace(MODEL_RECT[2], MODEL_RECT[3], 15))
             footprint = local_to_world(np.column_stack((xx.ravel(), zz.ravel())), origin, yaw)
             hh = sample(height, footprint)
             if np.ptp(hh) > 2.0:

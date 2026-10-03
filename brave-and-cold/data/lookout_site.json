@@ -13,17 +13,26 @@
   "footprint": {
     "local_bounds_xz": [
       -4.0,
-      6.7,
+      7.15,
       -3.4,
       3.4
     ],
     "min_ground_y": 303.0445,
-    "max_ground_y": 304.2375,
-    "relief_m": 1.193,
+    "max_ground_y": 304.2531,
+    "relief_m": 1.2086,
     "foundation_extension_m": 0.9098,
     "origin_height_policy": "terrain below stair base local x4.45,z+1.8 plus0.03m; short foundations adapt to unchanged terrain",
-    "minimum_tree_center_to_model_m": 3.2301,
-    "minimum_conservative_canopy_clearance_m": 0.1113
+    "minimum_tree_center_to_model_m": 2.9805,
+    "minimum_conservative_canopy_clearance_m": 0.0979,
+    "canopy_radius_per_tree_height_m": 0.27728,
+    "canopy_clearance_policy": "Largest measured spruce GLB radial reach 0.21328934 times maximum runtime horizontal girth multiplier 1.3, conservatively rounded upward to 0.27728; bounds include relocated stair supports and 0.60m foundation piers",
+    "canopy_source_maximum_radial_reach_m": 0.21328934,
+    "canopy_maximum_runtime_girth_multiplier": 1.3,
+    "canopy_source_sha256": {
+      "spruce_a.glb": "75e347dd635e14f31a9b82e984cee1d5c41bb7c322eb4ee19867fa921e3d9f42",
+      "spruce_b.glb": "3134f4a0d419537d390821dce9fcb240c77e28fff614c56ce2d1873d4bb360f1",
+      "spruce_c.glb": "ee21f28a096b1525b2744ae46c7ec2608c1bb9018189356ed04d7b622592ecd3"
+    }
   },
   "route": [
     [

@@ -2,9 +2,11 @@
 
 ## Delivered scope
 
-An original, Python-generated Blender asset is now present in the playable Godot world at **x528, z−764**, yaw **30°**. It sits on a naturally open mountain shoulder at approximately **472.75m above sea level**, near the upper end of the existing 169–497m terrain range. Its glazed living room is **8.64m above the structure origin**; the roof reaches **12.77m**.
+An original, Python-generated Blender asset is now present in the playable Godot world at **x528, z−764**, yaw **30°**. It sits on a naturally open mountain shoulder at approximately **472.75m above sea level**, near the upper end of the existing 169–497m terrain range. Its glazed living room is **21.41m above the structure origin**; the roof reaches **25.54m**, exactly twice the first version's overall height. The room retains its original dimensions instead of stretching doors, furnishings and steps.
 
-The timber tower has cross bracing, four continuous switchback stair flights, guarded landings, a connecting deck, a wraparound balcony, a snow-covered roof, and a furnished room. Bed, stove, desk lamp, radio, logbook and provisions are visual props. They do not yet provide sleep, heating, broadcasting, maintenance jobs or starting inventory.
+The timber tower has cross bracing, **ten continuous switchback stair flights**, guarded landings, a connecting deck, a wraparound balcony, a snow-covered roof, and a furnished room. The 120 steps have a 17.84cm rise and 30cm run. Bed, stove, desk lamp, radio, logbook and provisions are visual props. They do not yet provide sleep, heating, broadcasting, maintenance jobs or starting inventory.
+
+The staircase columns and diagonal braces sit outside the landings, at x3.40/6.80 and z±2.90. Landing joists sit below the floors. Inset deck joists and a 14cm deck slab leave 2m headroom above the next-to-last landing. Rails stand outside the usable landing area, and stair handrail ends retract 12cm to clear the player's shoulders during turns. These changes correct the first version's brace crossing directly through the landing, which movement tests alone could not detect.
 
 Existing terrain, roads, trees, trails, buildings and default player spawn remain unchanged. The only existing script changes are optional height-aware player surface hooks and the world hook for the new structure, indoor fog, roof cover and elevated save restoration. The ground beneath the cabin remains outdoors and never snaps actors upstairs.
 
@@ -20,12 +22,14 @@ The new **2m-wide maintenance footpath** joins the existing road at **x549.0067,
 | 95th percentile grade | 22.53% |
 | Minimum clearance from path centre to a trunk surface | 1.209m |
 | Water crossings | 0 |
-| Terrain relief beneath tower footprint | 1.193m |
+| Terrain relief beneath tower footprint | 1.209m |
 | Existing trees removed | 0 |
 
 This is credible walking access for a remote maintenance site. It is steep and narrow; it is not a vehicle logging road. Vehicle access would need a separate route assessment, wider bends and likely terrain/tree changes, which are outside this addition. Nearby trees remain, so some approaches obscure the tower. The room has an elevated valley view, rather than an artificially cleared panorama.
 
 The runtime samples the existing Godot terrain beneath the first stair and sets the tower origin to that height plus 3cm (**world Y303.7298** in the verified run). The raster survey gives Y303.7542; the small difference comes from terrain sampling. Short added foundation piers accommodate the hillside instead of flattening it.
+
+The enlarged conservative footprint includes all relocated columns and runtime foundation piers. It remains clear of existing trees. The site receipt records the source spruce mesh hashes and the maximum runtime girth used to derive a conservative canopy envelope, with about 9.8cm remaining clearance. Neither the tower origin nor any route point changed.
 
 ## Asset files and efficiency
 
@@ -38,15 +42,17 @@ The runtime samples the existing Godot terrain beneath the first stair and sets 
 
 Generated with Blender **5.2.2 LTS**, deterministic seed **2103**, in metres. Blender +Z is converted to Godot +Y during GLB export. The native source stays outside the Godot project so the editor imports the GLB rather than invoking Blender.
 
-The GLB contains **6,790 triangles**, **13,524 exported vertices**, **seven mesh/material batches**, and **534,172 bytes**. Flat face colours account for the duplicated vertices. It uses no external textures or downloaded meshes. The path and hillside piers each use one additional mesh; the visual desk light has no shadow map. These are bounded asset costs, not a measured FPS improvement.
+The GLB contains **13,414 triangles**, **26,772 exported vertices**, **seven mesh/material batches**, and **1,050,900 bytes** (about 1MiB). Flat face colours account for the duplicated vertices. It uses no external textures or downloaded meshes and remains below the 15,000-triangle budget. The path and hillside piers each use one additional mesh; the visual desk light has no shadow map. These are bounded asset costs, not a measured FPS improvement.
 
 The Godot adapter duplicates only the tower's imported materials to enable vertex-colour albedo, matching the project's other generated buildings. It preserves linear colours and the imported glass alpha/depth-prepass settings. In-game renders caught and corrected the initial white-material import result.
 
 ## Verification
 
-The final GLB validation confirms its receipt digest, bounds, finite positions, normals, vertex colours, 6,790-triangle budget and zero degenerate triangles.
+The final GLB validation confirms its receipt digest, bounds, finite positions, normals, vertex colours, triangle budget and zero degenerate triangles. Its measured roof height is 25.5400009m, compared with the original export's 12.7700005m.
 
-**28 Godot checks passed**, including actual player movement up all four flights, landing turns, the upper connector and doorway, return to unchanged terrain, shelter at the room's elevation, rail/wall bounds, and JSON round-trip restoration through the actual world save-application routine. A crouched save restores the same floor while standing. Upstairs footsteps do not trample ground snow. The real user save slot was untouched.
+**34 Godot checks passed**, including actual player movement up all ten flights, landing turns, the upper connector and doorway, return to unchanged terrain, shelter at the room's elevation, rail/wall bounds using the full 0.35m player radius, and JSON round-trip restoration through the actual world save-application routine. A crouched save restores the same floor while standing. Original-height upstairs and stair saves migrate onto corresponding valid new surfaces. Upstairs footsteps do not trample ground snow. The real user save slot was untouched.
+
+The exported triangle audit passes **870 sampled standing-capsule poses** (1.85m height, 0.35m radius), including lateral tread positions, dense landing turns, the upper connector and the near-left edge below the top deck. It performs 13,648 exact triangle-distance checks and finds no support, rail or overhead obstructions. Minimum sampled margins beyond the body radius are 5.25cm on lateral tread probes, 5cm on turns, and 4.5cm on the connector; the extreme landing boundary is tangent to its rail within numerical tolerance. Low outgoing stair-board toe contacts are reported separately as intended stepping. Timber, rails and ceiling triangles have no exemptions. This samples the walking route rather than proving every possible player position. Running the same audit against the old asset still detects its first-landing diagonal obstruction.
 
 A separate full-route check walked the actual player controller through **all 256 path waypoints**, from the existing road to the staircase entrance, with **zero movement blocks**. This exercised terrain grades, snow movement and the existing forest-trunk resolution, with hostiles disabled only for the diagnostic.
 
@@ -61,6 +67,7 @@ Use the installed Blender executable in background mode, without altering an ope
 ```powershell
 & 'C:/Program Files/Blender Foundation/Blender 5.2/blender.exe' --background --factory-startup --python tools/blender/gen_fire_lookout.py -- --output-dir shots/lookout/source --preview-dir shots/lookout/previews --render
 & tools/terrain/.venv/Scripts/python.exe tools/blender/validate_fire_lookout.py brave-and-cold/assets/models/buildings/fire_lookout.glb brave-and-cold/data/fire_lookout_geometry.json
+& tools/terrain/.venv/Scripts/python.exe tools/blender/validate_lookout_clearance.py brave-and-cold/assets/models/buildings/fire_lookout.glb brave-and-cold/data/fire_lookout_geometry.json
 ```
 
 Generation writes to the selected output directory. Copy the generated GLB, geometry receipt and `.blend` to their canonical paths together if intentionally updating the asset, then let Godot reimport it. The receipt includes the generator and model SHA-256 hashes.

@@ -371,7 +371,7 @@ func _build_fire_lookout(opts: Dictionary) -> void:
 		else:
 			var point := fire_lookout.approach_point(float(opts.get('lookoutdist', 17.0)))
 			player.place(point.x, point.z)
-			var target := fire_lookout.to_global(Vector3(0.0, 6.0, 0.0))
+			var target := fire_lookout.to_global(Vector3(0.0, FireLookout.DECK_Y * 0.7, 0.0))
 			var direction := target - Vector3(point.x, fire_lookout.position.y + player.eye_h, point.z)
 			opts['yaw'] = str(rad_to_deg(atan2(-direction.x, -direction.z)))
 			opts['pitch'] = str(rad_to_deg(atan2(direction.y, Vector2(direction.x, direction.z).length())))

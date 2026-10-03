@@ -7,18 +7,22 @@ extends Node3D
 const MODEL_PATH := "res://assets/models/buildings/fire_lookout.glb"
 const GEOMETRY_PATH := "res://data/fire_lookout_geometry.json"
 const SITE_PATH := "res://data/lookout_site.json"
-const DECK_Y := 8.64
+const DECK_Y := 21.41
+const FLIGHT_COUNT := 10
+const STEPS_PER_FLIGHT := 12
+const LEGACY_DECK_Y := 8.64
+const LEGACY_FLIGHT_COUNT := 4
 const ROOM := Rect2(-2.7, -2.2, 5.4, 4.4)
 const DECK := Rect2(-3.8, -3.3, 7.6, 6.6)
 const CONNECTOR := Rect2(3.55, 1.8, 1.3, 1.0)
-const STEP_RISE := 0.18
+const STEP_RISE := DECK_Y / float(FLIGHT_COUNT * STEPS_PER_FLIGHT)
 const STEP_RUN := 0.30
-const FLIGHT_RISE := 2.16
+const FLIGHT_RISE := DECK_Y / float(FLIGHT_COUNT)
 const FLIGHT_RUN := 3.60
 const FLIGHT_WIDTH := 1.10
 const STAIR_LANES: Array[float] = [4.45, 5.80]
 const SURFACE_REACH := 0.95
-const SUPPORTS: Array[Vector2] = [Vector2(-2.95, -2.45), Vector2(2.95, -2.45), Vector2(-2.95, 2.45), Vector2(2.95, 2.45), Vector2(3.74, -2.2), Vector2(6.44, -2.2), Vector2(3.74, 2.2), Vector2(6.44, 2.2)]
+const SUPPORTS: Array[Vector2] = [Vector2(-2.95, -2.45), Vector2(2.95, -2.45), Vector2(-2.95, 2.45), Vector2(2.95, 2.45), Vector2(3.40, -2.90), Vector2(6.80, -2.90), Vector2(3.40, 2.90), Vector2(6.80, 2.90)]
 
 var site: Dictionary = {}
 var model: Node3D
@@ -77,24 +81,26 @@ func floor_at_world(foot: Vector3, _terrain_height: float = NAN) -> float:
 	return NAN if is_nan(h) else global_position.y + h
 
 
-func _floor_local(p: Vector2, foot_y: float) -> float:
+func _floor_local(p: Vector2, foot_y: float, deck_y: float = DECK_Y, flight_count: int = FLIGHT_COUNT, surface_reach: float = SURFACE_REACH) -> float:
 	var best := NAN
-	if (DECK.has_point(p) or CONNECTOR.has_point(p)) and absf(foot_y - DECK_Y) <= SURFACE_REACH:
-		best = DECK_Y
-	for flight in range(4):
+	var flight_rise := deck_y / float(flight_count)
+	var step_rise := flight_rise / float(STEPS_PER_FLIGHT)
+	if (DECK.has_point(p) or CONNECTOR.has_point(p)) and absf(foot_y - deck_y) <= surface_reach:
+		best = deck_y
+	for flight in range(flight_count):
 		var lane := STAIR_LANES[flight % 2]
 		if absf(p.x - lane) > FLIGHT_WIDTH * 0.5 or p.y < -1.8 or p.y > 1.8:
 			continue
 		var progress := 1.8 - p.y if flight % 2 == 0 else p.y + 1.8
-		var step := clampi(int(ceil(progress / STEP_RUN)), 1, 12)
-		var h := float(flight) * FLIGHT_RISE + float(step) * STEP_RISE
-		if absf(h - foot_y) <= SURFACE_REACH and (is_nan(best) or absf(h - foot_y) < absf(best - foot_y)):
+		var step := clampi(int(ceil(progress / STEP_RUN)), 1, STEPS_PER_FLIGHT)
+		var h := float(flight) * flight_rise + float(step) * step_rise
+		if absf(h - foot_y) <= surface_reach and (is_nan(best) or absf(h - foot_y) < absf(best - foot_y)):
 			best = h
-	for landing in range(1, 5):
+	for landing in range(1, flight_count + 1):
 		var z0 := -2.6 if landing % 2 == 1 else 1.8
 		var bounds := Rect2(3.7, z0, 2.8, 0.8)
-		var h := float(landing) * FLIGHT_RISE
-		if bounds.has_point(p) and absf(h - foot_y) <= SURFACE_REACH and (is_nan(best) or absf(h - foot_y) < absf(best - foot_y)):
+		var h := float(landing) * flight_rise
+		if bounds.has_point(p) and absf(h - foot_y) <= surface_reach and (is_nan(best) or absf(h - foot_y) < absf(best - foot_y)):
 			best = h
 	return best
 
@@ -138,7 +144,7 @@ func resolve_at(candidate: Vector3, previous: Vector3, radius: float) -> Vector2
 	# Guardrails: never allow the controller's terrain snap to make a player fall
 	# through a stair side or deck edge. The base remains freely accessible.
 	if old.y > 0.85 and not is_nan(_floor_local(Vector2(old.x, old.z), old.y)):
-		if not _walkable_circle(q, old.y, radius * 0.8):
+		if not _walkable_circle(q, old.y, radius):
 			q = Vector2(old.x, old.z)
 	var result := to_global(Vector3(q.x, p.y, q.y))
 	return Vector2(result.x, result.z)
@@ -268,14 +274,29 @@ func saved_location(eye: Vector3, eye_height: float) -> Dictionary:
 	var surface_y := floor_at_world(foot)
 	if is_nan(surface_y):
 		return {}
-	return {"structure": "mountain_fire_lookout", "eye_y": eye.y, "floor_y": surface_y}
+	return {"structure": "mountain_fire_lookout", "eye_y": eye.y, "floor_y": surface_y, "deck_height": DECK_Y}
 
 
 func restore_location(player: Player, location: Dictionary) -> bool:
 	if String(location.get("structure", "")) != "mountain_fire_lookout":
 		return false
 	var foot_y := float(location.get("floor_y", float(location.get("eye_y", player.position.y)) - player.eye_h))
-	var h := floor_at_world(Vector3(player.position.x, foot_y, player.position.z))
+	var saved_deck := float(location.get("deck_height", LEGACY_DECK_Y))
+	var h := NAN
+	if is_equal_approx(saved_deck, LEGACY_DECK_Y):
+		# The original tower had four flights and no height metadata in saves.
+		# Validate that old surface, then choose the new surface closest to the
+		# normalized elevation at the same X/Z. Overlapping stair lanes must
+		# choose a real tread, not an arbitrary scaled height between flights.
+		var local := to_local(Vector3(player.position.x, foot_y, player.position.z))
+		var xz := Vector2(local.x, local.z)
+		var old_floor := _floor_local(xz, local.y, LEGACY_DECK_Y, LEGACY_FLIGHT_COUNT, 0.10)
+		if not is_nan(old_floor):
+			var new_floor := _floor_local(xz, old_floor * DECK_Y / LEGACY_DECK_Y, DECK_Y, FLIGHT_COUNT, INF)
+			if not is_nan(new_floor):
+				h = global_position.y + new_floor
+	elif is_equal_approx(saved_deck, DECK_Y):
+		h = floor_at_world(Vector3(player.position.x, foot_y, player.position.z))
 	if is_nan(h):
 		return false
 	player.position.y = h + player.eye_h

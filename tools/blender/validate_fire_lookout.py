@@ -62,7 +62,9 @@ def inspect(model, receipt):
     assert len(gltf['materials'])==meta['material_count']<=8
     low=[min(p[i] for p in positions) for i in range(3)]
     high=[max(p[i] for p in positions) for i in range(3)]
-    assert -.8<low[1]<0 and 12<high[1]<14,'Wrong up axis or height'
+    expected_roof=float(meta.get('roof_height',12.77))
+    assert -.8<low[1]<0 and abs(high[1]-expected_roof)<.01,'Wrong up axis or roof height'
+    assert expected_roof>meta['deck_height']>0,'Invalid floor/roof relationship'
     assert high[0]-low[0]<11 and high[2]-low[2]<8,'Footprint larger than site budget'
     assert abs(meta['stairs']['flights']*meta['stairs']['steps_per_flight']*meta['stairs']['riser']-meta['deck_height'])<1e-6
     return {'ok':True,'triangles':tris,'meshes':len(gltf['meshes']),

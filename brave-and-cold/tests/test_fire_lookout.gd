@@ -5,6 +5,11 @@ extends SceneTree
 var failures := 0
 var tower: FireLookout
 
+const DECK_Y := FireLookout.DECK_Y
+const FLIGHT_COUNT := FireLookout.FLIGHT_COUNT
+const FLIGHT_RISE := FireLookout.FLIGHT_RISE
+const STEP_RISE := FireLookout.STEP_RISE
+
 
 func _init() -> void:
 	call_deferred('_run')
@@ -21,36 +26,36 @@ func _run() -> void:
 	root.add_child(tower)
 	tower.build({'origin': {'x': 50.0, 'y': 120.0, 'z': -80.0}, 'yaw_degrees': 31.0}, false)
 	check(is_nan(height_at(Vector3(0.0, 0.0, 0.0))), 'Ground underneath cabin never becomes upstairs floor')
-	check(is_equal_approx(height_at(Vector3(0.0, 8.64, 0.0)), 128.64), 'Room supplies its upper floor at the correct elevation')
+	check(is_equal_approx(height_at(Vector3(0.0, DECK_Y, 0.0)), 120.0 + DECK_Y), 'Room supplies its upper floor at the correct elevation')
 	check(not tower.contains_room(world(Vector3(0.0, 1.7, 0.0))), 'Under-tower eye remains outside room shelter')
-	check(tower.contains_room(world(Vector3(0.0, 10.34, 0.0))), 'Standing room occupant is sheltered')
-	check(not tower.contains_room(world(Vector3(0.0, 10.34, 2.8))), 'Open deck is outdoors')
-	check(not tower.contains_room(world(Vector3(0.0, 13.0, 0.0))), 'Roof exterior is not an indoor room')
-	check(is_equal_approx(height_at(Vector3(4.45, 0.18, 1.7)), 120.18), 'First staircase begins near terrain')
-	check(is_equal_approx(height_at(Vector3(4.45, 4.50, 1.7)), 124.50), 'Third flight selected above the same X/Z')
+	check(tower.contains_room(world(Vector3(0.0, DECK_Y + 1.7, 0.0))), 'Standing room occupant is sheltered')
+	check(not tower.contains_room(world(Vector3(0.0, DECK_Y + 1.7, 2.8))), 'Open deck is outdoors')
+	check(not tower.contains_room(world(Vector3(0.0, DECK_Y + 4.36, 0.0))), 'Roof exterior is not an indoor room')
+	check(is_equal_approx(height_at(Vector3(4.45, STEP_RISE, 1.7)), 120.0 + STEP_RISE), 'First staircase begins near terrain')
+	check(is_equal_approx(height_at(Vector3(4.45, 2.0 * FLIGHT_RISE + STEP_RISE, 1.7)), 120.0 + 2.0 * FLIGHT_RISE + STEP_RISE), 'Third flight selected above the same X/Z')
 	check(is_nan(height_at(Vector3(4.45, 0.0, -1.7))), 'Ground actor at upper end cannot snap onto a stair flight')
-	check(is_equal_approx(height_at(Vector3(5.80, 8.64, 2.2)), 128.64), 'Top landing joins final stair elevation')
-	check(is_equal_approx(height_at(Vector3(3.65, 8.64, 2.3)), 128.64), 'Upper bridge connects staircase and deck')
+	check(is_equal_approx(height_at(Vector3(5.80, DECK_Y, 2.2)), 120.0 + DECK_Y), 'Top landing joins final stair elevation')
+	check(is_equal_approx(height_at(Vector3(3.65, DECK_Y, 2.3)), 120.0 + DECK_Y), 'Upper bridge connects staircase and deck')
 	# Exercise both directions through every tread and landing with independent
 	# foot height, including the stacked X/Z of flights zero and two.
 	var foot := Vector3(4.45, 0.0, 1.78)
 	var route: Array[Vector3] = []
-	for flight in range(4):
+	for flight in range(FLIGHT_COUNT):
 		var x := FireLookout.STAIR_LANES[flight % 2]
 		for step in range(12):
 			var z := 1.8 - (float(step) + 0.5) * 0.3 if flight % 2 == 0 else -1.8 + (float(step) + 0.5) * 0.3
-			route.append(Vector3(x, float(flight) * 2.16 + float(step + 1) * 0.18, z))
+			route.append(Vector3(x, float(flight) * FLIGHT_RISE + float(step + 1) * STEP_RISE, z))
 		var landing_z := -2.2 if flight % 2 == 0 else 2.2
-		route.append(Vector3(x, float(flight + 1) * 2.16, landing_z))
-		if flight < 3:
-			route.append(Vector3(FireLookout.STAIR_LANES[(flight + 1) % 2], float(flight + 1) * 2.16, landing_z))
+		route.append(Vector3(x, float(flight + 1) * FLIGHT_RISE, landing_z))
+		if flight < FLIGHT_COUNT - 1:
+			route.append(Vector3(FireLookout.STAIR_LANES[(flight + 1) % 2], float(flight + 1) * FLIGHT_RISE, landing_z))
 	var walked := true
 	for target in route:
 		var h := height_at(Vector3(target.x, foot.y, target.z))
 		if is_nan(h) or absf(h - (120.0 + target.y)) > 0.02:
 			walked = false
 		foot = target
-	check(walked, 'Four stair flights and turn landings form a continuous ascent')
+	check(walked, 'Ten stair flights and turn landings form a continuous ascent')
 	route.reverse()
 	for target in route:
 		var h := height_at(Vector3(target.x, foot.y, target.z))
@@ -58,24 +63,34 @@ func _run() -> void:
 			walked = false
 		foot = target
 	check(walked, 'Descent chooses the correct overlapping staircase level')
-	var inside := world(Vector3(0.0, 8.64, 1.8))
-	var through_door := world(Vector3(0.0, 8.64, 2.55))
+	var inside := world(Vector3(0.0, DECK_Y, 1.8))
+	var through_door := world(Vector3(0.0, DECK_Y, 2.55))
 	var door_result := tower.resolve_at(through_door, inside, 0.35)
 	check(door_result.distance_to(Vector2(through_door.x, through_door.z)) < 0.02, 'Open doorway passes a player-sized circle')
-	var toward_wall := world(Vector3(1.2, 8.64, 2.25))
-	var old_wall := world(Vector3(1.2, 8.64, 1.7))
+	var toward_wall := world(Vector3(1.2, DECK_Y, 2.25))
+	var old_wall := world(Vector3(1.2, DECK_Y, 1.7))
 	var wall_result := tower.resolve_at(toward_wall, old_wall, 0.35)
 	check(wall_result.distance_to(Vector2(toward_wall.x, toward_wall.z)) > 0.1, 'Solid front wall blocks upstairs movement')
-	var edge := world(Vector3(0.0, 8.64, -3.1))
-	var off_edge := world(Vector3(0.0, 8.64, -4.0))
+	var edge := world(Vector3(0.0, DECK_Y, -3.1))
+	var off_edge := world(Vector3(0.0, DECK_Y, -4.0))
 	var edge_result := tower.resolve_at(off_edge, edge, 0.35)
 	check(edge_result.distance_to(Vector2(edge.x, edge.z)) < 0.02, 'Deck guardrail prevents terrain snap through an edge')
 	var p := Player.new()
 	root.add_child(p)
-	p.position = world(Vector3(0.0, 10.34, 0.0))
+	p.position = world(Vector3(0.0, DECK_Y + 1.7, 0.0))
 	var saved := tower.saved_location(p.position, p.eye_h)
 	p.position.y = 400.0
-	check(tower.restore_location(p, saved) and absf(p.position.y - 130.34) < 0.01, 'Saving upstairs restores upper elevation')
+	check(tower.restore_location(p, saved) and absf(p.position.y - (120.0 + DECK_Y + p.eye_h)) < 0.01, 'Saving upstairs restores upper elevation')
+	check(is_equal_approx(float(saved.get('deck_height', 0.0)), DECK_Y), 'New saves identify the revised tower height')
+	p.position = world(Vector3(0.0, 0.0, 0.0))
+	var old_room := {'structure': 'mountain_fire_lookout', 'floor_y': 128.64, 'eye_y': 130.34}
+	check(tower.restore_location(p, old_room) and absf(p.position.y - (120.0 + DECK_Y + p.eye_h)) < 0.01, 'Original upstairs save migrates to the taller room')
+	p.position = world(Vector3(5.80, 0.0, -0.15))
+	var old_stair := {'structure': 'mountain_fire_lookout', 'floor_y': 123.24, 'eye_y': 124.94}
+	var new_stair_y := 3.0 * FLIGHT_RISE + 6.0 * STEP_RISE
+	check(tower.restore_location(p, old_stair) and absf(p.position.y - (120.0 + new_stair_y + p.eye_h)) < 0.01, 'Original stair save migrates to a real tread in the same lane')
+	p.position = world(Vector3(0.0, 0.0, 0.0))
+	check(not tower.restore_location(p, {'structure': 'mountain_fire_lookout', 'floor_y': 121.0}), 'Invalid old floor beneath the room cannot become an upstairs save')
 	check(tower.saved_location(world(Vector3(0.0, 1.7, 0.0)), 1.7).is_empty(), 'Ground placement does not acquire an elevated save identity')
 	check(not tower.restore_location(p, {}), 'Legacy saves without lookout data retain their existing placement')
 	p.free()
@@ -105,6 +120,7 @@ func _integration() -> void:
 	if tower == null:
 		game.free()
 		return
+	check(is_equal_approx(float(tower.geometry.get('deck_height', 0.0)), DECK_Y) and int(tower.geometry.get('stairs', {}).get('flights', 0)) == FLIGHT_COUNT, 'Imported geometry receipt agrees with the taller traversal surfaces')
 	check(tower.get_node_or_null('LookoutAccessTrack') != null, 'Access track renders from the site manifest')
 	var terrain: Terrain3D = game.get('terrain')
 	var stair_base := world(Vector3(4.45, 0.0, 1.8))
@@ -119,7 +135,7 @@ func _integration() -> void:
 	player._ready_ground = true
 	player._vel = Vector2.ZERO
 	var route: Array[Vector3] = []
-	for flight in range(4):
+	for flight in range(FLIGHT_COUNT):
 		var lane := FireLookout.STAIR_LANES[flight % 2]
 		var start := 1.65 if flight % 2 == 0 else -1.65
 		var end := -1.65 if flight % 2 == 0 else 1.65
@@ -127,7 +143,7 @@ func _integration() -> void:
 		route.append(Vector3(lane, 0.0, end))
 		var landing := -2.2 if flight % 2 == 0 else 2.2
 		route.append(Vector3(lane, 0.0, landing))
-		if flight < 3:
+		if flight < FLIGHT_COUNT - 1:
 			route.append(Vector3(FireLookout.STAIR_LANES[(flight + 1) % 2], 0.0, landing))
 	route.append(Vector3(3.4, 0.0, 2.30))
 	route.append(Vector3(0.0, 0.0, 2.75))
@@ -138,7 +154,7 @@ func _integration() -> void:
 			reached_all = false
 			print('TRAVERSAL_BLOCKED at=', tower.to_local(player.position - Vector3.UP * player.eye_h), ' target=', point)
 			break
-	check(reached_all and absf(player.position.y - (tower.position.y + FireLookout.DECK_Y + player.eye_h)) < 0.25, 'Actual Player controller climbs all four flights into the room')
+	check(reached_all and absf(player.position.y - (tower.position.y + FireLookout.DECK_Y + player.eye_h)) < 0.25, 'Actual Player controller climbs all ten flights into the room')
 	check(player.is_sheltered(), 'Actual player receives shelter only after reaching the room')
 	if reached_all:
 		var snow: SnowField = game.get('snow')
@@ -194,6 +210,11 @@ func _save_roundtrip(game: Node3D, player: Player) -> void:
 	player.place(float(parsed.player.x), float(parsed.player.z))
 	game.call('_apply_save', parsed)
 	check(absf(player.position.y - expected_floor - Player.EYE) < 0.01, 'Crouched save restores the same floor while standing')
+	saved['lookout_location'] = {'structure': 'mountain_fire_lookout', 'floor_y': tower.position.y + FireLookout.LEGACY_DECK_Y, 'eye_y': tower.position.y + FireLookout.LEGACY_DECK_Y + Player.EYE}
+	parsed = JSON.parse_string(JSON.stringify(saved))
+	player.place(float(parsed.player.x), float(parsed.player.z))
+	game.call('_apply_save', parsed)
+	check(absf(player.position.y - expected_floor - Player.EYE) < 0.01, 'Actual world restore migrates the original tower room save')
 
 
 func _walk_to(player: Player, target: Vector3) -> bool:
