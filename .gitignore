@@ -5,6 +5,8 @@
 brave-and-cold/demo/
 tools/terrain/out/
 shots/
+tools/blender/__pycache__/
+tools/blender/generated/hand_rig/*.blend[0-9]
 
 brave-and-cold/build/
 

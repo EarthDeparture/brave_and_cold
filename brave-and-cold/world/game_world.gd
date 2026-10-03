@@ -99,9 +99,10 @@ func _ready() -> void:
 			plants.build(terrain, forest.exclude)
 	road.build_mesh(terrain)
 	road.build_props(terrain)
+	ice.activate_shoreline()
 	var w := WaterSurfaces.new()
 	add_child(w)
-	w.build()
+	w.build("res://data/maps/valley_b", ice)
 	snow.build("res://data/maps/valley_b")
 	clock.hour = float(opts.get("hour", 16.5))
 	clock.time_scale = float(opts.get("speed", clock.time_scale))
@@ -1725,9 +1726,9 @@ func _update_prompt() -> void:
 			var left := float(forest.chop_hp.get(tk, ForestScatter.hits_total(float(tr["h"]))))
 			cands.append({"m": _lm, "d": float(tr["d"]) + 0.3, "text": "Chop tree (%d hits)" % int(ceil(left / pw)), "label": "Chopping", "hold": 0.85,
 				"start": func() -> void:
-					get_tree().create_timer(0.55).timeout.connect(func() -> void:
+					get_tree().create_timer(0.55 * ACTION_DURATION_MULT).timeout.connect(func() -> void:
 						if not _act.is_empty():
-							viewmodel.swing(true)),
+							viewmodel.swing(true, 1.0 / ACTION_DURATION_MULT)),
 				"again": func() -> bool: return not forest.felled.has(tk) and inv.count('axe') > 0 and not rifle_up,
 				"act": func() -> void: _chop_hit(tr)})
 	for lg in get_tree().get_nodes_in_group("logs"):
@@ -1783,6 +1784,7 @@ func _update_prompt() -> void:
 
 
 # ---- ActionRunner: hold-to-act with progress ring. Candidates may carry "hold" (s), "kcal", "noise" (m), "label".
+const ACTION_DURATION_MULT := 0.5  # Halve active work waits; costs and world simulation keep their own timing.
 var _act: Dictionary = {}
 var _act_t := 0.0
 var _act_hold := 0.0
@@ -1797,7 +1799,7 @@ func _act_begin(c: Dictionary) -> void:
 		return
 	_act = c
 	_act_t = 0.0
-	_act_hold = hold
+	_act_hold = hold * ACTION_DURATION_MULT
 	_act_pos = player.position
 	_act_hp = player.health
 	if c.has("start"):
@@ -3318,6 +3320,7 @@ func _update_viewmodel() -> void:
 	if viewmodel == null:
 		return
 	var m := 'fists'
+	viewmodel.glove_item = String(inv.extra.get('hands', '')) if inv != null else ''
 	if inv != null:
 		if rifle_up and inv.count('rifle') > 0:
 			m = 'rifle'

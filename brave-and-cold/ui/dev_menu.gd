@@ -191,10 +191,13 @@ func _selftest() -> void:
 	var done := [false]
 	var cand := {"text": "Test", "hold": 0.5, "act": func() -> void: done[0] = true}
 	world.call("_act_begin", cand)
-	for i in range(10):
-		world.call("_act_update", 0.1, true)
-	ok = done[0]
-	print("DEVTEST action completes=", ok)
+	world.call("_act_update", 0.24, true)
+	ok = not done[0] and is_equal_approx(float(world.get("_act_hold")), 0.25)
+	print("DEVTEST action half duration, not early=", ok)
+	fails += 0 if ok else 1
+	world.call("_act_update", 0.01, true)
+	ok = done[0] and (world.get("_act") as Dictionary).is_empty()
+	print("DEVTEST action completes at half duration=", ok)
 	fails += 0 if ok else 1
 	done[0] = false
 	world.call("_act_begin", cand)
@@ -1151,11 +1154,11 @@ func _crafttest() -> void:
 	ok = why == "" and not (world.get("craft_job") as Dictionary).is_empty()
 	fails += 0 if ok else 1
 	var c0 := inv.count("cordage")
-	_craft_run(7.0)
+	world.call("_craft_update", 3.99)
 	ok = inv.count("cordage") == c0 and not (world.get("craft_job") as Dictionary).is_empty()
 	print("CRAFTTEST not done early=", ok)
 	fails += 0 if ok else 1
-	_craft_run(2.0)
+	world.call("_craft_update", 0.01)
 	ok = inv.count("cordage") == c0 + 1 and inv.count("reed") == 0 and (world.get("craft_job") as Dictionary).is_empty()
 	print("CRAFTTEST cordage from reed=", ok)
 	fails += 0 if ok else 1

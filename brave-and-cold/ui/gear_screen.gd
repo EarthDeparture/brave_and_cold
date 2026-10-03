@@ -482,7 +482,8 @@ func _draw_craft() -> void:
 		_c.draw_rect(rr, Color(0.16, 0.18, 0.14, 0.95) if (hv and ok) else Color(0.09, 0.10, 0.09, 0.92))
 		_c.draw_rect(rr, DZ.ACCENT if ok else Color(0.30, 0.32, 0.27, 0.9), false, 1.0)
 		DZ.text(_c, String(r["name"]), rr.position + Vector2(8, 21), 14, DZ.TEXT if ok else DZ.DIM)
-		var tm := "%ds" % int(r["time_s"])
+		var seconds := float(r["time_s"])
+		var tm := "%ds" % int(seconds) if seconds == floorf(seconds) else "%.1fs" % seconds
 		DZ.text(_c, tm, rr.position + Vector2(col_w - 8 - DZ.text_w(tm, 13), 21), 13, DZ.DIM)
 		if hv:
 			hover_r = r

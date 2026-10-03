@@ -273,6 +273,13 @@ func _fly(delta: float) -> void:
 	_ready_ground = true
 
 func _move(delta: float) -> void:
+	# Bound each collision/slope query to a small displacement even on slow frames.
+	# A frame hitch must not jump past a doorway, trunk or narrow stair landing.
+	if delta > 1.0 / 60.0 + 0.00001:
+		var count := mini(8, ceili(delta * 60.0))
+		for i in count:
+			_move(minf(delta, 8.0 / 60.0) / float(count))
+		return
 	var fwd := Vector3(-sin(yaw), 0.0, -cos(yaw))
 	var right := Vector3(cos(yaw), 0.0, -sin(yaw))
 	var dir := Vector3.ZERO
@@ -340,7 +347,7 @@ func _move(delta: float) -> void:
 	eye_h = lerpf(eye_h, target_eye, minf(1.0, delta * 8.0))
 	var g: float = _eye_ground(position.x, position.z)
 	if not is_nan(g):
-		position.y = lerpf(position.y, g + eye_h, minf(1.0, delta * 12.0))
+		position.y = lerpf(position.y, g + eye_h, 1.0 - exp(-delta * 12.0))
 	_head_bob(delta, sp)
 
 
@@ -350,12 +357,12 @@ func _slope_step(step: Vector2) -> Vector2:
 	if len < 1e-6:
 		return step
 	var d := step / len
-	var h0: float = ground_at(position.x, position.z)
+	var h0: float = _eye_ground(position.x, position.z)
 	if is_nan(h0):
 		return step
 	for a in SLIDE_ANGLES:
 		var dd := d.rotated(a)
-		var h1: float = ground_at(position.x + dd.x * SLOPE_PROBE, position.z + dd.y * SLOPE_PROBE)
+		var h1: float = _eye_ground(position.x + dd.x * SLOPE_PROBE, position.z + dd.y * SLOPE_PROBE)
 		if is_nan(h1) or (h1 - h0) / SLOPE_PROBE <= MAX_SLOPE:
 			return dd * len * (1.0 if a == 0.0 else cos(a) * 0.9)
 	return Vector2.ZERO
