@@ -25,16 +25,16 @@
       [
         -2.1901028156280518,
         -1.7599999904632568,
-        0.09199997782707214
+        0.07100000977516174
       ],
       [
         2.275615930557251,
         1.9000000953674316,
-        1.3200000524520874
+        2.2125000953674316
       ]
     ],
     "native_source": "tools/blender/generated/lookout_opening/lookout_home_detail.blend",
-    "triangles": 9254,
+    "triangles": 10750,
     "mesh_groups": [
       "Bedding",
       "FixedProps",
@@ -44,8 +44,8 @@
       "StoveDetail",
       "ServiceLog"
     ],
-    "bytes": 2173664,
-    "sha256": "b941e11933922a0622e993c6f5095e9811185c481cc004c3853b0aab9c644c6d"
+    "bytes": 2238736,
+    "sha256": "47326e09729f99a8bb17415cfa8116ec3c1ce426a3837866ef1360b2a70a3ee6"
   },
   "depot_reserved_case": {
     "bounds_blender_m": [
@@ -66,7 +66,7 @@
       "FixedProps"
     ],
     "bytes": 481520,
-    "sha256": "d9ce1b6205ac430a4dc89af1c2cd856acf83c49fdfcb38ffe5b7ebc4e8b8e683"
+    "sha256": "188d6943c132c59e39326a3f04b5a721bcab6c8e32d1102d310c4a7e3ce09a03"
   },
   "refuge_gate": {
     "bounds_blender_m": [
@@ -87,7 +87,7 @@
       "FixedProps"
     ],
     "bytes": 511496,
-    "sha256": "e8d0321cdc5da5a276c4212f30d6f74a7f5c3b4b0ebf747b05e54471704686a1"
+    "sha256": "f98dc2e3d371251522c688a7c90465c26b15b4187012af56ae0c1a060c417967"
   },
   "source": {
     "generator": "tools/blender/gen_lookout_opening.py",
@@ -96,7 +96,7 @@
     "coordinate_units": "metres",
     "runtime": "Godot GLB",
     "blender": "5.2.2 LTS",
-    "generator_sha256": "22caad3d8b05f823578cf37e6897cd8433f199ee94fb48fdac98971e3d4d9170",
+    "generator_sha256": "989063df62d33fb8ac7e89922a8c6f0b0ecd8cc406cd463ffd151f6ffaeeb9d9",
     "graphics_sha256": {
       "battery.png": "9bb25cf56716a7fdc7cc8e1ecbbaf8fa933c40bf3d1360a84141faf6e76f7d42",
       "cabinet.png": "910f6d17d1d55cb391fc1eb993a616095ed360748dafa3a6cb2429748d2a1004",

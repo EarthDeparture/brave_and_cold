@@ -187,10 +187,25 @@ box('folded_wool',(1.87,1.25,1.62),(.75,.14,.25),'blue_canvas','PantryFixed',bev
 for i in range(6):
  x=1.49+i%3*.28;y=.15+(i//3)*.12
  cylinder('split_firewood',(x,y,1.49),(x,y,1.76),.058,'timber','HomeWood',8)
-cylinder('kettle_body',(-1.61,.726,1.20),(-1.61,.92,1.20),.12,'aged_steel','StoveDetail',24)
-cylinder('kettle_lid',(-1.61,.93,1.20),(-1.61,.946,1.20),.11,'aged_steel','StoveDetail',24)
-cylinder('lid_knob',(-1.61,.95,1.20),(-1.61,.98,1.20),.022,'rubber','StoveDetail')
-cord('kettle_bail',[(-1.73,.86,1.20),(-1.72,1.08,1.20),(-1.50,1.08,1.20),(-1.49,.86,1.20)],.007,'aged_steel')
+# Cast stove skin fits the original solid footprint. Authored bevels, seams,
+# hinges and flue collars improve its near-camera silhouette without moving it.
+M['cast_iron']=material('cast_iron',(.065,.072,.065),.68,.70)
+box('stove_body',(-1.65,.40,1.20),(.588,.658,.528),'cast_iron','StoveDetail',bevel=.014)
+box('cast_top',(-1.65,.738,1.20),(.600,.038,.55),'cast_iron','StoveDetail',bevel=.008)
+box('cast_door',(-1.65,.42,1.471),(.387,.366,.043),'cast_iron','StoveDetail',bevel=.008)
+for y in [.32,.52]:
+ cylinder('hinge_pin',(-1.858,y-.032,1.504),(-1.858,y+.032,1.504),.011,'aged_steel','StoveDetail',12)
+box('latch_mount',(-1.824,.42,1.518),(.026,.047,.018),'aged_steel','StoveDetail',bevel=.003)
+cylinder('door_latch',(-1.824,.42,1.532),(-1.787,.42,1.532),.008,'aged_steel','StoveDetail',12)
+for y in [.84,1.40,2.20]:ring('flue_seam',(-1.65,y,1.20),.114,.102,.025,'aged_steel','StoveDetail',24)
+for x in [-1.85,-1.45]:
+ for z in [1.03,1.39]:cylinder('top_fastener',(x,.754,z),(x,.760,z),.007,'aged_steel','StoveDetail',12)
+box('ash_tray',(-1.65,.16,1.492),(.40,.05,.018),'cast_iron','StoveDetail',bevel=.005)
+for x in [-1.82,-1.75,-1.68,-1.61,-1.54,-1.47]:box('air_slot',(x,.245,1.496),(.040,.012,.004),'rubber','StoveDetail',bevel=0)
+cylinder('kettle_body',(-1.46,.756,1.30),(-1.46,.92,1.30),.09,'aged_steel','StoveDetail',24)
+cylinder('kettle_lid',(-1.46,.93,1.30),(-1.46,.946,1.30),.083,'aged_steel','StoveDetail',24)
+cylinder('lid_knob',(-1.46,.95,1.30),(-1.46,.98,1.30),.019,'rubber','StoveDetail')
+cord('kettle_bail',[(-1.55,.86,1.30),(-1.55,1.08,1.30),(-1.37,1.08,1.30),(-1.37,.86,1.30)],.007,'aged_steel')
 # New rounded pillow slips over the original rectangular insert.
 box('pillow',(-1.60,.83,-1.70),(.87,.21,.40),'cream','Bedding',bevel=.075)
 # Stove window frame and grate; emission is driven in Godot, independent of electricity.
