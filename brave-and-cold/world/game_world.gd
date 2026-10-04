@@ -31,6 +31,9 @@ var plants: PlantField
 var footprints: Footprints
 var cabins: Array[Cabin] = []
 var fire_lookout: FireLookout # Standalone additive mountain structure; never a ground cabin collider.
+var opening: LookoutOpening
+var opening_state: LookoutAssignment
+var opening_zombie_count := 250
 var out_path := ""
 var walk_secs := 0.0
 var _t := 0.0
@@ -180,6 +183,12 @@ func _ready() -> void:
 	var sv: Dictionary = SaveGame.pending
 	SaveGame.pending = {}
 	var loading := not sv.is_empty()
+	opening_state = LookoutAssignment.new()
+	opening_state.enabled = opts.get("lookout","1") != "0" and opts.get("opening","assignment") != "survival" and (not loading or sv.has("opening"))
+	if loading and sv.has("opening"): opening_state.restore(sv.opening.get("state",{}))
+	elif opening_state.enabled: opening_state.new_run(int(opts.get("opening_seed",Time.get_unix_time_from_system())))
+	opening_zombie_count = int(opts.get("zombies",250))
+	if opening_state.enabled and not loading and not opts.has("hour"): clock.hour = 7.0
 	if loading:
 		sp = Vector2(float(sv['player']['x']), float(sv['player']['z']))
 	player.place(sp.x, sp.y)
@@ -214,7 +223,7 @@ func _ready() -> void:
 			_spawn_wolves(int(opts.get("wolves", 3)), home, 70.0, 140.0)
 			_spawn_bears(int(opts.get("bears", 2)), home, 150.0, 320.0)
 		if not loading:
-			_populate(int(opts.get("zombies", 700)), home)
+			if not opening_state.enabled: _populate(int(opts.get("zombies", 700)), home)
 			if opts.has("horde"):   # dev: a horde of N, hordedist m ahead (default 180)
 				var hf := Vector2(-sin(deg_to_rad(float(opts.get('yaw', 0.0)))), -cos(deg_to_rad(float(opts.get('yaw', 0.0)))))
 				pop.spawn_horde(Vector2(player.position.x, player.position.z) + hf * float(opts.get('hordedist', 180.0)), int(opts['horde']))
@@ -326,6 +335,17 @@ func _ready() -> void:
 	audio.detail_enabled = environment_detail_enabled
 	audio.setup(player, self, wind)
 	audio.weather = weather
+	if opening_state.enabled and fire_lookout != null:
+		opening = LookoutOpening.new(); add_child(opening)
+		opening.build(self,opening_state,sv.get("opening",{}).get("home",{}))
+		if not loading:
+			opening.starting_gear()
+			var camera_override := false
+			for option: String in ["pos","roadpos","hutpos","icepos","storepos","outpos","hamletpos","cabinpos","lookoutpos"]:
+				if opts.has(option): camera_override = true
+			if not camera_override:
+				player.position = fire_lookout.to_global(Vector3(0,FireLookout.DECK_Y+player.eye_h,.3))
+				player.yaw = fire_lookout.rotation.y; player.pitch = -.08
 	pause_menu = PauseMenu.new()
 	add_child(pause_menu)
 	dev = DevMenu.new()
@@ -468,6 +488,7 @@ func _process(delta: float) -> void:
 		_sleep_update(delta)
 	# time / lighting
 	var gs := clock.advance(delta)
+	if opening != null: opening.advance(gs)
 	if inv != null:
 		for sn in inv.tick(gs):
 			_say("%s spoiled" % sn)
@@ -519,6 +540,7 @@ func _process(delta: float) -> void:
 	var fw := player.fire_w
 	for cb in cabins:
 		fw = maxf(fw, cb.heat_at(player.position.x, player.position.z))
+	if opening != null: fw = maxf(fw,opening.heat_at(player.position))
 	for cf in campfires:
 		cf.advance(gs)
 		fw = maxf(fw, cf.heat_at(player.position.x, player.position.z))
@@ -1692,6 +1714,11 @@ func _update_prompt() -> void:
 			it["d"] = d + float(it.get("dbias", 0.0))
 			it["m"] = _lm
 			cands.append(it)
+	if opening != null:
+		for it: Dictionary in opening.actions():
+			var point: Vector3 = it.pos
+			if _aim_ok(point,float(it.get("r",2.1)),float(it.get("tol",.8))):
+				it["m"] = _lm; it["d"] = point.distance_to(player.position)+float(it.get("dbias",0)); cands.append(it)
 	_chest_cands(cands)
 	_opening_cands(cands, fwd)
 	for cf in campfires:
@@ -2294,6 +2321,7 @@ func _populate(n: int, center: Vector2) -> void:
 
 
 func _new_zombie(p: Vector3, idx: int) -> Zombie:
+	p = RefugeBoundary.safe_spawn(p)
 	if p.y>-400:p.y=RoadNet.lift(p.y,p.x,p.z)
 	var z := Zombie.new()
 	add_child(z)
@@ -2833,6 +2861,8 @@ func _fire_fuel_plan() -> Dictionary:
 
 
 func _fire_site() -> Dictionary:
+	if fire_lookout != null and fire_lookout.contains_room(player.position):
+		return {"ok":false,"msg":"Use the lookout stove indoors"}
 	for cb in cabins:
 		if cb.contains_xz(player.position.x, player.position.z):
 			return {'ok': false, 'msg': 'Not indoors. Use the stove'}
@@ -3016,6 +3046,7 @@ var _sl: Dictionary = {}
 
 ## Walls blunt the cold: a few degrees warmer inside any cabin even with the stove out (wind is already cut by is_sheltered).
 func _indoor_c() -> float:
+	if fire_lookout != null and fire_lookout.contains_room(player.position): return 6.0
 	for cb in cabins:
 		if cb.contains_xz(player.position.x, player.position.z):
 			return 6.0
@@ -3027,6 +3058,7 @@ func _sleep_block_reason() -> String:
 		return "Too cold to sleep: warm up first"
 	if player.injury.bleeding():
 		return "Can't sleep while bleeding"
+	if opening != null and opening.is_refuge(player.position): return ""
 	for h in get_tree().get_nodes_in_group('hostile'):
 		var n := h as Node3D
 		if n != null and not bool(n.call('is_dead')) and n.global_position.distance_to(player.position) < 45.0:
@@ -3037,8 +3069,8 @@ func _sleep_block_reason() -> String:
 			return "Can't sleep: a horde is close"
 	return ""
 
-func _sleep_items(cb: Cabin) -> Array:
-	var bp := cb.bed_world_pos()
+func _sleep_items(cb: Node3D) -> Array:
+	var bp: Vector3 = cb.call("bed_world_pos")
 	var out: Array = []
 	var why := _sleep_block_reason()
 	if why != "":
@@ -3053,7 +3085,7 @@ func _sleep_items(cb: Cabin) -> Array:
 	return out
 
 
-func _sleep_begin(cb: Cabin, hours: float) -> void:
+func _sleep_begin(cb: Node3D, hours: float) -> void:
 	if _sl_on or player.dead:
 		return
 	_sl_on = true
@@ -3084,7 +3116,7 @@ func _sleep_update(delta: float) -> void:
 		hud.sleep_text = ""
 		player.sleeping = false
 		return
-	var cb: Cabin = _sl["cb"]
+	var cb: Node3D = _sl["cb"]
 	_sl["t"] = float(_sl["t"]) + delta
 	var t := float(_sl["t"])
 	match int(_sl["phase"]):
@@ -3095,7 +3127,7 @@ func _sleep_update(delta: float) -> void:
 				_sl["t"] = 0.0
 				_sl["start_s"] = clock.total_game_s
 				_sl["target"] = clock.total_game_s + float(_sl["hours"]) * 3600.0
-				player.position = cb.bed_lie_pos()
+				player.position = cb.call("bed_lie_pos")
 				player.pitch = -0.6
 				clock.time_scale = sleep_rate
 				Cabin.game_scale = sleep_rate
@@ -3113,13 +3145,13 @@ func _sleep_update(delta: float) -> void:
 					save_game()
 
 
-func _sleep_tick(delta: float, cb: Cabin) -> void:
+func _sleep_tick(delta: float, cb: Node3D) -> void:
 	var gs := delta * sleep_rate
 	var q := _sleep_quality()
 	player.health = minf(100.0, player.health + 3.0 * q * gs / 3600.0)
 	player.stamina = 100.0
 	player.exhausted = false
-	player.position = cb.bed_lie_pos()
+	player.position = cb.call("bed_lie_pos")
 	if pop != null:
 		pop.catch_up(maxf(0.0, gs / 48.0 - delta))   # world minutes pass at the normal 48x pace, not at sleep speed
 	hud.sleep_text = "Sleeping...  %s     (E to wake)" % clock.time_string()
@@ -3148,6 +3180,7 @@ func _sleep_wake_reason() -> String:
 		return "Woke: starving or dying of thirst"
 	if player.injury.bleeding():
 		return "Woke: you are bleeding"
+	if opening != null and opening.is_refuge(player.position): return ""
 	for h in get_tree().get_nodes_in_group('hostile'):
 		var n := h as Node3D
 		if n != null and not bool(n.call('is_dead')) and n.global_position.distance_to(player.position) < 30.0:
@@ -3180,6 +3213,7 @@ func _sleep_wake(why: String) -> void:
 func _safe_to_save() -> bool:
 	if player.dead or player.airborne or inv == null or _sl_on:
 		return false
+	if opening != null and opening.is_refuge(player.position): return true
 	for h in get_tree().get_nodes_in_group('hostile'):
 		var n := h as Node3D
 		if n != null and not bool(n.call('is_dead')) and n.global_position.distance_to(player.position) < 45.0:
@@ -3188,8 +3222,13 @@ func _safe_to_save() -> bool:
 
 
 func save_game() -> bool:
-	if inv == null or player.dead or player.airborne:
+	if inv == null or player.dead or player.airborne or _sl_on:
 		return false
+	return SaveGame.write(_save_data())
+
+
+## In-memory snapshot also supports non-destructive save/load verification.
+func _save_data() -> Dictionary:
 	var cabs: Array = []
 	for cb in cabins:
 		cabs.append({'stove': cb.stove_fuel_s, 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'dboards': cb.door_boards, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
@@ -3228,7 +3267,8 @@ func save_game() -> bool:
 		var elevated_location := fire_lookout.saved_location(player.position, player.eye_h)
 		if not elevated_location.is_empty():
 			d['lookout_location'] = elevated_location
-	return SaveGame.write(d)
+	if opening != null: d['opening'] = opening.to_dict()
+	return d
 
 
 func _pickup_list() -> Array:
@@ -3236,7 +3276,7 @@ func _pickup_list() -> Array:
 	for pk in get_tree().get_nodes_in_group('pickups'):
 		var ip := pk as ItemPickup
 		if ip != null and not ip.is_queued_for_deletion():
-			out.append({'id': ip.id, 'n': ip.n, 'x': ip.global_position.x, 'z': ip.global_position.z, 'c': ip.cond})
+			out.append({'id': ip.id, 'n': ip.n, 'x': ip.global_position.x, 'y': ip.global_position.y, 'z': ip.global_position.z, 'c': ip.cond})
 	return out
 
 
@@ -3275,7 +3315,9 @@ func _restore_creatures(sv: Dictionary) -> void:
 		wl.setup(terrain, float(e['x']), float(e['z']), Vector3(float(e['dx']), 0.0, float(e['dz'])), float(e['h']), float(e['r']))
 	for e in sv.get('pickups', []):
 		if Inventory.ITEMS.has(String(e['id'])):
-			ItemPickup.spawn(self, String(e['id']), int(e['n']), _ground(float(e['x']), float(e['z'])), float(e.get('c', -1.0)))
+			var pickup_pos := _ground(float(e['x']), float(e['z']))
+			if e.has('y'): pickup_pos.y = float(e['y'])
+			ItemPickup.spawn(self, String(e['id']), int(e['n']), pickup_pos, float(e.get('c', -1.0)))
 	var i := 0
 	for e in sv.get('wolves', []):
 		var w := _add_wolf(_ground(float(e['x']), float(e['z'])), i)

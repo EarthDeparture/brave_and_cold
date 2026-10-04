@@ -3,6 +3,8 @@ extends RefCounted
 ## Minimal inventory: stackable items + one body clothing slot that drives BodyTemperature insulation.
 
 const ITEMS := {
+	"service_kit": {"name":"Insulated Service Kit","kind":"tool","stack":1,"desc":"Meters, insulated tools and a lockout kit for the North Ridge relay assignment."},
+	"power_relay": {"name":"Transfer Relay","kind":"misc","stack":1,"desc":"Reserved replacement for the lookout transfer cabinet. Install with your service kit."},
 	"wood": {"name": "Firewood", "kind": "fuel", "stack": 4, "desc": "Split firewood. Feeds a stove or campfire (40 min per log at a campfire)."},
 	"stick": {"name": "Sticks", "kind": "fuel", "stack": 8, "desc": "Dry branches. Kindling for fires; useful for crafting."},
 	"thatch": {"name": "Dry Grass", "kind": "misc", "stack": 10, "desc": "Bundle of dry grass. Tinder and thatch."},
@@ -65,7 +67,7 @@ const INFINITE_IDS := ["ammo", "flare", "matches"]
 const KIND_ORDER := ["weapon", "tool", "ammo", "clothing", "food", "fuel", "misc"]
 const CAPACITY := 24          # backpack cells
 const EQUIP_ITEMS := ["rifle", "axe"]   # live in equipment slots, not backpack cells
-const WEIGHTS := {"wood": 1.2, "stick": 0.15, "thatch": 0.05, "cordage": 0.05, "kindling": 0.1, "bow_drill": 0.4, "jerky": 0.2, "reed": 0.06, "tinder": 0.02, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6, "cured_hide": 1.0, "wolf_fur": 0.7, "bear_fur": 3.0, "toque": 0.1, "hide_cap": 0.3, "wolf_hat": 0.3, "hide_mitts": 0.3, "wolf_mitts": 0.3, "hide_boots": 0.8, "hide_leggings": 0.8, "bear_coat": 4.5, "rotten_meat": 0.5, "hammer": 0.8, "nails": 0.01, "plank": 0.9, "bandage": 0.05, "antiseptic": 0.2, "antibiotics": 0.05, "rag": 0.05, "tackle": 0.1, "trout_raw": 0.6, "trout_cooked": 0.45, "whitefish_raw": 0.5, "whitefish_cooked": 0.38, "pike_raw": 1.6, "pike_cooked": 1.2}
+const WEIGHTS := {"service_kit":1.4,"power_relay":0.7,"wood": 1.2, "stick": 0.15, "thatch": 0.05, "cordage": 0.05, "kindling": 0.1, "bow_drill": 0.4, "jerky": 0.2, "reed": 0.06, "tinder": 0.02, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6, "cured_hide": 1.0, "wolf_fur": 0.7, "bear_fur": 3.0, "toque": 0.1, "hide_cap": 0.3, "wolf_hat": 0.3, "hide_mitts": 0.3, "wolf_mitts": 0.3, "hide_boots": 0.8, "hide_leggings": 0.8, "bear_coat": 4.5, "rotten_meat": 0.5, "hammer": 0.8, "nails": 0.01, "plank": 0.9, "bandage": 0.05, "antiseptic": 0.2, "antibiotics": 0.05, "rag": 0.05, "tackle": 0.1, "trout_raw": 0.6, "trout_cooked": 0.45, "whitefish_raw": 0.5, "whitefish_cooked": 0.38, "pike_raw": 1.6, "pike_cooked": 1.2}
 const WEIGHT_SOFT := 30.0   # kg carried before you slow down
 const WEIGHT_HARD := 45.0   # kg hard cap (cannot pick up more)
 const BASE_WARMTH := 0.25

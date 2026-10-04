@@ -170,6 +170,7 @@ func generate(n: int, home: Vector2, anchors: Array, road_pts_in: Array, water: 
 
 # ------------------------------------------------------------------ pool
 func acquire(p: Vector3, id: int = -1, kind: int = 0) -> Zombie:
+	p = RefugeBoundary.safe_spawn(p)
 	var sid := id if id >= 0 else _next_id
 	if id < 0:
 		_next_id += 1

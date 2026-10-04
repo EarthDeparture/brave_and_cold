@@ -14,6 +14,7 @@ const W := 0.9
 const D := 0.55
 const H := 0.5
 
+var visual_enabled := true
 var contents: Dictionary = {}   # id -> n
 var cond: Dictionary = {}       # id -> condition 0..1 (only when worn)
 var age: Dictionary = {}        # id -> age seconds (perishables)
@@ -29,7 +30,10 @@ const PILE_MAX := 14
 
 func _ready() -> void:
 	add_to_group("chests")
-	_build()
+	if visual_enabled:
+		_build()
+	else:
+		set_process(false)
 
 
 func _build() -> void:

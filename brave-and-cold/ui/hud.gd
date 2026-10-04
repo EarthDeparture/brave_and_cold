@@ -26,6 +26,8 @@ void fragment() {
 }
 """
 
+var radio_heading := ""
+var radio_text := ""
 var prompt := ""          # kept for tests: text of the selected action
 var info := ""            # developer overlay extra line
 var player: Player
@@ -148,6 +150,7 @@ func _draw_ui() -> void:
 	if show_monitor:
 		_draw_monitor(sz, k)
 	_draw_messages(sz, k)
+	_draw_radio(sz, k)
 	_draw_actions(sz, k)
 	_draw_crosshair(sz, k)
 	_draw_action(sz, k)
@@ -365,3 +368,22 @@ func _draw_death(sz: Vector2, k: float) -> void:
 	var hrs := clock.total_game_s / 3600.0
 	DZ.text(_ui, "You survived %d d %d h.   Zombies killed: %d" % [int(hrs / 24.0), int(fmod(hrs, 24.0)), kills], Vector2(cx - 400.0 * k, sz.y * 0.42 + 80.0 * k), int(18.0 * k), DZ.DIM, HORIZONTAL_ALIGNMENT_CENTER, 800.0 * k)
 	DZ.text(_ui, "R: respawn from last save       M: main menu", Vector2(cx - 400.0 * k, sz.y * 0.42 + 130.0 * k), int(18.0 * k), DZ.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 800.0 * k)
+
+
+func _draw_radio(sz: Vector2, k: float) -> void:
+	if radio_text == "" or sleep_fade > 0: return
+	var width := minf(760 * k, sz.x * .70)
+	var font := DZ.font()
+	var lines: Array[String] = []
+	var line := ""
+	for word: String in radio_text.split(" "):
+		var next := line + (" " if line != "" else "") + word
+		if font.get_string_size(next, HORIZONTAL_ALIGNMENT_LEFT, -1, int(18*k)).x > width - 36*k:
+			lines.append(line); line = word
+		else: line = next
+	if line != "": lines.append(line)
+	var height := (52 + lines.size()*23)*k
+	var at := Vector2((sz.x-width)*.5,sz.y-140*k-height)
+	_ui.draw_rect(Rect2(at,Vector2(width,height)),Color(.025,.035,.04,.82))
+	DZ.text(_ui,radio_heading,at+Vector2(18,26)*k,int(16*k),Color(.83,.75,.52))
+	for i in lines.size(): DZ.text(_ui,lines[i],at+Vector2(18,51+i*23)*k,int(18*k),Color(.93,.93,.89))

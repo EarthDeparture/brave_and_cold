@@ -161,6 +161,20 @@ func resolve_at(candidate: Vector3, previous: Vector3, radius: float) -> Vector2
 		]
 		for wall in walls:
 			q = _push_rect(q, wall.grow(radius), Vector2(old.x, old.z))
+	# Resolve the actual deck rails with a 1 mm contact skin. This prevents
+	# sub-tolerance input steps accumulating through a rail over many frames.
+	# The bridge aperture remains open; distant/free movement stays exact.
+	if absf(old.y-DECK_Y)<SURFACE_REACH:
+		var rails: Array = [
+			[Vector2(-3.8,-3.3),Vector2(3.8,-3.3)],
+			[Vector2(-3.8,-3.3),Vector2(-3.8,3.3)],
+			[Vector2(-3.8,3.3),Vector2(3.8,3.3)],
+			[Vector2(3.8,-3.3),Vector2(3.8,1.8)],
+			[Vector2(3.8,2.8),Vector2(3.8,3.3)]]
+		for rail: Array in rails:
+			var clipped := RoadNet._rail_contact(Vector2(old.x,old.z),q,rail[0],rail[1],radius)
+			if clipped.distance_squared_to(q)>.0000000001:
+				q=clipped+(clipped-q).normalized()*.001
 	# Guardrails: never allow the controller's terrain snap to make a player fall
 	# through a stair side or deck edge. The base remains freely accessible.
 	if old.y > 0.85 and not is_nan(_floor_local(Vector2(old.x, old.z), old.y)):
@@ -341,3 +355,9 @@ func ceiling_at_world(eye: Vector3) -> float:
 	if not ROOM.has_point(Vector2(p.x, p.z)) or p.y < DECK_Y: return INF
 	# Lowest rafter/header underside; conservative full-room head clearance.
 	return global_position.y + DECK_Y + 2.505
+
+
+func bed_world_pos() -> Vector3:
+	return to_global(Vector3(-1.60, DECK_Y + .75, -1.0))
+func bed_lie_pos() -> Vector3:
+	return to_global(Vector3(-1.60, DECK_Y + .90, -1.0))

@@ -1,0 +1,234 @@
+class_name LookoutOpening
+extends Node3D
+## Additive opening. Existing saves without this block retain their original start.
+var world: Node3D
+var state: LookoutAssignment
+var boundary: RefugeBoundary
+var pantry: StorageChest
+var home_model: Node3D
+var relay: Node3D
+var case_model: Node3D
+var speaker: AudioStreamPlayer3D
+var fire_bounce: OmniLight3D
+var fire_loop: AudioStreamPlayer3D
+var fire_light: OmniLight3D
+var ember: MeshInstance3D
+var fuel_s := 7200.0
+var wood_left := 12
+var cooking: Dictionary = {}
+var _token := ""
+var _last_grid := true
+var _indicator: MeshInstance3D
+const RELAY_LOCAL := Vector3(-9, 0, -6)
+const CASE_LOCAL := Vector3(1.60, 1.42, 1.02)
+
+func home_point(p: Vector3) -> Vector3:
+	return world.fire_lookout.to_global(p + Vector3.UP * FireLookout.DECK_Y)
+func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> void:
+	world = w; state = assignment
+	var tower: FireLookout = world.fire_lookout
+	boundary = RefugeBoundary.new(); tower.add_child(boundary); boundary.build(world.terrain)
+	boundary.gate_open = bool(saved.get("gate_open", false)); boundary.sync_gate()
+	world.player.spatial_structures.append(boundary)
+	relay = Node3D.new(); tower.add_child(relay)
+	relay.position = boundary.ground_local(RELAY_LOCAL.x, RELAY_LOCAL.z)
+	_asset(relay, "relay_station")
+	# Cabinet and mast remain solid; no invisible pad or surface grading.
+	boundary.obstacle_rects.append(Rect2(-10.15,-6.65,1.8,1.12))
+	boundary.obstacle_posts.assign([Vector2(-10.04,-7.10),Vector2(-7.96,-7.10),Vector2(-9,-8.15)])
+	_relay_foundations()
+	_indicator = MeshInstance3D.new(); var bulb := SphereMesh.new(); bulb.radius = .035; bulb.height = .07
+	_indicator.mesh = bulb; _indicator.position = Vector3(.43, 1.45, .48); relay.add_child(_indicator)
+	var mat := StandardMaterial3D.new(); mat.emission_enabled = true; _indicator.material_override = mat
+	home_model = _asset(tower, "lookout_home_detail"); home_model.position.y = FireLookout.DECK_Y
+	pantry = StorageChest.new(); pantry.visual_enabled = false; tower.add_child(pantry)
+	pantry.position = Vector3(1.90, FireLookout.DECK_Y + .40, 1.62)
+	if saved.is_empty():
+		pantry.put("beans", 4, 1, 0); pantry.put("jerky", 2, 1, 0); pantry.put("matches", 4, 1, 0); pantry.put("bandage", 2, 1, 0)
+	else:
+		pantry.load_dict(saved.get("storage", {})); fuel_s = float(saved.get("fuel_s", 0)); wood_left = int(saved.get("wood_left", 0)); cooking = saved.get("cooking", {}).duplicate(true)
+	if not world.stores.is_empty():
+		case_model = _asset(world.stores[0], "depot_reserved_case"); case_model.position = CASE_LOCAL
+		case_model.visible = not state.parts_claimed
+	speaker = AudioStreamPlayer3D.new(); tower.add_child(speaker); speaker.position = Vector3(1.78, FireLookout.DECK_Y + 1.05, -1.17)
+	speaker.unit_size = 2; speaker.max_distance = 12; speaker.volume_db = -5
+	fire_light = OmniLight3D.new(); tower.add_child(fire_light); fire_light.position = Vector3(-1.65, FireLookout.DECK_Y + .48, 1.82)
+	fire_light.light_color = Color(1,.55,.24); fire_light.omni_range = 4.8; fire_light.shadow_enabled = true
+	fire_bounce = OmniLight3D.new(); tower.add_child(fire_bounce); fire_bounce.position = Vector3(-.6,FireLookout.DECK_Y+1.15,1.0)
+	fire_bounce.light_color = Color(1,.67,.40); fire_bounce.omni_range = 4.2; fire_bounce.shadow_enabled = false
+	ember = MeshInstance3D.new(); var q := QuadMesh.new(); q.size = Vector2(.22,.17); ember.mesh = q
+	var em := StandardMaterial3D.new(); em.albedo_color = Color(.50,.09,.01); em.emission_enabled = true; em.emission = Color(1,.14,.01); em.emission_energy_multiplier = 2.2
+	ember.material_override = em; ember.position = Vector3(-1.65, FireLookout.DECK_Y + .42, 1.492); tower.add_child(ember)
+	fire_loop = AudioStreamPlayer3D.new(); tower.add_child(fire_loop); fire_loop.position = Vector3(-1.65,FireLookout.DECK_Y+.4,1.65)
+	fire_loop.stream = Sfx.get_stream("fire"); fire_loop.volume_db = -18; fire_loop.unit_size = 1.2; fire_loop.max_distance = 8
+	_last_grid = state.grid_alive(); world.hud.show_monitor = false
+	update_presentation()
+func _asset(parent: Node3D, id: String) -> Node3D:
+	var node := (load("res://assets/lookout_opening/" + id + ".glb") as PackedScene).instantiate() as Node3D
+	node.name = id; parent.add_child(node)
+	for mesh: MeshInstance3D in node.find_children("*", "MeshInstance3D", true, false): mesh.visibility_range_end = 180 if id == "relay_station" else 75
+	return node
+func starting_gear() -> void:
+	world.inv = Inventory.new(world.body); world.inv.needs = world.needs
+	for pair: Array in [["axe",1],["knife",1],["service_kit",1],["matches",2],["wood",2],["beans",1],["bandage",1],["parka",1],["sweater",1],["toque",1],["hide_mitts",1],["hide_boots",1],["hide_leggings",1]]:
+		world.inv.add(pair[0], pair[1])
+	for item: String in ["parka","sweater","toque","hide_mitts","hide_boots","hide_leggings"]: world.inv.use(item)
+	world._say("North Ridge assignment: inspect the relay cabinet beside the tower. The service log is on your desk.")
+func advance(game_s: float) -> void:
+	state.advance_to(world.clock.total_game_s)
+	var burn := minf(game_s, fuel_s); fuel_s = maxf(0, fuel_s - game_s)
+	if not cooking.is_empty(): cooking["remaining_s"] = maxf(0, float(cooking.remaining_s) - burn)
+	pantry.tick(game_s)
+	if _last_grid and not state.grid_alive(): world._say("The mains have gone silent. " + ("Local backup is supplying the site." if state.backup_on else "Enable local backup at the desk panel."))
+	_last_grid = state.grid_alive()
+	if state.last_s >= 28 * 3600 and not state.zombies_seeded:
+		state.zombies_seeded = true
+		world._populate(world.opening_zombie_count, Vector2(world.player.position.x, world.player.position.z))
+		world.pop.specials = world.pop.specials.filter(func(v:Vector3)->bool: return Vector2(v.x-world.player.position.x,v.z-world.player.position.z).length()>120)
+	update_presentation(); _radio_update()
+func update_presentation() -> void:
+	var lamp := world.fire_lookout.get_node_or_null("LookoutDeskLamp") as OmniLight3D
+	if lamp != null: lamp.light_energy = .65 if state.powered() and state.lamp_on else 0
+	fire_light.light_energy = (0.80 + .05 * sin(state.last_s * .19)) if fuel_s > 0 else 0
+	fire_bounce.light_energy = .18 if fuel_s > 0 else 0
+	ember.visible = fuel_s > 0
+	if fuel_s > 0 and not fire_loop.playing: fire_loop.play()
+	elif fuel_s <= 0 and fire_loop.playing: fire_loop.stop()
+	var m := _indicator.material_override as StandardMaterial3D
+	m.albedo_color = Color(.10,.65,.29) if state.repair_stage == 3 and state.relay_enabled and state.powered() else Color(.78,.22,.035)
+	m.emission = m.albedo_color * .65
+	if case_model != null: case_model.visible = not state.parts_claimed
+	var food := home_model.get_node_or_null("PantryFood") as Node3D
+	if food != null: food.visible = pantry.count("beans") + pantry.count("jerky") > 0
+	var wood := home_model.get_node_or_null("HomeWood") as Node3D
+	if wood != null: wood.visible = wood_left > 0
+func _radio_update() -> void:
+	var near: bool = world.player.position.distance_to(speaker.global_position) < 12 and not world._sl_on
+	var entry := state.broadcast_at(state.last_s) if near else {}
+	world.hud.radio_heading = ""; world.hud.radio_text = ""
+	if entry.is_empty():
+		if speaker.playing: speaker.stop()
+		_token = ""; return
+	var offset := (state.last_s - float(entry.start_s)) / 48.0
+	var clip := load(String(entry.audio)) as AudioStream
+	if clip == null or offset >= clip.get_length():
+		speaker.stop(); _token = String(entry.id); return
+	world.hud.radio_heading = ("FIELD DISPATCH" if state.channel == "work" else "NORTH RIDGE PUBLIC RADIO") + " • " + String(entry.title)
+	# Live captions disappear with the transmission; no backlog or replay menu.
+	world.hud.radio_text = String(entry.text)
+	if _token != String(entry.id) or not speaker.playing:
+		speaker.stream = clip; speaker.play(offset); _token = String(entry.id)
+	elif absf(speaker.get_playback_position() - offset) > 1.5: speaker.seek(offset)
+func _action(pos: Vector3, text: String, act: Callable, hold: float = 0, bias: float = 0) -> Dictionary:
+	return {"pos":pos,"r":2.1,"tol":.8,"text":text,"hold":hold,"dbias":bias,"act":act}
+func actions() -> Array:
+	var out: Array = []
+	var desk := home_point(Vector3(.95,.88,-1.35))
+	out.append(_action(desk, "Read service log", read_log))
+	var radio := speaker.global_position
+	out.append(_action(radio, "Turn receiver off" if state.receiver_on else "Turn receiver on", toggle_receiver))
+	out.append(_action(radio, "Tune public radio" if state.channel == "work" else "Tune field dispatch", tune_radio, 0, .01))
+	var panel := home_point(Vector3(0,1.15,-2.08))
+	out.append(_action(panel, "Backup: %s • %.0f%% charge" % ["ON" if state.backup_on else "OFF", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100], toggle_backup))
+	if state.repair_stage == 3:
+		out.append(_action(panel, "Automatic transfer: %s" % ("ARMED" if state.auto_transfer_on else "DISABLED"), toggle_auto_transfer, 0, .02))
+	out.append(_action(panel, "Switch desk lamp off" if state.lamp_on else "Switch desk lamp on", toggle_lamp, 0, .01))
+	out.append(_action(pantry.global_position, "Open lookout provisions", func() -> void: world.gear.open_chest(pantry)))
+	var stove := home_point(Vector3(-1.65,.55,1.40))
+	out.append(_action(stove, "Stoke stove • %.1f h fuel" % (fuel_s / 3600), stoke, 2))
+	if fuel_s > 0:
+		out.append(_action(stove, "Boil snow and drink", boil, 4, .01))
+		if cooking.is_empty() and world.inv.has_raw(): out.append(_action(stove, "Cook one portion on stove", cook, 2, .02))
+	if not cooking.is_empty():
+		out.append(_action(stove, "Take cooked food" if float(cooking.remaining_s) <= 0 else "Cooking • %d min left" % int(ceil(float(cooking.remaining_s)/60)), take_cooked, 0, .03))
+	out.append(_action(home_point(Vector3(1.87,.18,1.55)), "Take firewood (%d left)" % wood_left, take_wood, 1, .03))
+	out.append_array(world._sleep_items(world.fire_lookout))
+	out.append(_action(boundary.gate_point(), "Close compound gate" if boundary.gate_open else "Open compound gate", boundary.toggle_gate))
+	var cabinet := relay.to_global(Vector3(0,1.10,.52))
+	match state.repair_stage:
+		0: out.append(_action(cabinet, "Inspect transfer cabinet", inspect_relay, 6))
+		1: out.append(_action(cabinet, "Install replacement transfer relay" if world.inv.count("power_relay") > 0 else "Replacement reserved at North Ridge Supply", install_relay, 6))
+		2: out.append(_action(cabinet, "Verify backup transfer", verify_relay, 4))
+		3:
+			out.append(_action(cabinet, "Disable repeater • save 12 W" if state.relay_enabled else "Enable repeater • 12 W", toggle_relay))
+			out.append(_action(cabinet, "Relay commissioned • local service only", func() -> void: world._say("Commissioned relay supports field dispatch and automatic battery transfer. Town grid and public transmitter remain independent."), 0, .01))
+	if case_model != null and not state.parts_claimed:
+		out.append(_action(case_model.global_position + Vector3.UP * .15, "Collect reserved transfer relay", claim_parts, 3))
+	return out
+func read_log() -> void:
+	var directions := ""
+	if not world.stores.is_empty():
+		var d: Vector3 = world.stores[0].global_position - world.fire_lookout.global_position
+		var bearing := fposmod(rad_to_deg(atan2(d.x,-d.z)),360)
+		directions = " Depot: %.0f m, bearing %.0f°. Follow the logging track down to the road." % [Vector2(d.x,d.z).length(), bearing]
+	var task: String = ["Inspect the ground cabinet.","Collect the reserved relay at North Ridge Supply, then return.","Verify the cabinet transfer under local power.","Relay signed off. Prepare food, water and stove fuel for the night."][state.repair_stage]
+	world._say(task + directions)
+	world._say("Field dispatch: receiver work channel. Local news: public channel. Deliveries are expected; supplies here are finite.")
+func toggle_receiver() -> void: state.receiver_on = not state.receiver_on; _radio_update()
+func tune_radio() -> void: state.channel = "public" if state.channel == "work" else "work"; _radio_update()
+func toggle_backup() -> void:
+	state.backup_on = not state.backup_on; update_presentation()
+	world._say("Local backup %s. Charge %.0f%%. Lamp 7 W, receiver 3 W, commissioned relay 12 W." % ["enabled" if state.backup_on else "disabled", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100])
+func toggle_auto_transfer() -> void: state.auto_transfer_on = not state.auto_transfer_on
+func toggle_relay() -> void:
+	state.relay_enabled = not state.relay_enabled; update_presentation(); _radio_update()
+	world._say("Repeater %s. Disabling it saves 12 W and disconnects field dispatch and automatic transfer; the public receiver still works." % ("enabled" if state.relay_enabled else "disabled"))
+func toggle_lamp() -> void: state.lamp_on = not state.lamp_on; update_presentation()
+func inspect_relay() -> void:
+	if world.inv.count("service_kit") < 1: world._say("Your insulated service kit is required"); return
+	if state.inspect(): world._say("Transfer contacts have failed. Replacement reserved at North Ridge Supply. Read the desk log for the route.")
+func claim_parts() -> void:
+	if state.parts_claimed: return
+	# Keep the reservation in its case if the backpack cannot take it.
+	if world.inv.can_add("power_relay"):
+		world.inv.add("power_relay")
+		state.parts_claimed = true; state.depot_visited = true; update_presentation(); world._say("Reserved relay collected. Return to the ground cabinet at the lookout.")
+	else: world._say("Make room in your pack; the reserved relay will stay here.")
+func install_relay() -> void:
+	if state.repair_stage != 1: return
+	if world.inv.count("service_kit") < 1 or world.inv.count("power_relay") < 1:
+		world._say("Need your service kit and the replacement relay"); return
+	if world.inv.remove("power_relay") and state.install(): world._say("Replacement seated. Verify the transfer before signing off.")
+func verify_relay() -> void:
+	if state.verify(): world._say("Transfer verified. Field dispatch restored and automatic backup armed. You can disable the repeater to conserve 12 W. Distant grid failures cannot be repaired here.")
+	elif state.repair_stage == 2: world._say("No local power. Enable backup at the desk panel, then verify.")
+func stoke() -> void:
+	if fuel_s >= 16 * 3600: world._say("Stove fuel capacity reached"); return
+	if world.inv.count("wood") < 1: world._say("Need firewood"); return
+	if fuel_s <= 0 and world.inv.count("matches") < 1: world._say("Need a match to relight the stove"); return
+	if fuel_s <= 0: world.inv.remove("matches")
+	world.inv.remove("wood"); fuel_s = minf(16 * 3600, fuel_s + 2 * 3600); update_presentation()
+func take_wood() -> void:
+	if wood_left > 0 and world.inv.can_add("wood"): world.inv.add("wood"); wood_left -= 1
+func boil() -> void:
+	if fuel_s > 0: world.needs.drink(35); world._say("Drank boiled snow (+35 water)")
+func cook() -> void:
+	if not cooking.is_empty() or fuel_s <= 0: return
+	for id: String in world.inv.counts:
+		if Inventory.ITEMS[id].get("raw", false) and world.inv.remove(id):
+			cooking = {"id": Inventory.ITEMS[id].cooked, "remaining_s": 1200.0}; return
+func take_cooked() -> void:
+	if cooking.is_empty() or float(cooking.remaining_s) > 0: return
+	if world.inv.can_add(String(cooking.id)): world.inv.add(String(cooking.id)); cooking = {}
+func heat_at(eye: Vector3) -> float:
+	if fuel_s <= 0 or not world.fire_lookout.contains_room(eye): return 0
+	var distance: float = eye.distance_to(home_point(Vector3(-1.65,.55,1.20)))
+	return (145.0 + 340.0 * pow(maxf(0,1-distance/3),2)) * minf(1,fuel_s/300)
+func is_refuge(point: Vector3) -> bool:
+	if world.fire_lookout.contains_room(point): return true
+	if boundary.gate_open or not boundary.contains_ground(point): return false
+	for actor: Node in get_tree().get_nodes_in_group("hostile"):
+		if actor is Node3D and not bool(actor.call("is_dead")) and boundary.contains_ground(actor.global_position): return false
+	return true
+func to_dict() -> Dictionary:
+	return {"state":state.to_dict(),"home":{"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open}}
+func _relay_foundations() -> void:
+	var st := SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for foot: Vector2 in [Vector2(-1.04,-1.1),Vector2(1.04,-1.1),Vector2(0,-2.15),Vector2(-.45,0),Vector2(.45,0),Vector2(-.92,-.35)]:
+		var w := relay.to_global(Vector3(foot.x,0,foot.y));var terrain_y:float=world.terrain.data.get_height(w)
+		var depth := w.y-terrain_y+.10
+		if depth < .02: continue
+		var box:=BoxMesh.new();box.size=Vector3(.37,depth,.37)
+		st.append_from(box,0,Transform3D(Basis.IDENTITY,Vector3(foot.x,-depth*.5,foot.y)))
+	var mesh:=MeshInstance3D.new();mesh.mesh=st.commit();relay.add_child(mesh)
+	var mat:=StandardMaterial3D.new();mat.albedo_color=Color(.42,.45,.43);mat.roughness=1;mesh.material_override=mat
