@@ -13,6 +13,7 @@ var sun: DirectionalLight3D
 var env: Environment
 var sky_mat: ProceduralSkyMaterial
 var clouds: CloudLayer
+var gameplay_night_factor := 0.0 # Stable legacy darkness; graphics may use a different light intensity.
 var coverage := 0.45
 var weather: Weather
 var _keys: Array = []  # [hour, preset]
@@ -79,6 +80,8 @@ func apply_hour(h: float) -> void:
 		env.ambient_light_color = env.ambient_light_color.lerp(gray, o * 0.5)
 		coverage = weather.coverage
 
+	gameplay_night_factor = clampf(1.0 - sun.light_energy / 0.7, 0.0, 1.0)
+
 	if clouds != null:
 		var lum := 0.3 + 0.7 * clampf(sun.light_energy / 1.5, 0.0, 1.0)
 		var hor: Color = sky_mat.sky_horizon_color
@@ -87,3 +90,16 @@ func apply_hour(h: float) -> void:
 		lit.a = 1.0
 		shade.a = 1.0
 		clouds.set_tint(lit, shade, coverage)
+
+## Evaluate the established gameplay curve without writing render resources.
+func gameplay_darkness_at(h: float) -> float:
+	h = fposmod(h,24.0)
+	var a: Array = _keys[0]
+	var b: Array = _keys[_keys.size()-1]
+	for i in _keys.size()-1:
+		if h>=float(_keys[i][0]) and h<=float(_keys[i+1][0]):
+			a=_keys[i]; b=_keys[i+1]; break
+	var t := smoothstep(0.0,1.0,(h-float(a[0]))/maxf(float(b[0])-float(a[0]),0.001))
+	var energy := lerpf(a[1][3],b[1][3],t)
+	if weather != null: energy*=1.0-0.75*weather.overcast
+	return clampf(1.0-energy/0.7,0.0,1.0)

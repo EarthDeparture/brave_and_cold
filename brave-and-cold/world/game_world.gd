@@ -46,6 +46,8 @@ func _ready() -> void:
 	terrain = Terrain3D.new()
 	terrain.name = "Terrain3D"
 	terrain.assets = load("res://data/terrain/terrain_assets.tres")
+	if opts.get('atmosphere', 'winter') != 'baseline':
+		terrain.assets = load('res://data/terrain/terrain_winter_assets.tres')
 	terrain.data_directory = MAP
 	add_child(terrain)
 	terrain.material.auto_shader = false
@@ -103,11 +105,15 @@ func _ready() -> void:
 	var w := WaterSurfaces.new()
 	add_child(w)
 	w.build("res://data/maps/valley_b", ice)
+	if opts.get('atmosphere', 'winter') != 'baseline':
+		var ice_material := w.surface.material_override as ShaderMaterial
+		ice_material.set_shader_parameter('winter_surface', true)
+		ice_material.set_shader_parameter('surface_noise', preload('res://assets/textures/atmosphere/cloud_fields.png'))
 	snow.build("res://data/maps/valley_b")
 	clock.hour = float(opts.get("hour", 16.5))
 	clock.time_scale = float(opts.get("speed", clock.time_scale))
 	Cabin.game_scale = clock.time_scale
-	sky_rig = SkyRig.new()
+	sky_rig = SkyRig.new() if opts.get("atmosphere", "winter") == "baseline" else preload("res://world/atmosphere_rig.gd").new()
 	add_child(sky_rig)
 	sky_rig.setup(sun, env, sky_mat)
 	sky_rig.weather = weather
@@ -115,8 +121,9 @@ func _ready() -> void:
 		var wi := ['clear', 'cloudy', 'flurry', 'snow', 'blizzard'].find(String(opts['weather']).to_lower())
 		if wi >= 0:
 			weather.lock_state(wi)
-	sky_rig.clouds = CloudLayer.new()
-	add_child(sky_rig.clouds)
+	if not sky_rig is AtmosphereRig:
+		sky_rig.clouds = CloudLayer.new()
+		add_child(sky_rig.clouds)
 	sky_rig.apply_hour(clock.hour)
 	player = Player.new()
 	add_child(player)
@@ -126,9 +133,12 @@ func _ready() -> void:
 	snowfall.follow = player
 	snowfall.weather = weather
 	snowfall.buildings = Callable(self, "_building_list")
+	if sky_rig is AtmosphereRig:
+		snowfall.enable_winter_presentation()
 	player.forest = forest
 	player.ice = ice
-	sky_rig.clouds.follow = player
+	if sky_rig.clouds != null:
+		sky_rig.clouds.follow = player
 	sky_rig.apply_hour(clock.hour)
 	footprints = Footprints.new()
 	add_child(footprints)
@@ -431,6 +441,8 @@ func _process(delta: float) -> void:
 	wind = weather.wind
 	clock.weather_offset_c = weather.temp_off
 	sky_rig.apply_hour(clock.hour)
+	if sky_rig is AtmosphereRig:
+		snowfall.set_light_tint((sky_rig as AtmosphereRig).snow_tint())
 	# inside a cabin the world fog (blizzard haze, aerial perspective) must not veil the room: fade it right down, ease in/out at the door
 	var in_cabin := false
 	for cb in cabins:
@@ -440,12 +452,14 @@ func _process(delta: float) -> void:
 	if fire_lookout != null and fire_lookout.contains_room(player.position):
 		in_cabin = true
 	_indoor_k = move_toward(_indoor_k, 1.0 if in_cabin else 0.0, delta * 2.0)
-	if _indoor_k > 0.0:
+	if sky_rig is AtmosphereRig:
+		(sky_rig as AtmosphereRig).apply_shelter(_indoor_k)
+	elif _indoor_k > 0.0:
 		env.fog_density *= lerpf(1.0, INDOOR_FOG_MULT, _indoor_k)
 		# a cold dark cabin must still read: lift ambient and warm it a touch (stove / window light adds on top)
 		env.ambient_light_energy *= lerpf(1.0, INDOOR_AMBIENT_MULT, _indoor_k)
 		env.ambient_light_color = env.ambient_light_color.lerp(Color(0.62, 0.50, 0.42), 0.3 * _indoor_k)
-	var night := clampf(1.0 - sun.light_energy / 0.7, 0.0, 1.0)
+	var night := sky_rig.gameplay_night_factor
 	Zombie.night_factor = night
 	Zombie.ambient_c = clock.ambient_c()
 	pop.tick(delta)
@@ -3140,6 +3154,8 @@ func save_game() -> bool:
 		fires.append({'x': cf.global_position.x, 'y': cf.global_position.y, 'z': cf.global_position.z, 'fuel': cf.fuel_s, 'cook': cf.cooking})
 	var d := {
 		'clock': {'hour': clock.hour, 'day': clock.day, 'total': clock.total_game_s},
+		'weather': weather.to_dict(),
+		'atmosphere': (sky_rig as AtmosphereRig).to_dict() if sky_rig is AtmosphereRig else {},
 		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
 		'body': {'core': body.core, 'wet': body.wetness},
 		'needs': {'cal': needs.calories, 'water': needs.water},
@@ -3250,6 +3266,10 @@ func _apply_save(sv: Dictionary) -> void:
 	clock.hour = float(c['hour'])
 	clock.day = int(c['day'])
 	clock.total_game_s = float(c['total'])
+	if sv.has('weather'):
+		weather.from_dict(sv.weather)
+	if sky_rig is AtmosphereRig:
+		(sky_rig as AtmosphereRig).from_dict(sv.get('atmosphere', {}))
 	var p: Dictionary = sv['player']
 	player.yaw = float(p['yaw'])
 	player.pitch = float(p['pitch'])

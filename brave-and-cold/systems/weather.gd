@@ -107,9 +107,27 @@ func _snap() -> void:
 
 
 func to_dict() -> Dictionary:
-	return {"state": state, "left": _left_h}
+	# JSON numbers cannot exactly hold every 64-bit RNG state; store it as text.
+	return {"schema":2,"state":state,"left":_left_h,"elapsed_s":_t,
+		"rng_seed":str(_rng.seed),"rng_state":str(_rng.state),
+		"blend":[wind_base,temp_off,precip,overcast,fog_mult,coverage]}
 
 
 func from_dict(d: Dictionary) -> void:
-	set_state(int(d.get("state", state)), true)
-	_left_h = float(d.get("left", _left_h))
+	set_state(int(d.get("state",state)),true)
+	_left_h = maxf(float(d.get("left",_left_h)),0.0)
+	if int(d.get("schema",1)) < 2:
+		return
+	_t = maxf(float(d.get("elapsed_s",0.0)),0.0)
+	var blend: Array = d.get("blend",[])
+	if blend.size() == 6:
+		wind_base = maxf(float(blend[0]),0.0)
+		temp_off = float(blend[1])
+		precip = clampf(float(blend[2]),0.0,1.0)
+		overcast = clampf(float(blend[3]),0.0,1.0)
+		fog_mult = maxf(float(blend[4]),0.0)
+		coverage = clampf(float(blend[5]),0.0,1.0)
+	if d.has("rng_seed") and d.has("rng_state"):
+		_rng.seed = int(String(d.rng_seed))
+		_rng.state = int(String(d.rng_state))
+	advance(0.0,0.0)

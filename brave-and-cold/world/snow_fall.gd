@@ -89,6 +89,7 @@ func _tag_buildings() -> void:
 		if bn == null or not is_instance_valid(bn) or _tagged.has(bn.get_instance_id()):
 			continue
 		_tagged[bn.get_instance_id()] = true
+		_mask_position = Vector3(INF,INF,INF)
 		for gi in bn.find_children("*", "GeometryInstance3D", true, false):
 			(gi as GeometryInstance3D).layers |= COVER_BIT
 		_refresh = 3   # re-render the heightfield with the new roofs
@@ -97,6 +98,7 @@ func _tag_buildings() -> void:
 func _process(delta: float) -> void:
 	if follow == null or weather == null:
 		return
+	_update_shelter_masks()
 	_tag_t -= delta
 	if _tag_t <= 0.0:
 		_tag_t = 2.0
@@ -121,3 +123,62 @@ func _process(delta: float) -> void:
 	if not _placed:
 		_placed = true
 		restart()
+
+## The heightfield handles roof contact. This draw mask also removes particles
+## born beneath a roof in the emitter box, including during warm-up or teleports.
+var _winter_material: ShaderMaterial
+var _mask_position := Vector3(INF,INF,INF)
+var _shelter_frames := PackedVector4Array()
+var _shelter_bounds := PackedVector4Array()
+
+func enable_winter_presentation() -> void:
+	_winter_material = ShaderMaterial.new()
+	_winter_material.shader = preload("res://world/shaders/winter_snow.gdshader")
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.055,0.055)
+	quad.material = _winter_material
+	draw_pass_1 = quad
+
+func set_light_tint(color: Color) -> void:
+	if _winter_material != null:
+		_winter_material.set_shader_parameter("flake_tint",color)
+
+func _update_shelter_masks() -> void:
+	if _winter_material == null or follow == null or not buildings.is_valid():
+		return
+	if follow.global_position.distance_to(_mask_position)<4.0:
+		return
+	_mask_position = follow.global_position
+	_shelter_frames.clear()
+	_shelter_bounds.clear()
+	var nearby: Array[Node3D] = []
+	for building in buildings.call():
+		var b := building as Node3D
+		if b != null and Vector2(b.global_position.x-follow.global_position.x,b.global_position.z-follow.global_position.z).length()<48.0:
+			nearby.append(b)
+	nearby.sort_custom(func(a:Node3D,b:Node3D)->bool: return a.global_position.distance_squared_to(follow.global_position)<b.global_position.distance_squared_to(follow.global_position))
+	for b in nearby.slice(0,16):
+		var width := 0.0
+		var depth := 0.0
+		var floor_height: float = b.global_position.y
+		var roof_height: float = floor_height+3.5
+		if b is FireLookout:
+			width = FireLookout.ROOM.size.x*0.5
+			depth = FireLookout.ROOM.size.y*0.5
+			floor_height += FireLookout.DECK_Y
+			roof_height = b.global_position.y+float(b.geometry.get("roof_height",25.54))
+		elif b is Cabin:
+			width=Cabin.HX; depth=Cabin.HZ; floor_height=b.floor_y
+		elif b is Hut:
+			width=Hut.HX; depth=Hut.HZ; floor_height=b.floor_y; roof_height=floor_height+2.9
+		elif b is Store:
+			width=Store.HX; depth=Store.HZ; floor_height=b.floor_y
+		elif b is Outbuilding:
+			width=b.hx; depth=b.hz
+		if width<=0.0: continue
+		var yaw: float = b.global_rotation.y
+		_shelter_frames.append(Vector4(b.global_position.x,b.global_position.z,cos(yaw),sin(yaw)))
+		_shelter_bounds.append(Vector4(width,depth,floor_height-0.1,roof_height))
+	_winter_material.set_shader_parameter("shelter_count",_shelter_frames.size())
+	_winter_material.set_shader_parameter("shelter_frames",_shelter_frames)
+	_winter_material.set_shader_parameter("shelter_bounds",_shelter_bounds)

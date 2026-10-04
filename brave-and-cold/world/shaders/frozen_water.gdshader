@@ -1,10 +1,21 @@
 shader_type spatial;
 render_mode cull_disabled;
 
+uniform bool winter_surface = false;
+uniform sampler2D surface_noise : filter_linear_mipmap, repeat_enable;
 varying vec3 world_position;
 varying float face_up;
 
 vec2 hash2(vec2 p) {
+	if (winter_surface) {
+		ivec2 cell = ivec2(p);
+		uint h = uint(cell.x)*374761393u + uint(cell.y)*668265263u;
+		h = (h ^ (h >> 13u))*1274126177u;
+		h ^= h >> 16u;
+		uint k = (h ^ 2246822519u)*3266489917u;
+		k = (k ^ (k >> 13u))*1274126177u;
+		return vec2(float(h & 16777215u),float((k ^ (k >> 16u)) & 16777215u))/16777215.0;
+	}
 	// Integer hashing avoids amplified sin()/rounding differences at triangle
 	// boundaries on D3D12. Each lattice point must produce exactly one value.
 	uvec2 q = uvec2(ivec2(p));
@@ -15,6 +26,7 @@ vec2 hash2(vec2 p) {
 }
 
 float noise2(vec2 p) {
+	if (winter_surface) { return textureLod(surface_noise,p*0.0137,0.0).r; }
 	vec2 i = floor(p);
 	vec2 f = fract(p);
 	f = f * f * (3.0 - 2.0 * f);
@@ -71,7 +83,8 @@ void fragment() {
 	vec3 underside = vec3(0.023, 0.075, 0.095) + broad * vec3(0.024, 0.040, 0.045);
 	ALBEDO = mix(underside, ice, top);
 	ROUGHNESS = mix(0.38, 0.28 + snow * 0.47 + frost * 0.08 + scratches * 0.04, top);
-	SPECULAR = 0.55;
+	if (winter_surface) { ROUGHNESS = clamp(ROUGHNESS+0.18,0.0,1.0); }
+	SPECULAR = winter_surface ? 0.34 : 0.55;
 	METALLIC = 0.0;
 	if (!FRONT_FACING) {
 		NORMAL = -NORMAL;
