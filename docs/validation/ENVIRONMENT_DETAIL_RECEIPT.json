@@ -1,0 +1,184 @@
+{
+  "schema": 1,
+  "baseline_commit": "cdc91978c33ec980b8d0dd5192f1e41b523a59ef",
+  "recovery_tag": "checkpoint/pre-environment-detail-2026-10-03",
+  "matched_views": 20,
+  "extra_tree_views": 5,
+  "asset_hashes_verified": 21,
+  "resolution": [
+    1600,
+    900
+  ],
+  "gpu": "NVIDIA GeForce GTX 1080 Ti",
+  "driver": "d3d12",
+  "engine": "4.7.2-stable (official)",
+  "metrics": [
+    {
+      "scenario": "deck-day",
+      "live": false,
+      "before": {
+        "median_ms": 14.634,
+        "p99_ms": 15.436,
+        "engine_process_median_ms": 15.44
+      },
+      "after": {
+        "median_ms": 10.949,
+        "p99_ms": 11.991,
+        "engine_process_median_ms": 12.112
+      },
+      "change_percent": -25.2
+    },
+    {
+      "scenario": "forest-overcast",
+      "live": false,
+      "before": {
+        "median_ms": 10.656,
+        "p99_ms": 12.088,
+        "engine_process_median_ms": 12.306
+      },
+      "after": {
+        "median_ms": 9.532,
+        "p99_ms": 11.171,
+        "engine_process_median_ms": 11.444
+      },
+      "change_percent": -10.5
+    },
+    {
+      "scenario": "shore-dusk",
+      "live": false,
+      "before": {
+        "median_ms": 11.487,
+        "p99_ms": 12.431,
+        "engine_process_median_ms": 12.734
+      },
+      "after": {
+        "median_ms": 6.936,
+        "p99_ms": 7.854,
+        "engine_process_median_ms": 7.941
+      },
+      "change_percent": -39.6
+    },
+    {
+      "scenario": "shelter-storm",
+      "live": false,
+      "before": {
+        "median_ms": 12.09,
+        "p99_ms": 13.114,
+        "engine_process_median_ms": 12.931
+      },
+      "after": {
+        "median_ms": 8.895,
+        "p99_ms": 10.054,
+        "engine_process_median_ms": 10.339
+      },
+      "change_percent": -26.4
+    },
+    {
+      "scenario": "forest-night",
+      "live": false,
+      "before": {
+        "median_ms": 11.79,
+        "p99_ms": 13.255,
+        "engine_process_median_ms": 13.535
+      },
+      "after": {
+        "median_ms": 11.972,
+        "p99_ms": 13.511,
+        "engine_process_median_ms": 13.148
+      },
+      "change_percent": 1.5
+    },
+    {
+      "scenario": "sky-cycle",
+      "live": false,
+      "before": {
+        "median_ms": 9.824,
+        "p99_ms": 10.981,
+        "engine_process_median_ms": 10.963
+      },
+      "after": {
+        "median_ms": 5.204,
+        "p99_ms": 7.427,
+        "engine_process_median_ms": 8.941
+      },
+      "change_percent": -47.0
+    },
+    {
+      "scenario": "forest-overcast",
+      "live": true,
+      "before": {
+        "median_ms": 10.357,
+        "p99_ms": 11.874,
+        "engine_process_median_ms": 11.806
+      },
+      "after": {
+        "median_ms": 8.808,
+        "p99_ms": 11.585,
+        "engine_process_median_ms": 13.507
+      },
+      "change_percent": -15.0
+    }
+  ],
+  "tests": {
+    "test_environment_detail": {
+      "passed": true,
+      "sha256": "3695125512377121e4083d75a97ed25c82c4510b2abfeb6dbf6bd928537f44db"
+    },
+    "test_atmosphere": {
+      "passed": true,
+      "sha256": "852cb98e800c8e527059cd4e9fb45d8336ecffe36ac287442fc1afb88dda4550"
+    },
+    "test_survival": {
+      "passed": true,
+      "sha256": "b5182f7b2577a558f4d90a65ee1bbc2bfa69fa72a98d82d92a40914e42be3565"
+    },
+    "test_frozen_water": {
+      "passed": true,
+      "sha256": "154c27e9739c6b0047d6ef541f5b18f6832bfa295fad8f8b3a65546d23b0f5ff"
+    },
+    "test_shore_walking": {
+      "passed": true,
+      "sha256": "41db5804f6fea082ddf4418926baafabce83a0aab90ddad7a7e94f306a80241e"
+    },
+    "test_fire_lookout": {
+      "passed": true,
+      "sha256": "45bbbeb0a03f2c42e25b420bf7d81fc8bb5a95b9baab660a2087f093cf23a7c7"
+    },
+    "test_viewmodel": {
+      "passed": true,
+      "sha256": "8fa76ab9e497489778e11053ce10c852b29aa08b44eefa15f9b4fbccd98e3871"
+    },
+    "test_audio": {
+      "passed": true,
+      "sha256": "3b8366ba1bf9effbc6f71ea30a88dff9340e6ecdc6fb7458036987e21e7f9d93"
+    }
+  },
+  "render_source_hashes": {
+    "res://assets/environment_detail/textures/provenance.json": "235f0f2f1f76dd50d9bf240cf16713a984e3e413bc094be9d59bdf1d91abcdd4",
+    "res://assets/environment_detail/trees/provenance.json": "384fcd297c2f9124beb13ae71e72bd7c8050d57721b95b0db103efdb9359805b",
+    "res://assets/environment_detail/viewmodel/provenance.json": "ed8aaf2254ae6dee1ec55aae4dba0c37dc674d1d38c3a878520e5d5797e5ba7e",
+    "res://assets/textures/atmosphere/cloud_fields.png": "ed492188352f194d407b42c6dd534061d0057f636ac5382fe40428a125ca3d73",
+    "res://data/terrain/terrain_environment_assets.tres": "08622ba264816cb7fa164ee42ec525164f7af5f1951e371a4d60ad7ed8428199",
+    "res://data/terrain/terrain_winter_assets.tres": "e943273e93d14b903ec78bd8a98feae7c17b04fca87fea4010a29b3083df38d5",
+    "res://systems/weather.gd": "3cf04d3abf273a310ad5d9c6ca1018744f8276c1708bd7527efa1a3abf699508",
+    "res://world/atmosphere_rig.gd": "4ead758339e38287ef930481ed08b2e06c815a8970d932ac89b6b4fc2f3e8ce8",
+    "res://world/forest_scatter.gd": "6ddea5ac31f51a60b91ae63be290ca90477405b31a7dc1ecf14c712e566c29e7",
+    "res://world/game_world.gd": "37641b49c88e597410a88e38b28ef68079b4d651413fc4fc2865270a098afaff",
+    "res://world/shaders/boreal_detail.gdshader": "cecb313e5d5ad1c5d1db88cc25cf91701f1c124d5d8f34ab2f6519454bccf05d",
+    "res://world/shaders/frozen_water.gdshader": "0fd4cd151c9f30e609262cee1ca6a347f69a95dd79d3c2e890fb2ac537aa74f7",
+    "res://world/shaders/winter_sky.gdshader": "8b00b9894b6f049b969b55bd5e70d109ec132d00778f3b69dfc055c01010daa0",
+    "res://world/shaders/winter_snow.gdshader": "379348f5b53593b1f40b89adf67430a652efe49dfc20d97bcf37d276266e1286",
+    "res://world/shaders/winter_timber.gdshader": "9dd6c296e53cb9c1904c037cdf69106dfd2aa7828d44d6cdd214d0daaa2fda72",
+    "res://world/shaders/winter_vapour.gdshader": "08a4e11853faa2cb9711700aa4ce92ad9123b5ca7aecb2777ff995b14d86c78f",
+    "res://world/sky_rig.gd": "3f08cdf22b4300372265fad4cec216e258da45778e9ff94b7d59e6ac87fe20b8",
+    "res://world/snow_fall.gd": "80db39abcfcc828f395707fc4f0972360ac357c3e27dedd4b0ff74296e1c6ed9",
+    "res://world/weather_presentation.gd": "9393b31a62f8f518bc4c2828117794fa80622bff133e672fed1eb637d998262d"
+  },
+  "baseline_comparison": {
+    "mean_absolute_byte_difference": 0.0004497685185185185,
+    "changed_pixels": 21,
+    "total_pixels": 1440000
+  },
+  "limitations": "Local project capture fallback, not sealed game-dev CLI telemetry. Wall-clock frame observations; live case includes normal population. Film readback overhead excluded. Existing Terrain3D deprecation and exit resource warnings remain.",
+  "renderer_commit": "71b091dc4045ba6755ee3bd2d97c3af369a12468"
+}
