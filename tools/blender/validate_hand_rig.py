@@ -51,6 +51,14 @@ for node in j['nodes']:
     assert bones.max()<16 and np.max(np.abs(np.linalg.norm(normal,axis=1)-1))<1e-5
     idx=values(primitive['indices']).ravel();tri=idx.reshape(-1,3)
     assert len(tri)==receipt['validation'][node['name']]['triangles']
+    if receipt.get('version',0)>=5:
+        targets=primitive.get('targets',[])
+        assert len(targets)==5 and set(j['meshes'][node['mesh']]['extras']['targetNames'])=={'corrective_'+g for g in ['Fist','Shaft','Trigger','Support','Bolt']}
+        for target in targets:
+            offsets=values(target['POSITION'])
+            assert offsets.shape==pos.shape and np.isfinite(offsets).all()
+            assert np.linalg.norm(offsets,axis=1).max()<.035
+        assert sum(np.linalg.norm(values(t['POSITION']),axis=1).max() for t in targets)>.005
     unique,weld=np.unique(pos,axis=0,return_inverse=True);faces=weld[tri]
     edges=Counter(tuple(sorted(e)) for face in faces for e in zip(face,np.roll(face,-1)))
     assert set(edges.values())=={2},'Open skin surface'

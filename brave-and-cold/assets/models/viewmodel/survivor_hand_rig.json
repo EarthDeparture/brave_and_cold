@@ -1,7 +1,37 @@
 {
-  "version": 3,
+  "version": 6,
   "source": "tools/blender/gen_hand_rig.py",
   "blender": "5.2.2 LTS",
+  "volume_correctives": {
+    "BareHand": {
+      "Fist": 0.005104533499698947,
+      "Shaft": 0.0025222503482892735,
+      "Trigger": 0.0021602972967708104,
+      "Support": 0.0025292503037675816,
+      "Bolt": 0.0023131222411379142
+    },
+    "LeatherGlove": {
+      "Fist": 0.00520780849836058,
+      "Shaft": 0.0027835760706217605,
+      "Trigger": 0.002281374721656625,
+      "Support": 0.003014198887222015,
+      "Bolt": 0.0028620209748329954
+    },
+    "BareHandLeft": {
+      "Fist": 0.005104533499698947,
+      "Shaft": 0.0025222503482892735,
+      "Trigger": 0.0021602972967708104,
+      "Support": 0.0025292503037675816,
+      "Bolt": 0.0023131222411379142
+    },
+    "LeatherGloveLeft": {
+      "Fist": 0.00520780849836058,
+      "Shaft": 0.0027835760706217605,
+      "Trigger": 0.002281374721656625,
+      "Support": 0.003014198887222015,
+      "Bolt": 0.0028620209748329954
+    }
+  },
   "units": "metres",
   "wrist_origin": [
     0,
@@ -89,8 +119,8 @@
     ]
   },
   "thumb_distal_length": 0.021954496145718913,
-  "sha256": "c6146718090e9ff4385d8226009058f99e34413b3275ba5c055d3f81e18b6f04",
-  "generator_sha256": "2453217582c45f3e465060a75e20cd0aab7aeb34c10746923d89d9adecd1e108",
-  "material_source_sha256": "69ab4f13646b33e947de506b836b2c48b212497a2510ca55c34596f736a87204",
+  "sha256": "3eac0e0cc6e7b919dad52d39e8f32e96bf7e17dbfcf879ce4fe64db9afb8b1e0",
+  "generator_sha256": "7b56cf4dc69d40ddde140a9460d705644e039c47dd7ad82825b73b4d3823f839",
+  "material_source_sha256": "0c59ec4f0a96c284f24dc2f31536eb4ef45ee431af8725bdf235ed000d29d42f",
   "license": "Project-authored original geometry and procedural textures; repository ownership"
 }

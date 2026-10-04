@@ -18,12 +18,12 @@ Damage, ammunition, action costs and combat timing remain unchanged. The previou
 
 - Generator: `tools/blender/gen_hand_rig.py`
 - Material generator: `tools/blender/hand_materials.py`
-- Native editable file: `tools/blender/generated/hand_rig/survivor_hand_rig.blend`
+- Native editable file: `tools/blender/generated/hand_refinement/survivor_hand_rig.blend`
 - Runtime export and provenance: `brave-and-cold/assets/models/viewmodel/survivor_hand_rig.glb` and adjacent JSON
 - Exported-byte validation: `tools/blender/validate_hand_rig.py`
 - Runtime verification: `brave-and-cold/tests/test_viewmodel.gd`
 
-Generate with Blender 5.2 using `--background --factory-startup --python-exit-code 1 --python tools/blender/gen_hand_rig.py -- --output-dir tools/blender/generated/hand_rig`. Run the validator against the exported GLB and JSON, copy both into the runtime folder, then import in Godot. The native file opens with one readable bare right hand; hidden variants remain available for editing.
+Generate with Blender 5.2 using `--background --factory-startup --python-exit-code 1 --python tools/blender/gen_hand_rig.py -- --output-dir tools/blender/generated/hand_refinement`. Run the validator against the exported GLB and JSON, copy both into the runtime folder, then import in Godot. The native file opens with one readable bare right hand; hidden variants remain available for editing.
 
 ## Validation and limits
 
@@ -34,3 +34,7 @@ The Godot test checks bind-pose fidelity, actual CPU skin deformation for all gr
 The final export passes the byte/topology validator and all 16 runtime checks. Bind geometry error is below 3 micrometres; fitted thumb-target error is below 0.24 mm. These are numerical rig checks, not proof of physically correct contact with every point on each item.
 
 These are original stylised hands, not an exact reproduction of The Long Dark's production assets. Human playtesting remains the final judgement of anatomy, sleeve transitions and screen coverage. The geometry and integration tests establish functional correctness; they do not establish equivalent commercial art quality.
+
+## October 4 refinement
+
+The current version 6 source widens the wrist, reduces the inflated dorsal palm, refines finger pad profiles and gives the glove a gathered cuff and stitched reinforcement. Thumb rings now follow the palm opening in the correct order; the previous half-twist caused visible thumb-web inversions. Five pose-specific corrective morphs preserve bent joint volume under Godot linear skinning, with native left/right mirroring and the existing grip bones/contact targets retained. The runtime blends both skeleton rotations and corrective weights. See WALK_SURFACE_REVIEW.md and the adjacent validation receipt for the current 14 rendered item poses, motion evidence and tests. The old native source is retained in hand_rig for historical recovery.

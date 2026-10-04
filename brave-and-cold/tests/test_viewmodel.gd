@@ -48,6 +48,14 @@ func run() -> void:
 			var m := mesh.get_surface_override_material(0) as StandardMaterial3D
 			material_ok = material_ok and mesh.skin!=null and m.albedo_texture!=null and m.normal_enabled and m.normal_texture!=null
 	check("Bare skin and leather gloves retain actual skinning and embedded paint/normal maps",material_ok)
+	vm._right.pose("Fist")
+	check("Both skin and glove contain five live volume corrective morphs",vm._right.bare.mesh.get_blend_shape_count()==5 and vm._right.glove.mesh.get_blend_shape_count()==5)
+	var shape_index:=vm._right.glove.find_blend_shape_by_name("corrective_Fist")
+	check("Fist activates its imported corrective",shape_index>=0 and is_equal_approx(vm._right.glove.get_blend_shape_value(shape_index),1.0))
+	vm._right.pose("Trigger","Bolt",.5)
+	var trigger_index:=vm._right.glove.find_blend_shape_by_name("corrective_Trigger")
+	var bolt_index:=vm._right.glove.find_blend_shape_by_name("corrective_Bolt")
+	check("Grip transitions blend both skeletal and volume corrections",is_equal_approx(vm._right.glove.get_blend_shape_value(trigger_index),.5) and is_equal_approx(vm._right.glove.get_blend_shape_value(bolt_index),.5))
 	vm._right.pose("Open")
 	var resting := skin_vertices(vm._right)
 	var original: PackedVector3Array = vm._right.bare.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]

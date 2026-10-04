@@ -42,7 +42,7 @@ class Hand:
     def palm(self):
         self.top, self.bottom = [], []
         self.zrows = [.012,0,-.012,-.025,-.040,-.054,-.067,-.076]
-        widths = [.57,.59,.67,.79,.92,1,1,1]
+        widths = [.68,.69,.73,.82,.93,1,1,1]
         for row,z in enumerate(self.zrows):
             t,b = [],[]
             for col,x0 in enumerate(XS):
@@ -54,14 +54,14 @@ class Hand:
                 # Rounded metacarpal arch with individual tendon ridges. The
                 # lateral contour drops toward the web rather than forming a
                 # flat rectangular slab between the wrist and finger roots.
-                dorsal = .004 + .010*cross + .002*math.sin(row/7*math.pi)
-                dorsal += .006*math.exp(-((zz+.077)/.011)**2)*(.30+.70*(col%2))
+                dorsal = .003 + .009*cross + .0015*math.sin(row/7*math.pi)
+                dorsal += .004*math.exp(-((zz+.077)/.011)**2)*(.30+.70*(col%2))
                 for tendon in [-.030,-.010,.010,.030]:
-                    dorsal += .0022*math.exp(-((x0-tendon)/.007)**2-((zz+.046)/.027)**2)
+                    dorsal += .0012*math.exp(-((x0-tendon)/.007)**2-((zz+.046)/.027)**2)
                 # Thenar and hypothenar pads are part of the palm surface.
                 pad = .007*math.exp(-((x+.025)/.020)**2-((zz+.034)/.026)**2)
                 pad += .004*math.exp(-((x-.026)/.020)**2-((zz+.050)/.029)**2)
-                volar = -.006 - .008*cross - pad
+                volar = -.005 - .007*cross - pad
                 t.append(self.vertex((x,dorsal,zz)))
                 b.append(self.vertex((x,volar,zz)))
             self.top.append(t); self.bottom.append(b)
@@ -104,6 +104,7 @@ class Hand:
             tangent=(b-a).normalized()
             u=Vector(ref); u=(u-tangent*u.dot(tangent)).normalized()
             v=u.cross(tangent).normalized()
+            assert v.y>.95, (name, 'dorsal ring must face +Y', tuple(v))
             # Ring ordering matches palm root: dorsal-left through dorsal-right,
             # volar-right through volar-left. Radius tapers along each phalanx.
             for t in [.06,.20,.48,.76,.93,1.0]:
@@ -113,7 +114,10 @@ class Hand:
                 if segment==2:
                     # Rounded terminal pad, rather than an abrupt cylinder cap.
                     r*=max(.10,math.sqrt(max(0,1-max(0,(t-.63)/.37)**2)))
-                center=a.lerp(b,t)
+                # Thumb metacarpal head sits inside the palm. Skin emerges
+                # outside the opening rather than folding back through it.
+                start=a if name!='thumb' or segment!=0 else sum((self.v[i] for i in root),Vector())/len(root)+tangent*.009
+                center=start.lerp(b,t)
                 weights={name+'_'+str(segment+1).zfill(2):1.0}
                 blend=.18
                 if t<blend:
@@ -125,9 +129,17 @@ class Hand:
                     weights={name+'_'+str(segment+1).zfill(2):1-k,name+'_'+str(segment+2).zfill(2):k}
                 ring=[]
                 for k in range(8):
-                    angle=math.pi*3/4 - math.tau*k/8
+                    # Thumb opening runs front-to-back, opposite the MCP row.
+                    # Match its ring order to avoid a half-twist through the web.
+                    angle=math.pi/4+math.tau*k/8 if name=='thumb' else math.pi*3/4-math.tau*k/8
                     # Slightly flatter dorsum and fuller fingertip pads.
-                    off=u*(math.cos(angle)*r)+v*(math.sin(angle)*r*.86)
+                    # Distinct dorsal plane and padded volar arc avoid identical
+                    # circular tubes. A knuckle broadens laterally; distal pads
+                    # remain oval and narrower than the proximal joint.
+                    sn=math.sin(angle);cs=math.cos(angle)
+                    dorsal_plane=sn*.75 if sn>0 else sn*.94
+                    off=u*(cs*r)+v*(dorsal_plane*r)
+                    off+=v*(.0008*math.sin(t*math.pi)*max(0,-sn))
                     ring.append(self.vertex(center+off,weights))
                 for k in range(8): self.quad(prev[k],prev[(k+1)%8],ring[(k+1)%8],ring[k])
                 prev=ring
@@ -236,13 +248,66 @@ def pose_actions(rig,side=1):
     for b in rig.pose.bones: b.rotation_quaternion=Quaternion()
 
 
+
+def add_volume_correctives(obj,rig):
+    """Bake volume-preserving bend corrections back into rest-space morphs.
+
+    Godot/glTF use linear skinning. Blender's dual-quaternion evaluation is
+    used as the target; inverse blended bone matrices convert the correction
+    to a normal pre-skinning blend shape. Bones and grip contact stay intact.
+    """
+    import numpy as np
+    mod=next(m for m in obj.modifiers if m.type=='ARMATURE')
+    obj.shape_key_add(name='Basis')
+    rest=np.array([tuple(v.co) for v in obj.data.vertices],dtype=np.float64)
+    indices=np.zeros((len(rest),4),dtype=np.int32)
+    weights=np.zeros((len(rest),4),dtype=np.float64)
+    names=[g.name for g in obj.vertex_groups]
+    for i,v in enumerate(obj.data.vertices):
+        for j,g in enumerate(v.groups):indices[i,j]=g.group;weights[i,j]=g.weight
+    bounds={}
+    for name in PRESETS:
+        if name=='Open':continue
+        track=next(t for t in rig.animation_data.nla_tracks if t.name==name)
+        rig.animation_data.action=track.strips[0].action
+        bpy.context.scene.frame_set(1);bpy.context.view_layer.update()
+        matrices=np.array([tuple(tuple(row) for row in (rig.pose.bones[n].matrix @ rig.data.bones[n].matrix_local.inverted())) for n in names])
+        blended=np.sum(matrices[indices]*weights[:,:,None,None],axis=1)
+        mod.use_deform_preserve_volume=True
+        bpy.context.view_layer.update()
+        evaluated=obj.evaluated_get(bpy.context.evaluated_depsgraph_get())
+        mesh=evaluated.to_mesh()
+        target=np.array([tuple(v.co) for v in mesh.vertices]);evaluated.to_mesh_clear()
+        linear=np.einsum('nij,nj->ni',blended[:,:3,:3],rest)+blended[:,:3,3]
+        delta=np.linalg.solve(blended[:,:3,:3],(target-linear)[:,:,None])[:,:,0]
+        assert np.isfinite(delta).all() and np.linalg.norm(delta,axis=1).max()<.035
+        key=obj.shape_key_add(name='corrective_'+name)
+        for v,co in zip(key.data,rest+delta):v.co=co
+        key.value=0
+        bounds[name]=float(np.linalg.norm(delta,axis=1).max())
+        mod.use_deform_preserve_volume=False
+    rig.animation_data.action=None
+    for b in rig.pose.bones:b.rotation_quaternion=Quaternion()
+    bpy.context.view_layer.update()
+    print('VOLUME_CORRECTIVES',obj.name,bounds,flush=True)
+    return bounds
+
+
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--output-dir',required=True)
     out=Path(ap.parse_args(sys.argv[sys.argv.index('--')+1:]).output_dir).resolve();out.mkdir(parents=True,exist_ok=True)
     bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
     hand=Hand();bare=hand.build();rig=make_rig(hand,bare)
     glove=bare.copy();glove.data=bare.data.copy();glove.name='LeatherGlove';bpy.context.collection.objects.link(glove)
-    for v in glove.data.vertices: v.co+=v.normal*.0015
+    for v in glove.data.vertices:
+        v.co+=v.normal*.0018
+        # Soft leather gathers at the wrist and a stitched reinforcement lip
+        # below the knuckles. This changes the silhouette, not only the paint.
+        p=(v.co.x,v.co.z,-v.co.y)
+        cuff=.0008*math.exp(-((p[2]+.005)/.006)**2)
+        cuff*=.55+.45*math.sin(math.atan2(p[1],p[0])*9)
+        knuckle=.0006*math.exp(-((p[2]+.062)/.0024)**2)*max(0,v.normal.z)
+        v.co+=v.normal*(cuff+knuckle)
     glove.data.update()
     shape=SimpleNamespace(name='rig_hand',wrist=(0,0,0),digits=hand.digits)
     paint.PALM['rig_hand']=(0,-1,0)
@@ -265,6 +330,7 @@ def main():
     left_rig=make_rig(hand,left[0],-1)
     left[1].parent=left_rig;mod=left[1].modifiers.new('Articulated left skin','ARMATURE');mod.object=left_rig
     pose_actions(rig);pose_actions(left_rig,-1)
+    correctives={obj.name:add_volume_correctives(obj,which) for obj,which in [(bare,rig),(glove,rig),(left[0],left_rig),(left[1],left_rig)]}
     # Normalised, bounded skinning is checked after the subdivision interpolation.
     report={}
     for obj in [bare,glove,*left]:
@@ -283,14 +349,14 @@ def main():
     bpy.ops.export_scene.gltf(filepath=str(glb),export_format='GLB',use_selection=True,
         export_yup=True,export_apply=False,export_normals=True,export_vertex_color='ACTIVE',
         export_all_vertex_colors=False,export_materials='EXPORT',export_animations=True,
-        export_animation_mode='NLA_TRACKS',export_skins=True,export_def_bones=True)
+        export_animation_mode='NLA_TRACKS',export_skins=True,export_def_bones=True,export_morph=True)
     # Native source opens on one readable bare hand. Hidden variants remain
     # editable, with their own skeletons; the exported package contains all four.
     for obj in [glove,*left,left_rig,*sleeves]:obj.hide_set(True)
     rig.show_in_front=True
     bpy.ops.wm.save_as_mainfile(filepath=str(out/'survivor_hand_rig.blend'))
-    receipt={'version':3,'source':'tools/blender/gen_hand_rig.py','blender':bpy.app.version_string,
-        'units':'metres','wrist_origin':[0,0,0],'forearm_axis':[0,0,1],
+    receipt={'version':6,'source':'tools/blender/gen_hand_rig.py','blender':bpy.app.version_string,
+        'volume_correctives':correctives,'units':'metres','wrist_origin':[0,0,0],'forearm_axis':[0,0,1],
         'bones':list(hand.bones),'grips':list(PRESETS),'validation':report,
         'thumb_targets_godot':THUMB_TARGETS,'thumb_distal_length':(Vector(hand.bones['thumb_03'][1])-Vector(hand.bones['thumb_03'][0])).length,
         'sha256':hashlib.sha256(glb.read_bytes()).hexdigest(),

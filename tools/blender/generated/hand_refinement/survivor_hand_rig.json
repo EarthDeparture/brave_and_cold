@@ -1,0 +1,126 @@
+{
+  "version": 6,
+  "source": "tools/blender/gen_hand_rig.py",
+  "blender": "5.2.2 LTS",
+  "volume_correctives": {
+    "BareHand": {
+      "Fist": 0.005104533499698947,
+      "Shaft": 0.0025222503482892735,
+      "Trigger": 0.0021602972967708104,
+      "Support": 0.0025292503037675816,
+      "Bolt": 0.0023131222411379142
+    },
+    "LeatherGlove": {
+      "Fist": 0.00520780849836058,
+      "Shaft": 0.0027835760706217605,
+      "Trigger": 0.002281374721656625,
+      "Support": 0.003014198887222015,
+      "Bolt": 0.0028620209748329954
+    },
+    "BareHandLeft": {
+      "Fist": 0.005104533499698947,
+      "Shaft": 0.0025222503482892735,
+      "Trigger": 0.0021602972967708104,
+      "Support": 0.0025292503037675816,
+      "Bolt": 0.0023131222411379142
+    },
+    "LeatherGloveLeft": {
+      "Fist": 0.00520780849836058,
+      "Shaft": 0.0027835760706217605,
+      "Trigger": 0.002281374721656625,
+      "Support": 0.003014198887222015,
+      "Bolt": 0.0028620209748329954
+    }
+  },
+  "units": "metres",
+  "wrist_origin": [
+    0,
+    0,
+    0
+  ],
+  "forearm_axis": [
+    0,
+    0,
+    1
+  ],
+  "bones": [
+    "hand",
+    "index_01",
+    "index_02",
+    "index_03",
+    "middle_01",
+    "middle_02",
+    "middle_03",
+    "ring_01",
+    "ring_02",
+    "ring_03",
+    "little_01",
+    "little_02",
+    "little_03",
+    "thumb_01",
+    "thumb_02",
+    "thumb_03"
+  ],
+  "grips": [
+    "Open",
+    "Fist",
+    "Shaft",
+    "Trigger",
+    "Support",
+    "Bolt"
+  ],
+  "validation": {
+    "BareHand": {
+      "vertices": 13939,
+      "triangles": 27872,
+      "closed": true
+    },
+    "LeatherGlove": {
+      "vertices": 13939,
+      "triangles": 27872,
+      "closed": true
+    },
+    "BareHandLeft": {
+      "vertices": 13939,
+      "triangles": 27872,
+      "closed": true
+    },
+    "LeatherGloveLeft": {
+      "vertices": 13939,
+      "triangles": 27872,
+      "closed": true
+    }
+  },
+  "thumb_targets_godot": {
+    "Fist": [
+      -0.01319,
+      -0.04137,
+      -0.09882
+    ],
+    "Shaft": [
+      0,
+      -0.018,
+      -0.098
+    ],
+    "Bolt": [
+      -0.01,
+      -0.022,
+      -0.103
+    ],
+    "Trigger": [
+      -0.047,
+      -0.055,
+      -0.04
+    ],
+    "Support": [
+      -0.044,
+      -0.048,
+      -0.033
+    ]
+  },
+  "thumb_distal_length": 0.021954496145718913,
+  "sha256": "3eac0e0cc6e7b919dad52d39e8f32e96bf7e17dbfcf879ce4fe64db9afb8b1e0",
+  "generator_sha256": "7b56cf4dc69d40ddde140a9460d705644e039c47dd7ad82825b73b4d3823f839",
+  "material_source_sha256": "0c59ec4f0a96c284f24dc2f31536eb4ef45ee431af8725bdf235ed000d29d42f",
+  "license": "Project-authored original geometry and procedural textures; repository ownership"
+}

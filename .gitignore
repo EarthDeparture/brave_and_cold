@@ -17,3 +17,6 @@ audio_in/*
 tools/blender/generated/environment_detail/*.blend[0-9]
 
 tools/blender/generated/road_detail/*.blend[0-9]
+
+tools/blender/generated/hand_refinement/*.blend[0-9]
+tools/blender/generated/route_detail/*.blend[0-9]

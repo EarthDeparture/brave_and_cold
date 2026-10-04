@@ -94,7 +94,7 @@ def painted(points, normals, shape, kind):
         palm_fold = np.maximum(palm_fold,np.exp(-(thenar/.045)**2)*.8)
         fold = np.maximum(fold,palm_fold*on_palm*.8)
     if kind == 'skin':
-        col = np.tile((.405, .294, .241), (len(points), 1)).astype(np.float32)
+        col = np.tile((.48, .335, .265), (len(points), 1)).astype(np.float32)
         col *= (0.87 + .21*broad + .10*(mottle-.5) + .023*(grain-.5))[:, None]
         col += blush[:, None]*np.array((.027, -.007, -.012))
         col *= (1-fold*.28)[:, None]
@@ -103,13 +103,18 @@ def painted(points, normals, shape, kind):
     else:
         # Cream leather backs, brown reinforced palms and fingertips.
         patch = np.clip((palm-.10)*3.5, 0, 1)
-        patch = np.maximum(patch, np.clip((tips-.26)*2.5, 0, 1))
+        patch = np.maximum(patch, np.clip((tips-.48)*2.5, 0, 1))
         patch = np.maximum(patch, np.clip((along+.007)*220, 0, 1))
         cuff_seam = np.exp(-np.square((along+.010)/.0010))
         angle = np.arctan2(wrist_d[:, 1], wrist_d[:, 0])
         cuff_seam *= (np.sin(angle*35) > .35)
         stitching = np.maximum(stitching*.40, cuff_seam)
-        col = (np.array((.32, .285, .225))*(1-patch[:, None]) + np.array((.082, .049, .028))*patch[:, None])
+        # Authored pale suede backs and warm leather palms, with a
+        # continuous cut-panel seam across the metacarpals.
+        panel = np.exp(-((points[:,2]+.060-points[:,0]*.10)/.0013)**2)
+        panel *= np.clip(-palm,0,1)
+        stitching = np.maximum(stitching,panel*(np.sin(points[:,0]*math.tau/.0042)>.25))
+        col = (np.array((.43, .365, .275))*(1-patch[:, None]) + np.array((.11, .065, .036))*patch[:, None])
         col *= (0.72 + .40*broad + .22*(mottle-.5) + .065*(grain-.5))[:, None]
         wear = np.clip(blush*.8 + tips*.4, 0, .8) * (.4+.6*mottle)
         col += wear[:, None]*np.array((.036, .028, .018))
