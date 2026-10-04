@@ -324,12 +324,14 @@ func _move(want: float, delta: float) -> void:
 				var q2: Vector2 = cb.resolve(np.x, np.z, body_radius + 0.05)
 				np.x = q2.x
 				np.z = q2.y
+			var road_q:=RoadNet.resolve_actor(np,pos,body_radius)
+			np.x=road_q.x;np.z=road_q.y
 			if state == State.CHASE and Vector2(np.x, np.z).distance_to(before) > step.length() * 0.6:
 				_stuck_t += delta
 			else:
 				_stuck_t = maxf(0.0, _stuck_t - delta)
 			pos = np
-	var h: float = IceField.lift(terrain.data.get_height(Vector3(pos.x, 0.0, pos.z)), pos.x, pos.z)
+	var h: float = RoadNet.lift(IceField.lift(terrain.data.get_height(Vector3(pos.x, 0.0, pos.z)), pos.x, pos.z),pos.x,pos.z,pos.y)
 	if not is_nan(h):
 		pos.y = lerpf(pos.y, h, minf(1.0, delta * 14.0))
 	global_position = pos

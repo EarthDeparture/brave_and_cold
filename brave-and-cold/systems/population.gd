@@ -161,7 +161,7 @@ func generate(n: int, home: Vector2, anchors: Array, road_pts_in: Array, water: 
 				continue
 			if water != null and water.get_pixel(int(x + HALF), int(z + HALF)).r > 0.5:
 				continue
-			var h: float = terrain.data.get_height(Vector3(x, 0.0, z))
+			var h: float = RoadNet.lift(terrain.data.get_height(Vector3(x, 0.0, z)),x,z)
 			if is_nan(h):
 				continue
 			add_virtual(Vector3(x, h, z))
@@ -409,7 +409,7 @@ func _drag_step(dt: float) -> void:
 		else:
 			cells[k] = arr
 		var np: Vector3 = m[2]
-		var h: float = terrain.data.get_height(Vector3(np.x, 0.0, np.z))
+		var h: float = RoadNet.lift(terrain.data.get_height(Vector3(np.x, 0.0, np.z)),np.x,np.z)
 		np.y = h if not is_nan(h) else (m[1] as Vector3).y
 		add_virtual(np)
 
@@ -540,7 +540,7 @@ func spawn_horde(at: Vector2, n: int, rng: RandomNumberGenerator = null) -> int:
 		var d := spread * sqrt(r.randf())
 		var x := at.x + cos(a) * d
 		var z := at.y + sin(a) * d
-		var hy: float = terrain.data.get_height(Vector3(x, 0.0, z))
+		var hy: float = RoadNet.lift(terrain.data.get_height(Vector3(x, 0.0, z)),x,z)
 		if is_nan(hy):
 			continue
 		h.pts.append(Vector3(x, hy, z))
@@ -663,7 +663,7 @@ func _horde_step(dt: float) -> void:
 				var v := h.pts[i]
 				var nx := v.x + mv.x
 				var nz := v.z + mv.y
-				var hy: float = terrain.data.get_height(Vector3(nx, 0.0, nz))
+				var hy: float = RoadNet.lift(terrain.data.get_height(Vector3(nx, 0.0, nz)),nx,nz)
 				h.pts[i] = Vector3(nx, v.y if is_nan(hy) else hy, nz)
 		# strays within 20 m join (snowball), up to HORDE_MAX
 		h.abs_t += dt
@@ -724,7 +724,7 @@ func restore_hordes(lst: Array) -> void:
 		h.target = Vector2(float(e["tx"]), float(e["tz"]))
 		h.state = int(e["state"]) if int(e["state"]) != 3 else 0
 		for q in e["pts"]:
-			var hy: float = terrain.data.get_height(Vector3(float(q[0]), 0.0, float(q[1])))
+			var hy: float = RoadNet.lift(terrain.data.get_height(Vector3(float(q[0]), 0.0, float(q[1]))),float(q[0]),float(q[1]))
 			h.pts.append(Vector3(float(q[0]), 0.0 if is_nan(hy) else hy, float(q[1])))
 		if h.state == 1:
 			_plan(h, h.target)

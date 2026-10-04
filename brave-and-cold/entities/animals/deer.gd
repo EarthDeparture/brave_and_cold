@@ -173,8 +173,10 @@ func _move(want: float, delta: float) -> void:
 			np.z = q.y
 		np.x = clampf(np.x, -980.0, 980.0)
 		np.z = clampf(np.z, -980.0, 980.0)
+		var road_q:=RoadNet.resolve_actor(np,pos,.4)
+		np.x=road_q.x;np.z=road_q.y
 		pos = np
-	var h: float = IceField.lift(terrain.data.get_height(Vector3(pos.x, 0.0, pos.z)), pos.x, pos.z)
+	var h: float = RoadNet.lift(IceField.lift(terrain.data.get_height(Vector3(pos.x, 0.0, pos.z)), pos.x, pos.z),pos.x,pos.z,pos.y)
 	if not is_nan(h):
 		pos.y = lerpf(pos.y, h, minf(1.0, delta * 14.0))
 	global_position = pos

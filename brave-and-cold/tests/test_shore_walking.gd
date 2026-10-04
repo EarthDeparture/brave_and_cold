@@ -36,16 +36,18 @@ func run() -> void:
 				if reverse:
 					var t := a; a = b; b = t
 				var dir := (b-a).normalized()
-				p.position = Vector3(a.x,p._eye_ground(a.x,a.y)+p.eye_h,a.y)
+				p.reset_jump()
+				p.cam.position=Vector3.ZERO
+				p.position = Vector3(a.x,p.ground_at(a.x,a.y)+p.eye_h,a.y)
 				p._vel = Vector2.ZERO
 				p._snow_mult = 1.0
 				p.dbg_blocks = 0
 				p.sim_dir = Vector3(dir.x,0,dir.y)
 				var previous_dy := 0.0
 				for frame in 12*fps:
-					var old_y := p.position.y
+					var old_y := p.position.y+p.cam.position.y
 					p._move(1.0/fps)
-					var dy := p.position.y-old_y
+					var dy := p.position.y+p.cam.position.y-old_y
 					max_bump = maxf(max_bump,absf(dy-previous_dy))
 					previous_dy = dy
 					if Vector2(p.position.x-a.x,p.position.z-a.y).dot(dir)>=25.0: break

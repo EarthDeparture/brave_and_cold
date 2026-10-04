@@ -243,3 +243,10 @@ func load_dict(d: Dictionary) -> void:
 	cond = (d.get("cond", {}) as Dictionary).duplicate()
 	age = (d.get("age", {}) as Dictionary).duplicate()
 	_pile_dirty = true
+
+
+## A crate occupies its actual height, not an invisible column through the map.
+func resolve_at(foot:Vector3,eye_height:float,radius:float) -> Vector2:
+	if foot.y>global_position.y+.75 or foot.y+eye_height<global_position.y-.05:
+		return Vector2(foot.x,foot.z)
+	return resolve(foot.x,foot.z,radius)

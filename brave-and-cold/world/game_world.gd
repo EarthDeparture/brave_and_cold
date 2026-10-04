@@ -59,6 +59,7 @@ func _ready() -> void:
 	terrain.material.set_shader_param("macro_variation1", Color(0.88, 0.93, 1.0))
 	terrain.material.set_shader_param("macro_variation2", Color(1.0, 0.97, 0.98))
 	road = RoadNet.new()
+	road.grading_enabled = opts.get("road_grade","smooth") != "baseline"
 	road.detail_enabled = environment_detail_enabled and opts.get("road_detail", "winter") != "baseline"
 	add_child(road)
 	trailnet = TrailNet.new()
@@ -105,9 +106,9 @@ func _ready() -> void:
 			plants = PlantField.new()
 			add_child(plants)
 			plants.build(terrain, forest.exclude)
+	ice.activate_shoreline()
 	road.build_mesh(terrain)
 	road.build_props(terrain)
-	ice.activate_shoreline()
 	var w := WaterSurfaces.new()
 	add_child(w)
 	w.build("res://data/maps/valley_b", ice)
@@ -151,6 +152,7 @@ func _ready() -> void:
 			add_child(weather_presentation)
 	player.forest = forest
 	player.ice = ice
+	player.walk_ribbons.assign([road,trailnet])
 	if sky_rig.clouds != null:
 		sky_rig.clouds.follow = player
 	sky_rig.apply_hour(clock.hour)
@@ -386,6 +388,7 @@ func _build_fire_lookout(opts: Dictionary) -> void:
 		fire_lookout.position.y = stair_ground + 0.03
 	fire_lookout.build_foundations(terrain)
 	fire_lookout.build_access_path(terrain)
+	if fire_lookout.access_ribbon!=null:player.walk_ribbons.append(fire_lookout.access_ribbon)
 	player.spatial_structures.append(fire_lookout)
 	print('FIRE_LOOKOUT at ', fire_lookout.position, ' yaw=', fire_lookout.rotation_degrees.y)
 	if opts.has('lookoutpos'):
@@ -2170,6 +2173,7 @@ func _spawn_bears(n: int, center: Vector2, min_d: float, max_d: float) -> void:
 
 
 func _add_wolf(p: Vector3, idx: int, bear := false) -> Wolf:
+	if p.y>-400:p.y=RoadNet.lift(p.y,p.x,p.z)
 	var w: Wolf = Bear.new() if bear else Wolf.new()
 	add_child(w)
 	w.global_position = p
@@ -2271,6 +2275,7 @@ func _populate(n: int, center: Vector2) -> void:
 
 
 func _new_zombie(p: Vector3, idx: int) -> Zombie:
+	if p.y>-400:p.y=RoadNet.lift(p.y,p.x,p.z)
 	var z := Zombie.new()
 	add_child(z)
 	z.global_position = p
@@ -2583,6 +2588,7 @@ func _spawn_deer(n: int, center: Vector2) -> void:
 
 
 func _add_deer(p: Vector3, idx: int) -> Deer:
+	if p.y>-400:p.y=RoadNet.lift(p.y,p.x,p.z)
 	var d := Deer.new()
 	add_child(d)
 	d.global_position = p

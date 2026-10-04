@@ -11,6 +11,7 @@ const XS: Array = [
 	[1.2, Color(0.70, 0.75, 0.86), 0.04],
 ]
 
+var walk_surface := WalkSurface.new()
 var trails: Array = []            # Array of Array[Vector2]
 var _hash: Dictionary = {}        # Vector2i(8 m cell) -> Array[Vector2]
 var markers: Array = []           # [{pos: Vector2, yaw: float}]
@@ -109,6 +110,15 @@ func build_mesh(terrain: Terrain3D) -> void:
 				var c: Color = xs[1]
 				row.append([Vector3(q.x, h + float(xs[2]), q.y), Color(c.r * wob, c.g * wob, c.b * wob)])
 			rows.append(row)
+		var heights:Array=[]
+		for row in rows:
+			var positions:Array=[]
+			for vertex in row:positions.append(vertex[0])
+			heights.append(positions)
+		var part:=WalkSurface.new();part.build(heights)
+		for key in part._cells:
+			if not walk_surface._cells.has(key):walk_surface._cells[key]=[]
+			walk_surface._cells[key].append_array(part._cells[key])
 		for i in range(rows.size() - 1):
 			for j in range(XS.size() - 1):
 				var v0: Array = rows[i][j]
@@ -160,3 +170,6 @@ func build_mesh(terrain: Terrain3D) -> void:
 		tg.rotation.y = float(m["yaw"])
 		add_child(tg)
 	print("TRAIL_MESH trails ", trails.size(), " tris ", tris)
+
+func floor_at_world(foot:Vector3,_terrain_height:float=NAN) -> float:
+	return walk_surface.height_at(foot.x,foot.z,foot.y)

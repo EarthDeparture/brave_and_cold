@@ -200,8 +200,8 @@ func floor_at(x: float, z: float, terrain_h: float) -> float:
 		return floor_y   # covered porch deck
 	if absf(l.x) < DOOR_HALF + 0.2 and l.y > HZ - 0.2 and l.y <= HZ + 0.4:
 		return floor_y
-	if absf(l.x) < DOOR_HALF + 0.35 and l.y > HZ + 0.4 and l.y < HZ + 0.4 + RAMP_LEN:
-		var t := (l.y - (HZ + 0.4)) / RAMP_LEN
+	if absf(l.x) < DOOR_HALF + 0.35 and l.y > HZ + 1.5 and l.y < HZ + 1.5 + RAMP_LEN:
+		var t := (l.y - (HZ + 1.5)) / RAMP_LEN
 		return lerpf(floor_y, terrain_h, t)
 	return NAN
 

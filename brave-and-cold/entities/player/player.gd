@@ -31,6 +31,10 @@ var cam: Camera3D
 var forest: ForestScatter
 var cabins: Array = []
 var spatial_structures: Array[Node3D] = [] # Optional height-aware surfaces, separate from ground cabins.
+var walk_ribbons: Array[Node3D] = []
+var _camera_ground := NAN
+var _ground_velocity := 0.0
+var _ground_offset := 0.0
 var chests: Array = []   # StorageChest colliders
 var footprints: Footprints
 var ice: IceField   # frozen water is walkable: the surface, not the carved bed under it
@@ -180,6 +184,9 @@ func ground_at(x: float, z: float) -> float:
 		var f: float = structure.call("floor_at_world", Vector3(x, _surface_probe_y(), z), th)
 		if not is_nan(f):
 			return f
+	for ribbon in walk_ribbons:
+		var f:float=ribbon.call("floor_at_world",Vector3(x,_surface_probe_y(),z),th)
+		if not is_nan(f) and (is_nan(th) or f>th):th=f
 	return th
 
 
@@ -291,6 +298,7 @@ func _move(delta: float) -> void:
 		for i in count:
 			_move(minf(delta, 8.0 / 60.0) / float(count))
 		return
+	if is_nan(_camera_ground):_camera_ground=position.y-eye_h
 	var fwd := Vector3(-sin(yaw), 0.0, -cos(yaw))
 	var right := Vector3(cos(yaw), 0.0, -sin(yaw))
 	var dir := Vector3.ZERO
@@ -327,6 +335,7 @@ func _move(delta: float) -> void:
 			moving = false
 			sprinting = false
 		else:
+			_vel=step/delta
 			var prior_foot := Vector3(position.x, _surface_probe_y(), position.z)
 			position.x += step.x
 			position.z += step.y
@@ -341,13 +350,17 @@ func _move(delta: float) -> void:
 				position.x = q2.x
 				position.z = q2.y
 			for ch in chests:
-				var q3: Vector2 = ch.resolve(position.x, position.z, 0.35)
+				var q3: Vector2 = ch.resolve_at(Vector3(position.x,_surface_probe_y(),position.z),eye_h,0.35)
 				position.x = q3.x
 				position.z = q3.y
 			for structure in spatial_structures:
 				var q4: Vector2 = structure.call("resolve_at", Vector3(position.x, _surface_probe_y(), position.z), prior_foot, 0.35)
 				position.x = q4.x
 				position.z = q4.y
+			for ribbon in walk_ribbons:
+				if ribbon.has_method("resolve_at"):
+					var q5:Vector2=ribbon.call("resolve_at",Vector3(position.x,_surface_probe_y(),position.z),prior_foot,.35)
+					position.x=q5.x;position.z=q5.y
 			# A jump cannot enter a doorway/roof whose underside is below the head.
 			if airborne and position.y + HEAD_CLEARANCE > _jump_ceiling() + 0.002:
 				position.x = prior_foot.x
@@ -357,6 +370,10 @@ func _move(delta: float) -> void:
 				# slide: drop the velocity component pointing into whatever pushed us out
 				var pn := push.normalized()
 				_vel -= pn * minf(0.0, _vel.dot(pn))
+	sp=_vel.length()
+	speed_now=sp
+	moving=sp>.3
+	sprinting=want_sprint and wish and sp>1.0
 	activity = 0
 	if moving:
 		activity = 2 if sprinting else 1
@@ -365,12 +382,15 @@ func _move(delta: float) -> void:
 	eye_h = lerpf(eye_h, target_eye, minf(1.0, delta * 8.0))
 	if airborne:
 		position.y = old_feet + eye_h
-	var g: float = _eye_ground(position.x, position.z)
+	var g: float = ground_at(position.x, position.z)
 	_jump_cooldown = maxf(0.0, _jump_cooldown - delta)
 	if airborne:
+		_ground_offset*=exp(-delta*10.0)
 		_jump_vertical(delta, g)
 	elif not is_nan(g):
-		position.y = lerpf(position.y, g + eye_h, 1.0 - exp(-delta * 12.0))
+		# Feet remain on the floor; only the camera absorbs ground corrugation.
+		position.y = g + eye_h
+		_smooth_ground(delta,_eye_ground(position.x,position.z),g)
 	_head_bob(delta, 0.0 if airborne else sp)
 
 
@@ -386,7 +406,7 @@ func _slope_step(step: Vector2) -> Vector2:
 	for a in SLIDE_ANGLES:
 		var dd := d.rotated(a)
 		var h1: float = _eye_ground(position.x + dd.x * SLOPE_PROBE, position.z + dd.y * SLOPE_PROBE)
-		if is_nan(h1) or (h1 - h0) / SLOPE_PROBE <= MAX_SLOPE:
+		if is_nan(h1) or absf(h1 - h0) / SLOPE_PROBE <= MAX_SLOPE:
 			return dd * len * (1.0 if a == 0.0 else cos(a) * 0.9)
 	return Vector2.ZERO
 
@@ -411,7 +431,25 @@ func _eye_ground(x: float, z: float) -> float:
 		if not is_nan(h):
 			s += h
 			n += 1
-	return s / float(n)
+	var filtered:=s/float(n)
+	# Authored walking ribbons override terrain filtering, including bridges.
+	for ribbon in walk_ribbons:
+		var f:float=ribbon.call("floor_at_world",Vector3(x,_surface_probe_y(),z),th)
+		if not is_nan(f) and f>th:return f
+	return filtered
+
+
+func _smooth_ground(delta:float, height:float, support:float) -> void:
+	if is_nan(height):height=support
+	if is_nan(_camera_ground) or absf(height-_camera_ground)>1.0:
+		_camera_ground=height;_ground_velocity=0.0
+	var error:=_camera_ground-height
+	var omega:=18.0
+	var v:=_ground_velocity+omega*error
+	var decay:=exp(-omega*delta)
+	_camera_ground=height+(error+v*delta)*decay
+	_ground_velocity=(_ground_velocity-omega*v*delta)*decay
+	_ground_offset=clampf(_camera_ground-support,-.8,.6)
 
 
 func _head_bob(delta: float, sp: float) -> void:
@@ -421,7 +459,7 @@ func _head_bob(delta: float, sp: float) -> void:
 	_bob_amp = lerpf(_bob_amp, amp, minf(1.0, delta * 6.0))
 	_bob_t += delta * sp * 1.9
 	_landing_dip = move_toward(_landing_dip, 0.0, delta * 0.26)
-	cam.position = Vector3(sin(_bob_t) * 0.011 * _bob_amp, absf(sin(_bob_t)) * -0.016 * _bob_amp - _landing_dip, 0.0)
+	cam.position = Vector3(sin(_bob_t) * 0.011 * _bob_amp, absf(sin(_bob_t)) * -0.016 * _bob_amp - _landing_dip + _ground_offset, 0.0)
 
 func _stamina(delta: float) -> void:
 	var tier: int = _step_snow_tier()
@@ -483,6 +521,9 @@ func _surface_probe_y() -> float:
 
 func reset_jump() -> void:
 	airborne = false
+	_camera_ground=NAN
+	_ground_velocity=0.0
+	_ground_offset=0.0
 	_vertical_speed = 0.0
 	_jump_cooldown = 0.0
 	_landing_dip = 0.0
@@ -495,7 +536,7 @@ func request_jump() -> bool:
 		return false
 	if dead or sleeping or struggling or ui_open or frozen or noclip or crouching or Input.is_key_pressed(KEY_C):
 		return false
-	var floor_y := _eye_ground(position.x, position.z)
+	var floor_y := ground_at(position.x, position.z)
 	if is_nan(floor_y) or absf(position.y - eye_h - floor_y) > 0.25:
 		return false
 	if _jump_ceiling() < position.y + HEAD_CLEARANCE + 0.06:
@@ -534,6 +575,8 @@ func _jump_vertical(delta: float, floor_y: float) -> void:
 		if next_feet <= floor_y and (_vertical_speed <= 0.0 or floor_y > feet + 0.015):
 			position.y = floor_y + eye_h
 			airborne = false
+			_camera_ground=floor_y+_ground_offset
+			_ground_velocity=0.0
 			_vertical_speed = 0.0
 			_jump_cooldown = 0.15
 			_landing_dip = 0.025

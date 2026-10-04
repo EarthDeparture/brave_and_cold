@@ -26,6 +26,7 @@ const SUPPORTS: Array[Vector2] = [Vector2(-2.95, -2.45), Vector2(2.95, -2.45), V
 
 var detail_enabled := false
 var site: Dictionary = {}
+var access_ribbon:WalkRibbon3D
 var model: Node3D
 var geometry: Dictionary = {}
 
@@ -222,6 +223,15 @@ func build_access_path(terrain: Terrain3D) -> void:
 				y = float(row[1])
 			cross.append(to_local(Vector3(xz.x, y + 0.075, xz.y)))
 		vertices.append(cross)
+	access_ribbon=WalkRibbon3D.new()
+	access_ribbon.name="LookoutAccessSurface"
+	add_child(access_ribbon)
+	var world_rows:Array=[]
+	for row in vertices:
+		var points_world:Array=[]
+		for point in row:points_world.append(to_global(point))
+		world_rows.append(points_world)
+	access_ribbon.walk_surface.build(world_rows)
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for i in range(vertices.size() - 1):

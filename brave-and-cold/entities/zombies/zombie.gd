@@ -113,6 +113,7 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 
 ## Pool reuse (Population): reset everything per-life, no instantiate cost.
 func activate(p: Vector3, seed_value: int, k: int = 0) -> void:
+	p.y=RoadNet.lift(p.y,p.x,p.z)
 	global_position = p
 	rotation.y = randf() * TAU
 	_rng.seed = seed_value
@@ -494,7 +495,7 @@ func _move(want: float, delta: float) -> void:
 	if mx * mx + mz * mz > 0.16:            # height + snow tier only re-sampled after 0.4 m of travel
 		_hx = pos.x
 		_hz = pos.z
-		var hq: float = IceField.lift(terrain.data.get_height(Vector3(pos.x, 0.0, pos.z)), pos.x, pos.z)
+		var hq: float = RoadNet.lift(IceField.lift(terrain.data.get_height(Vector3(pos.x, 0.0, pos.z)), pos.x, pos.z),pos.x,pos.z,pos.y)
 		_hcache = hq
 		_mcache = snow.zombie_speed_mult(pos.x, pos.z)
 	var mult := _mcache * _cold_mult() * (0.35 if crawling else 1.0) * (0.9 if kind == Kind.HEAVY else 1.0)
@@ -514,6 +515,8 @@ func _move(want: float, delta: float) -> void:
 			var q2: Vector2 = cb.resolve(np.x, np.z, 0.4)
 			np.x = q2.x
 			np.z = q2.y
+		var road_q:=RoadNet.resolve_actor(np,pos,.4)
+		np.x=road_q.x;np.z=road_q.y
 		pos = np
 	var h: float = _hcache
 	for cb2 in cabins:

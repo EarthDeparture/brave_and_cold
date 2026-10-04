@@ -16,12 +16,12 @@ func run()->void:
 	t.data_directory="res://data/terrain/valley_b";root.add_child(t)
 	var camera:=Camera3D.new();root.add_child(camera);camera.make_current();t.set_camera(camera)
 	await process_frame;await process_frame
-	var before:=RoadNet.new();before.detail_enabled=false;root.add_child(before)
+	var before:=RoadNet.new();before.detail_enabled=false;before.grading_enabled=false;root.add_child(before)
 	before.plan();seed(20261003);before.build_mesh(t);before.build_props(t);var rng_before:=randi()
 	var after:=RoadNet.new();root.add_child(after)
 	after.plan();seed(20261003);after.build_mesh(t);after.build_props(t);var rng_after:=randi()
 	check(before.points==after.points and before.bridges==after.bridges and before._deck==after._deck,"route, bridges and deck elevations preserved")
-	check(vertices(before)==vertices(after),"all rendered road triangle positions preserved")
+	check(vertices(before)!=vertices(after),"dedicated grading changes road surface while geographic route stays intact")
 	check(rng_before==rng_after,"global RNG consumption preserved for later gameplay placement")
 	check(before.sign_records.size()==after.sign_records.size(),"sign count and roadside anchor slots preserved")
 	var anchors:=true;var facing:=true;var no_stop:=true

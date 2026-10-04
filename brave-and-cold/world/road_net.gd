@@ -12,7 +12,7 @@ const WAYPOINTS: Array[Vector2] = [Vector2(-760, 420), Vector2(-420, 330), Vecto
 
 # cross-section: lateral offset, vertex colour, lift above terrain
 const XS: Array = [
-	[-4.6, Color(0.74, 0.79, 0.90), 0.02],
+	[-6.5, Color(0.74, 0.79, 0.90), 0.02],
 	[-3.3, Color(0.80, 0.84, 0.93), 0.16],
 	[-2.5, Color(0.50, 0.53, 0.60), 0.07],
 	[-1.25, Color(0.15, 0.16, 0.20), 0.05],
@@ -20,8 +20,12 @@ const XS: Array = [
 	[1.25, Color(0.15, 0.16, 0.20), 0.05],
 	[2.5, Color(0.50, 0.53, 0.60), 0.07],
 	[3.3, Color(0.80, 0.84, 0.93), 0.16],
-	[4.6, Color(0.74, 0.79, 0.90), 0.02],
+	[6.5, Color(0.74, 0.79, 0.90), 0.02],
 ]
+
+static var current: RoadNet
+
+func _init() -> void: current=self
 
 var map_dir := "res://data/maps/valley_b"
 var half := 1024
@@ -29,6 +33,9 @@ var points: Array[Vector2] = []     # resampled centreline (world x, z)
 var _hash: Dictionary = {}          # Vector2i(16 m cell) -> PackedVector2Array
 var length_m := 0.0
 var detail_enabled := true
+var grading_enabled := true
+var walk_surface := WalkSurface.new()
+var profile: Array[float] = []
 var sign_records: Array[Dictionary] = []
 var _road_material: ShaderMaterial
 var _sign_scenes: Dictionary = {}
@@ -210,6 +217,7 @@ func build_mesh(terrain: Terrain3D) -> void:
 		var top := maxf(ha, hb) + 0.4
 		for k in range(br[0], br[1] + 1):
 			_deck[k] = lerpf(ha + 0.2, hb + 0.2, float(k - br[0]) / maxf(float(br[1] - br[0]), 1.0)) if false else top
+	_grade_profile(terrain, distances)
 	for i in range(points.size()):
 		var a := points[maxi(i - 1, 0)]
 		var b := points[mini(i + 1, points.size() - 1)]
@@ -217,14 +225,23 @@ func build_mesh(terrain: Terrain3D) -> void:
 		var nrm := Vector2(-t.y, t.x)
 		var row: Array = []
 		for xs in XS:
-			var q: Vector2 = points[i] + nrm * float(xs[0])
+			var offset: float = clampf(float(xs[0]), -3.3, 3.3) if _deck.has(i) else (float(xs[0]) if grading_enabled else clampf(float(xs[0]),-4.6,4.6))
+			var q: Vector2 = points[i] + nrm * offset
 			var h: float = terrain.data.get_height(Vector3(q.x, 0.0, q.y))
+			if grading_enabled:h=IceField.lift(h,q.x,q.y)
 			if is_nan(h):
 				h = 0.0
 			if _deck.has(i):
 				h = float(_deck[i])
-			row.append(Vector3(q.x, h + float(xs[2]), q.y))
+			var lift:float=xs[2]
+			if grading_enabled:
+				var edge:=smoothstep(3.3,6.5,absf(offset))
+				var ends:=smoothstep(0.0,12.0,minf(distances[i],distances[-1]-distances[i]))
+				h=lerpf(h,maxf(h,profile[i]-.02*absf(offset)),(1.0-edge)*ends)
+				lift*=ends
+			row.append(Vector3(q.x, h + lift, q.y))
 		rows.append(row)
+	walk_surface.build(rows)
 	for i in range(rows.size() - 1):
 		for j in range(cols - 1):
 			var v0: Vector3 = rows[i][j]
@@ -570,3 +587,61 @@ func _add_detail_sign(kind: String, pos: Vector3, yaw: float) -> void:
 		mesh.visibility_range_end = 220.0
 		mesh.visibility_range_end_margin = 20.0
 		mesh.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+
+
+func _grade_profile(terrain:Terrain3D, distances:Array[float]) -> void:
+	profile.clear()
+	for i in points.size():
+		var a:=points[maxi(0,i-1)];var b:=points[mini(points.size()-1,i+1)]
+		var tangent:Vector2=(b-a).normalized();var side:=Vector2(-tangent.y,tangent.x)
+		var high:float=IceField.lift(terrain.data.get_height(Vector3(points[i].x,0,points[i].y)),points[i].x,points[i].y)
+		for lateral in [-3.3,-2.5,-1.25,0.0,1.25,2.5,3.3]:
+			var q:Vector2=points[i]+side*lateral
+			var h:float=IceField.lift(terrain.data.get_height(Vector3(q.x,0,q.y)),q.x,q.y)
+			if not is_nan(h):high=maxf(high,h+.02*absf(lateral))
+		profile.append(float(_deck[i]) if _deck.has(i) else high)
+	var raw:=profile.duplicate()
+	# Raise troughs rather than cut the unchanged terrain. A bounded 10 m
+	# envelope removes lidar corrugation and exaggerated lateral road camber.
+	for i in profile.size():
+		if _deck.has(i):continue
+		var sum:=0.0;var weights:=0.0
+		for j in range(maxi(0,i-4),mini(profile.size(),i+5)):
+			var w:=exp(-pow((distances[i]-distances[j])/5.0,2.0)*.5)
+			sum+=raw[j]*w;weights+=w
+		profile[i]=maxf(raw[i],sum/weights)
+	# Fill approaches gradually; bridge height itself remains fixed.
+	for i in range(1,profile.size()):
+		if not _deck.has(i):profile[i]=maxf(profile[i],profile[i-1]-.55*(distances[i]-distances[i-1]))
+	for i in range(profile.size()-2,-1,-1):
+		if not _deck.has(i):profile[i]=maxf(profile[i],profile[i+1]-.55*(distances[i+1]-distances[i]))
+
+func floor_at_world(foot:Vector3,_terrain_height:float=NAN) -> float:
+	return walk_surface.height_at(foot.x,foot.z,foot.y)
+
+func resolve_at(candidate:Vector3,previous:Vector3,radius:float) -> Vector2:
+	var old_height:=walk_surface.height_at(previous.x,previous.z,previous.y)
+	if is_nan(old_height) or absf(previous.y-old_height)>.65:return Vector2(candidate.x,candidate.z)
+	var closest:=Vector2.ZERO;var normal:=Vector2.ZERO;var best:=INF
+	for br in bridges:
+		for i in range(br[0],br[1]):
+			var a:Vector2=points[i];var b:Vector2=points[i+1];var d:=b-a
+			var u:float=clampf((Vector2(candidate.x,candidate.z)-a).dot(d)/d.length_squared(),0,1)
+			var middle:Vector2=a+d*u
+			var distance:float=middle.distance_squared_to(Vector2(candidate.x,candidate.z))
+			if distance<best:
+				best=distance;closest=middle;normal=Vector2(-d.y,d.x).normalized()
+	if best<4.2*4.2:
+		var lateral:float=(Vector2(candidate.x,candidate.z)-closest).dot(normal)
+		if absf(lateral)>3.2-radius:return closest+normal*signf(lateral)*(3.2-radius)
+	return Vector2(candidate.x,candidate.z)
+
+
+static func lift(height:float,x:float,z:float,foot_y:float=NAN) -> float:
+	if not is_instance_valid(current):return height
+	var top:=current.walk_surface.height_at(x,z,foot_y)
+	return top if not is_nan(top) and (is_nan(height) or top>height) else height
+
+
+static func resolve_actor(candidate:Vector3,previous:Vector3,radius:float) -> Vector2:
+	return current.resolve_at(candidate,previous,radius) if is_instance_valid(current) else Vector2(candidate.x,candidate.z)
