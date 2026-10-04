@@ -1,6 +1,6 @@
 # Grip transitions and route props — 4 October 2026
 
-Implemented on `codex/grip-transition-route-wear`, starting at `c1dcd17`. The shared play-test checkout receives these commits only if its previous HEAD and clean state remain unchanged. No push. Checkpoint: `checkpoint/pre-grip-transition-route-2026-10-04`.
+Implemented on `codex/grip-transition-route-wear`, starting at `c1dcd17`. Integrated into the shared play-test checkout after confirming its previous HEAD and clean state were unchanged. Its Godot import, hand suite, route suite and asset receipts pass. No push. Checkpoint: `checkpoint/pre-grip-transition-route-2026-10-04`.
 
 ## Rifle hand motion
 
@@ -30,5 +30,6 @@ To reproduce, run Godot with `--headless --path brave-and-cold --script res://te
 
 - `9806e59`: hand clearance and release, plus the reproducible diagnostic/capture fixture.
 - `576f191`: original packaging, hardware geometry, vertex patina, source receipts and material regressions.
+- `06a8ebf`: portable source-receipt hashing for Git line-ending conversion.
 
-Revert the relevant commit to remove a disliked upgrade while preserving subsequent work. Revert route then hands for the complete pass. The checkpoint records the starting state; do not reset the shared checkout over concurrent Claude changes. Review the bolt transition in both glove states and inspect store stock before/after searching during the next play-test.
+For route rollback, revert `06a8ebf` and then `576f191`. For hand rollback, revert `9806e59`. For the complete pass, use that order, preserving subsequent work. Documentation commits can remain as historical review records. The checkpoint records the starting state; do not reset the shared checkout over concurrent Claude changes. Review the bolt transition in both glove states and inspect store stock before/after searching during the next play-test.

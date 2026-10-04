@@ -153,6 +153,22 @@
   "performance_scope": "Geometry and file budgets verified; no new frame-time benchmark.",
   "commits": {
     "hands": "9806e59",
-    "route_assets": "576f191"
+    "route_assets": "576f191",
+    "receipt_portability": "06a8ebf"
+  },
+  "integrated_checkout": {
+    "implementation_head": "06a8ebf",
+    "path": "C:/Users/parst/Development/game/brave_and_cold",
+    "asset_receipts_pass": true,
+    "checks": {
+      "main-viewmodel.log": {
+        "success_marker": "HAND_RIG_TEST failures=0",
+        "log_sha256": "300a0c00de29fe9646dbf74b04322e42bc7bbd246c1fe135bd3dd00b0d04503a"
+      },
+      "main-route.log": {
+        "success_marker": "ROUTE_IDENTITY_TEST failures=0",
+        "log_sha256": "ad477defaeaf01de4e6c47a40e0a457c0347eb99f44cd3cc94bf6f76c189f6bd"
+      }
+    }
   }
 }
