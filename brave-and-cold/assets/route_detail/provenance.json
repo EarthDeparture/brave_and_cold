@@ -1,0 +1,15 @@
+{
+  "origin": "Project-authored original Blender geometry and painted graphics",
+  "units": "metres",
+  "triangles": 1806,
+  "draw_surfaces": 4,
+  "dimensions_m": [
+    0.48,
+    0.7,
+    0.19
+  ],
+  "generator": "tools/blender/gen_field_panel.py",
+  "sha256": "be1ab603f9eccaec2bf2cf2da483dfabe27291fd2da4e8f386e2a7d6f9295094",
+  "texture_sha256": "ba3e6ed5e890d95e5a669e704214fb758644b6fd45ec8ee4341727cdcda6aa08",
+  "license": "Original project-owned asset; system font is rasterized, not redistributed"
+}

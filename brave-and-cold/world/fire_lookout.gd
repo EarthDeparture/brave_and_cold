@@ -59,6 +59,12 @@ func build(site_data: Dictionary, with_model: bool = true) -> void:
 		lamp.omni_range = 4.0
 		lamp.shadow_enabled = false
 		add_child(lamp)
+		if detail_enabled:
+			var panel:Node3D=(load("res://assets/route_detail/field_power_panel.glb") as PackedScene).instantiate()
+			panel.name="TechnicianPowerPanel"
+			panel.position=Vector3(0,DECK_Y+.12,-2.08)
+			add_child(panel)
+			for mesh:MeshInstance3D in panel.find_children("*","MeshInstance3D",true,false):mesh.visibility_range_end=140.0
 
 
 ## Match the project's vertex-coloured building pipeline without modifying
