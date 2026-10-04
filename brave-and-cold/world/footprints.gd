@@ -5,6 +5,7 @@ extends Node3D
 const POOL := 300
 const LIFE_S := 240.0
 
+var detail_enabled := false
 var _decals: Array[Decal] = []
 var _age: PackedFloat32Array = PackedFloat32Array()
 var _next := 0
@@ -13,10 +14,12 @@ var _acc := 0.0
 
 
 func _ready() -> void:
-	var tex := _make_boot_texture()
+	var tex := _make_boot_texture(detail_enabled)
+	var compressed := _make_boot_normal() if detail_enabled else null
 	for i in range(POOL):
 		var d := Decal.new()
 		d.texture_albedo = tex
+		d.texture_normal = compressed
 		d.size = Vector3(0.20, 1.5, 0.45)
 		d.upper_fade = 0.3
 		d.lower_fade = 0.3
@@ -67,9 +70,9 @@ func _process(delta: float) -> void:
 
 
 ## 32x64 boot print: forefoot bulge, narrow arch, heel; subtle tread; cool tint.
-static func _make_boot_texture() -> ImageTexture:
-	var w := 32
-	var h := 64
+static func _make_boot_texture(detail := false) -> ImageTexture:
+	var w := 128 if detail else 32
+	var h := 256 if detail else 64
 	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
 	for y in range(h):
 		for x in range(w):
@@ -82,6 +85,18 @@ static func _make_boot_texture() -> ImageTexture:
 			var a := 0.0
 			if ww > 0.0:
 				a = 1.0 - smoothstep(ww * 0.8, ww, u)
-			var tread := 0.93 + 0.07 * sin(y * 1.6)
-			img.set_pixel(x, y, Color(0.50 * tread, 0.56 * tread, 0.74 * tread, a))
+			var tread := 0.93 + 0.07 * sin(y * 1.6 * 64.0 / h)
+			img.set_pixel(x, y, Color(0.59 * tread, 0.63 * tread, 0.72 * tread, a) if detail else Color(0.50 * tread, 0.56 * tread, 0.74 * tread, a))
 	return ImageTexture.create_from_image(img)
+
+## Compression lip and shallow sole relief, independent of traversal/trample rules.
+static func _make_boot_normal() -> ImageTexture:
+	var texture := _make_boot_texture(true).get_image()
+	var image := Image.create(128,256,false,Image.FORMAT_RGBA8)
+	for y in 256:
+		for x in 128:
+			var dx := texture.get_pixel(mini(x+1,127),y).a-texture.get_pixel(maxi(x-1,0),y).a
+			var dy := texture.get_pixel(x,mini(y+1,255)).a-texture.get_pixel(x,maxi(y-1,0)).a
+			var n := Vector3(dx*.85,dy*.85,1).normalized()
+			image.set_pixel(x,y,Color(n.x*.5+.5,n.y*.5+.5,n.z*.5+.5,texture.get_pixel(x,y).a))
+	return ImageTexture.create_from_image(image)

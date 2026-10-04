@@ -27,7 +27,9 @@ func run() -> void:
 		push_error("World failed to become ready.")
 		quit(1)
 		return
+	DisplayServer.window_set_size(Vector2i(1600,900))
 	await process_frame
+	if root.size != Vector2i(1600,900): push_error("Invalid capture resolution"); quit(1); return
 	_freeze(world)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	world.hud.hide()
@@ -57,6 +59,10 @@ func run() -> void:
 		{"id":"forest","eye":Vector3(-120,forest_y+1.7,133), "target":Vector3(-160,forest_y+4,50), "inside":0.0},
 		{"id":"interior","eye":tower.to_global(Vector3(1.7,FireLookout.DECK_Y+1.7,0.6)), "target":tower.to_global(Vector3(-1.3,FireLookout.DECK_Y+1.6,-2.7)), "inside":1.0}
 	]
+	if options.has("detail_reviews") and world.forest != null:
+		var tree: Dictionary = world.forest.nearest_tree(Vector3(-120,0,133),Vector3.FORWARD,50,false)
+		var floor_height: float = world.player._terrain_h(tree.x,tree.z)
+		locations.append({"id":"bough","eye":Vector3(tree.x+7.0,world.player._terrain_h(tree.x+7.0,tree.z+9.0)+1.7,tree.z+9.0),"target":Vector3(tree.x,floor_height+tree.h*.35,tree.z),"inside":0.0})
 	var states := [
 		{"id":"clear","hour":12.0,"state":Weather.S.CLEAR},
 		{"id":"overcast","hour":12.0,"state":Weather.S.CLOUDY},
@@ -80,6 +86,7 @@ func run() -> void:
 			elif world.sky_rig.clouds != null:
 				world.sky_rig.clouds._t = 120.0
 				world.sky_rig.clouds._process(0.0)
+			if world.forest != null: world.forest.update_detail_appearance()
 			world.sky_rig.apply_hour(state.hour)
 			if world.sky_rig is AtmosphereRig:
 				print('SKY_INPUT ',state.id,' state=',world.weather.state,' overcast=',world.weather.overcast,' coverage=',world.weather.coverage,' uniform=',world.sky_rig.material.get_shader_parameter('overcast'),' sun=',world.sun.light_energy)
@@ -104,6 +111,10 @@ func run() -> void:
 			if world.snowfall.visible:
 				world.snowfall.restart(true)
 				world.snowfall.request_particles_process(4.0)
+			world.snowfall.capture_detail_layers()
+			if world.weather_presentation != null:
+				world.weather_presentation.reset_visuals()
+				for j in 240: world.weather_presentation._process(1.0/60.0)
 			for i in 45:
 				await process_frame
 			var samples: Array[float] = []
@@ -123,9 +134,9 @@ func run() -> void:
 			var record := {"id":id,"hour":state.hour,"weather":state.id,"eye":_vector(location.eye),"target":_vector(location.target),"inside":indoor,"fov":camera.fov,"median_ms":samples[50],"p99_ms":samples[98],"file":path,"sha256":FileAccess.get_sha256(path),"overcast":world.weather.overcast,"cloud_coverage":world.weather.coverage,"fog_density":world.env.fog_density,"sun_energy":world.sun.light_energy,"particle_tint":str(world.snowfall._winter_material.get_shader_parameter("flake_tint")) if world.snowfall._winter_material!=null else "legacy"}
 			records.append(record)
 			print("ATMOSPHERE_CAPTURE ", JSON.stringify(record))
-	var manifest := {"schema":1,"capture_script":"tests/visual/capture_atmosphere.gd","atmosphere":options.get("atmosphere","baseline"),"resolution":[root.size.x,root.size.y],"gpu":RenderingServer.get_video_adapter_name(),"driver":RenderingServer.get_current_rendering_driver_name(),"engine":Engine.get_version_info().string,"population":"disabled for isolated renderer comparison","wind_phase_s":120,"particle_seed":42,"cloud_offset":[0.17,0.08],"captures":records}
+	var manifest := {"schema":1,"capture_script":"tests/visual/capture_atmosphere.gd","atmosphere":options.get("atmosphere","winter"),"detail":options.get("detail","winter"),"resolution":[root.size.x,root.size.y],"gpu":RenderingServer.get_video_adapter_name(),"driver":RenderingServer.get_current_rendering_driver_name(),"engine":Engine.get_version_info().string,"population":"disabled for isolated renderer comparison","wind_phase_s":120,"particle_seed":42,"cloud_offset":[0.17,0.08],"captures":records}
 	var sources := {}
-	for path in ["res://world/game_world.gd","res://world/sky_rig.gd","res://world/atmosphere_rig.gd","res://systems/weather.gd","res://world/snow_fall.gd","res://world/shaders/winter_sky.gdshader","res://world/shaders/winter_snow.gdshader","res://world/shaders/frozen_water.gdshader","res://data/terrain/terrain_winter_assets.tres","res://assets/textures/atmosphere/cloud_fields.png"]:
+	for path in ["res://world/game_world.gd","res://world/sky_rig.gd","res://world/atmosphere_rig.gd","res://systems/weather.gd","res://world/snow_fall.gd","res://world/shaders/winter_sky.gdshader","res://world/shaders/winter_snow.gdshader","res://world/shaders/frozen_water.gdshader","res://data/terrain/terrain_winter_assets.tres","res://assets/textures/atmosphere/cloud_fields.png","res://world/forest_scatter.gd","res://world/weather_presentation.gd","res://world/shaders/boreal_detail.gdshader","res://world/shaders/winter_timber.gdshader","res://world/shaders/winter_vapour.gdshader","res://data/terrain/terrain_environment_assets.tres","res://assets/environment_detail/textures/provenance.json","res://assets/environment_detail/trees/provenance.json","res://assets/environment_detail/viewmodel/provenance.json"]:
 		sources[path]=FileAccess.get_sha256(path)
 	manifest["source_hashes"]=sources
 	manifest["render_settings"]={"msaa":root.msaa_3d,"ssao":world.env.ssao_enabled,"tonemap":world.env.tonemap_mode,"sun_bias":world.sun.shadow_bias,"sun_normal_bias":world.sun.shadow_normal_bias,"sun_shadow_distance":world.sun.directional_shadow_max_distance}

@@ -11,6 +11,8 @@ var near_end := 140.0
 const VARIANTS := ["spruce_a", "spruce_b", "spruce_c"]
 const TREE_UNIT_M := 1.0  # source models are 1.0 high; scale = real canopy height
 
+var detail_enabled := false
+var weather: Weather
 var terrain: Terrain3D
 var map_dir := "res://data/maps/valley_b"
 var tree_count := 0
@@ -20,7 +22,7 @@ const TRUNK_CELL := 8.0
 var _trunks: Dictionary = {}  # Vector2i cell -> Array of Vector3(x, z, radius)
 var _mms: Dictionary = {}  # Vector3i(chunk x, chunk z, variant) -> [MultiMesh lod0, lod1]
 var _meshes: Array[Mesh] = []
-var _mat: StandardMaterial3D
+var _mat: Material
 var _half := 0
 var felled: Dictionary = {}  # "ix,iz" -> true (trees cut down by the player)
 var chop_hp: Dictionary = {}  # tree key -> remaining hits
@@ -42,7 +44,7 @@ func tree_mesh(vi: int) -> Mesh:
 	return _meshes[vi]
 
 
-func tree_mat() -> StandardMaterial3D:
+func tree_mat() -> Material:
 	return _mat
 
 
@@ -205,12 +207,21 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 	_half = half
 	var far_meshes: Array[Mesh] = []
 	for v in VARIANTS:
-		meshes.append(_load_mesh("res://assets/models/trees/%s.glb" % v))
-		far_meshes.append(_load_mesh("res://assets/models/trees/%s_far.glb" % v))
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.roughness = 1.0
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		meshes.append(_load_mesh(("res://assets/environment_detail/trees/%s.glb" if detail_enabled else "res://assets/models/trees/%s.glb") % v))
+		far_meshes.append(_load_mesh(("res://assets/environment_detail/trees/%s_far.glb" if detail_enabled else "res://assets/models/trees/%s_far.glb") % v))
+	var mat: Material
+	if detail_enabled:
+		near_end = 140.0
+		var surface := ShaderMaterial.new()
+		surface.shader = preload("res://world/shaders/boreal_detail.gdshader")
+		surface.set_shader_parameter("bough_albedo", preload("res://assets/environment_detail/textures/bough_albedo.png"))
+		mat = surface
+	else:
+		var surface := StandardMaterial3D.new()
+		surface.vertex_color_use_as_albedo = true
+		surface.roughness = 1.0
+		surface.cull_mode = BaseMaterial3D.CULL_DISABLED
+		mat = surface
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
@@ -307,3 +318,13 @@ func _near_water(w: Image, px: int, py: int) -> bool:
 		if w.get_pixel(x, y).r > 0.5:
 			return true
 	return false
+
+func update_detail_appearance() -> void:
+	if detail_enabled and _mat is ShaderMaterial and weather != null:
+		var surface := _mat as ShaderMaterial
+		surface.set_shader_parameter("wind_direction",weather.wind_dir)
+		surface.set_shader_parameter("wind_speed",weather.wind)
+		surface.set_shader_parameter("wind_phase",weather._t)
+
+func _process(_delta: float) -> void:
+	update_detail_appearance()

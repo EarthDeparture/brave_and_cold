@@ -21,7 +21,9 @@ func run() -> void:
 		await process_frame
 		if world.hud!=null: break
 	if world.hud==null: quit(1); return
+	DisplayServer.window_set_size(Vector2i(1600,900))
 	await process_frame
+	if root.size != Vector2i(1600,900): push_error("Invalid benchmark resolution"); quit(1); return
 	if not options.has("live"):
 		_freeze(world)
 	else:
@@ -86,6 +88,8 @@ func run() -> void:
 					world.env.ambient_light_energy*=lerpf(1.0,world.INDOOR_AMBIENT_MULT,world._indoor_k)
 					world.env.ambient_light_color=world.env.ambient_light_color.lerp(Color(0.62,0.5,0.42),0.3*world._indoor_k)
 				world.snowfall._process(1.0/60.0)
+				if world.forest != null: world.forest.update_detail_appearance()
+				if world.weather_presentation != null and not options.has("live"): world.weather_presentation._process(1.0/60.0)
 				await process_frame
 				await RenderingServer.frame_post_draw
 				if frame>=60:
@@ -100,7 +104,7 @@ func run() -> void:
 			print("ATMOSPHERE_MOTION ",JSON.stringify(row))
 			if repeat==0:
 				root.get_texture().get_image().save_png(output.path_join(scenario.id+".png"))
-	var manifest:={"schema":1,"atmosphere":options.get("atmosphere","winter"),"live_gameplay":options.has("live"),"performance_valid":not options.has("film"),"gpu":RenderingServer.get_video_adapter_name(),"resolution":[root.size.x,root.size.y],"repeats":repeats,"scenarios":records}
+	var manifest:={"schema":1,"atmosphere":options.get("atmosphere","winter"),"detail":options.get("detail","winter"),"live_gameplay":options.has("live"),"performance_valid":not options.has("film"),"gpu":RenderingServer.get_video_adapter_name(),"resolution":[root.size.x,root.size.y],"repeats":repeats,"scenarios":records}
 	var file:=FileAccess.open(output.path_join("manifest.json"),FileAccess.WRITE)
 	file.store_string(JSON.stringify(manifest,"\t")); file.close()
 	print("ATMOSPHERE_MOTION_COMPLETE")

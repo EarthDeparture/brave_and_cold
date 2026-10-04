@@ -9,6 +9,7 @@ var bare: MeshInstance3D
 var glove: MeshInstance3D
 var grips: Dictionary = {}
 var mirrored := false
+var detail_enabled := false
 
 func _ready() -> void:
 	var asset := ASSET.instantiate()
@@ -23,6 +24,10 @@ func _ready() -> void:
 		for i in mesh.mesh.get_surface_count():
 			var mat := mesh.mesh.surface_get_material(i).duplicate() as StandardMaterial3D
 			mat.cull_mode = BaseMaterial3D.CULL_BACK
+			if detail_enabled:
+				mat.normal_scale = 0.30 if mesh == glove else 0.22
+				mat.roughness = 0.86 if mesh == glove else 0.73
+				mat.metallic_specular = 0.22
 			mesh.set_surface_override_material(i, mat)
 	for sleeve_name in ["vm_sleeve_r", "vm_sleeve_l"]:
 		asset.find_child(sleeve_name, true, false).queue_free()

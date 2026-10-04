@@ -2,6 +2,8 @@ shader_type spatial;
 render_mode cull_disabled;
 
 uniform bool winter_surface = false;
+uniform bool detail_surface = false;
+uniform sampler2D ice_fields : filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D surface_noise : filter_linear_mipmap, repeat_enable;
 varying vec3 world_position;
 varying float face_up;
@@ -61,6 +63,26 @@ void vertex() {
 }
 
 void fragment() {
+	if (detail_surface) {
+        vec2 uv = world_position.xz / 60.0;
+        vec4 field = texture(ice_fields, uv);
+        float top = smoothstep(0.0, 0.6, face_up);
+        float frost = smoothstep(.25,.80,field.r) * (1.0 - field.b * .5);
+        vec3 clear_ice = mix(vec3(.045,.105,.135),vec3(.17,.28,.32),field.g);
+        clear_ice += field.a * vec3(.10,.14,.15);
+        clear_ice = mix(clear_ice,vec3(.28,.39,.43),frost*.48);
+        clear_ice = mix(clear_ice,vec3(.78,.84,.89),field.b);
+        ALBEDO = mix(vec3(.028,.078,.102),clear_ice,top);
+        ROUGHNESS = mix(.56,.43+field.g*.12+field.b*.32+frost*.09,top);
+        SPECULAR = .32;
+        METALLIC = 0.0;
+        vec2 texel = vec2(1.0)/vec2(textureSize(ice_fields,0));
+        float dx = texture(ice_fields,uv+vec2(texel.x,0)).g-texture(ice_fields,uv-vec2(texel.x,0)).g;
+        float dz = texture(ice_fields,uv+vec2(0,texel.y)).g-texture(ice_fields,uv-vec2(0,texel.y)).g;
+        vec3 world_normal = normalize(vec3(-dx*1.8,1.0,-dz*1.8));
+        if (top>.5) NORMAL = normalize((VIEW_MATRIX*vec4(world_normal,0.0)).xyz);
+        else if (!FRONT_FACING) NORMAL = -NORMAL;
+    } else {
 	vec2 p = world_position.xz;
 	vec2 wind = vec2(p.x + p.y * 0.35, p.y - p.x * 0.35);
 	float broad = noise2(p * 0.025) * 0.65 + noise2(p * 0.095 + 23.0) * 0.35;
@@ -89,4 +111,5 @@ void fragment() {
 	if (!FRONT_FACING) {
 		NORMAL = -NORMAL;
 	}
+    }
 }

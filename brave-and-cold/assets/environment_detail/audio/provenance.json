@@ -1,0 +1,34 @@
+{
+  "origin": "Original procedural material sounds",
+  "seed": 31871,
+  "files": [
+    {
+      "file": "timber_creak.wav",
+      "duration_s": 1.4499773242630385,
+      "peak": 0.68,
+      "rms": 0.09329715664313701,
+      "sha256": "def896eb93a5185922ef7bc9d2d49f5c8c3428aedff39a28d0178dc037fc602e"
+    },
+    {
+      "file": "window_rattle.wav",
+      "duration_s": 0.8,
+      "peak": 0.68,
+      "rms": 0.06716836193698325,
+      "sha256": "afb556ccfd8d2549fb10b7b59886447eac0d165c18ae786f357a0d2bc85d86be"
+    },
+    {
+      "file": "step_wood.wav",
+      "duration_s": 0.26,
+      "peak": 0.68,
+      "rms": 0.09172967859912876,
+      "sha256": "c29c5a7a85f973a702b66619a7108f06853e986d75839594f20365b7c8959a60"
+    },
+    {
+      "file": "step_ice.wav",
+      "duration_s": 0.3,
+      "peak": 0.68,
+      "rms": 0.06906954286253626,
+      "sha256": "281852f2c04b61f5f3d23e3afcd7974b897d236d23df7de9cabc8f489e945a44"
+    }
+  ]
+}

@@ -19,6 +19,7 @@ const FIST_ROLL := -12.0
 const AIM_POS := Vector3(0.0, -0.098, -0.16)   # rear sight 0.35 m ahead of the eye, sight line on the view axis
 const BOLT_ORIGIN := Vector3(0.0, 0.046, 0.06)
 
+var detail_enabled := false
 var player: Player
 var mode := "fists"  # fists | axe | rifle
 var glove_item := ""  # Existing inventory hands slot; bare when no mitts are worn.
@@ -51,13 +52,16 @@ var _was_dead := false
 func _ready() -> void:
 	_right = SurvivorHandRig.new()
 	_right.name = "RightHand"
+	_right.detail_enabled = detail_enabled
 	add_child(_right)
 	_left = SurvivorHandRig.new()
 	_left.name = "LeftHand"
+	_left.detail_enabled = detail_enabled
 	_left.mirrored = true
 	add_child(_left)
-	_sl_r = _pick(HANDS, "vm_sleeve_r")
-	_sl_l = _pick(HANDS, "vm_sleeve_l")
+	var sleeves := "res://assets/environment_detail/viewmodel/winter_sleeves.glb" if detail_enabled else HANDS
+	_sl_r = _pick(sleeves, "vm_sleeve_r")
+	_sl_l = _pick(sleeves, "vm_sleeve_l")
 	_axe = _pick(AXE, "vm_axe")
 	_rifle = _pick(RIFLE, "vm_rifle")
 	_bolt = _pick(RIFLE, "vm_bolt")
@@ -101,6 +105,19 @@ func _take_part(root: Node, node_name: String) -> MeshInstance3D:
 				m.albedo_texture = load("res://assets/models/viewmodel/parka_fabric.png")
 				m.uv1_triplanar = true
 				m.uv1_scale = Vector3.ONE * 5.0
+			if detail_enabled:
+				if m.resource_name in ["vm_beech", "vm_ash", "vm_walnut"]:
+					m.normal_enabled = true
+					m.normal_texture = preload("res://assets/environment_detail/textures/timber_nrm.png")
+					m.normal_scale = 0.35
+					m.roughness_texture = m.normal_texture
+					m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_ALPHA
+				elif m.resource_name in ["vm_blued", "vm_steel"]:
+					m.roughness = 0.48
+					m.metallic = 0.65
+				elif m.resource_name == "survivor_cloth":
+					m.roughness = 0.96
+					m.metallic_specular = 0.15
 	found.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(found)
 	return found

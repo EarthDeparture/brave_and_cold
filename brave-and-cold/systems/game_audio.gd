@@ -4,6 +4,13 @@ extends Node
 
 const AMBIENT_BUS := "Ambient"
 
+var detail_enabled := false
+var _detail_rng := RandomNumberGenerator.new()
+var _detail_timer := 24.0
+const WOOD_STEP := preload("res://assets/environment_detail/audio/step_wood.wav")
+const ICE_STEP := preload("res://assets/environment_detail/audio/step_ice.wav")
+const WOOD_CREAK := preload("res://assets/environment_detail/audio/timber_creak.wav")
+const WINDOW_RATTLE := preload("res://assets/environment_detail/audio/window_rattle.wav")
 var player: Player
 var world: Node
 var wind_speed := 3.0
@@ -30,6 +37,7 @@ func setup(p: Player, w: Node, wind: float) -> void:
 	world = w
 	wind_speed = wind
 	_rng.randomize()
+	_detail_rng.seed = 8173
 	if AudioServer.get_bus_index(AMBIENT_BUS) == -1:
 		AudioServer.add_bus()
 		var idx := AudioServer.bus_count - 1
@@ -63,7 +71,8 @@ func _process(delta: float) -> void:
 		return
 	_t += delta
 	var sheltered := player.is_sheltered()
-	var gust := 0.5 + 0.5 * sin(_t * 0.23) * sin(_t * 0.071 + 1.0)
+	var phase := weather._t if detail_enabled and weather != null else _t
+	var gust := 0.5 + 0.5 * sin(phase * 0.23) * sin(phase * 0.071 + 1.0)
 	var ws := wind_speed
 	if weather != null:
 		ws = weather.wind
@@ -82,6 +91,7 @@ func _process(delta: float) -> void:
 	_wind2.pitch_scale = 0.45 + 0.25 * wn
 	if _lp != null:
 		_lp.cutoff_hz = lerpf(_lp.cutoff_hz, cutoff, clampf(delta * 3.0, 0.0, 1.0))
+	if detail_enabled: _detail_ambience(delta, ws)
 	_creatures(delta)
 
 
@@ -90,6 +100,19 @@ func _on_step(tier: int, radius: float) -> void:
 	_step_n += 1
 	var p := AudioStreamPlayer.new()
 	p.stream = Sfx.get_stream("step%d%d" % [set_id, _step_n % 3])
+	if detail_enabled:
+		if player._on_spatial_surface():
+			p.stream = WOOD_STEP
+		else:
+			var on_floor := false
+			for cabin in player.cabins:
+				if cabin.contains_xz(player.position.x, player.position.z):
+					on_floor = true; break
+			if on_floor: p.stream = WOOD_STEP
+			elif player.ice != null:
+				var height: float = player.ice.ice_at(player.position.x,player.position.z)
+				if not is_nan(height) and absf(player.position.y-player.eye_h-height)<.7:
+					p.stream = ICE_STEP
 	p.volume_db = lerpf(-36.0, -17.0, clampf((radius - 3.0) / 15.0, 0.0, 1.0))
 	p.pitch_scale = _rng.randf_range(0.9, 1.1)
 	p.finished.connect(p.queue_free)
@@ -317,3 +340,25 @@ func _creatures(delta: float) -> void:
 		_wstate[did] = dst
 		if dst != Deer.State.DEAD and dd2 < STEP_R:
 			_footsteps(dr, dv, did, "deer", false)
+
+## Sparse building response follows the same weather wind as foliage and powder.
+## A separate RNG avoids altering creature voice selection.
+func _detail_ambience(delta: float, wind: float) -> void:
+	_detail_timer -= delta
+	if _detail_timer>0: return
+	_detail_timer = _detail_rng.randf_range(20.0,42.0)
+	var tower: FireLookout = world.fire_lookout
+	if tower == null or wind<5.0: return
+	var local := tower.to_local(player.global_position)
+	if absf(local.x)>8.0 or absf(local.z)>8.0 or absf(local.y-FireLookout.DECK_Y)>5.0: return
+	var rattle := _detail_rng.randf()<.35
+	var sound := AudioStreamPlayer3D.new()
+	sound.stream = WINDOW_RATTLE if rattle else WOOD_CREAK
+	sound.volume_db = lerpf(-31.0,-23.0,clampf(wind/20.0,0,1))
+	sound.unit_size = 3.0
+	sound.max_distance = 14.0
+	sound.pitch_scale = _detail_rng.randf_range(.88,1.10)
+	sound.finished.connect(sound.queue_free)
+	world.add_child(sound)
+	sound.global_position = tower.to_global(Vector3(2.55 if rattle else -2.7,FireLookout.DECK_Y+1.7,-1.0))
+	sound.play()

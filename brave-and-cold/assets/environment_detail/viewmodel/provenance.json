@@ -1,0 +1,19 @@
+{
+  "origin": "Original Blender cloth geometry",
+  "generator": "tools/blender/gen_winter_sleeves.py",
+  "length_m": 0.52,
+  "wrists": "Unchanged origin and runtime transforms",
+  "sha256": "77e1b0bb90441627e357b93545590e503a2ad595c7a649879d9a0067fc28d858",
+  "models": [
+    {
+      "name": "vm_sleeve_r",
+      "vertices": 880,
+      "triangles": 1720
+    },
+    {
+      "name": "vm_sleeve_l",
+      "vertices": 880,
+      "triangles": 1720
+    }
+  ]
+}

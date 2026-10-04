@@ -13,6 +13,7 @@ var sky_rig: SkyRig
 var clock := GameClock.new()
 var weather := Weather.new()
 var snowfall: SnowFall
+var weather_presentation: Node3D
 var road: RoadNet
 var huts: Array = []
 var trailnet: TrailNet
@@ -37,17 +38,19 @@ var _frames := 0
 var wind := 3.0
 var _walk_started := false
 var _ft: Array[float] = []
+var environment_detail_enabled := false
 
 
 func _ready() -> void:
 	Settings.load_all()
 	var opts := _args()
+	environment_detail_enabled = opts.get("detail","winter") != "baseline" and opts.get("atmosphere","winter") != "baseline"
 	_build_environment()
 	terrain = Terrain3D.new()
 	terrain.name = "Terrain3D"
 	terrain.assets = load("res://data/terrain/terrain_assets.tres")
 	if opts.get('atmosphere', 'winter') != 'baseline':
-		terrain.assets = load('res://data/terrain/terrain_winter_assets.tres')
+		terrain.assets = load('res://data/terrain/terrain_environment_assets.tres' if environment_detail_enabled else 'res://data/terrain/terrain_winter_assets.tres')
 	terrain.data_directory = MAP
 	add_child(terrain)
 	terrain.material.auto_shader = false
@@ -80,6 +83,8 @@ func _ready() -> void:
 			trailnet.add_trail(_road_edge_toward(hp), hp + Vector2(sin(hyaw), cos(hyaw)) * 1.8, 11)
 	if opts.get("trees", "1") == "1":
 		forest = ForestScatter.new()
+		forest.detail_enabled = environment_detail_enabled
+		forest.weather = weather
 		add_child(forest)
 		forest.exclude = func(x: float, z: float) -> bool:
 			for hs in hut_sites:
@@ -108,6 +113,9 @@ func _ready() -> void:
 	if opts.get('atmosphere', 'winter') != 'baseline':
 		var ice_material := w.surface.material_override as ShaderMaterial
 		ice_material.set_shader_parameter('winter_surface', true)
+		ice_material.set_shader_parameter('detail_surface', environment_detail_enabled)
+		if environment_detail_enabled:
+			ice_material.set_shader_parameter('ice_fields', preload('res://assets/environment_detail/textures/ice_fields.png'))
 		ice_material.set_shader_parameter('surface_noise', preload('res://assets/textures/atmosphere/cloud_fields.png'))
 	snow.build("res://data/maps/valley_b")
 	clock.hour = float(opts.get("hour", 16.5))
@@ -135,16 +143,23 @@ func _ready() -> void:
 	snowfall.buildings = Callable(self, "_building_list")
 	if sky_rig is AtmosphereRig:
 		snowfall.enable_winter_presentation()
+		if environment_detail_enabled:
+			snowfall.enable_detail_layers()
+			weather_presentation = preload("res://world/weather_presentation.gd").new()
+			weather_presentation.world = self
+			add_child(weather_presentation)
 	player.forest = forest
 	player.ice = ice
 	if sky_rig.clouds != null:
 		sky_rig.clouds.follow = player
 	sky_rig.apply_hour(clock.hour)
 	footprints = Footprints.new()
+	footprints.detail_enabled = environment_detail_enabled
 	add_child(footprints)
 	player.footprints = footprints
 	viewmodel = Viewmodel.new()
 	viewmodel.player = player
+	viewmodel.detail_enabled = environment_detail_enabled
 	player.cam.add_child(viewmodel)
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -303,6 +318,7 @@ func _ready() -> void:
 	opts_dropdemo = opts.has('dropdemo')
 	audio = GameAudio.new()
 	add_child(audio)
+	audio.detail_enabled = environment_detail_enabled
 	audio.setup(player, self, wind)
 	audio.weather = weather
 	pause_menu = PauseMenu.new()
@@ -358,6 +374,7 @@ func _build_fire_lookout(opts: Dictionary) -> void:
 		push_error('Fire lookout site data is invalid')
 		return
 	fire_lookout = FireLookout.new()
+	fire_lookout.detail_enabled = environment_detail_enabled
 	add_child(fire_lookout)
 	fire_lookout.build(parsed)
 	var stair_base := fire_lookout.to_global(Vector3(4.45, 0.0, 1.8))

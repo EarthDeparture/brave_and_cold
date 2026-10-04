@@ -18,6 +18,8 @@ var _refresh := 0
 const MAX_AMOUNT := 12000
 var _pm: ParticleProcessMaterial
 var _placed := false
+var _far: GPUParticles3D
+var _far_pm: ParticleProcessMaterial
 
 
 func _ready() -> void:
@@ -120,6 +122,12 @@ func _process(delta: float) -> void:
 	_pm.gravity = Vector3(wd.x * 0.35, -0.5 - 0.6 * p, wd.y * 0.35)
 	_pm.initial_velocity_max = 3.6 + weather.wind * 0.12
 	global_position = follow.global_position + Vector3(0.0, 6.0, 0.0) - Vector3(wd.x, 0.0, wd.y) * 0.6
+	if _far != null:
+		_far.emitting = emitting
+		_far.amount_ratio = amount_ratio
+		_far.speed_scale = speed_scale
+		_far_pm.gravity = _pm.gravity
+		_far_pm.initial_velocity_max = _pm.initial_velocity_max
 	if not _placed:
 		_placed = true
 		restart()
@@ -182,3 +190,32 @@ func _update_shelter_masks() -> void:
 	_winter_material.set_shader_parameter("shelter_count",_shelter_frames.size())
 	_winter_material.set_shader_parameter("shelter_frames",_shelter_frames)
 	_winter_material.set_shader_parameter("shelter_bounds",_shelter_bounds)
+
+## A wider, finer layer supplies depth without enlarging nearby flakes.
+func enable_detail_layers() -> void:
+	amount = 6500
+	_far = GPUParticles3D.new()
+	_far.name = "DistantSnow"
+	_far.amount = 3800
+	_far.lifetime = 5.0
+	_far.preprocess = 5.0
+	_far.local_coords = false
+	_far.use_fixed_seed = true
+	_far.seed = 43
+	_far.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_far.visibility_aabb = AABB(Vector3(-42,-20,-42),Vector3(84,40,84))
+	_far_pm = _pm.duplicate() as ParticleProcessMaterial
+	_far_pm.emission_box_extents = Vector3(24,8,24)
+	_far_pm.scale_min = .40
+	_far_pm.scale_max = .95
+	_far.process_material = _far_pm
+	var quad := QuadMesh.new()
+	quad.size = Vector2(.028,.028)
+	quad.material = _winter_material
+	_far.draw_pass_1 = quad
+	add_child(_far)
+
+func capture_detail_layers() -> void:
+	if _far != null:
+		_far.restart(true)
+		_far.request_particles_process(5.0)

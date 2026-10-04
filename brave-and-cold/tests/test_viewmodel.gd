@@ -40,7 +40,7 @@ func skin_vertices(hand: SurvivorHandRig) -> PackedVector3Array:
 func run() -> void:
 	p = Player.new(); root.add_child(p); p.set_process(false)
 	p.cam = Camera3D.new(); p.add_child(p.cam)
-	vm = Viewmodel.new(); vm.player = p; p.cam.add_child(vm); vm.set_process(false)
+	vm = Viewmodel.new(); vm.detail_enabled = OS.get_cmdline_user_args().has("detail=winter"); vm.player = p; p.cam.add_child(vm); vm.set_process(false)
 	check("Both hands have a 16-bone articulated skin, with mirrored left anatomy",vm._right.skeleton.get_bone_count()==16 and vm._left.skeleton.get_bone_count()==16 and vm._left.mirrored)
 	var material_ok := true
 	for h in [vm._right,vm._left]:

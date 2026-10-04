@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "origin": "Original project-authored Blender geometry",
+  "generator": "tools/blender/gen_boreal_detail.py",
+  "art_spec": "Boreal spruce, rooted tapered trunks, separated drooping boughs, crossed botanical needle boughs and rounded resting snow; restrained painterly winter colours",
+  "negative_spec": "No copied assets, solid triangular skirts, oversized pillows, changed scatter locations or physical colliders",
+  "units": "metres; 1 m source height scaled by existing canopy data",
+  "models": [
+    {
+      "name": "spruce_a",
+      "seed": 211,
+      "triangles": 2704,
+      "vertices": 2283,
+      "sha256": "0be12658a0264cece02eca8b817ce5edf78dadec22e23088ced7adc0c3459ab8"
+    },
+    {
+      "name": "spruce_a_far",
+      "seed": 211,
+      "triangles": 306,
+      "vertices": 500,
+      "sha256": "876464802173407272c7cbcb1787c513933b173ab663ee652911f6c83683e5d7"
+    },
+    {
+      "name": "spruce_b",
+      "seed": 317,
+      "triangles": 2860,
+      "vertices": 2418,
+      "sha256": "c5c47a55df01fb2f688572ae1020473a7dba3960219951a635fd2b3810b0ea7b"
+    },
+    {
+      "name": "spruce_b_far",
+      "seed": 317,
+      "triangles": 306,
+      "vertices": 500,
+      "sha256": "3401e9d488b6d1a75626910426d7dab28d360c93d2c2c4f3a95fc77f13b550d5"
+    },
+    {
+      "name": "spruce_c",
+      "seed": 419,
+      "triangles": 2548,
+      "vertices": 2103,
+      "sha256": "0b92972747d68954d3d2cf1a61158e03f89e55daabc287e5e94a6229af26be41"
+    },
+    {
+      "name": "spruce_c_far",
+      "seed": 419,
+      "triangles": 306,
+      "vertices": 500,
+      "sha256": "5248c3cf262935b900959a4aed4d1155af6361c8b64e568c9a1fd6ff841de32c"
+    }
+  ]
+}

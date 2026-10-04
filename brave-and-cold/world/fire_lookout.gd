@@ -24,6 +24,7 @@ const STAIR_LANES: Array[float] = [4.45, 5.80]
 const SURFACE_REACH := 0.95
 const SUPPORTS: Array[Vector2] = [Vector2(-2.95, -2.45), Vector2(2.95, -2.45), Vector2(-2.95, 2.45), Vector2(2.95, 2.45), Vector2(3.40, -2.90), Vector2(6.80, -2.90), Vector2(3.40, 2.90), Vector2(6.80, 2.90)]
 
+var detail_enabled := false
 var site: Dictionary = {}
 var model: Node3D
 var geometry: Dictionary = {}
@@ -72,6 +73,11 @@ func _enable_model_vertex_colors() -> void:
 			material.vertex_color_use_as_albedo = true
 			material.vertex_color_is_srgb = false
 			mesh.set_surface_override_material(surface, material)
+			if detail_enabled and mesh.name in ["lookout_boards", "lookout_timber", "lookout_interior", "lookout_trim"]:
+				var wood := ShaderMaterial.new()
+				wood.shader = preload("res://world/shaders/winter_timber.gdshader")
+				wood.set_shader_parameter("grain", preload("res://assets/environment_detail/textures/timber_alb.png"))
+				mesh.set_surface_override_material(surface, wood)
 
 
 ## Height-aware floor query, in world space. Missing means leave existing terrain alone.

@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "origin": "Original project-authored procedural textures and botanical atlas",
+  "generator": "tools/atmosphere/generate_environment_fields.py",
+  "seed": 3103,
+  "botanical_seed": 42419,
+  "dimensions": [
+    1024,
+    1024
+  ],
+  "terrain_packing": "albedo RGB + height A; normal RGB + roughness A",
+  "ice_packing": "R fractures, G cloudiness, B drift, A trapped bubbles",
+  "botanical_alpha_coverage": 0.07883358001708984,
+  "files": [
+    {
+      "file": "bedrock_alb.png",
+      "sha256": "a214a1ac2fcf9c871e3d4aa19facf5ed9614c95362e64016ef763c947bc0c9fd"
+    },
+    {
+      "file": "bedrock_nrm.png",
+      "sha256": "281297fbaec90b6e4933a441964d088065272191e367d6fb1ca97c04f313245c"
+    },
+    {
+      "file": "bough_albedo.png",
+      "sha256": "10bb1c5d1539d4a8d666dd86007712a00015a2a4950c176436e4c9a234fe9476"
+    },
+    {
+      "file": "forest_snow_alb.png",
+      "sha256": "81d7e8dd2faa0eaf267f5507a98729c485154710b7af7edab7b0aebf3077d9ba"
+    },
+    {
+      "file": "forest_snow_nrm.png",
+      "sha256": "b183d45c74e2298e68f333a7d311e4ada0ac779080829199a3c55d06fef19496"
+    },
+    {
+      "file": "ice_fields.png",
+      "sha256": "15e3ecfd024164b4a00ec6ad1ec30a53fe426069914f6bcc6be257c0b2626aaa"
+    },
+    {
+      "file": "powder_alb.png",
+      "sha256": "0d41e8b0a8f864f50275ccf8bf935cdbdcc1f974889b581c3295be4f730733ef"
+    },
+    {
+      "file": "powder_nrm.png",
+      "sha256": "aaca014d01ece2ef98a277e3bc8b89ea334b0a79b8071862f5a0fbc01c7542de"
+    },
+    {
+      "file": "timber_alb.png",
+      "sha256": "0e510ce6bd0e56ace5ec032e221f1a1e7d74c7288d1c95fb0ee5b1652bd19a0e"
+    },
+    {
+      "file": "timber_nrm.png",
+      "sha256": "50a617af17cfb31d920d7b0115f060d20d507118ea42659058b09ea48424b30d"
+    }
+  ]
+}
