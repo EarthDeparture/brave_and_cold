@@ -20,6 +20,7 @@ const STEP_RUN := 0.30
 const FLIGHT_RISE := DECK_Y / float(FLIGHT_COUNT)
 const FLIGHT_RUN := 3.60
 const FLIGHT_WIDTH := 1.10
+const RAIL_END_INSET := .32
 const STAIR_LANES: Array[float] = [4.45, 5.80]
 const SURFACE_REACH := 0.95
 const SUPPORTS: Array[Vector2] = [Vector2(-2.95, -2.45), Vector2(2.95, -2.45), Vector2(-2.95, 2.45), Vector2(2.95, 2.45), Vector2(3.40, -2.90), Vector2(6.80, -2.90), Vector2(3.40, 2.90), Vector2(6.80, 2.90)]
@@ -200,23 +201,67 @@ func resolve_at(candidate: Vector3, previous: Vector3, radius: float) -> Vector2
 			var clipped := RoadNet._rail_contact(Vector2(old.x,old.z),q,rail[0],rail[1],radius)
 			if clipped.distance_squared_to(q)>.0000000001:
 				q=clipped+(clipped-q).normalized()*.001
-	# Guardrails: never allow the controller's terrain snap to make a player fall
-	# through a stair side or deck edge. The base remains freely accessible.
-	if old.y > 0.85 and not is_nan(_floor_local(Vector2(old.x, old.z), old.y)):
-		if not _walkable_circle(q, old.y, radius):
-			q = Vector2(old.x, old.z)
+	# Match the authored handrails, not an eroded rectangle of floor. Requiring
+	# the whole capsule footprint to have floor made the turn's open inner edge
+	# an invisible wall and cancelled even tangential input.
+	q = _stair_rail_slide(Vector2(old.x,old.z), q, old.y, radius)
+	if old.y > .85 and not is_nan(_floor_local(Vector2(old.x,old.z),old.y)):
+		q = _floor_slide(Vector2(old.x,old.z),q,old.y)
 	if q==original:return Vector2(candidate.x,candidate.z)
 	var result := to_global(Vector3(q.x, p.y, q.y))
 	return Vector2(result.x, result.z)
 
 
-func _walkable_circle(p: Vector2, y: float, radius: float) -> bool:
-	if is_nan(_floor_local(p, y)):
-		return false
-	for offset: Vector2 in [Vector2(radius, 0.0), Vector2(-radius, 0.0), Vector2(0.0, radius), Vector2(0.0, -radius)]:
-		if is_nan(_floor_local(p + offset, y)):
-			return false
-	return true
+func _stair_rail_slide(old: Vector2, candidate: Vector2, y: float, radius: float) -> Vector2:
+	var rails: Array = []
+	# Join the two close inner rail ends into one nose. Separate overlapping
+	# rounded caps form a pocket that can cancel both components of a turn.
+	for landing in range(1,FLIGHT_COUNT):
+		if absf(y-landing*FLIGHT_RISE)>SURFACE_REACH: continue
+		var z: float = (-1 if landing%2==1 else 1)*(1.8-RAIL_END_INSET)
+		rails.append([Vector2(STAIR_LANES[0]+.56,z),Vector2(STAIR_LANES[1]-.56,z)])
+	for flight in FLIGHT_COUNT:
+		var lane: float = STAIR_LANES[flight%2]
+		var progress := clampf(1.8-old.y if flight%2==0 else old.y+1.8,0,FLIGHT_RUN)
+		var h := flight*FLIGHT_RISE+progress/FLIGHT_RUN*FLIGHT_RISE
+		if absf(y-h)>SURFACE_REACH: continue
+		for side: float in [-.56,.56]:
+			rails.append([Vector2(lane+side,-1.8+RAIL_END_INSET),Vector2(lane+side,1.8-RAIL_END_INSET)])
+	for landing in range(1,FLIGHT_COUNT+1):
+		if absf(y-landing*FLIGHT_RISE)>SURFACE_REACH: continue
+		var z: float = -2.20 if landing%2==1 else 2.20
+		rails.append([Vector2(3.63,z+signf(z)*.44),Vector2(6.57,z+signf(z)*.44)])
+		rails.append([Vector2(6.57,z-.44),Vector2(6.57,z+.44)])
+		if landing<FLIGHT_COUNT:
+			rails.append([Vector2(3.63,z-.44),Vector2(3.63,z+.44)])
+	var q := candidate
+	for rail: Array in rails:
+		var clipped := RoadNet._rail_contact(old,q,rail[0],rail[1],radius+.0375)
+		if clipped.distance_squared_to(q)>1e-10:
+			q=clipped+(clipped-q).normalized()*.001
+	return q
+
+
+## Feet need support; the body is constrained by the actual rails. When a
+## corner has no floor, keep the component along its edge rather than stopping.
+func _floor_slide(old: Vector2, candidate: Vector2, y: float) -> Vector2:
+	if not is_nan(_floor_local(candidate,y)): return candidate
+	var best := old
+	for x_first: bool in [true,false]:
+		var q := old
+		for axis: int in ([0,1] if x_first else [1,0]):
+			var target := q; target[axis]=candidate[axis]
+			if not is_nan(_floor_local(target,y)):
+				q=target
+			else:
+				var lo := 0.0; var hi := 1.0
+				for iteration in 12:
+					var mid := (lo+hi)*.5
+					if is_nan(_floor_local(q.lerp(target,mid),y)): hi=mid
+					else: lo=mid
+				q=q.lerp(target,lo)
+		if q.distance_squared_to(candidate)<best.distance_squared_to(candidate): best=q
+	return best
 
 
 func _push_rect(p: Vector2, rect: Rect2, old: Vector2) -> Vector2:

@@ -1828,9 +1828,9 @@ func _update_prompt() -> void:
 		if wl == null or wl.is_queued_for_deletion():
 			continue
 		var ld := wl.dist_to(player.position)
-		if ld < 2.2 and _aim_ok(wl.global_position, 2.6, 1.2):
+		if ld < 2.2 and _aim_ok(wl.interaction_point(player.position, _view_dir(), 2.6), 2.6, 1.2):
 			if axe_up:
-				cands.append({"m": _lm, "d": ld + 0.2, "text": "Split log (+%d firewood)" % wl.firewood, "hold": 5.0, "kcal": 25.0, "noise": 20.0, "act": func() -> void: _split_log(wl)})
+				cands.append({"m": _lm, "d": ld + 0.2, "text": "Split log (+%d firewood, %d sticks)" % [wl.firewood, wl.sticks], "hold": 5.0, "kcal": 25.0, "noise": 20.0, "act": func() -> void: _split_log(wl)})
 			else:
 				cands.append({"m": _lm, "d": ld + 0.2, "text": "Log (needs a hatchet equipped)", "act": func() -> void: _say('Need a hatchet to split this')})
 	cands = _rank_cands(cands)
@@ -1984,14 +1984,16 @@ func _land_tree(x: float, z: float, away: Vector3, h: float, r: float) -> void:
 
 
 func _split_log(wl: WoodLog) -> void:
-	if wl == null or wl.is_queued_for_deletion():
+	if not is_instance_valid(wl) or wl.is_queued_for_deletion():
 		return
+	if inv.count("axe") < 1 or rifle_up:
+		_say("Equip a hatchet to split this log"); return
 	var fw := wl.firewood
 	var sk := wl.sticks
 	_give_or_drop('wood', fw, wl.center())
 	_give_or_drop('stick', sk, wl.center())
 	inv.wear('axe', 0.01)
-	_say('Split log: %d firewood, %d sticks' % [fw, sk])
+	_say('Split log: %d firewood, %d sticks. Make planks in Gear > Craft.' % [fw, sk])
 	wl.queue_free()
 
 

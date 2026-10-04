@@ -28,6 +28,7 @@ FLIGHTS = 10
 STEPS_PER_FLIGHT = 12
 FLIGHT_RISE = FLOOR / FLIGHTS
 RISER = FLIGHT_RISE / STEPS_PER_FLIGHT
+RAIL_END_INSET = .32
 STAIR_POST_X = (3.40, 6.80)
 STAIR_POST_Y = (-2.90, 2.90)
 RNG = random.Random(SEED)
@@ -188,13 +189,26 @@ def stairs(b):
         for xx in [x-.56,x+.56]:
             t.beam((xx,ys,base-.12),(xx,-ys,base+FLIGHT_RISE-.12),.16)
             # Retract rail ends from the turn so shoulders can pass the corner posts.
-            rail_inset = .12 / 3.60
-            trim.beam((xx,ys+direction*.12,base+FLIGHT_RISE*rail_inset+1.02),
-                      (xx,-ys-direction*.12,base+FLIGHT_RISE*(1-rail_inset)+1.02),.075)
+            rail_inset = RAIL_END_INSET / 3.60
+            trim.beam((xx,ys+direction*RAIL_END_INSET,base+FLIGHT_RISE*rail_inset+1.02),
+                      (xx,-ys-direction*RAIL_END_INSET,base+FLIGHT_RISE*(1-rail_inset)+1.02),.075)
             for u in [rail_inset,.333,.666,1-rail_inset]:
                 yy=ys+direction*3.6*u
                 zz=base+FLIGHT_RISE*u
                 trim.box((xx,yy,zz+.48),(.075,.075,.96))
+    # Joined inner noses keep adjacent terminal posts from making a snag pocket.
+    # The link lies over the narrow void between lanes, outside the turn aisle.
+    nose_rng = RNG.getstate()
+    for landing in range(1, FLIGHTS):
+        y = -1.8 + RAIL_END_INSET if landing % 2 else 1.8 - RAIL_END_INSET
+        h = landing * FLIGHT_RISE
+        previous_x = 4.45 if landing % 2 else 5.80
+        next_x = 5.80 if landing % 2 else 4.45
+        x0 = previous_x + .56 if previous_x < next_x else previous_x - .56
+        x1 = next_x - .56 if previous_x < next_x else next_x + .56
+        delta_h = FLIGHT_RISE * RAIL_END_INSET / 3.60
+        trim.beam((x0,y,h-delta_h+1.02),(x1,y,h+delta_h+1.02),.075)
+    RNG.setstate(nose_rng)
     # Ten broad landings join flights; posts/braces stay outside their walking volume.
     for f in range(FLIGHTS):
         y=2.20 if f%2==0 else -2.20
@@ -459,7 +473,7 @@ def main():
                   'z_end':[-1.8 if f%2==0 else 1.8 for f in range(FLIGHTS)],'landing_x':[3.7,6.5],
                   'landing_depth':.8,'landing_z':[-2.2 if f%2==0 else 2.2 for f in range(FLIGHTS)],
                   'standing_clearance_m':2.0,'support_planes_z':[-2.90,2.90],
-                  'rail_end_inset_m':.12,'visual_landing_x':[3.64,6.56],'visual_landing_depth':.84},
+                  'rail_end_inset_m':RAIL_END_INSET,'joined_inner_noses':FLIGHTS-1,'visual_landing_x':[3.64,6.56],'visual_landing_depth':.84},
         'mesh_objects':len(objs),'triangles':triangles,'vertices':vertices,
         'material_count':len(objs),'file_bytes':glb.stat().st_size,
         'sha256':hashlib.sha256(glb.read_bytes()).hexdigest(),

@@ -19,6 +19,9 @@ var wood_left := 12
 var cooking: Dictionary = {}
 var _token := ""
 var _last_grid := true
+var _receiver_power: MeshInstance3D
+var _receiver_channel: MeshInstance3D
+var _channel_label: Label3D
 var _indicator: MeshInstance3D
 const RELAY_LOCAL := Vector3(-9, 0, -6)
 const CASE_LOCAL := Vector3(1.60, 1.42, 1.02)
@@ -54,6 +57,7 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 		case_model = _asset(world.stores[0], "depot_reserved_case"); case_model.position = CASE_LOCAL
 		case_model.visible = not state.parts_claimed
 	speaker = AudioStreamPlayer3D.new(); tower.add_child(speaker); speaker.position = Vector3(1.78, FireLookout.DECK_Y + 1.05, -1.17)
+	_build_receiver_indicators(tower)
 	speaker.unit_size = 2; speaker.max_distance = 12; speaker.volume_db = -5
 	fire_light = OmniLight3D.new(); tower.add_child(fire_light); fire_light.position = stove_point(Vector3(0,.48,.62))
 	fire_light.light_color = Color(1,.55,.24); fire_light.omni_range = 4.8; fire_light.shadow_enabled = true
@@ -91,6 +95,7 @@ func advance(game_s: float) -> void:
 		world.pop.specials = world.pop.specials.filter(func(v:Vector3)->bool: return Vector2(v.x-world.player.position.x,v.z-world.player.position.z).length()>120)
 	update_presentation(); _radio_update()
 func update_presentation() -> void:
+	_update_receiver_indicators()
 	var lamp := world.fire_lookout.get_node_or_null("LookoutDeskLamp") as OmniLight3D
 	if lamp != null: lamp.light_energy = .65 if state.powered() and state.lamp_on else 0
 	fire_light.light_energy = (0.80 + .05 * sin(state.last_s * .19)) if fuel_s > 0 else 0
@@ -109,6 +114,40 @@ func update_presentation() -> void:
 	if food != null: food.visible = pantry.count("beans") + pantry.count("jerky") > 0
 	var wood := home_model.get_node_or_null("HomeWood") as Node3D
 	if wood != null: wood.visible = wood_left > 0
+## Two front-panel lenses belong to the existing receiver. No room-sized light
+## or transmission claim: these report local power and tuning, even in silence.
+func _build_receiver_indicators(tower: FireLookout) -> void:
+	_receiver_power = _receiver_lens(tower,"ReceiverPower",1.127)
+	_receiver_channel = _receiver_lens(tower,"ReceiverChannel",1.022)
+	_receiver_label(tower,"POWER",1.127)
+	_channel_label = _receiver_label(tower,"DISPATCH",1.022)
+func _receiver_lens(tower: FireLookout, id: String, y: float) -> MeshInstance3D:
+	var rim := MeshInstance3D.new(); rim.name=id+"Bezel"
+	var cylinder := CylinderMesh.new(); cylinder.top_radius=.011; cylinder.bottom_radius=.011; cylinder.height=.006; cylinder.radial_segments=12
+	rim.mesh=cylinder; rim.rotation.x=PI*.5; rim.position=Vector3(1.807,FireLookout.DECK_Y+y,-1.155)
+	var metal := StandardMaterial3D.new(); metal.albedo_color=Color(.13,.15,.14); metal.metallic=.6; metal.roughness=.38
+	rim.material_override=metal; rim.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF; tower.add_child(rim)
+	var lens := MeshInstance3D.new(); lens.name=id
+	var bulb := SphereMesh.new(); bulb.radius=.008; bulb.height=.016; bulb.radial_segments=12; bulb.rings=6
+	lens.mesh=bulb; lens.position=Vector3(1.807,FireLookout.DECK_Y+y,-1.150); lens.scale.z=.45
+	var mat := StandardMaterial3D.new(); mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED; mat.emission_energy_multiplier=1.6
+	lens.material_override=mat; lens.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF; tower.add_child(lens)
+	return lens
+func _receiver_label(tower: FireLookout, text: String, y: float) -> Label3D:
+	var label := Label3D.new(); label.text=text; label.font_size=32; label.pixel_size=.00048; label.outline_size=0; label.shaded=true
+	label.position=Vector3(1.878,FireLookout.DECK_Y+y,-1.151); label.modulate=Color(.79,.81,.72); label.no_depth_test=false
+	tower.add_child(label); return label
+func _update_receiver_indicators() -> void:
+	if _receiver_power == null: return
+	var on := state.receiver_on and state.powered()
+	var colors: Array[Color] = [Color(.13,1,.28),Color(.15,.48,1) if state.channel=="public" else Color(1,.73,.08)]
+	var lenses: Array[MeshInstance3D] = [_receiver_power,_receiver_channel]
+	for i in lenses.size():
+		var mat := lenses[i].material_override as StandardMaterial3D
+		mat.albedo_color=colors[i] if on else Color(.025,.030,.026)
+		mat.emission_enabled=on; mat.emission=colors[i] if on else Color.BLACK
+	_channel_label.text="PUBLIC" if state.channel=="public" else "DISPATCH"
+
 func _radio_update() -> void:
 	var near: bool = world.player.position.distance_to(speaker.global_position) < 12 and not world._sl_on
 	var entry := state.broadcast_at(state.last_s) if near else {}
@@ -170,12 +209,12 @@ func read_log() -> void:
 		directions = "North Ridge Supply is approximately %.0f m away on bearing %.0f° (straight-line). Follow the logging track down to the road; collect the reserved relay case at the store counter." % [Vector2(d.x,d.z).length(),bearing]
 	var task: String = ["Inspect the ground transfer cabinet with your insulated service kit.","Collect the reserved transfer relay, return and install it in the cabinet.","Verify the cabinet transfer under local power.","Relay signed off. Local service restored."][state.repair_stage]
 	if state.repair_stage==1 and state.parts_claimed:task="Return to the ground cabinet and install the replacement relay."
-	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nField dispatch uses the receiver's work channel. Local news uses the public channel. The receiver and desk lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. Keep water, food and dry firewood ready. Stoke the stove, boil snow, and prepare the sleeping berth before the weather closes in." % [task,directions]
+	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nField dispatch uses the receiver's work channel; local news uses public radio. Green indicates receiver power. Yellow selects field dispatch; blue selects public radio. A lit receiver can be silent between broadcasts. The receiver and desk lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. Keep water, food and dry firewood ready. Stoke the stove, boil snow, and prepare the sleeping berth before the weather closes in." % [task,directions]
 	world.reading.open("North Ridge • Service log",text,world.player,world.hud)
-func toggle_receiver() -> void: state.receiver_on = not state.receiver_on; _radio_update()
-func tune_radio() -> void: state.channel = "public" if state.channel == "work" else "work"; _radio_update()
+func toggle_receiver() -> void: state.receiver_on = not state.receiver_on; _update_receiver_indicators(); _radio_update()
+func tune_radio() -> void: state.channel = "public" if state.channel == "work" else "work"; _update_receiver_indicators(); _radio_update()
 func toggle_backup() -> void:
-	state.backup_on = not state.backup_on; update_presentation()
+	state.backup_on = not state.backup_on; update_presentation(); _radio_update()
 	world._say("Local backup %s. Charge %.0f%%. Lamp 7 W, receiver 3 W, commissioned relay 12 W." % ["enabled" if state.backup_on else "disabled", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100])
 func toggle_auto_transfer() -> void: state.auto_transfer_on = not state.auto_transfer_on
 func toggle_relay() -> void:

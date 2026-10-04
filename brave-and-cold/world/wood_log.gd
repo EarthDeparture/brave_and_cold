@@ -68,6 +68,7 @@ func setup(terrain: Terrain3D, x: float, z: float, d: Vector3, h: float, r: floa
 	p1 = b + dir * (0.4 + length)
 	p0.y = _h(terrain, p0)
 	p1.y = _h(terrain, p1)
+	global_position = center()
 	var ax := (p1 - p0).normalized()
 	var side := ax.cross(Vector3.UP).normalized()
 	var up := side.cross(ax)
@@ -89,6 +90,13 @@ static func _h(terrain: Terrain3D, p: Vector3) -> float:
 
 func center() -> Vector3:
 	return (p0 + p1) * 0.5
+
+
+## Pick the visible part under the view ray, including either end of long logs.
+## The parent transform is not a reliable target for an elongated trunk.
+func interaction_point(eye: Vector3, view: Vector3, reach: float) -> Vector3:
+	var lift := Vector3.UP * maxf(.04, tree_r*.35)
+	return Geometry3D.get_closest_points_between_segments(eye,eye+view*reach,p0+lift,p1+lift)[1]
 
 
 ## xz distance from a point to the log's axis segment.

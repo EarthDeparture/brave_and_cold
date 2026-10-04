@@ -2,7 +2,7 @@
   {"id": "cordage_reed", "name": "Twist reed cordage", "desc": "Twist cattail reeds into rope.", "inputs": {"reed": 3}, "tools": [], "station": "", "time_s": 4, "kcal": 6, "noise": 0, "out": {"cordage": 1}},
   {"id": "cordage_gut", "name": "Cut gut into cordage", "desc": "Strong sinew-like line from animal gut.", "inputs": {"gut": 1}, "tools": ["knife"], "station": "", "time_s": 3, "kcal": 6, "noise": 0, "out": {"cordage": 2}},
   {"id": "cordage_hide", "name": "Cut hide into lacing", "desc": "Rawhide strips. Uses a whole deer hide.", "inputs": {"deer_hide": 1}, "tools": ["knife"], "station": "", "time_s": 5, "kcal": 8, "noise": 0, "out": {"cordage": 4}},
-  {"id": "plank_split", "name": "Split a plank", "desc": "Hatchet a log into rough planks. Loud.", "inputs": {"wood": 1}, "tools": ["axe"], "station": "", "time_s": 10, "kcal": 14, "noise": 20, "out": {"plank": 2}},
+  {"id": "plank_split", "name": "Split firewood into planks", "desc": "One firewood makes two rough planks with a hatchet. Loud.", "inputs": {"wood": 1}, "tools": ["axe"], "station": "", "time_s": 10, "kcal": 14, "noise": 20, "out": {"plank": 2}},
   {"id": "rag_sweater", "name": "Tear sweater into rags", "desc": "Ruins the sweater. Four rags.", "inputs": {"sweater": 1}, "tools": ["knife"], "station": "", "time_s": 4, "kcal": 4, "noise": 0, "out": {"rag": 4}},
   {"id": "rag_hide", "name": "Cut hide into rags", "desc": "Heavy curtain cloth from a cured hide.", "inputs": {"cured_hide": 1}, "tools": ["knife"], "station": "", "time_s": 4, "kcal": 4, "noise": 0, "out": {"rag": 3}},
   {"id": "bandage_rag", "name": "Wrap a bandage", "desc": "Two clean rags make a bandage.", "inputs": {"rag": 2}, "tools": [], "station": "", "time_s": 2, "kcal": 2, "noise": 0, "out": {"bandage": 1}},

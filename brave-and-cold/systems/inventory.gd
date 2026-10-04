@@ -5,7 +5,7 @@ extends RefCounted
 const ITEMS := {
 	"service_kit": {"name":"Insulated Service Kit","kind":"tool","stack":1,"desc":"Meters, insulated tools and a lockout kit for the North Ridge relay assignment."},
 	"power_relay": {"name":"Transfer Relay","kind":"misc","stack":1,"desc":"Reserved replacement for the lookout transfer cabinet. Install with your service kit."},
-	"wood": {"name": "Firewood", "kind": "fuel", "stack": 4, "desc": "Split firewood. Feeds a stove or campfire (40 min per log at a campfire)."},
+	"wood": {"name": "Firewood", "kind": "fuel", "stack": 4, "desc": "Split firewood. Fuels a stove or campfire (40 min per log at a campfire). Gear > Craft: hatchet one firewood into two planks."},
 	"stick": {"name": "Sticks", "kind": "fuel", "stack": 8, "desc": "Dry branches. Kindling for fires; useful for crafting."},
 	"thatch": {"name": "Dry Grass", "kind": "misc", "stack": 10, "desc": "Bundle of dry grass. Tinder and thatch."},
 	"reed": {"name": "Cattail Reeds", "kind": "misc", "stack": 10, "desc": "Tough reed stalks. Future: cordage, torches."},
