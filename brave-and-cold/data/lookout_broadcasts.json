@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "broadcasts": [
+    {
+      "id": "dispatch_check",
+      "channel": "work",
+      "offset_h": 2,
+      "anchor": "start",
+      "title": "Routine traffic",
+      "text": "Kestrel Seven, your replacement transfer relay is held at North Ridge Supply. Inspect the cabinet before collecting it. Leave the standby battery charged.",
+      "window_game_s": 1800,
+      "audio": "res://assets/audio/radio_opening/dispatch_check.wav"
+    },
+    {
+      "id": "local_reports",
+      "channel": "public",
+      "offset_h": 8,
+      "anchor": "start",
+      "title": "North Ridge bulletin",
+      "text": "The regional clinic reports several unusual incidents overnight. Residents are asked to avoid the treatment entrance. Regular deliveries are running late.",
+      "window_game_s": 1800,
+      "audio": "res://assets/audio/radio_opening/local_reports.wav"
+    },
+    {
+      "id": "road_advisory",
+      "channel": "public",
+      "offset_h": 20,
+      "anchor": "start",
+      "title": "Travel advisory",
+      "text": "Police advise against using the western town junction following attacks on responders. Keep clear of crowds. Do not approach people behaving erratically.",
+      "window_game_s": 1800,
+      "audio": "res://assets/audio/radio_opening/road_advisory.wav"
+    },
+    {
+      "id": "delivery_cancelled",
+      "channel": "work",
+      "offset_h": 30,
+      "anchor": "start",
+      "title": "Dispatch interruption",
+      "text": "Kestrel Seven, the supply truck will not reach your site. Keep your provisions. We have lost contact with the town crew. Maintain your local equipment.",
+      "window_game_s": 1800,
+      "audio": "res://assets/audio/radio_opening/delivery_cancelled.wav"
+    },
+    {
+      "id": "shelter_notice",
+      "channel": "public",
+      "offset_h": 46,
+      "anchor": "start",
+      "title": "Emergency notice",
+      "text": "Reports confirm people rising after fatal injuries. The infection has spread beyond the regional clinic. Remain indoors where possible. Prepare drinking water, food, and heating fuel.",
+      "window_game_s": 1800,
+      "audio": "res://assets/audio/radio_opening/shelter_notice.wav"
+    },
+    {
+      "id": "grid_loss",
+      "channel": "public",
+      "offset_h": 2,
+      "anchor": "grid",
+      "title": "Emergency power",
+      "text": "Several communities have lost electrical service. This transmitter is operating on reserve power. Local repairs cannot restore the regional supply.",
+      "window_game_s": 1800,
+      "audio": "res://assets/audio/radio_opening/grid_loss.wav"
+    },
+    {
+      "id": "isolation",
+      "channel": "public",
+      "offset_h": 16,
+      "anchor": "grid",
+      "title": "Limited assistance",
+      "text": "Emergency assistance cannot reach the northern service roads. The town is overrun. Travel in daylight, treat water, and conserve medical supplies. There will be no further deliveries.",
+      "window_game_s": 1800,
+      "audio": "res://assets/audio/radio_opening/isolation.wav"
+    },
+    {
+      "id": "last_call",
+      "channel": "public",
+      "offset_h": -0.5,
+      "anchor": "source_end",
+      "title": "Final transmission",
+      "text": "Our reserve power is almost exhausted. There will be no further scheduled reports from this station. If you are listening, find shelter and keep your people warm.",
+      "window_game_s": 1800,
+      "audio": "res://assets/audio/radio_opening/last_call.wav"
+    }
+  ]
+}

@@ -22,3 +22,5 @@ tools/blender/generated/hand_refinement/*.blend[0-9]
 tools/blender/generated/route_detail/*.blend[0-9]
 
 tools/blender/generated/route_identity/*.blend[0-9]
+
+tools/blender/generated/lookout_opening/*.blend[0-9]
