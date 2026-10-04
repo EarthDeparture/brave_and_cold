@@ -41,6 +41,8 @@ var _road_material: ShaderMaterial
 var _sign_scenes: Dictionary = {}
 var _water: Image
 var _deck: Dictionary = {}   # point index -> deck height (bridge spans)
+var _rail_segments:Array=[]
+var _rail_bounds:Rect2
 var bridges: Array = []      # [i0, i1] inclusive point-index ranges
 
 
@@ -202,6 +204,7 @@ func is_near(x: float, z: float, margin: float = CORRIDOR_HW) -> bool:
 
 
 func build_mesh(terrain: Terrain3D) -> void:
+	_rail_segments.clear()
 	if points.size() < 2:
 		return
 	var st := SurfaceTool.new()
@@ -315,12 +318,18 @@ func _build_bridge(i0: int, i1: int) -> void:
 		deck.material_override = concrete
 		add_child(deck)
 		for sx in [-1.0, 1.0]:
+			var rail_a:Vector2=_rail_endpoint(k,sx);var rail_b:Vector2=_rail_endpoint(k+1,sx)
+			_rail_segments.append([rail_a,rail_b])
+			if _rail_segments.size()==1:_rail_bounds=Rect2(rail_a,Vector2.ZERO)
+			_rail_bounds=_rail_bounds.expand(rail_a).expand(rail_b)
+			var rail_delta:=rail_b-rail_a;var rail_mid:Vector2=(rail_a+rail_b)*.5
+			var rail_yaw:=atan2(-rail_delta.x,-rail_delta.y)
 			var rail := MeshInstance3D.new()
 			var rm := BoxMesh.new()
-			rm.size = Vector3(0.12, 0.14, len + 0.05)
+			rm.size = Vector3(0.12, 0.14, rail_delta.length() + 0.05)
 			rail.mesh = rm
-			rail.position = Vector3(mid.x, top + 1.0, mid.y) + Vector3(cos(yaw), 0.0, -sin(yaw)) * 3.2 * sx
-			rail.rotation.y = yaw
+			rail.position = Vector3(rail_mid.x,top+1.0,rail_mid.y)
+			rail.rotation.y = rail_yaw
 			rail.material_override = wood
 			add_child(rail)
 			if k % 2 == 0:
@@ -328,7 +337,7 @@ func _build_bridge(i0: int, i1: int) -> void:
 				var pm := BoxMesh.new()
 				pm.size = Vector3(0.14, 1.1, 0.14)
 				post.mesh = pm
-				post.position = Vector3(mid.x, top + 0.55, mid.y) + Vector3(cos(yaw), 0.0, -sin(yaw)) * 3.2 * sx
+				post.position = Vector3(rail_mid.x,top+.55,rail_mid.y)
 				post.material_override = wood
 				add_child(post)
 	# piers every ~10 m
@@ -620,21 +629,67 @@ func floor_at_world(foot:Vector3,_terrain_height:float=NAN) -> float:
 	return walk_surface.height_at(foot.x,foot.z,foot.y)
 
 func resolve_at(candidate:Vector3,previous:Vector3,radius:float) -> Vector2:
+	var result:=Vector2(candidate.x,candidate.z)
 	var old_height:=walk_surface.height_at(previous.x,previous.z,previous.y)
-	if is_nan(old_height) or absf(previous.y-old_height)>.65:return Vector2(candidate.x,candidate.z)
-	var closest:=Vector2.ZERO;var normal:=Vector2.ZERO;var best:=INF
-	for br in bridges:
-		for i in range(br[0],br[1]):
-			var a:Vector2=points[i];var b:Vector2=points[i+1];var d:=b-a
-			var u:float=clampf((Vector2(candidate.x,candidate.z)-a).dot(d)/d.length_squared(),0,1)
-			var middle:Vector2=a+d*u
-			var distance:float=middle.distance_squared_to(Vector2(candidate.x,candidate.z))
-			if distance<best:
-				best=distance;closest=middle;normal=Vector2(-d.y,d.x).normalized()
-	if best<4.2*4.2:
-		var lateral:float=(Vector2(candidate.x,candidate.z)-closest).dot(normal)
-		if absf(lateral)>3.2-radius:return closest+normal*signf(lateral)*(3.2-radius)
-	return Vector2(candidate.x,candidate.z)
+	if is_nan(old_height) or absf(previous.y-old_height)>.65:return result
+	var origin:=Vector2(previous.x,previous.z)
+	# Contact with the actual finite rails, from either side. Starting beside a
+	# bridge must never project the actor into its corridor or along its deck.
+	var bounds:=_rail_bounds.grow(radius+.12)
+	if not bounds.has_point(origin) and not bounds.has_point(result):return result
+	for rail in _rail_segments:
+		result=_rail_contact(origin,result,rail[0],rail[1],radius+.06)
+	return result
+
+func _rail_endpoint(index:int,side:float)->Vector2:
+	# Shared vertices join the rails through bends, matching the road ribbon.
+	var tangent:Vector2=(points[mini(index+1,points.size()-1)]-points[maxi(index-1,0)]).normalized()
+	return points[index]+Vector2(-tangent.y,tangent.x)*3.2*side
+
+
+static func _rail_contact(origin:Vector2,candidate:Vector2,a:Vector2,b:Vector2,radius:float)->Vector2:
+	var axis:=b-a
+	var plane_normal:=Vector2(-axis.y,axis.x).normalized()
+	var old_side:float=(origin-a).dot(plane_normal)
+	var new_side:float=(candidate-a).dot(plane_normal)
+	var side:float=signf(old_side)
+	var limit_plane:float=minf(radius,absf(old_side))
+	if side!=0 and new_side*side<limit_plane and absf(old_side-new_side)>.00001:
+		var fraction:float=(old_side-side*limit_plane)/(old_side-new_side)
+		var crossing:=origin+(candidate-origin)*clampf(fraction,0,1)
+		var along:float=(crossing-a).dot(axis)/axis.length_squared()
+		if along>=0 and along<=1:
+			return candidate+plane_normal*side*(limit_plane-new_side*side)
+	# Sweep the rounded ends too; a long step can otherwise cross the gap
+	# between adjoining rail segments without ending inside either capsule.
+	var movement:=candidate-origin
+	var aa:=movement.length_squared()
+	if aa>.00000001:
+		for endpoint in [a,b]:
+			var relative:Vector2=origin-endpoint
+			var bb:float=2.0*relative.dot(movement)
+			var cc:float=relative.length_squared()-radius*radius
+			var discriminant:float=bb*bb-4.0*aa*cc
+			if cc<0 or discriminant<0:continue
+			var fraction:float=(-bb-sqrt(discriminant))/(2.0*aa)
+			if fraction<0 or fraction>1:continue
+			var contact:=origin+movement*fraction
+			var normal:Vector2=(contact-endpoint).normalized()
+			var remaining:=movement*(1.0-fraction)
+			return contact+remaining-normal*minf(remaining.dot(normal),0.0)
+	var old_near:=a+axis*clampf((origin-a).dot(axis)/axis.length_squared(),0,1)
+	var new_near:=a+axis*clampf((candidate-a).dot(axis)/axis.length_squared(),0,1)
+	var old_delta:=origin-old_near
+	var old_distance:=old_delta.length()
+	var new_delta:=candidate-new_near
+	var limit:=minf(radius,old_distance)
+	if new_delta.length()>=limit-.00001:return candidate
+	# A slightly overlapping spawn can move outward freely. Inward movement
+	# is clipped without a corrective teleport; the tangential component stays.
+	var normal:=old_delta/old_distance if old_distance>.00001 else Vector2(-axis.y,axis.x).normalized()
+	var correction:=limit-new_delta.dot(normal)
+	if correction<=0:return candidate
+	return candidate+normal*minf(correction,(candidate-origin).length())
 
 
 static func lift(height:float,x:float,z:float,foot_y:float=NAN) -> float:

@@ -134,6 +134,7 @@ func resolve_at(candidate: Vector3, previous: Vector3, radius: float) -> Vector2
 	var p := to_local(candidate)
 	var old := to_local(previous)
 	var q := Vector2(p.x, p.z)
+	var original:=q
 	if old.y < DECK_Y - 0.8:
 		for center in SUPPORTS:
 			var delta := q - center
@@ -159,6 +160,7 @@ func resolve_at(candidate: Vector3, previous: Vector3, radius: float) -> Vector2
 	if old.y > 0.85 and not is_nan(_floor_local(Vector2(old.x, old.z), old.y)):
 		if not _walkable_circle(q, old.y, radius):
 			q = Vector2(old.x, old.z)
+	if q==original:return Vector2(candidate.x,candidate.z)
 	var result := to_global(Vector3(q.x, p.y, q.y))
 	return Vector2(result.x, result.z)
 

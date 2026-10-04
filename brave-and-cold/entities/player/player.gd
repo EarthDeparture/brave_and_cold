@@ -20,8 +20,9 @@ const HEAD_CLEARANCE := 0.12
 const ACCEL := 16.0          # m/s^2 ramp up/down: no hard start/stop
 const DECEL := 22.0
 const SLOPE_PROBE := 0.6
-const SLIDE_ANGLES: Array[float] = [0.0, 0.6, -0.6, 1.1, -1.1]
-const BLUR_OFFSETS: Array[Vector2] = [Vector2(0.7, 0.0), Vector2(-0.7, 0.0), Vector2(0.0, 0.7), Vector2(0.0, -0.7)]
+const WALK_STEP_TOLERANCE := 0.30
+const CONTACT_TOLERANCE := 0.0005
+var head_bob_strength := 0.0
 
 var terrain: Terrain3D
 var snow: SnowField
@@ -34,6 +35,7 @@ var spatial_structures: Array[Node3D] = [] # Optional height-aware surfaces, sep
 var walk_ribbons: Array[Node3D] = []
 var _camera_ground := NAN
 var _ground_velocity := 0.0
+var _ground_acceleration := 0.0
 var _ground_offset := 0.0
 var chests: Array = []   # StorageChest colliders
 var footprints: Footprints
@@ -366,7 +368,11 @@ func _move(delta: float) -> void:
 				position.x = prior_foot.x
 				position.z = prior_foot.z
 			var push := Vector2(position.x - ax, position.z - az)
-			if push.length_squared() > 1e-8:
+			if push.length_squared() < CONTACT_TOLERANCE*CONTACT_TOLERANCE:
+				# Local/world round trips can differ by a few float ULPs at
+				# distant coordinates. They are not a physical collision.
+				position.x=ax;position.z=az
+			elif push.length_squared() > 0.0:
 				# slide: drop the velocity component pointing into whatever pushed us out
 				var pn := push.normalized()
 				_vel -= pn * minf(0.0, _vel.dot(pn))
@@ -394,21 +400,23 @@ func _move(delta: float) -> void:
 	_head_bob(delta, 0.0 if airborne else sp)
 
 
-## Ground-slope gate over a 0.6 m lookahead (a 2-5 cm per-frame step made lidar noise look like a wall). Too steep: slide along the contour.
+## Preserve the requested heading. Small seams are steps, not steering obstacles.
 func _slope_step(step: Vector2) -> Vector2:
-	var len := step.length()
-	if len < 1e-6:
-		return step
-	var d := step / len
-	var h0: float = _eye_ground(position.x, position.z)
-	if is_nan(h0):
-		return step
-	for a in SLIDE_ANGLES:
-		var dd := d.rotated(a)
-		var h1: float = _eye_ground(position.x + dd.x * SLOPE_PROBE, position.z + dd.y * SLOPE_PROBE)
-		if is_nan(h1) or absf(h1 - h0) / SLOPE_PROBE <= MAX_SLOPE:
-			return dd * len * (1.0 if a == 0.0 else cos(a) * 0.9)
-	return Vector2.ZERO
+	if step.length_squared()<1e-12:return step
+	# A distant probe can extend past a stair landing into empty space. Judge
+	# authored treads at the actual next foot position so turns stay traversable.
+	var foot:=Vector3(position.x,_surface_probe_y(),position.z)
+	for structure in spatial_structures:
+		var current:float=structure.call("floor_at_world",foot,NAN)
+		var next:float=structure.call("floor_at_world",foot+Vector3(step.x,0,step.y),NAN)
+		if not is_nan(current) and not is_nan(next) and absf(next-current)<=WALK_STEP_TOLERANCE:return step
+	var d:=step.normalized()
+	var h0:float=_eye_ground(position.x,position.z)
+	var h1:float=_eye_ground(position.x+d.x*SLOPE_PROBE,position.z+d.y*SLOPE_PROBE)
+	if is_nan(h0) or is_nan(h1):return step
+	var allowed:=MAX_SLOPE*SLOPE_PROBE+WALK_STEP_TOLERANCE
+	var brake:=smoothstep(allowed,allowed+.40,absf(h1-h0))
+	return step*(1.0-brake)
 
 
 ## Camera ground height: structures exact, open terrain low-passed over ~1.5 m so lidar-scale bumps don't shake the view.
@@ -422,44 +430,44 @@ func _eye_ground(x: float, z: float) -> float:
 		var f: float = structure.call("floor_at_world", Vector3(x, _surface_probe_y(), z), th)
 		if not is_nan(f):
 			return f
-	if is_nan(th):
-		return th
-	var s := th
-	var n := 1
-	for o in BLUR_OFFSETS:
-		var h: float = _terrain_h(x + o.x, z + o.y)
-		if not is_nan(h):
-			s += h
-			n += 1
-	var filtered:=s/float(n)
-	# Authored walking ribbons override terrain filtering, including bridges.
-	for ribbon in walk_ribbons:
-		var f:float=ribbon.call("floor_at_world",Vector3(x,_surface_probe_y(),z),th)
-		if not is_nan(f) and f>th:return f
-	return filtered
+	if is_nan(th):return th
+	# Apply one footprint filter to terrain, snow/ice and road/trail triangles.
+	# Changing the surface under a sample must not switch the camera algorithm.
+	var sum:=0.0;var total:=0.0
+	for dx in [-1,0,1]:
+		for dz in [-1,0,1]:
+			var weight:=float((2 if dx==0 else 1)*(2 if dz==0 else 1))
+			var xx:float=x+float(dx)*.50;var zz:float=z+float(dz)*.50
+			var h:=_terrain_h(xx,zz)
+			for ribbon in walk_ribbons:
+				var f:float=ribbon.call("floor_at_world",Vector3(xx,_surface_probe_y(),zz),h)
+				if not is_nan(f) and (is_nan(h) or f>h):h=f
+			if not is_nan(h):sum+=h*weight;total+=weight
+	return th if total==0 else sum/total
+
 
 
 func _smooth_ground(delta:float, height:float, support:float) -> void:
 	if is_nan(height):height=support
-	if is_nan(_camera_ground) or absf(height-_camera_ground)>1.0:
-		_camera_ground=height;_ground_velocity=0.0
-	var error:=_camera_ground-height
-	var omega:=18.0
-	var v:=_ground_velocity+omega*error
-	var decay:=exp(-omega*delta)
-	_camera_ground=height+(error+v*delta)*decay
-	_ground_velocity=(_ground_velocity-omega*v*delta)*decay
-	_ground_offset=clampf(_camera_ground-support,-.8,.6)
+	if is_nan(_camera_ground):
+		_camera_ground=support;_ground_velocity=0.0;_ground_acceleration=0.0
+	# A height seam changes the target, never the view in one frame. Bound both
+	# vertical acceleration and its rate of change, including material borders.
+	var acceleration:=clampf((height-_camera_ground)*100.0-_ground_velocity*20.0,-6.0,6.0)
+	_ground_acceleration=move_toward(_ground_acceleration,acceleration,delta*40.0)
+	_camera_ground+=_ground_velocity*delta+.5*_ground_acceleration*delta*delta
+	_ground_velocity+=_ground_acceleration*delta
+	_ground_offset=_camera_ground-support
 
 
 func _head_bob(delta: float, sp: float) -> void:
 	var amp := 0.0
 	if sp > 0.3 and not sim_on:
-		amp = clampf(sp / WALK, 0.0, 1.7) * (0.55 if crouching else 1.0)
+		amp = head_bob_strength * clampf(sp / WALK, 0.0, 1.7) * (0.55 if crouching else 1.0)
 	_bob_amp = lerpf(_bob_amp, amp, minf(1.0, delta * 6.0))
 	_bob_t += delta * sp * 1.9
 	_landing_dip = move_toward(_landing_dip, 0.0, delta * 0.26)
-	cam.position = Vector3(sin(_bob_t) * 0.011 * _bob_amp, absf(sin(_bob_t)) * -0.016 * _bob_amp - _landing_dip + _ground_offset, 0.0)
+	cam.position = Vector3(0.0, (cos(_bob_t*2.0)-1.0)*0.004*_bob_amp - _landing_dip + _ground_offset, 0.0)
 
 func _stamina(delta: float) -> void:
 	var tier: int = _step_snow_tier()
@@ -522,7 +530,7 @@ func _surface_probe_y() -> float:
 func reset_jump() -> void:
 	airborne = false
 	_camera_ground=NAN
-	_ground_velocity=0.0
+	_ground_velocity=0.0;_ground_acceleration=0.0
 	_ground_offset=0.0
 	_vertical_speed = 0.0
 	_jump_cooldown = 0.0
@@ -576,7 +584,7 @@ func _jump_vertical(delta: float, floor_y: float) -> void:
 			position.y = floor_y + eye_h
 			airborne = false
 			_camera_ground=floor_y+_ground_offset
-			_ground_velocity=0.0
+			_ground_velocity=0.0;_ground_acceleration=0.0
 			_vertical_speed = 0.0
 			_jump_cooldown = 0.15
 			_landing_dip = 0.025
