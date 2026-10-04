@@ -32,6 +32,14 @@ func run() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	world.hud.hide()
 	world.viewmodel.hide()
+	if options.has("hands"):
+		world.viewmodel.mode=String(options.hands)
+		world.viewmodel._cur=world.viewmodel.mode
+		world.viewmodel._equip=1.0
+		world.viewmodel.freeze_t=0.0
+		world.viewmodel.glove_item=String(options.get("gloves",""))
+		world.viewmodel.show()
+		world.viewmodel._process(0.0)
 	world.snowfall.use_fixed_seed = true
 	world.snowfall.seed = 42
 	world.snowfall.fixed_fps = 60
@@ -64,6 +72,7 @@ func run() -> void:
 			camera.global_position = location.eye
 			camera.look_at(location.target)
 			world.clock.hour = state.hour
+			world.weather._t = 0.0
 			world.weather.lock_state(state.state)
 			world.weather.advance(120.0,0.0)
 			if world.sky_rig.has_method("set_cloud_offset"):
@@ -72,6 +81,10 @@ func run() -> void:
 				world.sky_rig.clouds._t = 120.0
 				world.sky_rig.clouds._process(0.0)
 			world.sky_rig.apply_hour(state.hour)
+			if world.sky_rig is AtmosphereRig:
+				print('SKY_INPUT ',state.id,' state=',world.weather.state,' overcast=',world.weather.overcast,' coverage=',world.weather.coverage,' uniform=',world.sky_rig.material.get_shader_parameter('overcast'),' sun=',world.sun.light_energy)
+			if world.sky_rig.has_method('snow_tint'):
+				world.snowfall.set_light_tint(world.sky_rig.snow_tint())
 			var indoor: float = location.inside
 			if world.sky_rig.has_method("apply_shelter"):
 				world.sky_rig.apply_shelter(indoor)
@@ -107,10 +120,15 @@ func run() -> void:
 				push_error("Capture failed: "+path)
 				quit(1)
 				return
-			var record := {"id":id,"hour":state.hour,"weather":state.id,"eye":_vector(location.eye),"target":_vector(location.target),"inside":indoor,"fov":camera.fov,"median_ms":samples[50],"p99_ms":samples[98],"file":path,"sha256":FileAccess.get_sha256(path)}
+			var record := {"id":id,"hour":state.hour,"weather":state.id,"eye":_vector(location.eye),"target":_vector(location.target),"inside":indoor,"fov":camera.fov,"median_ms":samples[50],"p99_ms":samples[98],"file":path,"sha256":FileAccess.get_sha256(path),"overcast":world.weather.overcast,"cloud_coverage":world.weather.coverage,"fog_density":world.env.fog_density,"sun_energy":world.sun.light_energy,"particle_tint":str(world.snowfall._winter_material.get_shader_parameter("flake_tint")) if world.snowfall._winter_material!=null else "legacy"}
 			records.append(record)
 			print("ATMOSPHERE_CAPTURE ", JSON.stringify(record))
 	var manifest := {"schema":1,"capture_script":"tests/visual/capture_atmosphere.gd","atmosphere":options.get("atmosphere","baseline"),"resolution":[root.size.x,root.size.y],"gpu":RenderingServer.get_video_adapter_name(),"driver":RenderingServer.get_current_rendering_driver_name(),"engine":Engine.get_version_info().string,"population":"disabled for isolated renderer comparison","wind_phase_s":120,"particle_seed":42,"cloud_offset":[0.17,0.08],"captures":records}
+	var sources := {}
+	for path in ["res://world/game_world.gd","res://world/sky_rig.gd","res://world/atmosphere_rig.gd","res://systems/weather.gd","res://world/snow_fall.gd","res://world/shaders/winter_sky.gdshader","res://world/shaders/winter_snow.gdshader","res://world/shaders/frozen_water.gdshader","res://data/terrain/terrain_winter_assets.tres","res://assets/textures/atmosphere/cloud_fields.png"]:
+		sources[path]=FileAccess.get_sha256(path)
+	manifest["source_hashes"]=sources
+	manifest["render_settings"]={"msaa":root.msaa_3d,"ssao":world.env.ssao_enabled,"tonemap":world.env.tonemap_mode,"sun_bias":world.sun.shadow_bias,"sun_normal_bias":world.sun.shadow_normal_bias,"sun_shadow_distance":world.sun.directional_shadow_max_distance}
 	var file := FileAccess.open(output.path_join("manifest.json"),FileAccess.WRITE)
 	file.store_string(JSON.stringify(manifest,"\t"))
 	file.close()

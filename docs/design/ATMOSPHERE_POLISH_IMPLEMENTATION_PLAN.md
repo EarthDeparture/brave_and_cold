@@ -1,11 +1,11 @@
 # Atmosphere polish and the next MVP milestones
 
-Status: implementation plan only. No gameplay, rendering, assets or saves changed by this planning task.
+Status: atmosphere candidate implemented and validated for player review. See ATMOSPHERE_POLISH_REVIEW.md for measured results, iteration decisions and rollback. Narrative/content milestones remain planned.
 Date: 2026-10-03.
 Verified baseline: `8a623693988c371a976d6a304151c78cdf4a37ae`.
 Local rollback tag: `checkpoint/pre-atmosphere-2026-10-03`.
-Reserved candidate branch: `codex/atmosphere-polish`, starting at the baseline.
-Shared checkout remains on `codex/lookout-radio-opening`. Git LFS object and pointer verification passed. No push is planned.
+Candidate branch: `codex/atmosphere-polish`, starting at the baseline.
+Implementation was isolated on `codex/atmosphere-polish` in a managed worktree. Shared checkout integration preserves `codex/lookout-radio-opening` and any concurrent work. Git LFS object and pointer verification passed. No push is planned.
 
 ## Objective and quality standard
 
