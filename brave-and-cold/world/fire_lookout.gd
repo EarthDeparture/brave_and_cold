@@ -25,6 +25,7 @@ const SURFACE_REACH := 0.95
 const SUPPORTS: Array[Vector2] = [Vector2(-2.95, -2.45), Vector2(2.95, -2.45), Vector2(-2.95, 2.45), Vector2(2.95, 2.45), Vector2(3.40, -2.90), Vector2(6.80, -2.90), Vector2(3.40, 2.90), Vector2(6.80, 2.90)]
 
 var detail_enabled := false
+var route_dressing_enabled := false
 var site: Dictionary = {}
 var access_ribbon:WalkRibbon3D
 var model: Node3D
@@ -65,6 +66,11 @@ func build(site_data: Dictionary, with_model: bool = true) -> void:
 			panel.position=Vector3(0,DECK_Y+.12,-2.08)
 			add_child(panel)
 			for mesh:MeshInstance3D in panel.find_children("*","MeshInstance3D",true,false):mesh.visibility_range_end=140.0
+
+		if detail_enabled and route_dressing_enabled:
+			var bench:Node3D=(load("res://assets/route_detail/lookout_workbench.glb") as PackedScene).instantiate()
+			bench.name="TechnicianWorkbench";bench.position.y=DECK_Y;add_child(bench)
+			for mesh:MeshInstance3D in bench.find_children("*","MeshInstance3D",true,false):mesh.visibility_range_end=90
 
 
 ## Match the project's vertex-coloured building pipeline without modifying

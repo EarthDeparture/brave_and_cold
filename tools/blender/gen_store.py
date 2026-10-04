@@ -76,7 +76,7 @@ def frame(m, axis, fixed, a, b, rz0, rz1):
             m.box(fixed, (a + b) / 2, z, 0.12, b - a + t, t, TRIM)
 
 
-def build():
+def build(include_placeholder_stock=True):
     m = Mesh()
     # foundation piers + floor
     for sx in (-1, -0.33, 0.33, 1):
@@ -103,8 +103,10 @@ def build():
     # false front: tall flat facade above the front wall with a sign board
     FF_H = 1.1
     m.box(0, -HY - 0.12, WALL_TOP + 0.08 + FF_H / 2, 2 * HX + 0.3, 0.1, FF_H, FADED, j=0.1)
-    m.box(0, -HY - 0.2, WALL_TOP + 0.08 + FF_H / 2, 3.2, 0.05, 0.6, (0.62, 0.55, 0.40), j=0.15)   # sign board
-    m.box(0, -HY - 0.24, WALL_TOP + 0.08 + FF_H / 2, 3.0, 0.03, 0.08, (0.15, 0.10, 0.08))
+    if include_placeholder_stock:
+        m.box(0, -HY - 0.2, WALL_TOP + 0.08 + FF_H / 2, 3.2, 0.05, 0.6, (0.62, 0.55, 0.40), j=0.15)   # sign board
+        m.box(0, -HY - 0.24, WALL_TOP + 0.08 + FF_H / 2, 3.0, 0.03, 0.08, (0.15, 0.10, 0.08))
+
     # gable roof (ridge along X) behind the facade
     ov = 0.35
     rz = WALL_TOP + 0.1
@@ -144,9 +146,10 @@ def build():
     for sx in (-2.5, -1.1, 0.3):
         m.box(sx, HY - 0.3, FT + 1.0, 0.07, 0.34, 2.0, TRIM)
     m.box(-2.5, 1.8, FT + 2.05, 0.1, 0.1, 0.1, TRIM)
-    for k in range(6):   # tins on shelves
-        m.box(-2.4 + k * 0.45, HY - 0.3, FT + 0.58, 0.14, 0.14, 0.18, (0.55, 0.50, 0.38), j=0.2)
-        m.box(-2.4 + k * 0.45 + 0.15, HY - 0.3, FT + 1.18, 0.14, 0.14, 0.18, (0.28, 0.32, 0.22), j=0.2)
+    if include_placeholder_stock:
+        for k in range(6):   # tins on shelves
+            m.box(-2.4 + k * 0.45, HY - 0.3, FT + 0.58, 0.14, 0.14, 0.18, (0.55, 0.50, 0.38), j=0.2)
+            m.box(-2.4 + k * 0.45 + 0.15, HY - 0.3, FT + 1.18, 0.14, 0.14, 0.18, (0.28, 0.32, 0.22), j=0.2)
     m.pipe(-HX + 0.6, -0.4, FT, FT + 0.85, 0.28, (0.16, 0.12, 0.09), sides=10)
     m.pipe(-HX + 1.2, -0.9, FT, FT + 0.85, 0.28, (0.16, 0.12, 0.09), sides=10)
     m.box(-HX + 0.7, 0.9, FT + 0.2, 0.8, 0.6, 0.4, WOODL, top=WOODL, j=0.12)

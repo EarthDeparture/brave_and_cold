@@ -1,0 +1,92 @@
+{
+  "source": "tools/blender/gen_route_identity.py",
+  "source_sha256": "a018113c4d2d59e688857d65e95475692f1d073109d1e6015f09365cec93b860",
+  "graphics": "tools/route/generate_route_graphics.py",
+  "license": "Original project-authored geometry and graphics",
+  "units": "metres",
+  "assets": {
+    "store_identity": {
+      "triangles": 308,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 87552,
+      "sha256": "432d35e447528c4e6e1dde5c6379b647a2de29ef297d382a36552681d6e79916"
+    },
+    "store_dressing": {
+      "triangles": 6346,
+      "mesh_groups": [
+        "ShelfStock",
+        "FixedProps",
+        "CounterStock",
+        "CrateStock"
+      ],
+      "bytes": 792512,
+      "sha256": "6f9174ba5cffa074384bd564c1df3a73e74226f42df359b92c7802c277bf6bc6"
+    },
+    "lookout_workbench": {
+      "triangles": 2600,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 270044,
+      "sha256": "09f8cc1785eeab32e7b9dcb78461da6b463ef6c22a239b822e167ec51ebe60ea"
+    },
+    "home_identity_0": {
+      "triangles": 110,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 36220,
+      "sha256": "83350aed4d243c3e3ef75c5f7c7e4360af81f8e9bd8146b2c5475e873c1b1b71"
+    },
+    "home_identity_1": {
+      "triangles": 110,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 38744,
+      "sha256": "2bca1e637a200408102fd33a17a268f483d57ddb051d7f19a7c4d19bc60e1396"
+    },
+    "home_identity_2": {
+      "triangles": 110,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 39212,
+      "sha256": "dfe90b06ed2573455dbbe5026154883b549fa56e8c897b4faff76b9b5822c8bc"
+    },
+    "home_identity_3": {
+      "triangles": 110,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 38932,
+      "sha256": "b7ae898228af437a104fcf911d9bc7aa2f1e459b9750d22c64bd405d807853f6"
+    },
+    "home_identity_4": {
+      "triangles": 110,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 39028,
+      "sha256": "ccc2c6e5dc0fad727cc6ad94167a1e0c6ffbf01c92e5dc1bcee963c032e34050"
+    },
+    "lookout_wayfinding": {
+      "triangles": 218,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 381720,
+      "sha256": "3dcf4a31b188585e0c58e3bb1fed371c518bb33f301c369802708f86b590938a"
+    },
+    "store_shell": {
+      "triangles": 2518,
+      "mesh_groups": [
+        "store"
+      ],
+      "bytes": 176588,
+      "sha256": "dc14988543514a9994243d6e866f04c9ae7453f99d2b98c968b5ab492b1dc340"
+    }
+  }
+}

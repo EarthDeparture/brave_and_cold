@@ -10,9 +10,12 @@ const HZ := 2.3
 const WALL_T := 0.12
 const DOOR_HALF := 0.5
 const RAMP_LEN := 1.4
-## Standing spots (local xz) for the three searches.
-const LOOT_SPOTS := [Vector3(-1.5, 0.0, -1.5), Vector3(0.95, 0.0, 0.2), Vector3(-1.8, 0.0, -0.5)]
+## Physical stock locations for the three existing searches.
+const LOOT_SPOTS := [Vector3(-1.5, 1.53, -1.95), Vector3(1.59, 1.50, -0.92), Vector3(-2.49, 1.11, -0.9)]
 const LOOT_NAMES := ["Search shelves", "Search counter", "Search crates"]
+
+var detail_enabled := false
+var _dressing:Node3D
 
 var floor_y := 0.0
 var door_open := true
@@ -44,7 +47,7 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	position = Vector3(x, hmax - 0.1, z)
 	rotation_degrees = Vector3(0, yaw_deg, 0)
 	floor_y = position.y + FLOOR_LOCAL_Y
-	var model := (load(MODEL) as PackedScene).instantiate()
+	var model := (load("res://assets/route_detail/store_shell.glb" if detail_enabled else MODEL) as PackedScene).instantiate()
 	add_child(model)
 	var mat := StandardMaterial3D.new()
 	mat.vertex_color_use_as_albedo = true
@@ -52,6 +55,9 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	for mi in model.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).material_override = mat
+		if detail_enabled:
+			var timber:=ShaderMaterial.new();timber.shader=preload("res://world/shaders/winter_timber.gdshader")
+			timber.set_shader_parameter("grain",preload("res://assets/environment_detail/textures/timber_alb.png"));(mi as MeshInstance3D).material_override=timber
 	var t := WALL_T
 	_walls = [
 		Rect2(-HX - t, -HZ - t, 2 * HX + 2 * t, 2 * t),
@@ -72,8 +78,19 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	openings.append(Opening.make(self, "window", 1.0, 0.8, Vector3(1.9, 1.5, HZ), 0.0))
 	openings.append(Opening.make(self, "window", 1.0, 0.8, Vector3(HX, 1.5, 0.0), 90.0))
 	openings.append(Opening.make(self, "window", 1.0, 0.8, Vector3(-HX, 1.5, 0.0), -90.0))
+	if detail_enabled:
+		var identity:Node3D=(load("res://assets/route_detail/store_identity.glb") as PackedScene).instantiate();add_child(identity)
+		_dressing=(load("res://assets/route_detail/store_dressing.glb") as PackedScene).instantiate();add_child(_dressing)
+		for node:MeshInstance3D in identity.find_children("*","MeshInstance3D",true,false):node.visibility_range_end=220
+		for node:MeshInstance3D in _dressing.find_children("*","MeshInstance3D",true,false):node.visibility_range_end=85
+		update_loot_visuals()
 	return true
 
+func update_loot_visuals()->void:
+	if _dressing==null:return
+	for i in 3:
+		var stock:Node3D=_dressing.find_child(["ShelfStock","CounterStock","CrateStock"][i],true,false)
+		if stock!=null:stock.visible=not looted[i]
 
 func _build_door() -> void:
 	_door_pivot = Node3D.new()
@@ -119,10 +136,12 @@ func restore_state(d: Dictionary) -> void:
 	if _door_pivot != null:
 		_door_pivot.rotation.y = deg_to_rad(120.0 if door_broken else (105.0 if door_open else 0.0))
 
+	update_loot_visuals()
+
 
 func loot_world_pos(i: int) -> Vector3:
 	var s: Vector3 = LOOT_SPOTS[i]
-	return to_global(Vector3(s.x, FLOOR_LOCAL_Y, s.z))
+	return to_global(Vector3(s.x, FLOOR_LOCAL_Y + s.y, s.z))
 
 
 func noise_leak() -> float:
@@ -173,6 +192,8 @@ func resolve(x: float, z: float, r: float) -> Vector2:
 	var l := to_local_xz(x, z)
 	var moved := false
 	var rects := _walls.duplicate()
+	if detail_enabled:
+		rects.append_array([Rect2(1.25,-1.3,.70,2.6),Rect2(-2.90,-1.20,.80,.60),Rect2(-2.88,.12,.56,.56),Rect2(-2.28,.62,.56,.56),Rect2(-2.70,-2.22,3.40,.36)])
 	if not door_open:
 		rects.append(_door_rect)
 	for w in rects:
@@ -185,7 +206,12 @@ func resolve(x: float, z: float, r: float) -> Vector2:
 			if dl > 0.0001:
 				l = Vector2(cx, cz) + d / dl * r
 			else:
-				l.x += r
+				var edges:=[l.x-w.position.x,w.end.x-l.x,l.y-w.position.y,w.end.y-l.y]
+				var side:int=edges.find(edges.min())
+				if side==0:l.x=w.position.x-r
+				elif side==1:l.x=w.end.x+r
+				elif side==2:l.y=w.position.y-r
+				else:l.y=w.end.y+r
 	if not moved:
 		return Vector2(x, z)
 	var wv := to_global(Vector3(l.x, 0.0, l.y))

@@ -38,6 +38,7 @@ var _frames := 0
 var wind := 3.0
 var _walk_started := false
 var _ft: Array[float] = []
+var route_detail_enabled := false
 var environment_detail_enabled := false
 
 
@@ -60,6 +61,7 @@ func _ready() -> void:
 	terrain.material.set_shader_param("macro_variation2", Color(1.0, 0.97, 0.98))
 	road = RoadNet.new()
 	road.grading_enabled = opts.get("road_grade","smooth") != "baseline"
+	route_detail_enabled=environment_detail_enabled and opts.get("route_detail","winter")!="baseline"
 	road.detail_enabled = environment_detail_enabled and opts.get("road_detail", "winter") != "baseline"
 	add_child(road)
 	trailnet = TrailNet.new()
@@ -378,6 +380,7 @@ func _build_fire_lookout(opts: Dictionary) -> void:
 		return
 	fire_lookout = FireLookout.new()
 	fire_lookout.detail_enabled = environment_detail_enabled
+	fire_lookout.route_dressing_enabled = route_detail_enabled
 	add_child(fire_lookout)
 	fire_lookout.build(parsed)
 	var stair_base := fire_lookout.to_global(Vector3(4.45, 0.0, 1.8))
@@ -390,6 +393,16 @@ func _build_fire_lookout(opts: Dictionary) -> void:
 	fire_lookout.build_access_path(terrain)
 	if fire_lookout.access_ribbon!=null:player.walk_ribbons.append(fire_lookout.access_ribbon)
 	player.spatial_structures.append(fire_lookout)
+	if route_detail_enabled:
+		var path:Array=parsed.get("route",[])
+		if path.size()>1:
+			var a:Array=path[0];var b:Array=path[1]
+			var direction:=Vector2(float(b[0])-float(a[0]),float(b[1])-float(a[1])).normalized()
+			var point:=Vector2(float(a[0]),float(a[1]))+Vector2(-direction.y,direction.x)*3.5+direction*12
+			var sign:Node3D=(load("res://assets/route_detail/lookout_wayfinding.glb") as PackedScene).instantiate()
+			sign.name="LookoutServiceWayfinding"
+			sign.position=Vector3(point.x,terrain.data.get_height(Vector3(point.x,0,point.y)),point.y);sign.rotation.y=atan2(-direction.x,-direction.y);add_child(sign)
+			for mesh:MeshInstance3D in sign.find_children("*","MeshInstance3D",true,false):mesh.visibility_range_end=180
 	print('FIRE_LOOKOUT at ', fire_lookout.position, ' yaw=', fire_lookout.rotation_degrees.y)
 	if opts.has('lookoutpos'):
 		var mode := String(opts['lookoutpos'])
@@ -933,6 +946,7 @@ func _build_store() -> void:
 	if store_plan.is_empty():
 		return
 	var st := Store.new()
+	st.detail_enabled=route_detail_enabled
 	add_child(st)
 	if st.setup(terrain, float(store_plan['x']), float(store_plan['z']), float(store_plan['yaw'])):
 		stores.append(st)
@@ -943,6 +957,7 @@ func _build_store() -> void:
 
 func _loot_store(st: Store, i: int) -> void:
 	st.looted[i] = true
+	st.update_loot_visuals()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(absf(st.position.x) * 13.0 + absf(st.position.z) * 7.0) + i * 101
 	var tables := [
@@ -1064,6 +1079,10 @@ func _build_hamlet(_home: Vector2) -> void:
 		cb.tint = [Color(0.92, 0.88, 0.84), Color(1.0, 1.0, 1.0), Color(0.88, 0.9, 0.95), Color(1.0, 0.95, 0.88), Color(0.9, 0.86, 0.8)][hamlet_n % 5]
 		add_child(cb)
 		if cb.setup(terrain, float(hp['x']), float(hp['z']), float(hp['yaw'])):
+			if route_detail_enabled:
+				var identity:Node3D=(load("res://assets/route_detail/home_identity_%d.glb"%(hamlet_n%5)) as PackedScene).instantiate()
+				identity.name="HamletIdentity";cb.add_child(identity)
+				for mesh:MeshInstance3D in identity.find_children("*","MeshInstance3D",true,false):mesh.visibility_range_end=100
 			cb.wood_pile = 2 + (hamlet_n * 3) % 5
 			cabins.append(cb)
 			hamlet_n += 1
