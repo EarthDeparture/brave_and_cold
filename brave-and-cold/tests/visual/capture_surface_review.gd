@@ -8,7 +8,7 @@ func freeze(node:Node)->void:
 	for child in node.get_children():freeze(child)
 func run()->void:
 	for arg in OS.get_cmdline_user_args():
-		var pair:=arg.split("=",true,1);options[pair[0]]=pair[1] if pair.size()>1 else "1"
+		var pair:=arg.split("=",true,1);options[pair[0].trim_prefix("--")]=pair[1] if pair.size()>1 else "1"
 	output=String(options.get("capture_out","res://shots/walk-surfaces/review"));DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output))
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED);DisplayServer.window_set_size(Vector2i(1600,900));AudioServer.set_bus_mute(0,true);SaveGame.pending={};seed(20261003)
 	var world:Node3D=load("res://world/game_world.gd").new();root.add_child(world)
@@ -19,6 +19,10 @@ func run()->void:
 	freeze(world);world.hud.hide();world.player.frozen=false;world.snowfall.hide();world.weather_presentation.hide()
 	world.weather.lock_state(Weather.S.CLOUDY);world.weather.advance(120,0);world.clock.hour=12;world.sky_rig.set_cloud_offset(Vector2(.17,.08));world.sky_rig.apply_hour(12)
 	var p:Player=world.player;var vm:Viewmodel=world.viewmodel;var camera:Camera3D=p.cam;var records:Array=[]
+	if options.has("normal_off"):
+		for hand in [vm._right,vm._left]:
+			for mesh in [hand.bare,hand.glove]:
+				(mesh.get_surface_override_material(0) as StandardMaterial3D).normal_enabled=false
 	p.position=Vector3(-120,8.44652,133);camera.position=Vector3.ZERO;camera.look_at(Vector3(-160,10.74652,50))
 	for gloves in ["","hide_mitts"]:
 		for item in [{"id":"rifle-hip","mode":"rifle","aim":0.0,"fire":-1.0,"swing":-1.0},{"id":"rifle-aim","mode":"rifle","aim":1.0,"fire":-1.0,"swing":-1.0},{"id":"rifle-bolt","mode":"rifle","aim":0.0,"fire":.62,"swing":-1.0},{"id":"axe-rest","mode":"axe","aim":0.0,"fire":-1.0,"swing":-1.0},{"id":"axe-strike","mode":"axe","aim":0.0,"fire":-1.0,"swing":.4},{"id":"fists","mode":"fists","aim":0.0,"fire":-1.0,"swing":-1.0},{"id":"jab","mode":"fists","aim":0.0,"fire":-1.0,"swing":.18}]:

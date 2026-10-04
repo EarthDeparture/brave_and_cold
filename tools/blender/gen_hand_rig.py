@@ -55,12 +55,12 @@ class Hand:
                 # lateral contour drops toward the web rather than forming a
                 # flat rectangular slab between the wrist and finger roots.
                 dorsal = .003 + .009*cross + .0015*math.sin(row/7*math.pi)
-                dorsal += .004*math.exp(-((zz+.077)/.011)**2)*(.30+.70*(col%2))
+                dorsal += .0055*math.exp(-((zz+.077)/.011)**2)*(.30+.70*(col%2))
                 for tendon in [-.030,-.010,.010,.030]:
                     dorsal += .0012*math.exp(-((x0-tendon)/.007)**2-((zz+.046)/.027)**2)
                 # Thenar and hypothenar pads are part of the palm surface.
-                pad = .007*math.exp(-((x+.025)/.020)**2-((zz+.034)/.026)**2)
-                pad += .004*math.exp(-((x-.026)/.020)**2-((zz+.050)/.029)**2)
+                pad = .010*math.exp(-((x+.025)/.020)**2-((zz+.034)/.026)**2)
+                pad += .006*math.exp(-((x-.026)/.020)**2-((zz+.050)/.029)**2)
                 volar = -.005 - .007*cross - pad
                 t.append(self.vertex((x,dorsal,zz)))
                 b.append(self.vertex((x,volar,zz)))
@@ -202,6 +202,8 @@ def make_rig(hand,obj,side=1):
     return rig
 
 
+CONTACT_FIT=json.loads(Path(__file__).with_name("hand_contact_fit.json").read_text())
+
 PRESETS={
     'Open': ([0,0,0],[0,0,0],0),
     'Fist': ([90,100,40],[25,0,22],-47),
@@ -210,14 +212,47 @@ PRESETS={
     'Support': ([45,61,42],[11.5,76.1,62.2],22.9),
     'Bolt': ([61,80,61],[0,11.8,36],-51.3),
 }
-THUMB_TARGETS={'Fist':[-.01319,-.04137,-.09882],'Shaft':[0,-.018,-.098],
-               'Bolt':[-.010,-.022,-.103],'Trigger':[-.047,-.055,-.040],
-               'Support':[-.044,-.048,-.033]}
+THUMB_TARGETS={'Fist':[-.01319,-.04137,-.09882],'Shaft':[0,-.006,-.103],
+               'Bolt':[0,-.009,-.106],'Trigger':[-.044,-.068,-.068],
+               'Support':[-.044,-.080,-.033]}
+
+
+def fit_thumb(rig,target,initial):
+    """Small damped IK solve in Blender, for a pad outside the item surface."""
+    import numpy as np
+    angles=np.array(initial,dtype=float)
+    target=np.array(target,dtype=float)
+    def evaluate(values):
+        for j in range(3):
+            rig.pose.bones['thumb_'+str(j+1).zfill(2)].rotation_quaternion=Euler((math.radians(-values[j]),0,math.radians(values[3] if j==0 else 0))).to_quaternion()
+        bpy.context.view_layer.update()
+        tip=rig.pose.bones['thumb_03'].tail
+        return np.array([tip.x,tip.z,-tip.y])
+    for _ in range(100):
+        point=evaluate(angles);error=target-point
+        if np.linalg.norm(error)<.0002:break
+        jac=np.stack([(evaluate(angles+np.eye(4)[j]*.05)-point)/.05 for j in range(4)],axis=1)
+        step=jac.T@np.linalg.solve(jac@jac.T+np.eye(3)*1e-8,error)
+        step=np.clip(step,-8,8)
+        old=np.linalg.norm(error)
+        for scale in [1,.5,.25,.1]:
+            candidate=np.clip(angles+step*scale,[-25,-15,-10,-100],[105,110,100,100])
+            if np.linalg.norm(target-evaluate(candidate))<old:
+                angles=candidate;break
+        else:break
+    error=float(np.linalg.norm(target-evaluate(angles)))
+    print('THUMB_FIT',target.tolist(),angles.tolist(),'error_m',error,flush=True)
+    assert error<.001, error
+    return angles.tolist()
 
 
 def pose_actions(rig,side=1):
     rig.animation_data_create()
     for name,(fingers,thumb,opposition) in PRESETS.items():
+        if side==1 and name in ['Shaft','Trigger','Support','Bolt']:
+            fitted=fit_thumb(rig,THUMB_TARGETS[name],[*thumb,opposition])
+            thumb=fitted[:3];opposition=fitted[3]
+            PRESETS[name]=(fingers,thumb,opposition)
         action=bpy.data.actions.new(name);action.use_fake_user=True
         rig.animation_data.action=action
         for b in rig.pose.bones:
@@ -230,11 +265,13 @@ def pose_actions(rig,side=1):
                     # palm pad instead of leaving a visible open loop.
                     angle={'index':[90,100,40], 'middle':[90,100,45],
                            'ring':[90,100,35], 'little':[90,90,40]}[digit][j]
+                if name in CONTACT_FIT and digit in CONTACT_FIT[name]:
+                    angle=CONTACT_FIT[name][digit][j]
                 # Straight trigger finger rests alongside guard before firing.
                 if name=='Trigger' and digit=='index': angle=[5,15,10][j]
                 rig.pose.bones[digit+'_'+str(j+1).zfill(2)].rotation_quaternion=Euler((math.radians(-angle),0,0)).to_quaternion()
                 if name=='Trigger' and digit=='index' and j==0:
-                    rig.pose.bones['index_01'].rotation_quaternion=Euler((math.radians(-angle),0,math.radians(35*side))).to_quaternion()
+                    rig.pose.bones['index_01'].rotation_quaternion=Euler((math.radians(-angle),0,math.radians(-35*side))).to_quaternion()
         for j,angle in enumerate(thumb):
             rig.pose.bones['thumb_'+str(j+1).zfill(2)].rotation_quaternion=Euler((math.radians(-angle),0,math.radians(opposition*side if j==0 else 0))).to_quaternion()
         for bone in rig.pose.bones:
@@ -355,9 +392,9 @@ def main():
     for obj in [glove,*left,left_rig,*sleeves]:obj.hide_set(True)
     rig.show_in_front=True
     bpy.ops.wm.save_as_mainfile(filepath=str(out/'survivor_hand_rig.blend'))
-    receipt={'version':6,'source':'tools/blender/gen_hand_rig.py','blender':bpy.app.version_string,
+    receipt={'version':7,'source':'tools/blender/gen_hand_rig.py','blender':bpy.app.version_string,
         'volume_correctives':correctives,'units':'metres','wrist_origin':[0,0,0],'forearm_axis':[0,0,1],
-        'bones':list(hand.bones),'grips':list(PRESETS),'validation':report,
+        'contact_fit':CONTACT_FIT,'bones':list(hand.bones),'grips':list(PRESETS),'validation':report,
         'thumb_targets_godot':THUMB_TARGETS,'thumb_distal_length':(Vector(hand.bones['thumb_03'][1])-Vector(hand.bones['thumb_03'][0])).length,
         'sha256':hashlib.sha256(glb.read_bytes()).hexdigest(),
         'generator_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),

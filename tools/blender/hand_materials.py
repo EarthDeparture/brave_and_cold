@@ -61,8 +61,8 @@ def painted(points, normals, shape, kind):
         tip_d = points-path[-1]
         longitudinal = tip_d @ tip_axis
         # A quiet oval nail on the outward terminal segment. Most are hidden by grips.
-        nail_mask = np.exp(-np.square((longitudinal+.003)/.004))
-        nail_mask *= np.exp(-np.square(tip_dist/(radius*.95))) * np.clip(-palm, 0, 1)
+        nail_mask = np.exp(-np.square((longitudinal+.006)/.006))
+        nail_mask *= np.exp(-np.square(tip_dist/(radius*1.25))) * np.clip(-palm, 0, 1)
         nail = np.maximum(nail, nail_mask)
         offset = 0.0
         for a, b in zip(path, path[1:]):
@@ -97,8 +97,8 @@ def painted(points, normals, shape, kind):
         col = np.tile((.48, .335, .265), (len(points), 1)).astype(np.float32)
         col *= (0.87 + .21*broad + .10*(mottle-.5) + .023*(grain-.5))[:, None]
         col += blush[:, None]*np.array((.027, -.007, -.012))
-        col *= (1-fold*.28)[:, None]
-        col = col*(1-nail[:, None]*.55) + np.array((.48, .36, .32))*nail[:, None]*.55
+        col *= (1-fold*.14)[:, None]
+        col = col*(1-nail[:, None]*.72) + np.array((.48, .36, .32))*nail[:, None]*.72
         height = (grain-.5)*.07 - fold*.20
     else:
         # Cream leather backs, brown reinforced palms and fingertips.
@@ -108,7 +108,7 @@ def painted(points, normals, shape, kind):
         cuff_seam = np.exp(-np.square((along+.010)/.0010))
         angle = np.arctan2(wrist_d[:, 1], wrist_d[:, 0])
         cuff_seam *= (np.sin(angle*35) > .35)
-        stitching = np.maximum(stitching*.40, cuff_seam)
+        stitching = np.maximum(stitching*.15, cuff_seam)
         # Authored pale suede backs and warm leather palms, with a
         # continuous cut-panel seam across the metacarpals.
         panel = np.exp(-((points[:,2]+.060-points[:,0]*.10)/.0013)**2)
@@ -119,8 +119,8 @@ def painted(points, normals, shape, kind):
         wear = np.clip(blush*.8 + tips*.4, 0, .8) * (.4+.6*mottle)
         col += wear[:, None]*np.array((.036, .028, .018))
         col *= (1-fold*.35)[:, None]
-        col = col*(1-stitching[:, None]*.65) + np.array((.51, .43, .30))*stitching[:, None]*.65
-        height = (grain-.5)*.14 - fold*.32 + stitching*.17
+        col = col*(1-stitching[:, None]*.30) + np.array((.51, .43, .30))*stitching[:, None]*.30
+        height = (grain-.5)*.10 - fold*.18 + stitching*.07
     return np.clip(col, 0, 1), height
 
 

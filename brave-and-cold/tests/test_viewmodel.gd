@@ -18,10 +18,18 @@ func pose(mode_name: String, swing_time := -1.0, fire_time := -1.0, aim := 0.0) 
 	vm._process(0.0)
 func cuff_ok() -> bool:
 	return vm._right.position.distance_to(vm._sl_r.position)<.0001 and (not vm._left.visible or vm._left.position.distance_to(vm._sl_l.position)<.0001)
-func skin_vertices(hand: SurvivorHandRig) -> PackedVector3Array:
-	var mesh := hand.bare
+func skin_vertices(hand: SurvivorHandRig,gloved:=false) -> PackedVector3Array:
+	var mesh := hand.glove if gloved else hand.bare
 	var arrays := mesh.mesh.surface_get_arrays(0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	# Imported glTF stores absolute positions in NORMALIZED blend shapes.
+	assert(mesh.mesh.blend_shape_mode==Mesh.BLEND_SHAPE_MODE_NORMALIZED)
+	var base:=vertices.duplicate()
+	for shape in mesh.mesh.get_blend_shape_count():
+		var blend:float=mesh.get_blend_shape_value(shape)
+		if absf(blend)<.000001:continue
+		var target:PackedVector3Array=mesh.mesh.surface_get_blend_shape_arrays(0)[shape][Mesh.ARRAY_VERTEX]
+		for i in vertices.size():vertices[i]+=(target[i]-base[i])*blend
 	var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
 	var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
 	var matrices: Array[Transform3D] = []
@@ -90,6 +98,45 @@ func run() -> void:
 	check("Thumb joints reach the fitted grip targets within 1 mm",contact_error<.001)
 	check("Both native skeletons preserve mirrored joint motion without negative node scale",mirror_error<.00001 and vm._left.skeleton.global_basis.determinant()>0.0)
 	print("HAND_CONTACT_ERROR metres=",contact_error," mirror_error=",mirror_error)
+	pose("axe")
+	for gloved in [false,true]:
+		var penetration:=0.0;var touching:=0;var handle_inverse:=vm._axe.transform.affine_inverse()
+		for point in skin_vertices(vm._right,gloved):
+			var tool:Vector3=handle_inverse*(vm._right.transform*point)
+			if absf(tool.y)>.04:continue
+			var radial:float=pow(pow(absf(tool.x/.0122),2.4)+pow(absf((tool.z-.002)/.0168),2.4),1.0/2.4)
+			var distance:float=(radial-1.0)*.0122*1.2
+			penetration=maxf(penetration,-distance)
+			if absf(distance)<.004:touching+=1
+		print("ACTUAL_SHAFT_CONTACT gloved=",gloved," penetration_m=",penetration," near_surface_vertices=",touching)
+		check("Actual skinned shaft grip has pad contact without deep handle penetration, gloves %s"%gloved,penetration<.0035 and touching>20)
+	pose("rifle")
+	var stock:Array=[[-.402,-.044,.0165,.066],[-.380,-.043,.0185,.064],[-.320,-.037,.0195,.056],[-.260,-.028,.0195,.048],[-.200,-.018,.019,.042],[-.140,-.011,.0185,.039],[-.080,-.007,.018,.037],[-.020,-.004,.0185,.038],[.050,0,.019,.040],[.120,.004,.0195,.040],[.220,.008,.0195,.036],[.340,.012,.019,.032],[.460,.016,.0185,.029],[.560,.018,.018,.026],[.600,.019,.0165,.0235]]
+	for hand in [vm._right,vm._left]:
+		for gloved in [false,true]:
+			var penetration:=0.0;var touching:=0;var inverse:=vm._rifle.transform.affine_inverse()
+			for point in skin_vertices(hand,gloved):
+				var tool:Vector3=inverse*(hand.transform*point);var axial:float=-tool.z
+				for index in stock.size()-1:
+					var a:Array=stock[index];var b:Array=stock[index+1]
+					if axial<a[0] or axial>b[0]:continue
+					var mix:float=(axial-a[0])/(b[0]-a[0]);var center:float=lerpf(a[1],b[1],mix);var width:float=lerpf(a[2],b[2],mix);var height:float=lerpf(a[3],b[3],mix)
+					var radial:float=pow(pow(absf(tool.x/width),2.8)+pow(absf((tool.y-center)/height),2.8),1.0/2.8)
+					var distance:float=(radial-1.0)*minf(width,height)
+					penetration=maxf(penetration,-distance)
+					if absf(distance)<.004:touching+=1
+					break
+			print("ACTUAL_STOCK_CONTACT hand=",hand.name," gloved=",gloved," penetration_m=",penetration," near_surface_vertices=",touching )
+			check("Actual rifle stock has pad contact without deep skin or glove penetration, %s gloves %s"%[hand.name,gloved],penetration<.0035 and touching>20)
+	pose("rifle",-1.0,.62)
+	for gloved in [false,true]:
+		var min_radius:=INF;var closest:=Vector3.ZERO
+		for point in skin_vertices(vm._right,gloved):
+			var local:Vector3=vm._bolt.transform.affine_inverse()*(vm._right.transform*point)
+			var scaled:Vector3=(local-Vector3(.063,-.042,.018))/Vector3(.0125,.0115,.0125)
+			if scaled.length()<min_radius:min_radius=scaled.length();closest=local
+		print("ACTUAL_BOLT_CONTACT gloves=",gloved," min_radius=",min_radius," closest=",closest)
+		check("Bolt knob remains between the pads without deep penetration, gloves %s"%gloved,min_radius>.72 and min_radius<1.30)
 	var valid := true
 	for i in range(83):
 		pose("axe",i*.01)
