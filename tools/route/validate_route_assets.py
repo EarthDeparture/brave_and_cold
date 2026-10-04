@@ -5,8 +5,9 @@ ROOT=Path(__file__).resolve().parents[2]
 PALETTE={'painted_steel':(.06,.12,.10),'aged_steel':(.24,.27,.24),'brass':(.31,.25,.12),'rubber':(.017,.021,.02),'paper':(.64,.58,.40),'canvas':(.24,.25,.14),'red_lead':(.25,.032,.017),'cream':(.58,.52,.36)}
 def validate():
  receipt=json.loads((ROOT/'tools/blender/generated/route_identity/route_identity.json').read_text(encoding='utf-8'))
+ assert receipt['source_hash_encoding']=='utf-8 LF'
  for key,path in [('source_sha256',receipt['source']),('graphics_source_sha256',receipt['graphics'])]:
-  assert hashlib.sha256((ROOT/path).read_bytes()).hexdigest()==receipt[key],('source hash',path)
+  assert hashlib.sha256((ROOT/path).read_text(encoding='utf-8').encode('utf-8')).hexdigest()==receipt[key],('source hash',path)
  for name,digest in receipt['graphics_sha256'].items():
   assert hashlib.sha256((ROOT/'tools/blender/generated/route_identity/textures'/name).read_bytes()).hexdigest()==digest,('graphic hash',name)
  results={}

@@ -16,7 +16,7 @@ Eighteen tins now have cylindrical paper labels, rolled rims, pressed lids and p
 
 Route props have subtle baked vertex patina. An initial Blender MixRGB export washed untextured surfaces white; that candidate was rejected. The final export retains the authored material factors and direct texture links, with neutral multiplicative vertex colors. GLB-byte validation and Godot palette assertions guard against repeating that failure. Existing fixed-prop and three searchable stock groups remain unchanged. Searches remove their corresponding physical stock, save restoration restores emptiness, and entrance/search aisles stay clear.
 
-The store dressing has 19,474 triangles and 22 material primitives, below its 20,000-triangle asset budget. Ten route GLBs total 3,125,948 bytes. Store props retain the existing 85 m visibility limit. Source Blender files include packed images; source, graphic and runtime hashes are recorded. Geometry/file budgets are verified; this pass does not establish a new frame-time benchmark.
+The store dressing has 19,474 triangles and 22 material primitives, below its 20,000-triangle asset budget. Ten route GLBs total 3,125,948 bytes. Store props retain the existing 85 m visibility limit. Source Blender files include packed images; source, graphic and runtime hashes are recorded. Source hashes use canonical UTF-8/LF text to tolerate Git line-ending conversion; graphic and GLB hashes use exact bytes. Geometry/file budgets are verified; this pass does not establish a new frame-time benchmark.
 
 ## Verification and limits
 

@@ -1,8 +1,8 @@
 {
   "source": "tools/blender/gen_route_identity.py",
-  "source_sha256": "a29b45b493236a85155582fbc8422bd964ddbbc899edcf1c94ce12c0cee83498",
+  "source_sha256": "752b7762d2e689839881b08b8a1a068b41663ed5fef2b589c775c1d3ac5101d1",
   "graphics": "tools/route/generate_route_graphics.py",
-  "graphics_source_sha256": "44128ebdddc2e746a801247b21aececc6b78afad10a16e94751abe08309f5ca7",
+  "graphics_source_sha256": "aed41df790648d01a8619f72f1ecc69cbec463e2ecd7997b1ee1699ac5bda2bc",
   "graphics_sha256": {
     "beans.png": "0d0a9e5dc273ad7c5037cccf6b383b009c40a79510cfe863aafd8c2e32b18c79",
     "home_0.png": "a2311fee6089e34ae01fe9505953505180dbe4000bc89853c99e2d832acf0130",
@@ -109,5 +109,6 @@
       "bytes": 176588,
       "sha256": "dc14988543514a9994243d6e866f04c9ae7453f99d2b98c968b5ab492b1dc340"
     }
-  }
+  },
+  "source_hash_encoding": "utf-8 LF"
 }
