@@ -332,7 +332,11 @@ func _pose_rifle(base: Transform3D) -> void:
 		else:
 			reach = 1.0 - _sstep((_fire_t - 0.90) / (FIRE_LEN - 0.90))
 	_right.transform = trigger.interpolate_with(bolt_grip, reach)
-	_right.pose("Trigger", "Bolt", reach)
+	# Lift outside the receiver while releasing the stock. Both fitted endpoints
+	# stay exact; the fingers relax in the middle and close onto the bolt knob.
+	var clearance := sin(PI * reach)
+	_right.position += w.basis * Vector3(.12, .035, 0.0) * clearance
+	_right.pose("Trigger", "Bolt", reach, .55 * clearance)
 	_left.transform = w * Transform3D(Basis(Vector3.FORWARD, Vector3.DOWN, Vector3.LEFT), RIFLE_WRIST_L)
 	_left.pose("Support")
 	var arm := base * _about(butt, kb)

@@ -60,15 +60,18 @@ func set_gloved(worn: bool) -> void:
 	bare.visible = not worn
 	glove.visible = worn
 
-func pose(grip: String, second := "", blend := 0.0) -> void:
+func pose(grip: String, second := "", blend := 0.0, release := 0.0) -> void:
 	var first: Array = grips[grip]
 	var other: Array = grips[second] if second != "" else first
+	var open: Array = grips["Open"]
+	var relaxed := clampf(release, 0.0, 1.0)
 	for i in skeleton.get_bone_count():
-		skeleton.set_bone_pose_rotation(i, (first[i] as Quaternion).slerp(other[i], blend))
+		var rotation := (first[i] as Quaternion).slerp(other[i], blend)
+		skeleton.set_bone_pose_rotation(i, rotation.slerp(open[i], relaxed))
 
 	# Corrective morphs preserve joint volume when the linear skin bends.
 	for mesh in [bare,glove]:
 		for i in mesh.mesh.get_blend_shape_count():
 			var name:=String(mesh.mesh.get_blend_shape_name(i))
 			var weight:float=(1.0-blend if name=="corrective_"+grip else 0.0)+(blend if second!="" and name=="corrective_"+second else 0.0)
-			mesh.set_blend_shape_value(i,weight)
+			mesh.set_blend_shape_value(i,weight*(1.0-relaxed))
