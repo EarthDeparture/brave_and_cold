@@ -1,0 +1,129 @@
+{
+  "date": "2026-10-04",
+  "engine": "Godot 4.7.2",
+  "blender": "5.2.2",
+  "seed": 20261003,
+  "direction_cases": 544,
+  "unobstructed_cases": 424,
+  "unobstructed_steering_events": 0,
+  "unobstructed_max_camera_height_step_change_m": 0.0016937255859375,
+  "reproduced_case": {
+    "id": "road-632-6.40",
+    "direction": 5,
+    "after_turns": 0,
+    "after_max_turn_degrees": 0.00609918842422113,
+    "baseline_note": "The earlier diagnostic output was overwritten; only final measurements are retained here. Original movement code is preserved at checkpoint/pre-locomotion-route-2026-10-04."
+  },
+  "capture_motion": [
+    {
+      "camera_step_change": [
+        6.103515625e-05,
+        0.0016937255859375,
+        6.103515625e-05
+      ],
+      "distance_m": 25.1879901885986,
+      "fps": 30,
+      "id": "bank-walk"
+    },
+    {
+      "camera_step_change": [
+        0.00030517578125,
+        0.000660896301269531,
+        0.0
+      ],
+      "distance_m": 24.5642700195313,
+      "fps": 30,
+      "id": "shore-walk"
+    }
+  ],
+  "hand_rig": {
+    "ok": true,
+    "bones_per_hand": 16,
+    "skeletons": 2,
+    "grips": 6,
+    "bind_error": 1.177038162492039e-07,
+    "bytes": 17648480,
+    "meshes": {
+      "BareHand": {
+        "triangles": 27872,
+        "components": 1,
+        "closed": true,
+        "weight_sum_error": 1.1920928955078125e-07,
+        "minimum_triangle_area_m2": 1.0131911309940733e-08
+      },
+      "LeatherGlove": {
+        "triangles": 27872,
+        "components": 1,
+        "closed": true,
+        "weight_sum_error": 1.1920928955078125e-07,
+        "minimum_triangle_area_m2": 2.332415593997439e-09
+      },
+      "BareHandLeft": {
+        "triangles": 27872,
+        "components": 1,
+        "closed": true,
+        "weight_sum_error": 1.1920928955078125e-07,
+        "minimum_triangle_area_m2": 1.0131911309940733e-08
+      },
+      "LeatherGloveLeft": {
+        "triangles": 27872,
+        "components": 1,
+        "closed": true,
+        "weight_sum_error": 1.1920928955078125e-07,
+        "minimum_triangle_area_m2": 2.332415593997439e-09
+      }
+    }
+  },
+  "route_runtime_bytes": 1900552,
+  "tests": {
+    "walk-final": [
+      "WALK_SURFACE_TEST_COMPLETE failures=0 routes=192 max_contact_error_m=0.00001522116364 max_camera_step_change_m=0.00607363879681"
+    ],
+    "directions-final": [
+      "DIRECTION_AUDIT_COMPLETE cases=544 free_cases=424 unexpected_steering=0 report=res://shots/locomotion-route/directions-final.json"
+    ],
+    "shore-contacts-final": [
+      "SHORE_CONTACT_COMPLETE hits=0 end=(-618.5497, 11.30697, -72.0)"
+    ],
+    "test_shore_walking-final": [
+      "SHORE_WALK fps=30 crossings=28 blocked_frames=0 minimum_metres=25.0005416870117 max_vertical_bump_m=0.0036523193121",
+      "SHORE_WALK fps=60 crossings=28 blocked_frames=0 minimum_metres=25.0005416870117 max_vertical_bump_m=0.00092093646526",
+      "SHORE_WALK fps=120 crossings=28 blocked_frames=0 minimum_metres=25.0007629394531 max_vertical_bump_m=0.00022654235363",
+      "STAIR_CONTROLLER ascent=true height=21.4099999848425 blocked_frames=0",
+      "STAIR_CONTROLLER descent=true height=0.00000013743038 blocked_frames=0"
+    ],
+    "jump-final": [
+      "JUMP_TEST_COMPLETE failures=0"
+    ],
+    "viewmodel-final": [
+      "ACTUAL_SHAFT_CONTACT gloved=false penetration_m=0.0 near_surface_vertices=1602",
+      "ACTUAL_SHAFT_CONTACT gloved=true penetration_m=0.00098381210726 near_surface_vertices=2878",
+      "ACTUAL_STOCK_CONTACT hand=RightHand gloved=false penetration_m=0.00065524590955 near_surface_vertices=1338",
+      "ACTUAL_STOCK_CONTACT hand=RightHand gloved=true penetration_m=0.00169566869198 near_surface_vertices=2138",
+      "ACTUAL_STOCK_CONTACT hand=LeftHand gloved=false penetration_m=0.00079986677498 near_surface_vertices=2210",
+      "ACTUAL_STOCK_CONTACT hand=LeftHand gloved=true penetration_m=0.00172955076943 near_surface_vertices=3996",
+      "ACTUAL_BOLT_CONTACT gloves=false min_radius=1.02329981327057 closest=(0.057925, -0.036101, 0.008164)",
+      "ACTUAL_BOLT_CONTACT gloves=true min_radius=0.88832175731659 closest=(0.058897, -0.036506, 0.009585)",
+      "HAND_RIG_TEST failures=0"
+    ],
+    "route-test-final": [
+      "ROUTE_IDENTITY_TEST failures=0"
+    ],
+    "route-baseline-final": [
+      "ROUTE_BASELINE_TEST failures=0"
+    ],
+    "test_frozen_water-final": [],
+    "test_fire_lookout-final": [
+      "FIRE_LOOKOUT_TEST failures=0"
+    ],
+    "test_road_detail-final": [
+      "ROAD_DETAIL_TEST_COMPLETE failures=0 points=1024 signs=18 metres=2558.13801461458"
+    ],
+    "test_environment_detail-final": [
+      "ENVIRONMENT_DETAIL_TESTS failures=0"
+    ],
+    "test_survival-final": [
+      "SURVIVAL_TESTS failures=0"
+    ]
+  }
+}
