@@ -1,0 +1,158 @@
+{
+  "date": "2026-10-04",
+  "checkpoint": "checkpoint/pre-grip-transition-route-2026-10-04",
+  "baseline_commit": "c1dcd171bd968e279bbfd21f41b5a051519343f5",
+  "branch": "codex/grip-transition-route-wear",
+  "pushed": false,
+  "grip": {
+    "sample_interval_s": 0.005,
+    "states_each": 282,
+    "skins": [
+      "bare",
+      "gloved"
+    ],
+    "baseline_worst": {
+      "gloved": true,
+      "overlap": 0.0126134285893043,
+      "time": 0.45
+    },
+    "candidate_worst": {
+      "gloved": true,
+      "overlap": 0.00169566869198143,
+      "time": 1.075
+    },
+    "stock_tolerance_m": 0.0035,
+    "scope": "Imported right-hand skin plus live corrective morphs through hip-fire bolt operation; static aim/contact and wrist continuity covered separately by test_viewmodel."
+  },
+  "assets": {
+    "source_hashes_valid": true,
+    "graphic_hashes_valid": true,
+    "palette_factors_valid": true,
+    "stock_groups_valid": true,
+    "triangle_budget_per_asset": 20000,
+    "total_bytes": 3125948,
+    "assets": {
+      "store_identity": {
+        "triangles": 308,
+        "primitives": 4,
+        "bytes": 91228,
+        "sha256": "579e1b8b3a0bcc657dd009f1c48e5f9e56db9b7d5de2497cc69a6206f04ab0dc"
+      },
+      "store_dressing": {
+        "triangles": 19474,
+        "primitives": 22,
+        "bytes": 1977076,
+        "sha256": "e3f4de7175e61f72ff0b3aba78c0d7802ba93b5c0e7216e3a6f0626aa64b8002"
+      },
+      "lookout_workbench": {
+        "triangles": 2600,
+        "primitives": 11,
+        "bytes": 297308,
+        "sha256": "c0755c374f04c5ba9aeb4bf39598a1bfe5a29af3ef0a33922ab738afb7fd3213"
+      },
+      "home_identity_0": {
+        "triangles": 110,
+        "primitives": 2,
+        "bytes": 37640,
+        "sha256": "cd9af7f798aa1b68a057105c80982b8908f7c887345a94dbc008da4b82bfe4a6"
+      },
+      "home_identity_1": {
+        "triangles": 110,
+        "primitives": 2,
+        "bytes": 40164,
+        "sha256": "2ef76c2225ba48550029a33fe508b61105b706ead5ee4b82399e098b6314436e"
+      },
+      "home_identity_2": {
+        "triangles": 110,
+        "primitives": 2,
+        "bytes": 40632,
+        "sha256": "9421ac075874e4545303b21c391d46b7ae401b3d7caa23991cad46e6958c477a"
+      },
+      "home_identity_3": {
+        "triangles": 110,
+        "primitives": 2,
+        "bytes": 40352,
+        "sha256": "d8145439e1559e54c80fdd1686c7735273856b486237757856a875c9d79df24f"
+      },
+      "home_identity_4": {
+        "triangles": 110,
+        "primitives": 2,
+        "bytes": 40448,
+        "sha256": "9e45a6b37a5c88cef66de4ea20c7febf77a539f1797dc6bd3186f2ed60869950"
+      },
+      "lookout_wayfinding": {
+        "triangles": 218,
+        "primitives": 3,
+        "bytes": 384512,
+        "sha256": "43a7b253986cf5d7a9c6b35623673cdb6f6180d3ace91d31b4bfd0f5867080ac"
+      },
+      "store_shell": {
+        "triangles": 2518,
+        "primitives": 1,
+        "bytes": 176588,
+        "sha256": "dc14988543514a9994243d6e866f04c9ae7453f99d2b98c968b5ab492b1dc340"
+      }
+    }
+  },
+  "native": {
+    "store_source_packed": true,
+    "mesh_groups": [
+      "ShelfStock",
+      "FixedProps",
+      "CounterStock",
+      "CrateStock"
+    ],
+    "vertex_patina_present": true
+  },
+  "checks": {
+    "viewmodel-final.log": {
+      "success_marker": "HAND_RIG_TEST failures=0",
+      "log_sha256": "300a0c00de29fe9646dbf74b04322e42bc7bbd246c1fe135bd3dd00b0d04503a"
+    },
+    "grip-after.log": {
+      "success_marker": "GRIP_TRANSITION_COMPLETE",
+      "log_sha256": "9feb74d92733155fc8184b302f2629f011dc4a8b7ac959586c9976389bc132c2"
+    },
+    "route-final.log": {
+      "success_marker": "ROUTE_IDENTITY_TEST failures=0",
+      "log_sha256": "792cb0ecda5404443c741d2ecd099c21d6f13b4a877ba7a5d75baa4a28d4da0a"
+    },
+    "route-baseline.log": {
+      "success_marker": "ROUTE_BASELINE_TEST failures=0",
+      "log_sha256": "9c3457a3651b3e1775a24f225d1142d75fc2d5d3eefad4c366545973dfbbe445"
+    },
+    "shore-final.log": {
+      "success_marker": "SHORE_CONTACT_COMPLETE hits=0",
+      "log_sha256": "4f1f77093340733a5e7877d1f735bf15b0f58bc53179989bec4e76656df6fd7d"
+    },
+    "props-capture-final.log": {
+      "success_marker": "ROUTE_REVIEW_COMPLETE",
+      "log_sha256": "5538f7bfb2dfc1363d254c38a5b30768b3d9f75d04a610f373379e319456f521"
+    },
+    "reload-before.log": {
+      "success_marker": "RELOAD_CAPTURE_COMPLETE frames=37",
+      "log_sha256": "411eeb6030573a23d84fa97abe04c883cf86fb98f317bbb5aaef39a48a0e8327"
+    },
+    "reload-after.log": {
+      "success_marker": "RELOAD_CAPTURE_COMPLETE frames=37",
+      "log_sha256": "282cfb326f77a2fd26f41bc71078144823e5eff98fd6ee6f63e3e6ce24909e4a"
+    },
+    "native-final.log": {
+      "success_marker": "BLENDER_SOURCE_VALIDATION",
+      "log_sha256": "68c5e7620d96c183c7b32230e72e3cb4ba756adcb26f6b25f4031d3c9dca4f68"
+    }
+  },
+  "captures": {
+    "route_camera": "Fixed seed 20261003, cloudy noon; 1600x900; same named cameras before/after. Time-based shader/reflection variation prevents strict pixel-difference claims.",
+    "reload": "37 frames each, 1280x720, 20 ms animation increments; same camera/weather; immutable pre-clearance fixture.",
+    "folder": "brave-and-cold/shots/grip-route-followup",
+    "ignored_by_git": true
+  },
+  "movement_code_changed": false,
+  "known_log_warnings": "Existing CanvasItem/ObjectDB/RID shutdown leak warnings and Blender use_nodes deprecation; no GDScript parse errors or failed candidate checks.",
+  "performance_scope": "Geometry and file budgets verified; no new frame-time benchmark.",
+  "commits": {
+    "hands": "9806e59",
+    "route_assets": "576f191"
+  }
+}
