@@ -23,6 +23,11 @@ func run()->void:
  var p:Player=world.player;var cam:Camera3D=p.cam;var store:Store=world.stores[0];var tower:FireLookout=world.fire_lookout
  p.position=store.to_global(Vector3(.4,2,6.7));cam.position=Vector3.ZERO;cam.look_at(store.to_global(Vector3(0,2.1,0)));await shot("store-exterior")
  world.sky_rig.apply_shelter(.75);p.position=store.to_global(Vector3(-.3,1.93,1.50));cam.look_at(store.to_global(Vector3(-.30,1.33,-1.9)));await shot("store-stocked")
+ if options.has("closeups"):
+  var old_fov:=cam.fov;cam.fov=55
+  p.position=store.to_global(Vector3(-1.25,2.15,-1.02));cam.look_at(store.to_global(Vector3(-1.25,1.73,-1.98)));await shot("store-food-closeup")
+  p.position=store.to_global(Vector3(1.77,2.06,-1.12));cam.look_at(store.to_global(Vector3(1.77,1.96,-2.06)));await shot("store-tools-closeup")
+  cam.fov=old_fov
  p.position=store.to_global(Vector3(-.55,1.93,.3));cam.look_at(store.to_global(Vector3(1.59,1.40,-.4)));await shot("store-counter")
  store.looted=[true,true,true];store.update_loot_visuals();p.position=store.to_global(Vector3(-.3,1.93,1.50));cam.look_at(store.to_global(Vector3(-.3,1.33,-1.9)));await shot("store-searched");store.looted=[false,false,false];store.update_loot_visuals()
  p.position=tower.to_global(Vector3(.45,FireLookout.DECK_Y+1.70,-.25));cam.look_at(tower.to_global(Vector3(1.20,FireLookout.DECK_Y+.93,-1.38)));world.sky_rig.apply_shelter(1);await shot("lookout-workbench")

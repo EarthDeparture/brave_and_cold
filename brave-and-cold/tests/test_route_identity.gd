@@ -22,6 +22,17 @@ func run()->void:
  var store:Store=world.stores[0]
  check(world.find_child("LookoutServiceWayfinding",true,false)!=null,"service trail has authored wayfinding")
  check(store.detail_enabled and store._dressing!=null,"authored store dressing loaded")
+ # The material factor must keep its palette even when importing COLOR_0.
+ # An unsupported Blender MixRGB export previously washed these props white.
+ var palette:Dictionary={"painted_steel":Color(.06,.12,.10),"aged_steel":Color(.24,.27,.24),"rubber":Color(.017,.021,.02),"paper":Color(.64,.58,.40),"canvas":Color(.24,.25,.14),"red_lead":Color(.25,.032,.017),"cream":Color(.58,.52,.36)}
+ var seen:Dictionary={}
+ for node:MeshInstance3D in store._dressing.find_children("*","MeshInstance3D",true,false):
+  for surface in node.mesh.get_surface_count():
+   var mat:=node.get_active_material(surface) as BaseMaterial3D
+   if mat==null or not palette.has(mat.resource_name):continue
+   var actual:=mat.albedo_color.srgb_to_linear();var expected:Color=palette[mat.resource_name]
+   seen[mat.resource_name]=maxf(absf(actual.r-expected.r),maxf(absf(actual.g-expected.g),absf(actual.b-expected.b)))<.002 and seen.get(mat.resource_name,true)
+ for name in palette:check(seen.get(name,false),"import retains authored prop palette "+name)
  var groups:=["ShelfStock","CounterStock","CrateStock"]
  for i in 3:
   var item:Node3D=store._dressing.find_child(groups[i],true,false)
