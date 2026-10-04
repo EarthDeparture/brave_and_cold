@@ -79,6 +79,7 @@ func run() -> void:
 	w.drop_item("beans",1)
 	var dropped:ItemPickup=get_nodes_in_group("pickups")[0]
 	check(absf(dropped.global_position.y-(w.fire_lookout.global_position.y+FireLookout.DECK_Y))<.01,"items dropped at home stay on elevated floor")
+	w.fire_lookout.restore_door({"boards":2,"plank_hp":13,"hp":73})
 	var snapshot:Dictionary=w._save_data();var encoded:=JSON.stringify(snapshot);var decoded:Dictionary=JSON.parse_string(encoded)
 	var saved_state:=LookoutAssignment.new();saved_state.restore(decoded.opening.state)
 	check(is_equal_approx(saved_state.grid_fail_s,s.grid_fail_s) and is_equal_approx(saved_state.source_end_s,s.source_end_s) and saved_state.repair_stage==s.repair_stage and saved_state.parts_claimed==s.parts_claimed,"full world snapshot preserves opening state through JSON")
@@ -110,6 +111,7 @@ func run() -> void:
 	check(loaded.opening.state.parts_claimed and loaded.inv.count("power_relay")==0,"loading cannot duplicate spent reservation")
 	check(is_equal_approx(loaded.opening.state.grid_fail_s,saved_state.grid_fail_s),"loading does not reroll outage date")
 	check(loaded.fire_lookout.contains_room(loaded.player.position),"fresh world restores elevated home")
+	check(loaded.fire_lookout.door_boards==2 and loaded.fire_lookout.door_plank_hp==13 and loaded.fire_lookout.door_hp==73,"fresh world restores elevated door reinforcement and damage")
 	var loaded_pickup:ItemPickup=get_nodes_in_group("pickups")[0]
 	check(absf(loaded_pickup.global_position.y-(loaded.fire_lookout.global_position.y+FireLookout.DECK_Y))<.01,"loading retains dropped item elevation")
 	check(loaded.opening.pantry.count("beans")==4,"loading preserves pantry without double spawn")

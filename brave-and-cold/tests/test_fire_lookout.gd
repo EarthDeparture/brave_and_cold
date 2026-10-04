@@ -65,6 +65,7 @@ func _run() -> void:
 	check(walked, 'Descent chooses the correct overlapping staircase level')
 	var inside := world(Vector3(0.0, DECK_Y, 1.8))
 	var through_door := world(Vector3(0.0, DECK_Y, 2.55))
+	tower.restore_door({'open':true})
 	var door_result := tower.resolve_at(through_door, inside, 0.35)
 	check(door_result.distance_to(Vector2(through_door.x, through_door.z)) < 0.02, 'Open doorway passes a player-sized circle')
 	var toward_wall := world(Vector3(1.2, DECK_Y, 2.25))
@@ -126,6 +127,7 @@ func _integration() -> void:
 	var stair_base := world(Vector3(4.45, 0.0, 1.8))
 	var terrain_y: float = terrain.data.get_height(stair_base)
 	check(absf(terrain_y - tower.position.y) < 0.12, 'Tower root follows natural terrain at the first stair')
+	tower.restore_door({'open':true})
 	var player := game.get('player') as Player
 	player.frozen = true
 	player.sim_on = true
@@ -189,6 +191,7 @@ func _save_roundtrip(game: Node3D, player: Player) -> void:
 	var needs: Needs = game.get('needs')
 	var inventory: Inventory = game.get('inv')
 	var saved: Dictionary = {
+		'lookout_door': tower.door_to_dict(),
 		'clock': {'hour': clock.hour, 'day': clock.day, 'total': clock.total_game_s},
 		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
 		'body': {'core': body.core, 'wet': body.wetness},

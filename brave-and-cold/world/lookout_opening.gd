@@ -23,6 +23,8 @@ var _indicator: MeshInstance3D
 const RELAY_LOCAL := Vector3(-9, 0, -6)
 const CASE_LOCAL := Vector3(1.60, 1.42, 1.02)
 
+func stove_point(offset: Vector3) -> Vector3:
+	return FireLookout.STOVE_CENTER+Vector3.UP*FireLookout.DECK_Y+Basis(Vector3.UP,FireLookout.STOVE_YAW)*offset
 func home_point(p: Vector3) -> Vector3:
 	return world.fire_lookout.to_global(p + Vector3.UP * FireLookout.DECK_Y)
 func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> void:
@@ -53,13 +55,13 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 		case_model.visible = not state.parts_claimed
 	speaker = AudioStreamPlayer3D.new(); tower.add_child(speaker); speaker.position = Vector3(1.78, FireLookout.DECK_Y + 1.05, -1.17)
 	speaker.unit_size = 2; speaker.max_distance = 12; speaker.volume_db = -5
-	fire_light = OmniLight3D.new(); tower.add_child(fire_light); fire_light.position = Vector3(-1.65, FireLookout.DECK_Y + .48, 1.82)
+	fire_light = OmniLight3D.new(); tower.add_child(fire_light); fire_light.position = stove_point(Vector3(0,.48,.62))
 	fire_light.light_color = Color(1,.55,.24); fire_light.omni_range = 4.8; fire_light.shadow_enabled = true
 	fire_bounce = OmniLight3D.new(); tower.add_child(fire_bounce); fire_bounce.position = Vector3(-.6,FireLookout.DECK_Y+1.15,1.0)
 	fire_bounce.light_color = Color(1,.67,.40); fire_bounce.omni_range = 4.2; fire_bounce.shadow_enabled = false
 	ember = MeshInstance3D.new(); var q := QuadMesh.new(); q.size = Vector2(.22,.17); ember.mesh = q
 	var em := ShaderMaterial.new(); em.shader = preload("res://world/shaders/stove_embers.gdshader")
-	ember.material_override = em; ember.position = Vector3(-1.65, FireLookout.DECK_Y + .42, 1.501); tower.add_child(ember)
+	ember.material_override = em; ember.position = stove_point(Vector3(0,.42,.301)); ember.rotation.y=FireLookout.STOVE_YAW; tower.add_child(ember)
 	fire_loop = AudioStreamPlayer3D.new(); tower.add_child(fire_loop); fire_loop.position = Vector3(-1.65,FireLookout.DECK_Y+.4,1.65)
 	fire_loop.stream = Sfx.get_stream("fire"); fire_loop.volume_db = -18; fire_loop.unit_size = 1.2; fire_loop.max_distance = 8
 	_build_smoke(tower)
@@ -139,7 +141,7 @@ func actions() -> Array:
 		out.append(_action(panel, "Automatic transfer: %s" % ("ARMED" if state.auto_transfer_on else "DISABLED"), toggle_auto_transfer, 0, .02))
 	out.append(_action(panel, "Switch desk lamp off" if state.lamp_on else "Switch desk lamp on", toggle_lamp, 0, .01))
 	out.append(_action(pantry.global_position, "Open lookout provisions", func() -> void: world.gear.open_chest(pantry)))
-	var stove := home_point(Vector3(-1.65,.55,1.40))
+	var stove: Vector3 = world.fire_lookout.to_global(stove_point(Vector3(0,.55,.301)))
 	out.append(_action(stove, "Stoke stove • %.1f h fuel" % (fuel_s / 3600), stoke, 2))
 	if fuel_s > 0:
 		out.append(_action(stove, "Boil snow and drink", boil, 4, .01))
@@ -161,14 +163,15 @@ func actions() -> Array:
 		out.append(_action(case_model.global_position + Vector3.UP * .15, "Collect reserved transfer relay", claim_parts, 3))
 	return out
 func read_log() -> void:
-	var directions := ""
+	var directions := "Follow the logging track down to the road and North Ridge Supply."
 	if not world.stores.is_empty():
 		var d: Vector3 = world.stores[0].global_position - world.fire_lookout.global_position
 		var bearing := fposmod(rad_to_deg(atan2(d.x,-d.z)),360)
-		directions = " Depot: %.0f m, bearing %.0f°. Follow the logging track down to the road." % [Vector2(d.x,d.z).length(), bearing]
-	var task: String = ["Inspect the ground cabinet.","Collect the reserved relay at North Ridge Supply, then return.","Verify the cabinet transfer under local power.","Relay signed off. Prepare food, water and stove fuel for the night."][state.repair_stage]
-	world._say(task + directions)
-	world._say("Field dispatch: receiver work channel. Local news: public channel. Deliveries are expected; supplies here are finite.")
+		directions = "North Ridge Supply is approximately %.0f m away on bearing %.0f° (straight-line). Follow the logging track down to the road; collect the reserved relay case at the store counter." % [Vector2(d.x,d.z).length(),bearing]
+	var task: String = ["Inspect the ground transfer cabinet with your insulated service kit.","Collect the reserved transfer relay, return and install it in the cabinet.","Verify the cabinet transfer under local power.","Relay signed off. Local service restored."][state.repair_stage]
+	if state.repair_stage==1 and state.parts_claimed:task="Return to the ground cabinet and install the replacement relay."
+	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nField dispatch uses the receiver's work channel. Local news uses the public channel. The receiver and desk lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. Keep water, food and dry firewood ready. Stoke the stove, boil snow, and prepare the sleeping berth before the weather closes in." % [task,directions]
+	world.reading.open("North Ridge • Service log",text,world.player,world.hud)
 func toggle_receiver() -> void: state.receiver_on = not state.receiver_on; _radio_update()
 func tune_radio() -> void: state.channel = "public" if state.channel == "work" else "work"; _radio_update()
 func toggle_backup() -> void:

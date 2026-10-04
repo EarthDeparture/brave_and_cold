@@ -18,7 +18,7 @@
       "FixedProps"
     ],
     "bytes": 1591308,
-    "sha256": "591461b74d5b4861ddb4ca81dc7551fe40973bcc1b9b054b22857ba9e066a81c"
+    "sha256": "e6c62ed0bc06dd077d2f98b2c3a1c70d98a80c4f2aa95e0499a4c650e8fccd51"
   },
   "lookout_home_detail": {
     "bounds_blender_m": [
@@ -44,8 +44,8 @@
       "StoveDetail",
       "ServiceLog"
     ],
-    "bytes": 2238736,
-    "sha256": "47326e09729f99a8bb17415cfa8116ec3c1ce426a3837866ef1360b2a70a3ee6"
+    "bytes": 2238808,
+    "sha256": "e47c20fb1fa8a21fdd2e60486306cf7233ef21d3f390c91f3be14aff54e26bb3"
   },
   "depot_reserved_case": {
     "bounds_blender_m": [
@@ -66,7 +66,7 @@
       "FixedProps"
     ],
     "bytes": 481520,
-    "sha256": "188d6943c132c59e39326a3f04b5a721bcab6c8e32d1102d310c4a7e3ce09a03"
+    "sha256": "3ee30c3a7cbb3da3314510ac95afa5d35877589756a0ffd39bc21ddd15d16e3d"
   },
   "refuge_gate": {
     "bounds_blender_m": [
@@ -96,7 +96,7 @@
     "coordinate_units": "metres",
     "runtime": "Godot GLB",
     "blender": "5.2.2 LTS",
-    "generator_sha256": "989063df62d33fb8ac7e89922a8c6f0b0ecd8cc406cd463ffd151f6ffaeeb9d9",
+    "generator_sha256": "02fbabbeca12618dd43d237f3f66fbfb1dfce8c41f10d0049c2a25f4c1383955",
     "graphics_sha256": {
       "battery.png": "9bb25cf56716a7fdc7cc8e1ecbbaf8fa933c40bf3d1360a84141faf6e76f7d42",
       "cabinet.png": "910f6d17d1d55cb391fc1eb993a616095ed360748dafa3a6cb2429748d2a1004",

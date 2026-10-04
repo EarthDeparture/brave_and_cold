@@ -191,6 +191,10 @@ static func building_block(blds: Array, eye: Vector3, dir: Vector3, max_t: float
 		var bn := b as Node3D
 		if bn == null or not is_instance_valid(bn):
 			continue
+		if bn is FireLookout:
+			var door_t:float=bn.door_ray_block(eye,dir,max_t)
+			if door_t != INF:return door_t
+			continue
 		var to := bn.global_position - eye
 		var mid := to.dot(dir)
 		if (to - dir * clampf(mid, 0.0, max_t)).length() > 5.0:

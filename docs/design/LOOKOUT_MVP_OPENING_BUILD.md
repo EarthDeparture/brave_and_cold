@@ -6,7 +6,7 @@ Branch: `codex/lookout-mvp-opening`. Local checkpoint: `checkpoint/pre-lookout-m
 
 A new game starts at 07:00 in the elevated lookout, wearing winter layers and carrying a hatchet, service kit and small supplies. Existing saves without an opening block retain their survival mode, inventory and placement. The existing valley, forest, road network and buildings are preserved.
 
-1. Read the service log on the desk; turn the receiver on and choose field dispatch or public radio.
+1. Read the service log in its scrollable modal (Esc/X closes it; play pauses while reading); turn the receiver on and choose field dispatch or public radio.
 2. Inspect the ground transfer cabinet beside the original Blender relay mast. Inspection needs the service kit.
 3. Open the compound gate. Follow the existing logging track to the road and North Ridge Supply (about 542 m straight-line; the log gives the actual bearing).
 4. Collect the reserved relay case at the store counter. It is independent of random store loot and stays put if the backpack is full.
@@ -14,7 +14,7 @@ A new game starts at 07:00 in the elevated lookout, wearing winter layers and ca
 6. Commissioning restores later field dispatch and arms automatic battery transfer. It cannot restore the town grid or distant transmitter.
 7. Stock the stove, boil snow, cook hunted food, transfer provisions and sleep in the elevated bed. Rest retains hunger, cold, bleeding and injury rules. The closed ground perimeter blocks player and creature capsules; the upper lookout remains defensible.
 
-All timed interactions use the existing 50% duration multiplier. Gate and electrical switches are immediate. Existing cabins remain usable.
+All timed interactions use the existing 50% duration multiplier. Gate and electrical switches are immediate. Existing cabins remain usable. The upper lookout has an animated door with the cabin's three-plank barricade actions and costs. Door state and damage persist; older saves load the formerly static doorway open. The stove front now faces the room center around its unchanged flue axis. See `docs/validation/LOOKOUT_DOOR_STOVE_LOG.md` for follow-up acceptance.
 
 ## Collapse and power
 

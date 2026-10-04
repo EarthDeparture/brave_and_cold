@@ -700,4 +700,5 @@ static func lift(height:float,x:float,z:float,foot_y:float=NAN) -> float:
 
 static func resolve_actor(candidate:Vector3,previous:Vector3,radius:float) -> Vector2:
 	var q := current.resolve_at(candidate,previous,radius) if is_instance_valid(current) else Vector2(candidate.x,candidate.z)
-	return RefugeBoundary.resolve_actor(Vector3(q.x,candidate.y,q.y),previous,radius)
+	q=RefugeBoundary.resolve_actor(Vector3(q.x,candidate.y,q.y),previous,radius)
+	return FireLookout.resolve_doors(Vector3(q.x,candidate.y,q.y),previous,radius)

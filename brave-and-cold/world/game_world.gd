@@ -26,6 +26,7 @@ var snow := SnowField.new()
 var noise_bus := NoiseBus.new()
 var player: Player
 var hud: Hud
+var reading: ReadingModal
 var forest: ForestScatter
 var plants: PlantField
 var footprints: Footprints
@@ -346,6 +347,7 @@ func _ready() -> void:
 			if not camera_override:
 				player.position = fire_lookout.to_global(Vector3(0,FireLookout.DECK_Y+player.eye_h,.3))
 				player.yaw = fire_lookout.rotation.y; player.pitch = -.08
+	reading=ReadingModal.new();add_child(reading)
 	pause_menu = PauseMenu.new()
 	add_child(pause_menu)
 	dev = DevMenu.new()
@@ -413,6 +415,7 @@ func _build_fire_lookout(opts: Dictionary) -> void:
 	fire_lookout.build_access_path(terrain)
 	if fire_lookout.access_ribbon!=null:player.walk_ribbons.append(fire_lookout.access_ribbon)
 	player.spatial_structures.append(fire_lookout)
+	fire_lookout.event.connect(_on_opening_event)
 	if route_detail_enabled:
 		var path:Array=parsed.get("route",[])
 		if path.size()>1:
@@ -1412,7 +1415,7 @@ func _nail_board() -> bool:
 	return true
 
 
-func _door_cands(cands: Array, cb: Cabin, fwd: Vector3) -> void:
+func _door_cands(cands: Array, cb: Node3D, fwd: Vector3) -> void:
 	var dp: Vector3 = cb.door_inside_pos()
 	var dd := (dp - player.position).length()
 	if cb.door_open or cb.door_broken or not _aim_ok(dp, 2.2, 1.0):
@@ -1420,7 +1423,7 @@ func _door_cands(cands: Array, cb: Cabin, fwd: Vector3) -> void:
 	if cb.door_boards < 3:
 		if inv.count("hammer") > 0 and inv.count("plank") > 0 and inv.count("nails") >= 1:
 			cands.append({"m": _lm, "d": dd + 0.04, "text": "Barricade door (%d/3)" % cb.door_boards, "hold": 6.0, "kcal": 8.0, "noise": 22.0, "act": func() -> void:
-				if _nail_board():
+				if not cb.door_open and not cb.door_broken and cb.door_boards<3 and _nail_board():
 					cb.add_door_board()
 					if audio != null:
 						audio.play_at("hammer", dp, 2.0, randf_range(0.9, 1.0), 6.0, 70.0)
@@ -1647,6 +1650,13 @@ func _update_prompt() -> void:
 						obb.wood_left -= 1
 						inv.add('wood')
 						_say('+1 firewood')})
+	if fire_lookout != null:
+		var dp:=fire_lookout.door_world_pos()
+		if _aim_ok(dp,2.2,1.1):
+			var text: String="Door is broken" if fire_lookout.door_broken else ("Close door" if fire_lookout.door_open else "Open door")
+			if fire_lookout.door_boards>0:text="Door barricaded (%d/3)" % fire_lookout.door_boards
+			cands.append({"m":_lm,"d":dp.distance_to(player.position),"text":text,"act":_toggle_lookout_door})
+		if fire_lookout.contains_room(player.position):_door_cands(cands,fire_lookout,fwd)
 	for cb in cabins:
 		var stove_text := "Add wood to stove (%d)" % inv.count("wood")
 		if not cb.is_lit():
@@ -2052,6 +2062,17 @@ func _log_list() -> Array:
 			out.append(wl.to_save())
 	return out
 
+
+func _toggle_lookout_door() -> void:
+	if fire_lookout.door_broken:_say("The door is broken");return
+	if fire_lookout.door_boards>0:_say("Remove the door planks first");return
+	if fire_lookout.door_sweep_contains(player.position-Vector3.UP*player.eye_h,.35):
+		_say("Step clear of the door's swing");return
+	for group: String in ["hostile","prey"]:
+		for actor:Node in get_tree().get_nodes_in_group(group):
+			if actor is Node3D and fire_lookout.door_sweep_contains(actor.global_position,.35):
+				_say("The doorway is obstructed");return
+	fire_lookout.toggle_door()
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_ESCAPE and pause_menu != null and not pause_menu.visible:
@@ -3264,6 +3285,7 @@ func _save_data() -> Dictionary:
 		'picked': plants.picked if plants != null else {},
 	}
 	if fire_lookout != null:
+		d['lookout_door']=fire_lookout.door_to_dict()
 		var elevated_location := fire_lookout.saved_location(player.position, player.eye_h)
 		if not elevated_location.is_empty():
 			d['lookout_location'] = elevated_location
@@ -3363,6 +3385,7 @@ func _apply_save(sv: Dictionary) -> void:
 	player.stamina = float(p['stam'])
 	if fire_lookout != null:
 		fire_lookout.restore_location(player, sv.get('lookout_location', {}))
+		fire_lookout.restore_door(sv.get('lookout_door',{'open':true}))
 	body.core = float(sv['body']['core'])
 	body.wetness = float(sv['body']['wet'])
 	needs.calories = float(sv['needs']['cal'])

@@ -39,6 +39,7 @@ PALETTE = {
     "snow": (0.78, 0.85, 0.91, 1),
     "glass": (0.37, 0.58, 0.67, 0.20),
     "interior": (0.36, 0.28, 0.20, 1),
+    "door": (0.25, 0.32, 0.28, 1),
 }
 
 
@@ -116,7 +117,7 @@ def material(name, glass=False):
 
 
 def structure(b):
-    t, wood, trim, metal, snow, glass, inside=[b[k] for k in PALETTE]
+    t, wood, trim, metal, snow, glass, inside=[b[k] for k in ["timber","boards","trim","metal","snow","glass","interior"]]
     # Four splayed square posts sit on concrete shoes. Diagonal braces form readable bays.
     for sx in [-1,1]:
         for sy in [-1,1]:
@@ -237,7 +238,7 @@ def stairs(b):
 
 
 def cabin(b):
-    t,wood,trim,metal,snow,glass,inside=[b[k] for k in PALETTE]
+    t,wood,trim,metal,snow,glass,inside=[b[k] for k in ["timber","boards","trim","metal","snow","glass","interior"]]
     sill=FLOOR+1.02
     top=FLOOR+2.46
     # Horizontal timber cladding beneath panoramic windows, actual cut-out doorway.
@@ -271,8 +272,12 @@ def cabin(b):
     for x in [-.59,.59]:
         trim.box((x,-2.21,FLOOR+1.03),(.11,.20,2.06))
     trim.box((0,-2.21,FLOOR+2.10),(1.28,.20,.12))
-    wood.box((-.59,-1.66,FLOOR+.99),(.075,1.05,1.98),(0.25,.32,.28,1))
-    metal.box((-.53,-1.22,FLOOR+1.02),(.04,.10,.07),(0.52,.47,.32,1))
+    # Separate closed leaf: runtime hinge is Godot (-.55, FLOOR, 2.19).
+    leaf=b["door"]
+    leaf.box((0,-2.19,FLOOR+1.025),(1.10,.075,2.05))
+    for x in [-.49,.49]: leaf.box((x,-2.238,FLOOR+1.025),(.075,.025,1.97))
+    for z in [FLOOR+.08,FLOOR+1.96]: leaf.box((0,-2.238,z),(.94,.025,.07))
+    for y in [-2.255,-2.125]: leaf.box((.40,y,FLOOR+1.02),(.05,.07,.12),(.52,.47,.32,1))
     # Header, exposed under-eave rafters.
     for y in [-2.2,2.2]:
         t.box((0,y,FLOOR+2.73),(5.65,.18,.45))
@@ -298,10 +303,16 @@ def cabin(b):
         t.box((0,y,eave-.14),(6.8,.09,.12))
     # Stove and safe flue placement away from the entrance and sleeping berth.
     metal.box((-1.65,-1.2,FLOOR+.04),(.95,1.05,.06))
+    stove_start=len(metal.verts)
     metal.box((-1.65,-1.2,FLOOR+.40),(.58,.52,.65))
     metal.box((-1.65,-1.47,FLOOR+.42),(.38,.035,.36),(0.17,.13,.10,1))
     metal.cylinder((-1.65,-1.2,FLOOR+2.25),.105,3.1)
     metal.box((-1.65,-1.2,FLOOR+3.90),(.44,.44,.09))
+    # Front points from the left/front corner toward the room center.
+    yaw=math.atan2(1.65,-1.20);cs,sn=math.cos(yaw),math.sin(yaw)
+    for i in range(stove_start,len(metal.verts)):
+        x,y,z=metal.verts[i];dx,dy=x+1.65,y+1.20
+        metal.verts[i]=(-1.65+cs*dx-sn*dy,-1.20+sn*dx+cs*dy,z)
     snow.box((-1.65,-1.2,FLOOR+3.96),(.45,.45,.05))
     # Bunk, two-tone blanket and pillow.
     inside.box((-1.60,1.00,FLOOR+.42),(1.25,2.0,.22))
@@ -440,7 +451,8 @@ def main():
         'deck_height':FLOOR,'deck_bounds':[-3.8,-3.3,3.8,3.3],
         'room_bounds':[-2.7,-2.2,2.7,2.2],'door_width':1.1,
         'supports':[[x,z,.30] for x in [-2.95,2.95] for z in [-2.45,2.45]]+[[x,z,.20] for x in STAIR_POST_X for z in STAIR_POST_Y],
-        'door':{'x':0,'z':2.2,'width':1.1},
+        'door':{'x':0,'z':2.19,'width':1.1,'hinge_x':-.55,'leaf_mesh':'lookout_door','open_degrees':105},
+        'stove':{'center':[-1.65,FLOOR,1.20],'yaw_degrees':math.degrees(math.atan2(1.65,-1.20))},
         'stairs':{'flights':FLIGHTS,'steps_per_flight':STEPS_PER_FLIGHT,'riser':RISER,'run':.30,'width':1.1,
                   'lane_x':[4.45 if f%2==0 else 5.8 for f in range(FLIGHTS)],
                   'z_start':[1.8 if f%2==0 else -1.8 for f in range(FLIGHTS)],
@@ -452,7 +464,7 @@ def main():
         'material_count':len(objs),'file_bytes':glb.stat().st_size,
         'sha256':hashlib.sha256(glb.read_bytes()).hexdigest(),
         'source':'Original procedural geometry: tools/blender/gen_fire_lookout.py',
-        'generator_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        'generator_sha256':hashlib.sha256(Path(__file__).read_text(encoding='utf-8').replace('\r\n','\n').encode('utf-8')).hexdigest(),
         'license':'Project-authored original asset; same ownership as repository',
         'blender_version':bpy.app.version_string,
         'design':'Winter forestry lookout on timber stilts, glazed elevated room, snow hip roof, continuous switchback access, muted wood/green/blue palette',

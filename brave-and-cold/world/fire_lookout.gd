@@ -24,6 +24,19 @@ const STAIR_LANES: Array[float] = [4.45, 5.80]
 const SURFACE_REACH := 0.95
 const SUPPORTS: Array[Vector2] = [Vector2(-2.95, -2.45), Vector2(2.95, -2.45), Vector2(-2.95, 2.45), Vector2(2.95, 2.45), Vector2(3.40, -2.90), Vector2(6.80, -2.90), Vector2(3.40, 2.90), Vector2(6.80, 2.90)]
 
+signal event(kind: String, point: Vector3)
+static var instances: Array[FireLookout] = []
+const STOVE_CENTER := Vector3(-1.65, 0, 1.20)
+const STOVE_YAW := 2.199592613210329
+var door_open := false
+var door_broken := false
+var door_hp := 100.0
+var door_boards := 0
+var door_plank_hp := 40.0
+var _door_pivot: Node3D
+var _door_planks: Node3D
+var _door_tween: Tween
+
 var detail_enabled := false
 var route_dressing_enabled := false
 var site: Dictionary = {}
@@ -34,6 +47,7 @@ var geometry: Dictionary = {}
 
 func build(site_data: Dictionary, with_model: bool = true) -> void:
 	site = site_data
+	if not instances.has(self): instances.append(self)
 	name = "FireLookout"
 	var origin: Dictionary = site_data.get("origin", {})
 	position = Vector3(float(origin.get("x", 0.0)), float(origin.get("y", 0.0)), float(origin.get("z", 0.0)))
@@ -50,6 +64,7 @@ func build(site_data: Dictionary, with_model: bool = true) -> void:
 			_enable_model_vertex_colors()
 	elif with_model:
 		push_error("FireLookout: missing imported model at " + MODEL_PATH)
+	_build_door()
 	set_meta("lookout_site_id", "mountain_fire_lookout")
 	if with_model:
 		var lamp := OmniLight3D.new()
@@ -86,7 +101,7 @@ func _enable_model_vertex_colors() -> void:
 			material.vertex_color_use_as_albedo = true
 			material.vertex_color_is_srgb = false
 			mesh.set_surface_override_material(surface, material)
-			if detail_enabled and mesh.name in ["lookout_boards", "lookout_timber", "lookout_interior", "lookout_trim"]:
+			if detail_enabled and mesh.name in ["lookout_boards", "lookout_timber", "lookout_interior", "lookout_trim", "lookout_door"]:
 				var wood := ShaderMaterial.new()
 				wood.shader = preload("res://world/shaders/winter_timber.gdshader")
 				wood.set_shader_parameter("grain", preload("res://assets/environment_detail/textures/timber_alb.png"))
@@ -148,7 +163,7 @@ func resolve_at(candidate: Vector3, previous: Vector3, radius: float) -> Vector2
 			if delta.length_squared() < rr * rr:
 				q = center + (delta.normalized() if delta.length_squared() > 0.00001 else Vector2.RIGHT) * rr
 	if absf(old.y - DECK_Y) < SURFACE_REACH:
-		# Room walls stay solid at window height; the centered front doorway is open.
+		# Room walls stay solid; the moving door uses its actual hinge angle below.
 		var walls: Array[Rect2] = [
 			Rect2(-2.79, -2.29, 0.18, 4.58), Rect2(2.61, -2.29, 0.18, 4.58),
 			Rect2(-2.79, -2.29, 5.58, 0.18),
@@ -156,11 +171,21 @@ func resolve_at(candidate: Vector3, previous: Vector3, radius: float) -> Vector2
 			# Furniture bounds mirror the source asset (bed, desk, chair, stove,
 			# provisions rack and inward-open door leaf).
 			Rect2(-2.225, -2.0, 1.25, 2.0), Rect2(0.50, -1.70, 1.80, 0.70),
-			Rect2(1.12, -0.85, 0.46, 0.65), Rect2(-1.94, 0.94, 0.58, 0.52),
-			Rect2(1.375, 1.47, 1.05, 0.36), Rect2(-0.63, 1.13, 0.08, 1.10),
+			Rect2(1.12, -0.85, 0.46, 0.65),
+			Rect2(1.375, 1.47, 1.05, 0.36),
 		]
 		for wall in walls:
 			q = _push_rect(q, wall.grow(radius), Vector2(old.x, old.z))
+		var turn := Basis(Vector3.UP, STOVE_YAW)
+		var stove_p := turn.inverse() * (Vector3(q.x,0,q.y)-STOVE_CENTER)
+		var stove_old := turn.inverse() * (Vector3(old.x,0,old.z)-STOVE_CENTER)
+		var stove_q := _push_rect(Vector2(stove_p.x,stove_p.z),Rect2(-.30,-.275,.60,.55).grow(radius),Vector2(stove_old.x,stove_old.z))
+		if stove_q != Vector2(stove_p.x,stove_p.z):
+			var moved := STOVE_CENTER+turn*Vector3(stove_q.x,0,stove_q.y)
+			q=Vector2(moved.x,moved.z)
+		var door_q := resolve_door_at(to_global(Vector3(q.x,p.y,q.y)),previous,radius)
+		var door_local := to_local(Vector3(door_q.x,candidate.y,door_q.y))
+		q=Vector2(door_local.x,door_local.z)
 	# Resolve the actual deck rails with a 1 mm contact skin. This prevents
 	# sub-tolerance input steps accumulating through a rail over many frames.
 	# The bridge aperture remains open; distant/free movement stays exact.
@@ -361,3 +386,103 @@ func bed_world_pos() -> Vector3:
 	return to_global(Vector3(-1.60, DECK_Y + .75, -1.0))
 func bed_lie_pos() -> Vector3:
 	return to_global(Vector3(-1.60, DECK_Y + .90, -1.0))
+
+
+func _exit_tree() -> void:
+	instances.erase(self)
+
+func _build_door() -> void:
+	_door_pivot=Node3D.new();_door_pivot.name="LookoutDoorHinge"
+	_door_pivot.position=Vector3(-.55,DECK_Y,2.19);add_child(_door_pivot)
+	if model != null:
+		var leaf:=model.find_child("lookout_door",true,false) as MeshInstance3D
+		if leaf != null:leaf.reparent(_door_pivot,true)
+	_door_planks=Node3D.new();_door_planks.name="LookoutDoorBoards";add_child(_door_planks)
+
+func door_world_pos() -> Vector3:
+	return to_global(Vector3(0,DECK_Y+1.15,2.19))
+
+func door_inside_pos() -> Vector3:
+	return to_global(Vector3(0,DECK_Y+1,1.29))
+
+func toggle_door() -> void:
+	if door_broken or door_boards>0:return
+	door_open=not door_open
+	if _door_tween != null and _door_tween.is_valid():_door_tween.kill()
+	_door_tween=create_tween()
+	_door_tween.tween_property(_door_pivot,"rotation:y",deg_to_rad(105) if door_open else 0.0,.5).set_trans(Tween.TRANS_SINE)
+
+func add_door_board() -> bool:
+	if door_open or door_broken or door_boards>=3:return false
+	door_boards+=1;door_plank_hp=40;_build_door_planks();return true
+
+func remove_door_board() -> bool:
+	if door_boards<=0:return false
+	door_boards-=1;door_plank_hp=40;_build_door_planks();return true
+
+func _build_door_planks() -> void:
+	for child:Node in _door_planks.get_children():child.free()
+	for index:int in door_boards:
+		var board:=MeshInstance3D.new();var box:=BoxMesh.new()
+		box.size=Vector3(1.5,.17,.045);board.mesh=box;board.material_override=Opening.wood_material()
+		board.position=Vector3(0,DECK_Y+.55+.60*index,1.97)
+		board.rotation.z=deg_to_rad(float((index*5)%7)-3);_door_planks.add_child(board)
+
+func bash_door(damage: float) -> void:
+	if door_open or door_broken:return
+	if door_boards>0:
+		door_plank_hp-=damage
+		if door_plank_hp<=0:
+			door_boards-=1;door_plank_hp=40;_build_door_planks();event.emit("board_break",door_world_pos())
+		return
+	door_hp=maxf(0,door_hp-damage)
+	if door_hp<=0:
+		door_broken=true;door_open=true
+		if _door_tween != null and _door_tween.is_valid():_door_tween.kill()
+		_door_pivot.rotation.y=deg_to_rad(120)
+
+func door_to_dict() -> Dictionary:
+	return {"open":door_open,"broken":door_broken,"hp":door_hp,"boards":door_boards,"plank_hp":door_plank_hp}
+
+func restore_door(saved: Dictionary) -> void:
+	if _door_tween != null and _door_tween.is_valid():_door_tween.kill()
+	door_hp=clampf(float(saved.get("hp",100)),0,100)
+	door_broken=bool(saved.get("broken",false)) or door_hp<=0
+	door_boards=0 if door_broken else clampi(int(saved.get("boards",0)),0,3)
+	door_open=door_broken or (bool(saved.get("open",false)) and door_boards==0)
+	door_plank_hp=clampf(float(saved.get("plank_hp",40)),.01,40)
+	_door_pivot.rotation.y=deg_to_rad(120 if door_broken else (105 if door_open else 0))
+	_build_door_planks()
+
+func door_sweep_contains(foot: Vector3, radius: float) -> bool:
+	var local:=to_local(foot)
+	return absf(local.y-DECK_Y)<.8 and Rect2(-.89,1.10,1.45,1.13).grow(radius).has_point(Vector2(local.x,local.z))
+
+func resolve_door_at(candidate: Vector3, previous: Vector3, radius: float) -> Vector2:
+	var local:=to_local(previous)
+	if local.y<DECK_Y-.8 or local.y>DECK_Y+2.05:return Vector2(candidate.x,candidate.z)
+	var a:=_door_pivot.global_position
+	var b:=_door_pivot.to_global(Vector3(1.10,0,0))
+	var q:=Vector2(candidate.x,candidate.z)
+	var clipped:=RoadNet._rail_contact(Vector2(previous.x,previous.z),q,Vector2(a.x,a.z),Vector2(b.x,b.z),radius+.04)
+	return clipped+(clipped-q).normalized()*.001 if clipped.distance_squared_to(q)>1e-10 else q
+
+static func resolve_doors(candidate: Vector3, previous: Vector3, radius: float) -> Vector2:
+	var q:=Vector2(candidate.x,candidate.z)
+	for tower:FireLookout in instances:
+		q=tower.resolve_door_at(Vector3(q.x,candidate.y,q.y),previous,radius)
+	return q
+
+func door_ray_block(eye: Vector3, direction: Vector3, reach: float) -> float:
+	var p:=_door_pivot.to_local(eye)
+	var d:=_door_pivot.global_basis.inverse()*direction
+	var near:=0.0;var far:=reach
+	var lo:=Vector3(0,0,-.06);var hi:=Vector3(1.10,2.05,.06)
+	for axis:int in 3:
+		if absf(d[axis])<.00001:
+			if p[axis]<lo[axis] or p[axis]>hi[axis]:return INF
+		else:
+			var t0:float=(lo[axis]-p[axis])/d[axis];var t1:float=(hi[axis]-p[axis])/d[axis]
+			near=maxf(near,minf(t0,t1));far=minf(far,maxf(t0,t1))
+			if near>far:return INF
+	return near

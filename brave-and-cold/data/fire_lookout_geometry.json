@@ -73,8 +73,19 @@
   ],
   "door": {
     "x": 0,
-    "z": 2.2,
-    "width": 1.1
+    "z": 2.19,
+    "width": 1.1,
+    "hinge_x": -0.55,
+    "leaf_mesh": "lookout_door",
+    "open_degrees": 105
+  },
+  "stove": {
+    "center": [
+      -1.65,
+      21.41,
+      1.2
+    ],
+    "yaw_degrees": 126.02737338510362
   },
   "stairs": {
     "flights": 10,
@@ -147,14 +158,14 @@
     ],
     "visual_landing_depth": 0.84
   },
-  "mesh_objects": 7,
-  "triangles": 13414,
-  "vertices": 26772,
-  "material_count": 7,
-  "file_bytes": 1050900,
-  "sha256": "3aff8d9a335690ff33d4566a86740e28f2d21b09f0adfd7fe888e41c7c7f73c2",
+  "mesh_objects": 8,
+  "triangles": 13474,
+  "vertices": 26892,
+  "material_count": 8,
+  "file_bytes": 1056512,
+  "sha256": "dbaf1534ac122e11feec8bbd15d4ae8a15ead33f2e6a3022f07973cb6c82bd28",
   "source": "Original procedural geometry: tools/blender/gen_fire_lookout.py",
-  "generator_sha256": "92ba3f1649db687967ebadc619d33e7bf43a6feccca4d17bd7b7be7bd2080c6e",
+  "generator_sha256": "c0085c4604b09348ccb744a508e8740afb735255f5413ff0fffb3533dc400b47",
   "license": "Project-authored original asset; same ownership as repository",
   "blender_version": "5.2.2 LTS",
   "design": "Winter forestry lookout on timber stilts, glazed elevated room, snow hip roof, continuous switchback access, muted wood/green/blue palette",

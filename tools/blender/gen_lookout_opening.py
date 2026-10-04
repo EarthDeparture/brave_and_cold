@@ -1,7 +1,7 @@
 """Original route dressing, metres in authored Godot coordinates. No downloads."""
 import bpy, json, hashlib, math
 from pathlib import Path
-from mathutils import Vector
+from mathutils import Vector, Matrix
 ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'tools/blender/generated/lookout_opening';RUNTIME=ROOT/'brave-and-cold/assets/lookout_opening';OUT.mkdir(parents=True,exist_ok=True);RUNTIME.mkdir(parents=True,exist_ok=True)
 def cv(v):return Vector((v[0],-v[2],v[1]))
 def material(name,color,rough=.8,metal=0):
@@ -27,8 +27,8 @@ def cylinder(name,a,b,r,mat,group='FixedProps',segments=12):
  aa,bb=cv(a),cv(b);d=bb-aa;bpy.ops.mesh.primitive_cylinder_add(vertices=segments,radius=r,depth=d.length,location=(aa+bb)*.5);o=bpy.context.object;o.name=name;o.rotation_mode='QUATERNION';o.rotation_quaternion=d.to_track_quat('Z','Y')
  for p in o.data.polygons:p.use_smooth=len(p.vertices)==4
  return add(o,group,mat)
-def cord(name,points,r,mat):
- for a,b in zip(points,points[1:]):cylinder(name,a,b,r,mat,segments=6)
+def cord(name,points,r,mat,group="FixedProps"):
+ for a,b in zip(points,points[1:]):cylinder(name,a,b,r,mat,group,segments=6)
 def face(name,c,size,graphic,group='FixedProps',up=False):
  x,y,z=c;w,h=size
  vertices=[(x-w/2,y-h/2,z),(x+w/2,y-h/2,z),(x+w/2,y+h/2,z),(x-w/2,y+h/2,z)] if not up else [(x-w/2,y,z+h/2),(x+w/2,y,z+h/2),(x+w/2,y,z-h/2),(x-w/2,y,z-h/2)]
@@ -205,13 +205,16 @@ for x in [-1.82,-1.75,-1.68,-1.61,-1.54,-1.47]:box('air_slot',(x,.245,1.496),(.0
 cylinder('kettle_body',(-1.46,.756,1.30),(-1.46,.92,1.30),.09,'aged_steel','StoveDetail',24)
 cylinder('kettle_lid',(-1.46,.93,1.30),(-1.46,.946,1.30),.083,'aged_steel','StoveDetail',24)
 cylinder('lid_knob',(-1.46,.95,1.30),(-1.46,.98,1.30),.019,'rubber','StoveDetail')
-cord('kettle_bail',[(-1.55,.86,1.30),(-1.55,1.08,1.30),(-1.37,1.08,1.30),(-1.37,.86,1.30)],.007,'aged_steel')
+cord('kettle_bail',[(-1.55,.86,1.30),(-1.55,1.08,1.30),(-1.37,1.08,1.30),(-1.37,.86,1.30)],.007,'aged_steel','StoveDetail')
 # New rounded pillow slips over the original rectangular insert.
 box('pillow',(-1.60,.83,-1.70),(.87,.21,.40),'cream','Bedding',bevel=.075)
 # Stove window frame and grate; emission is driven in Godot, independent of electricity.
 for x in [-1.786,-1.514]:box('stove_window_frame',(x,.42,1.495),(.018,.21,.015),'aged_steel','StoveDetail',bevel=.002)
 for y in [.32,.52]:box('stove_window_frame',(-1.65,y,1.495),(.29,.015,.015),'aged_steel','StoveDetail',bevel=.002)
 for x in [-1.72,-1.65,-1.58]:box('stove_grate',(x,.42,1.505),(.009,.19,.012),'aged_steel','StoveDetail',bevel=.001)
+# Rotate the whole overlay around the unchanged flue axis.
+turn=Matrix.Translation(cv((-1.65,0,1.20))) @ Matrix.Rotation(math.atan2(1.65,-1.20),4,'Z') @ Matrix.Translation(-cv((-1.65,0,1.20)))
+for obj in PARTS['StoveDetail']:obj.matrix_world=turn @ obj.matrix_world
 # Service log on the available left section of the existing desk.
 box('log_folder',(.73,.861,-1.34),(.39,.018,.48),'canvas','ServiceLog')
 face('service_log',(.73,.872,-1.34),(.36,.44),'log','ServiceLog',up=True)
