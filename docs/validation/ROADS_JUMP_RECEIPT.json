@@ -1,0 +1,1537 @@
+{
+  "schema": 1,
+  "baseline_commit": "9886e7df4c427e2f93b72e31e0f0c8ba83ab610f",
+  "checkpoint": "checkpoint/pre-roads-jump-2026-10-03",
+  "resolution": [
+    1600,
+    900
+  ],
+  "gpu": "NVIDIA GeForce GTX 1080 Ti",
+  "benchmark": "Three static full-world render repetitions, 120 measured frames after 30 warmup frames per view; no active creatures. Screenshot readback excluded from timing. Wall-clock frame durations, not GPU timestamp queries.",
+  "metrics": [
+    {
+      "id": "road-day",
+      "before_ms": 6.441,
+      "after_ms": 6.66,
+      "delta_ms": 0.2190000000000003,
+      "change_pct": 3.4000931532370826
+    },
+    {
+      "id": "road-overcast",
+      "before_ms": 7.083,
+      "after_ms": 7.309,
+      "delta_ms": 0.22599999999999998,
+      "change_pct": 3.1907383876888407
+    },
+    {
+      "id": "road-dusk",
+      "before_ms": 5.042,
+      "after_ms": 5.274,
+      "delta_ms": 0.2320000000000002,
+      "change_pct": 4.601348671162242
+    },
+    {
+      "id": "road-storm",
+      "before_ms": 7.078,
+      "after_ms": 7.295,
+      "delta_ms": 0.21699999999999964,
+      "change_pct": 3.065837807290195
+    },
+    {
+      "id": "road-night",
+      "before_ms": 6.92,
+      "after_ms": 7.174,
+      "delta_ms": 0.25400000000000045,
+      "change_pct": 3.6705202312138807
+    },
+    {
+      "id": "road-surface",
+      "before_ms": 7.11,
+      "after_ms": 7.281,
+      "delta_ms": 0.17099999999999937,
+      "change_pct": 2.405063291139231
+    },
+    {
+      "id": "sign-0",
+      "before_ms": 9.307,
+      "after_ms": 9.35,
+      "delta_ms": 0.04299999999999926,
+      "change_pct": 0.4620178360373872
+    },
+    {
+      "id": "sign-1",
+      "before_ms": 7.518,
+      "after_ms": 7.544,
+      "delta_ms": 0.0259999999999998,
+      "change_pct": 0.34583665868581637
+    },
+    {
+      "id": "sign-2",
+      "before_ms": 6.131,
+      "after_ms": 6.288,
+      "delta_ms": 0.15700000000000003,
+      "change_pct": 2.5607568096558397
+    },
+    {
+      "id": "sign-3",
+      "before_ms": 5.2,
+      "after_ms": 5.282,
+      "delta_ms": 0.08199999999999985,
+      "change_pct": 1.5769230769230758
+    },
+    {
+      "id": "sign-4",
+      "before_ms": 8.058,
+      "after_ms": 8.113,
+      "delta_ms": 0.054999999999999716,
+      "change_pct": 0.6825515016132933
+    }
+  ],
+  "asset_hashes": {
+    "brave-and-cold/assets/road_detail/models/bear.glb": "839f057e2296f981d1b39bd72860cb69b771dfc70d9aca3838c38551187cca3c",
+    "brave-and-cold/assets/road_detail/models/bear_sign_bear.png": "ae0a73638e6c3ee1bcae86fd7d2066e17e6e35ee6b4ae801294f9dcdc0a515a5",
+    "brave-and-cold/assets/road_detail/models/curve_left.glb": "da73207926ac3b77134414f9471e5d3e45102e29729f8451c66f9a96f51cd269",
+    "brave-and-cold/assets/road_detail/models/curve_left_sign_curve_left.png": "10137cbd44abeb60f584998b130d4c4c811feebf8b59b600b27aa2fa41f8775a",
+    "brave-and-cold/assets/road_detail/models/curve_right.glb": "aaf2cf972bd17d204c569117d4c0989cdeaf71b122d8fa75d9b0b328c6083095",
+    "brave-and-cold/assets/road_detail/models/curve_right_sign_curve_right.png": "6582d4309c435ddf017926a6b399f6dfdc706681a162d2eaec74c74984d6bae2",
+    "brave-and-cold/assets/road_detail/models/deer.glb": "773e73acefb504080ddf3f8c099b984622588349a45333ee4dcd7c79f38a1417",
+    "brave-and-cold/assets/road_detail/models/deer_sign_deer.png": "597560853aea5dab12644ca7e225e4d2a4386f19a9916aa9592b041dfc009999",
+    "brave-and-cold/assets/road_detail/models/icy.glb": "7d7581267ba9b939a9edb9b6ba3706fc1986e9232c2112332fb853ae22810c4b",
+    "brave-and-cold/assets/road_detail/models/icy_sign_icy.png": "17e2b3c8882914bd637309564811fea22610673dd29f7b9a38a5229c3263b309",
+    "brave-and-cold/assets/road_detail/models/speed.glb": "5ef909c93e8298ce2a716b634ead593e12af323f8d8b3e6d1c8016c654768726",
+    "brave-and-cold/assets/road_detail/models/speed_sign_speed.png": "9b85f34f4f49f5ba5246e0451972454cb8e42f131c8a5cf1ec3989fc1fc44be1",
+    "brave-and-cold/assets/road_detail/textures/aggregate_alb.png": "f43e31ae10e185bff47761a6857b5e64513a4fead8bf097d7c55b12915f67632",
+    "brave-and-cold/assets/road_detail/textures/aggregate_nrm.png": "eeed1b498fc8df26fb834a20fe34af3612f24b344f3c5e23a5b918d0dd93322b",
+    "brave-and-cold/assets/road_detail/textures/road_fields.png": "d65ac5e25f38250124e10324a16de68b83ee6a8dfcc302b10fc422b804c58248",
+    "brave-and-cold/assets/road_detail/textures/sign_bear.png": "ae0a73638e6c3ee1bcae86fd7d2066e17e6e35ee6b4ae801294f9dcdc0a515a5",
+    "brave-and-cold/assets/road_detail/textures/sign_curve_left.png": "10137cbd44abeb60f584998b130d4c4c811feebf8b59b600b27aa2fa41f8775a",
+    "brave-and-cold/assets/road_detail/textures/sign_curve_right.png": "6582d4309c435ddf017926a6b399f6dfdc706681a162d2eaec74c74984d6bae2",
+    "brave-and-cold/assets/road_detail/textures/sign_deer.png": "597560853aea5dab12644ca7e225e4d2a4386f19a9916aa9592b041dfc009999",
+    "brave-and-cold/assets/road_detail/textures/sign_icy.png": "17e2b3c8882914bd637309564811fea22610673dd29f7b9a38a5229c3263b309",
+    "brave-and-cold/assets/road_detail/textures/sign_speed.png": "9b85f34f4f49f5ba5246e0451972454cb8e42f131c8a5cf1ec3989fc1fc44be1"
+  },
+  "source_hashes": {
+    "brave-and-cold/entities/player/player.gd": "8bf7e17a41e567ffba4cd01e9a5a863259d9a9a59c2020b884e39c05d734f5a3",
+    "brave-and-cold/project.godot": "fe5945e67a10da131572f02e53458a5a59fbb7221565cf7ff76a76decb8db5f4",
+    "brave-and-cold/world/game_world.gd": "08ec0b5a0d27797e487618851d0f3d2b83b29235d8b35e4cd354b7af6f2f3e35",
+    "brave-and-cold/world/road_net.gd": "620d3adf3e5d5828f098012f2c9747c78562732bdad612671e848a1147a4b985",
+    "brave-and-cold/world/shaders/winter_road.gdshader": "6234409508d74058701f0d7738b756a4e4a0fd9bf236f8451a20803c54c37b2c",
+    "brave-and-cold/world/cabin.gd": "91b573f0aac8c94e10d2c69ff747c53e8ca0d986c883760b607c6dc5fac4993c",
+    "brave-and-cold/world/hut.gd": "158ad52c3dc663954bf85b6c3f177e8bf278d1cbb736028bb0763d920949a031",
+    "brave-and-cold/world/store.gd": "4c07bef25a528f5b65122cc8988786a5313f504d23ad59d90772e7de6fd1d8ec",
+    "brave-and-cold/world/fire_lookout.gd": "8937517c199621a23eec911484493bd2ac9d6d4c120e68a705cd8e4d0d7940a6",
+    "tools/roads/generate_road_fields.py": "4ad79d92b5a5625e391bdb6e47a6268a532c7f7199641c16ffc49c0a6152c73c",
+    "tools/blender/gen_road_signs.py": "27739d939906bc6c3f5ba465406cabcb6552e5fe89b02f4911a24abe0362b0b8",
+    "brave-and-cold/tests/test_jump.gd": "c3c6dcc652c2faaa086aefb2868720dc789ada1f867c40601e5148e2cf44d15e",
+    "brave-and-cold/tests/test_road_detail.gd": "e54fbf6cf9824c4900abd13552799a0c81b7177a982a77fd5009769837831e38",
+    "brave-and-cold/tests/visual/capture_roads.gd": "a3d0f43215310ab4127ef083ca75427a9a3e49e7c105e3b1eebcd6f80d772d19",
+    "brave-and-cold/tests/visual/capture_jump.gd": "5d15be7b9c44e23919c83b64a00df244d649ed68feba23690ae913e945ef5f7e"
+  },
+  "tests": {
+    "jump": {
+      "passed": true,
+      "log_sha256": "6591e9bdf4eb265e6c8ff5b063d44ae46c9879d478d7ca167ee9d5229d49976f"
+    },
+    "road_detail": {
+      "passed": true,
+      "log_sha256": "090d9db9987a8d8bced3284c8683ceb6276dae36c677a00f123c226121d1bcad"
+    },
+    "shore_walking": {
+      "passed": true,
+      "log_sha256": "41db5804f6fea082ddf4418926baafabce83a0aab90ddad7a7e94f306a80241e"
+    },
+    "fire_lookout": {
+      "passed": true,
+      "log_sha256": "45bbbeb0a03f2c42e25b420bf7d81fc8bb5a95b9baab660a2087f093cf23a7c7"
+    },
+    "viewmodel": {
+      "passed": true,
+      "log_sha256": "8fa76ab9e497489778e11053ce10c852b29aa08b44eefa15f9b4fbccd98e3871"
+    },
+    "survival": {
+      "passed": true,
+      "log_sha256": "b5182f7b2577a558f4d90a65ee1bbc2bfa69fa72a98d82d92a40914e42be3565"
+    },
+    "frozen_water": {
+      "passed": true,
+      "log_sha256": "154c27e9739c6b0047d6ef541f5b18f6832bfa295fad8f8b3a65546d23b0f5ff"
+    },
+    "atmosphere": {
+      "passed": true,
+      "log_sha256": "852cb98e800c8e527059cd4e9fb45d8336ecffe36ac287442fc1afb88dda4550"
+    },
+    "audio": {
+      "passed": true,
+      "log_sha256": "3b8366ba1bf9effbc6f71ea30a88dff9340e6ecdc6fb7458036987e21e7f9d93"
+    },
+    "environment_detail": {
+      "passed": true,
+      "log_sha256": "17da0fe770cc7468356839f4445227c0c8a1d3c3b6ea869486551119f0ceaab5"
+    }
+  },
+  "jump_world": {
+    "landed": true,
+    "save_protected_while_airborne": true,
+    "space_event_started_jump": true
+  },
+  "capture_manifests": {
+    "before": {
+      "captures": [
+        {
+          "eye": [
+            -427.662841796875,
+            11.4636449813843,
+            317.892822265625
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-day-r0.png",
+          "hour": 11.0,
+          "id": "road-day",
+          "median_ms": 6.407,
+          "p99_ms": 7.337,
+          "repeat": 0,
+          "sha256": "30d58ef6844a22dd9d1d9ab3e6a3726f99a5b5dca5e26777a480d0907802ad61",
+          "target": [
+            -403.738403320313,
+            10.6621875762939,
+            340.261596679688
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.73315334320068,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-overcast-r0.png",
+          "hour": 13.0,
+          "id": "road-overcast",
+          "median_ms": 6.933,
+          "p99_ms": 7.478,
+          "repeat": 0,
+          "sha256": "f7e4f8b072741f1b3628a32c1df07a4fb2695c7f10f137541c1a1566b92155a9",
+          "target": [
+            -96.0199966430664,
+            9.00288105010986,
+            272.019989013672
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            70.9475479125977,
+            154.953308105469,
+            -114.900001525879
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-dusk-r0.png",
+          "hour": 17.1,
+          "id": "road-dusk",
+          "median_ms": 4.948,
+          "p99_ms": 5.476,
+          "repeat": 0,
+          "sha256": "4d34d031f6d6222cba09dc6fb86b85547b90d34ea31c6c362a47a5bcbcb0a5aa",
+          "target": [
+            105.947547912598,
+            168.089996337891,
+            -116.0
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.73315334320068,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-storm-r0.png",
+          "hour": 13.0,
+          "id": "road-storm",
+          "median_ms": 6.962,
+          "p99_ms": 7.468,
+          "repeat": 0,
+          "sha256": "9cb4c2a0237c4ffd6bb9dd9e7adfc73d7584182480bc0fdfa596bf10e71913e3",
+          "target": [
+            -96.0199966430664,
+            9.00288105010986,
+            272.019989013672
+          ],
+          "weather": 4
+        },
+        {
+          "eye": [
+            -427.662841796875,
+            11.4636449813843,
+            317.892822265625
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-night-r0.png",
+          "hour": 22.0,
+          "id": "road-night",
+          "median_ms": 6.894,
+          "p99_ms": 7.373,
+          "repeat": 0,
+          "sha256": "ca4f17e0c5fef6206f403eb2f633d537d8c9c25b340e6937c469561d8ce45ab7",
+          "target": [
+            -403.738403320313,
+            10.6621875762939,
+            340.261596679688
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.08315372467041,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-surface-r0.png",
+          "hour": 13.0,
+          "id": "road-surface",
+          "median_ms": 7.032,
+          "p99_ms": 7.455,
+          "repeat": 0,
+          "sha256": "44329dbdcc6ff9bf6a32fcaaf2d19b49ae073783a79617beea0e8354626296e8",
+          "target": [
+            -110.857940673828,
+            8.38315391540527,
+            298.050354003906
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -740.900207519531,
+            31.6210327148438,
+            379.063598632813
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-0-r0.png",
+          "hour": 13.0,
+          "id": "sign-0",
+          "median_ms": 9.124,
+          "p99_ms": 9.778,
+          "repeat": 0,
+          "sha256": "9de103b743d3c8be59d42cab0040609317c07128364d851adc131750f8f6e551",
+          "target": [
+            -742.623291015625,
+            31.8010330200195,
+            376.486572265625
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -650.317749023438,
+            15.1626768112183,
+            274.128265380859
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-1-r0.png",
+          "hour": 13.0,
+          "id": "sign-1",
+          "median_ms": 7.424,
+          "p99_ms": 8.133,
+          "repeat": 0,
+          "sha256": "70255794fcfc4862f7fccc3c23ea93b274602cee30643212514dd9275a748eb7",
+          "target": [
+            -652.598022460938,
+            15.342677116394,
+            276.228332519531
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -531.10400390625,
+            11.8150053024292,
+            278.600006103516
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-2-r0.png",
+          "hour": 13.0,
+          "id": "sign-2",
+          "median_ms": 6.088,
+          "p99_ms": 6.694,
+          "repeat": 0,
+          "sha256": "00b17c8abeb92843a888256bc5c68ab7e4d49c87768433ca11dd279cf2e9042c",
+          "target": [
+            -528.004028320313,
+            11.995005607605,
+            278.600006103516
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -410.191009521484,
+            11.5020198822021,
+            341.121520996094
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-3-r0.png",
+          "hour": 13.0,
+          "id": "sign-3",
+          "median_ms": 5.107,
+          "p99_ms": 5.627,
+          "repeat": 0,
+          "sha256": "a99a1f54843f031d1a2d9abf16b734f64e2797e442ec49ff433826a5ecd34888",
+          "target": [
+            -412.559844970703,
+            11.6820201873779,
+            339.121856689453
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -312.416717529297,
+            11.379524230957,
+            415.434814453125
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-4-r0.png",
+          "hour": 13.0,
+          "id": "sign-4",
+          "median_ms": 7.982,
+          "p99_ms": 8.572,
+          "repeat": 0,
+          "sha256": "05ebadd208f91b0cae215e2b2e623e8896a6ef5712b9bada549be46ce2c33594",
+          "target": [
+            -309.778839111328,
+            11.5595245361328,
+            413.806427001953
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -427.662841796875,
+            11.4636449813843,
+            317.892822265625
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-day-r1.png",
+          "hour": 11.0,
+          "id": "road-day",
+          "median_ms": 6.492,
+          "p99_ms": 6.988,
+          "repeat": 1,
+          "sha256": "b42177887059ca3279cfc6150e0ecd20fca530ffab85d2e711300a21343220e0",
+          "target": [
+            -403.738403320313,
+            10.6621875762939,
+            340.261596679688
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.73315334320068,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-overcast-r1.png",
+          "hour": 13.0,
+          "id": "road-overcast",
+          "median_ms": 7.099,
+          "p99_ms": 7.687,
+          "repeat": 1,
+          "sha256": "f7e4f8b072741f1b3628a32c1df07a4fb2695c7f10f137541c1a1566b92155a9",
+          "target": [
+            -96.0199966430664,
+            9.00288105010986,
+            272.019989013672
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            70.9475479125977,
+            154.953308105469,
+            -114.900001525879
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-dusk-r1.png",
+          "hour": 17.1,
+          "id": "road-dusk",
+          "median_ms": 5.043,
+          "p99_ms": 5.495,
+          "repeat": 1,
+          "sha256": "4d34d031f6d6222cba09dc6fb86b85547b90d34ea31c6c362a47a5bcbcb0a5aa",
+          "target": [
+            105.947547912598,
+            168.089996337891,
+            -116.0
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.73315334320068,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-storm-r1.png",
+          "hour": 13.0,
+          "id": "road-storm",
+          "median_ms": 7.078,
+          "p99_ms": 7.789,
+          "repeat": 1,
+          "sha256": "a308ca6fbf10c39aee1d069b6bec466a2cc05dd9aabeed7bf97be4881707ce17",
+          "target": [
+            -96.0199966430664,
+            9.00288105010986,
+            272.019989013672
+          ],
+          "weather": 4
+        },
+        {
+          "eye": [
+            -427.662841796875,
+            11.4636449813843,
+            317.892822265625
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-night-r1.png",
+          "hour": 22.0,
+          "id": "road-night",
+          "median_ms": 7.009,
+          "p99_ms": 7.586,
+          "repeat": 1,
+          "sha256": "ca4f17e0c5fef6206f403eb2f633d537d8c9c25b340e6937c469561d8ce45ab7",
+          "target": [
+            -403.738403320313,
+            10.6621875762939,
+            340.261596679688
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.08315372467041,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-surface-r1.png",
+          "hour": 13.0,
+          "id": "road-surface",
+          "median_ms": 7.184,
+          "p99_ms": 7.586,
+          "repeat": 1,
+          "sha256": "44329dbdcc6ff9bf6a32fcaaf2d19b49ae073783a79617beea0e8354626296e8",
+          "target": [
+            -110.857940673828,
+            8.38315391540527,
+            298.050354003906
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -740.900207519531,
+            31.6210327148438,
+            379.063598632813
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-0-r1.png",
+          "hour": 13.0,
+          "id": "sign-0",
+          "median_ms": 9.307,
+          "p99_ms": 9.861,
+          "repeat": 1,
+          "sha256": "9de103b743d3c8be59d42cab0040609317c07128364d851adc131750f8f6e551",
+          "target": [
+            -742.623291015625,
+            31.8010330200195,
+            376.486572265625
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -650.317749023438,
+            15.1626768112183,
+            274.128265380859
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-1-r1.png",
+          "hour": 13.0,
+          "id": "sign-1",
+          "median_ms": 7.518,
+          "p99_ms": 8.165,
+          "repeat": 1,
+          "sha256": "70255794fcfc4862f7fccc3c23ea93b274602cee30643212514dd9275a748eb7",
+          "target": [
+            -652.598022460938,
+            15.342677116394,
+            276.228332519531
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -531.10400390625,
+            11.8150053024292,
+            278.600006103516
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-2-r1.png",
+          "hour": 13.0,
+          "id": "sign-2",
+          "median_ms": 6.131,
+          "p99_ms": 6.772,
+          "repeat": 1,
+          "sha256": "dccd1394ab602902f2ad4460579cdd53d91182a67a35e470cc4bacc3d6fd32c9",
+          "target": [
+            -528.004028320313,
+            11.995005607605,
+            278.600006103516
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -410.191009521484,
+            11.5020198822021,
+            341.121520996094
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-3-r1.png",
+          "hour": 13.0,
+          "id": "sign-3",
+          "median_ms": 5.2,
+          "p99_ms": 5.697,
+          "repeat": 1,
+          "sha256": "09b7fd71d315306fbca57e8b9b59bdc393bf46156a4dd0202a421d59d6c516c5",
+          "target": [
+            -412.559844970703,
+            11.6820201873779,
+            339.121856689453
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -312.416717529297,
+            11.379524230957,
+            415.434814453125
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-4-r1.png",
+          "hour": 13.0,
+          "id": "sign-4",
+          "median_ms": 8.058,
+          "p99_ms": 8.775,
+          "repeat": 1,
+          "sha256": "05ebadd208f91b0cae215e2b2e623e8896a6ef5712b9bada549be46ce2c33594",
+          "target": [
+            -309.778839111328,
+            11.5595245361328,
+            413.806427001953
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -427.662841796875,
+            11.4636449813843,
+            317.892822265625
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-day-r2.png",
+          "hour": 11.0,
+          "id": "road-day",
+          "median_ms": 6.441,
+          "p99_ms": 7.119,
+          "repeat": 2,
+          "sha256": "b42177887059ca3279cfc6150e0ecd20fca530ffab85d2e711300a21343220e0",
+          "target": [
+            -403.738403320313,
+            10.6621875762939,
+            340.261596679688
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.73315334320068,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-overcast-r2.png",
+          "hour": 13.0,
+          "id": "road-overcast",
+          "median_ms": 7.083,
+          "p99_ms": 7.651,
+          "repeat": 2,
+          "sha256": "f7e4f8b072741f1b3628a32c1df07a4fb2695c7f10f137541c1a1566b92155a9",
+          "target": [
+            -96.0199966430664,
+            9.00288105010986,
+            272.019989013672
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            70.9475479125977,
+            154.953308105469,
+            -114.900001525879
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-dusk-r2.png",
+          "hour": 17.1,
+          "id": "road-dusk",
+          "median_ms": 5.042,
+          "p99_ms": 5.536,
+          "repeat": 2,
+          "sha256": "2dc8c16118bed8172f9e25b39d6723f0fc6d8e1e902510ad64da1d6c248632c0",
+          "target": [
+            105.947547912598,
+            168.089996337891,
+            -116.0
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.73315334320068,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-storm-r2.png",
+          "hour": 13.0,
+          "id": "road-storm",
+          "median_ms": 7.118,
+          "p99_ms": 7.651,
+          "repeat": 2,
+          "sha256": "e167a8f59d62a6d45b6053a389930dbdec16c2c18a37eb0c0cc2db1fae824b96",
+          "target": [
+            -96.0199966430664,
+            9.00288105010986,
+            272.019989013672
+          ],
+          "weather": 4
+        },
+        {
+          "eye": [
+            -427.662841796875,
+            11.4636449813843,
+            317.892822265625
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-night-r2.png",
+          "hour": 22.0,
+          "id": "road-night",
+          "median_ms": 6.92,
+          "p99_ms": 7.56,
+          "repeat": 2,
+          "sha256": "ca4f17e0c5fef6206f403eb2f633d537d8c9c25b340e6937c469561d8ce45ab7",
+          "target": [
+            -403.738403320313,
+            10.6621875762939,
+            340.261596679688
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.08315372467041,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/bench-before/road-surface-r2.png",
+          "hour": 13.0,
+          "id": "road-surface",
+          "median_ms": 7.11,
+          "p99_ms": 7.834,
+          "repeat": 2,
+          "sha256": "44329dbdcc6ff9bf6a32fcaaf2d19b49ae073783a79617beea0e8354626296e8",
+          "target": [
+            -110.857940673828,
+            8.38315391540527,
+            298.050354003906
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -740.900207519531,
+            31.6210327148438,
+            379.063598632813
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-0-r2.png",
+          "hour": 13.0,
+          "id": "sign-0",
+          "median_ms": 9.314,
+          "p99_ms": 9.738,
+          "repeat": 2,
+          "sha256": "9de103b743d3c8be59d42cab0040609317c07128364d851adc131750f8f6e551",
+          "target": [
+            -742.623291015625,
+            31.8010330200195,
+            376.486572265625
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -650.317749023438,
+            15.1626768112183,
+            274.128265380859
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-1-r2.png",
+          "hour": 13.0,
+          "id": "sign-1",
+          "median_ms": 7.545,
+          "p99_ms": 8.165,
+          "repeat": 2,
+          "sha256": "70255794fcfc4862f7fccc3c23ea93b274602cee30643212514dd9275a748eb7",
+          "target": [
+            -652.598022460938,
+            15.342677116394,
+            276.228332519531
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -531.10400390625,
+            11.8150053024292,
+            278.600006103516
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-2-r2.png",
+          "hour": 13.0,
+          "id": "sign-2",
+          "median_ms": 6.194,
+          "p99_ms": 6.735,
+          "repeat": 2,
+          "sha256": "00b17c8abeb92843a888256bc5c68ab7e4d49c87768433ca11dd279cf2e9042c",
+          "target": [
+            -528.004028320313,
+            11.995005607605,
+            278.600006103516
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -410.191009521484,
+            11.5020198822021,
+            341.121520996094
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-3-r2.png",
+          "hour": 13.0,
+          "id": "sign-3",
+          "median_ms": 5.238,
+          "p99_ms": 5.659,
+          "repeat": 2,
+          "sha256": "a99a1f54843f031d1a2d9abf16b734f64e2797e442ec49ff433826a5ecd34888",
+          "target": [
+            -412.559844970703,
+            11.6820201873779,
+            339.121856689453
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -312.416717529297,
+            11.379524230957,
+            415.434814453125
+          ],
+          "file": "res://shots/roads-jump/bench-before/sign-4-r2.png",
+          "hour": 13.0,
+          "id": "sign-4",
+          "median_ms": 8.064,
+          "p99_ms": 8.639,
+          "repeat": 2,
+          "sha256": "05ebadd208f91b0cae215e2b2e623e8896a6ef5712b9bada549be46ce2c33594",
+          "target": [
+            -309.778839111328,
+            11.5595245361328,
+            413.806427001953
+          ],
+          "weather": 1
+        }
+      ],
+      "gpu": "NVIDIA GeForce GTX 1080 Ti",
+      "resolution": [
+        1600,
+        900
+      ],
+      "road_detail": "baseline",
+      "seed": 20261003
+    },
+    "after": {
+      "captures": [
+        {
+          "eye": [
+            -427.662841796875,
+            11.4636449813843,
+            317.892822265625
+          ],
+          "file": "res://shots/roads-jump/final/road-day-r0.png",
+          "hour": 11.0,
+          "id": "road-day",
+          "median_ms": 6.705,
+          "p99_ms": 7.821,
+          "repeat": 0,
+          "sha256": "0affcb213da8a0d2f19e7cae51d4338c426fc1463fb11b5ae8b648cd1e4975b0",
+          "target": [
+            -403.738403320313,
+            10.6621875762939,
+            340.261596679688
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.73315334320068,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/final/road-overcast-r0.png",
+          "hour": 13.0,
+          "id": "road-overcast",
+          "median_ms": 7.168,
+          "p99_ms": 7.934,
+          "repeat": 0,
+          "sha256": "e59ca3eb39ecb80480f701741ccd7d10659b659dfe075e69ab8034759748c08f",
+          "target": [
+            -96.0199966430664,
+            9.00288105010986,
+            272.019989013672
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            70.9475479125977,
+            154.953308105469,
+            -114.900001525879
+          ],
+          "file": "res://shots/roads-jump/final/road-dusk-r0.png",
+          "hour": 17.1,
+          "id": "road-dusk",
+          "median_ms": 5.181,
+          "p99_ms": 5.797,
+          "repeat": 0,
+          "sha256": "fead211f183ad545a9632d7920a1d322e4e5713c4114460b1080807b5e399b2c",
+          "target": [
+            105.947547912598,
+            168.089996337891,
+            -116.0
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.73315334320068,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/final/road-storm-r0.png",
+          "hour": 13.0,
+          "id": "road-storm",
+          "median_ms": 7.155,
+          "p99_ms": 7.947,
+          "repeat": 0,
+          "sha256": "7400d2ea115d39e8340711e1d39a722e693c639460db2a70e7f8c4495eb45dd9",
+          "target": [
+            -96.0199966430664,
+            9.00288105010986,
+            272.019989013672
+          ],
+          "weather": 4
+        },
+        {
+          "eye": [
+            -427.662841796875,
+            11.4636449813843,
+            317.892822265625
+          ],
+          "file": "res://shots/roads-jump/final/road-night-r0.png",
+          "hour": 22.0,
+          "id": "road-night",
+          "median_ms": 7.069,
+          "p99_ms": 7.585,
+          "repeat": 0,
+          "sha256": "8ddac49dd07f16f987e54664024a3c74e9ef33c57ad10a00d4ea14646e601dba",
+          "target": [
+            -403.738403320313,
+            10.6621875762939,
+            340.261596679688
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.08315372467041,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/final/road-surface-r0.png",
+          "hour": 13.0,
+          "id": "road-surface",
+          "median_ms": 7.254,
+          "p99_ms": 7.827,
+          "repeat": 0,
+          "sha256": "c44c830d0f8aa45df5cd99f8ce18bea585e72c63164f610dd9eebe2aeac4056f",
+          "target": [
+            -110.857940673828,
+            8.38315391540527,
+            298.050354003906
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -740.900207519531,
+            31.6210327148438,
+            379.063598632813
+          ],
+          "file": "res://shots/roads-jump/final/sign-0-r0.png",
+          "hour": 13.0,
+          "id": "sign-0",
+          "median_ms": 9.148,
+          "p99_ms": 9.993,
+          "repeat": 0,
+          "sha256": "973a5d65480eaf77fdda4b341494290bf98ff8ae15d031c30c4ffca39fd68d73",
+          "target": [
+            -742.623291015625,
+            31.8010330200195,
+            376.486572265625
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -650.317749023438,
+            15.1626768112183,
+            274.128265380859
+          ],
+          "file": "res://shots/roads-jump/final/sign-1-r0.png",
+          "hour": 13.0,
+          "id": "sign-1",
+          "median_ms": 7.503,
+          "p99_ms": 8.22,
+          "repeat": 0,
+          "sha256": "7f9b6e3323ec467d648c7f5f73c1ef25c037a9ec5d9f1505b6798f7c7bfc7716",
+          "target": [
+            -652.598022460938,
+            15.342677116394,
+            276.228332519531
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -531.10400390625,
+            11.8150053024292,
+            278.600006103516
+          ],
+          "file": "res://shots/roads-jump/final/sign-2-r0.png",
+          "hour": 13.0,
+          "id": "sign-2",
+          "median_ms": 6.165,
+          "p99_ms": 6.895,
+          "repeat": 0,
+          "sha256": "c03e1607e81db0749bb0dc9f10e0331198f7a451ef69cafad12f33886050e502",
+          "target": [
+            -528.004028320313,
+            11.995005607605,
+            278.600006103516
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -410.191009521484,
+            11.5020198822021,
+            341.121520996094
+          ],
+          "file": "res://shots/roads-jump/final/sign-3-r0.png",
+          "hour": 13.0,
+          "id": "sign-3",
+          "median_ms": 5.255,
+          "p99_ms": 5.78,
+          "repeat": 0,
+          "sha256": "15e5a894a9356de1a285cb55d5739c3b1b242799c2d230519e28aa3ae1dffaf8",
+          "target": [
+            -412.559844970703,
+            11.6820201873779,
+            339.121856689453
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -312.416717529297,
+            11.379524230957,
+            415.434814453125
+          ],
+          "file": "res://shots/roads-jump/final/sign-4-r0.png",
+          "hour": 13.0,
+          "id": "sign-4",
+          "median_ms": 8.091,
+          "p99_ms": 8.851,
+          "repeat": 0,
+          "sha256": "871c6cc33553edb683e8668b2144746e56f2dd7ef7c6ea442c4a9850dbf6ab4a",
+          "target": [
+            -309.778839111328,
+            11.5595245361328,
+            413.806427001953
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -427.662841796875,
+            11.4636449813843,
+            317.892822265625
+          ],
+          "file": "res://shots/roads-jump/final/road-day-r1.png",
+          "hour": 11.0,
+          "id": "road-day",
+          "median_ms": 6.58,
+          "p99_ms": 7.228,
+          "repeat": 1,
+          "sha256": "542f0e077c4058539ef8d784cbad81b1370b44450d5697d2783fd2a0e26951e2",
+          "target": [
+            -403.738403320313,
+            10.6621875762939,
+            340.261596679688
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.73315334320068,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/final/road-overcast-r1.png",
+          "hour": 13.0,
+          "id": "road-overcast",
+          "median_ms": 7.309,
+          "p99_ms": 7.884,
+          "repeat": 1,
+          "sha256": "e59ca3eb39ecb80480f701741ccd7d10659b659dfe075e69ab8034759748c08f",
+          "target": [
+            -96.0199966430664,
+            9.00288105010986,
+            272.019989013672
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            70.9475479125977,
+            154.953308105469,
+            -114.900001525879
+          ],
+          "file": "res://shots/roads-jump/final/road-dusk-r1.png",
+          "hour": 17.1,
+          "id": "road-dusk",
+          "median_ms": 5.275,
+          "p99_ms": 5.833,
+          "repeat": 1,
+          "sha256": "fead211f183ad545a9632d7920a1d322e4e5713c4114460b1080807b5e399b2c",
+          "target": [
+            105.947547912598,
+            168.089996337891,
+            -116.0
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.73315334320068,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/final/road-storm-r1.png",
+          "hour": 13.0,
+          "id": "road-storm",
+          "median_ms": 7.307,
+          "p99_ms": 7.818,
+          "repeat": 1,
+          "sha256": "cefd2e31c812f0a2beac2a2081e65f4215da1769d04ed187b237ecc1337f89ae",
+          "target": [
+            -96.0199966430664,
+            9.00288105010986,
+            272.019989013672
+          ],
+          "weather": 4
+        },
+        {
+          "eye": [
+            -427.662841796875,
+            11.4636449813843,
+            317.892822265625
+          ],
+          "file": "res://shots/roads-jump/final/road-night-r1.png",
+          "hour": 22.0,
+          "id": "road-night",
+          "median_ms": 7.174,
+          "p99_ms": 7.763,
+          "repeat": 1,
+          "sha256": "8ddac49dd07f16f987e54664024a3c74e9ef33c57ad10a00d4ea14646e601dba",
+          "target": [
+            -403.738403320313,
+            10.6621875762939,
+            340.261596679688
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.08315372467041,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/final/road-surface-r1.png",
+          "hour": 13.0,
+          "id": "road-surface",
+          "median_ms": 7.36,
+          "p99_ms": 8.273,
+          "repeat": 1,
+          "sha256": "c44c830d0f8aa45df5cd99f8ce18bea585e72c63164f610dd9eebe2aeac4056f",
+          "target": [
+            -110.857940673828,
+            8.38315391540527,
+            298.050354003906
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -740.900207519531,
+            31.6210327148438,
+            379.063598632813
+          ],
+          "file": "res://shots/roads-jump/final/sign-0-r1.png",
+          "hour": 13.0,
+          "id": "sign-0",
+          "median_ms": 9.35,
+          "p99_ms": 9.746,
+          "repeat": 1,
+          "sha256": "973a5d65480eaf77fdda4b341494290bf98ff8ae15d031c30c4ffca39fd68d73",
+          "target": [
+            -742.623291015625,
+            31.8010330200195,
+            376.486572265625
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -650.317749023438,
+            15.1626768112183,
+            274.128265380859
+          ],
+          "file": "res://shots/roads-jump/final/sign-1-r1.png",
+          "hour": 13.0,
+          "id": "sign-1",
+          "median_ms": 7.544,
+          "p99_ms": 8.337,
+          "repeat": 1,
+          "sha256": "7f9b6e3323ec467d648c7f5f73c1ef25c037a9ec5d9f1505b6798f7c7bfc7716",
+          "target": [
+            -652.598022460938,
+            15.342677116394,
+            276.228332519531
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -531.10400390625,
+            11.8150053024292,
+            278.600006103516
+          ],
+          "file": "res://shots/roads-jump/final/sign-2-r1.png",
+          "hour": 13.0,
+          "id": "sign-2",
+          "median_ms": 6.288,
+          "p99_ms": 6.788,
+          "repeat": 1,
+          "sha256": "c03e1607e81db0749bb0dc9f10e0331198f7a451ef69cafad12f33886050e502",
+          "target": [
+            -528.004028320313,
+            11.995005607605,
+            278.600006103516
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -410.191009521484,
+            11.5020198822021,
+            341.121520996094
+          ],
+          "file": "res://shots/roads-jump/final/sign-3-r1.png",
+          "hour": 13.0,
+          "id": "sign-3",
+          "median_ms": 5.282,
+          "p99_ms": 8.277,
+          "repeat": 1,
+          "sha256": "15e5a894a9356de1a285cb55d5739c3b1b242799c2d230519e28aa3ae1dffaf8",
+          "target": [
+            -412.559844970703,
+            11.6820201873779,
+            339.121856689453
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -312.416717529297,
+            11.379524230957,
+            415.434814453125
+          ],
+          "file": "res://shots/roads-jump/final/sign-4-r1.png",
+          "hour": 13.0,
+          "id": "sign-4",
+          "median_ms": 8.113,
+          "p99_ms": 8.896,
+          "repeat": 1,
+          "sha256": "871c6cc33553edb683e8668b2144746e56f2dd7ef7c6ea442c4a9850dbf6ab4a",
+          "target": [
+            -309.778839111328,
+            11.5595245361328,
+            413.806427001953
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -427.662841796875,
+            11.4636449813843,
+            317.892822265625
+          ],
+          "file": "res://shots/roads-jump/final/road-day-r2.png",
+          "hour": 11.0,
+          "id": "road-day",
+          "median_ms": 6.66,
+          "p99_ms": 7.346,
+          "repeat": 2,
+          "sha256": "542f0e077c4058539ef8d784cbad81b1370b44450d5697d2783fd2a0e26951e2",
+          "target": [
+            -403.738403320313,
+            10.6621875762939,
+            340.261596679688
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.73315334320068,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/final/road-overcast-r2.png",
+          "hour": 13.0,
+          "id": "road-overcast",
+          "median_ms": 7.34,
+          "p99_ms": 8.055,
+          "repeat": 2,
+          "sha256": "e59ca3eb39ecb80480f701741ccd7d10659b659dfe075e69ab8034759748c08f",
+          "target": [
+            -96.0199966430664,
+            9.00288105010986,
+            272.019989013672
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            70.9475479125977,
+            154.953308105469,
+            -114.900001525879
+          ],
+          "file": "res://shots/roads-jump/final/road-dusk-r2.png",
+          "hour": 17.1,
+          "id": "road-dusk",
+          "median_ms": 5.274,
+          "p99_ms": 5.782,
+          "repeat": 2,
+          "sha256": "fead211f183ad545a9632d7920a1d322e4e5713c4114460b1080807b5e399b2c",
+          "target": [
+            105.947547912598,
+            168.089996337891,
+            -116.0
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.73315334320068,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/final/road-storm-r2.png",
+          "hour": 13.0,
+          "id": "road-storm",
+          "median_ms": 7.295,
+          "p99_ms": 7.9,
+          "repeat": 2,
+          "sha256": "bb05afe9666f7640eaf4c4c46ae709f344272ee6be026344e83c8f4985edbf79",
+          "target": [
+            -96.0199966430664,
+            9.00288105010986,
+            272.019989013672
+          ],
+          "weather": 4
+        },
+        {
+          "eye": [
+            -427.662841796875,
+            11.4636449813843,
+            317.892822265625
+          ],
+          "file": "res://shots/roads-jump/final/road-night-r2.png",
+          "hour": 22.0,
+          "id": "road-night",
+          "median_ms": 7.184,
+          "p99_ms": 7.682,
+          "repeat": 2,
+          "sha256": "8ddac49dd07f16f987e54664024a3c74e9ef33c57ad10a00d4ea14646e601dba",
+          "target": [
+            -403.738403320313,
+            10.6621875762939,
+            340.261596679688
+          ],
+          "weather": 0
+        },
+        {
+          "eye": [
+            -112.857940673828,
+            9.08315372467041,
+            300.550354003906
+          ],
+          "file": "res://shots/roads-jump/final/road-surface-r2.png",
+          "hour": 13.0,
+          "id": "road-surface",
+          "median_ms": 7.281,
+          "p99_ms": 8.169,
+          "repeat": 2,
+          "sha256": "c44c830d0f8aa45df5cd99f8ce18bea585e72c63164f610dd9eebe2aeac4056f",
+          "target": [
+            -110.857940673828,
+            8.38315391540527,
+            298.050354003906
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -740.900207519531,
+            31.6210327148438,
+            379.063598632813
+          ],
+          "file": "res://shots/roads-jump/final/sign-0-r2.png",
+          "hour": 13.0,
+          "id": "sign-0",
+          "median_ms": 9.393,
+          "p99_ms": 9.963,
+          "repeat": 2,
+          "sha256": "973a5d65480eaf77fdda4b341494290bf98ff8ae15d031c30c4ffca39fd68d73",
+          "target": [
+            -742.623291015625,
+            31.8010330200195,
+            376.486572265625
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -650.317749023438,
+            15.1626768112183,
+            274.128265380859
+          ],
+          "file": "res://shots/roads-jump/final/sign-1-r2.png",
+          "hour": 13.0,
+          "id": "sign-1",
+          "median_ms": 7.595,
+          "p99_ms": 8.383,
+          "repeat": 2,
+          "sha256": "7f9b6e3323ec467d648c7f5f73c1ef25c037a9ec5d9f1505b6798f7c7bfc7716",
+          "target": [
+            -652.598022460938,
+            15.342677116394,
+            276.228332519531
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -531.10400390625,
+            11.8150053024292,
+            278.600006103516
+          ],
+          "file": "res://shots/roads-jump/final/sign-2-r2.png",
+          "hour": 13.0,
+          "id": "sign-2",
+          "median_ms": 6.32,
+          "p99_ms": 6.974,
+          "repeat": 2,
+          "sha256": "858198ad668fd194ccd4ec911703b807b32b6de1ad661bef1a018bd490a0b1d9",
+          "target": [
+            -528.004028320313,
+            11.995005607605,
+            278.600006103516
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -410.191009521484,
+            11.5020198822021,
+            341.121520996094
+          ],
+          "file": "res://shots/roads-jump/final/sign-3-r2.png",
+          "hour": 13.0,
+          "id": "sign-3",
+          "median_ms": 5.342,
+          "p99_ms": 5.979,
+          "repeat": 2,
+          "sha256": "15e5a894a9356de1a285cb55d5739c3b1b242799c2d230519e28aa3ae1dffaf8",
+          "target": [
+            -412.559844970703,
+            11.6820201873779,
+            339.121856689453
+          ],
+          "weather": 1
+        },
+        {
+          "eye": [
+            -312.416717529297,
+            11.379524230957,
+            415.434814453125
+          ],
+          "file": "res://shots/roads-jump/final/sign-4-r2.png",
+          "hour": 13.0,
+          "id": "sign-4",
+          "median_ms": 8.227,
+          "p99_ms": 8.894,
+          "repeat": 2,
+          "sha256": "871c6cc33553edb683e8668b2144746e56f2dd7ef7c6ea442c4a9850dbf6ab4a",
+          "target": [
+            -309.778839111328,
+            11.5595245361328,
+            413.806427001953
+          ],
+          "weather": 1
+        }
+      ],
+      "gpu": "NVIDIA GeForce GTX 1080 Ti",
+      "resolution": [
+        1600,
+        900
+      ],
+      "road_detail": "winter",
+      "seed": 20261003
+    }
+  },
+  "road_contract": {
+    "points": 1024,
+    "length_m": 2558.138,
+    "road_triangles": 16368,
+    "signs": 18,
+    "poles": 57,
+    "bridge_spans": [
+      [
+        293,
+        302
+      ]
+    ],
+    "raw_terrain_grade_max_pct": 87.01,
+    "raw_terrain_grade_p95_pct": 42.739,
+    "grade_note": "Raw lidar/carved-bed sample gradients, not an engineered road grade or a gameplay collision audit."
+  }
+}

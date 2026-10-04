@@ -55,7 +55,7 @@ func _ready() -> void:
 		b.pressed.connect(spec[1])
 		b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		_main.add_child(b)
-	var hint := UiKit.label("WASD move   Shift sprint   C crouch   Wheel + E actions   LMB / F attack   X rifle   V flare   B campfire   Tab gear   Esc pause", 14, UiKit.DIM)
+	var hint := UiKit.label("WASD move   Space jump   Shift sprint   C crouch   Wheel + E actions   LMB / F attack   X rifle   V flare   B campfire   Tab gear   Esc pause", 14, UiKit.DIM)
 	hint.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	hint.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	hint.grow_vertical = Control.GROW_DIRECTION_BEGIN

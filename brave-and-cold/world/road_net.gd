@@ -28,6 +28,10 @@ var half := 1024
 var points: Array[Vector2] = []     # resampled centreline (world x, z)
 var _hash: Dictionary = {}          # Vector2i(16 m cell) -> PackedVector2Array
 var length_m := 0.0
+var detail_enabled := true
+var sign_records: Array[Dictionary] = []
+var _road_material: ShaderMaterial
+var _sign_scenes: Dictionary = {}
 var _water: Image
 var _deck: Dictionary = {}   # point index -> deck height (bridge spans)
 var bridges: Array = []      # [i0, i1] inclusive point-index ranges
@@ -197,6 +201,9 @@ func build_mesh(terrain: Terrain3D) -> void:
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var cols := XS.size()
 	var rows: Array = []  # per point: Array of Vector3
+	var distances: Array[float] = [0.0]
+	for i in range(1, points.size()):
+		distances.append(distances[-1] + points[i].distance_to(points[i - 1]))
 	for br in bridges:
 		var ha: float = terrain.data.get_height(Vector3(points[br[0]].x, 0.0, points[br[0]].y))
 		var hb: float = terrain.data.get_height(Vector3(points[br[1]].x, 0.0, points[br[1]].y))
@@ -227,11 +234,20 @@ func build_mesh(terrain: Terrain3D) -> void:
 			var c0: Color = XS[j][1]
 			var c1: Color = XS[j + 1][1]
 			# winding so normal faces up
-			for tri in [[v0, c0, v2, c0, v1, c1], [v1, c1, v2, c0, v3, c1]]:
+			var u0 := Vector2(float(XS[j][0]), distances[i])
+			var u1 := Vector2(float(XS[j+1][0]), distances[i])
+			var u2 := Vector2(float(XS[j][0]), distances[i+1])
+			var u3 := Vector2(float(XS[j+1][0]), distances[i+1])
+			for tri in [[v0, c0, u0, v2, c0, u2, v1, c1, u1], [v1, c1, u1, v2, c0, u2, v3, c1, u3]]:
 				for k in range(3):
 					st.set_normal(Vector3.UP)
-					st.set_color(tri[k * 2 + 1])
-					st.add_vertex(tri[k * 2])
+					st.set_color(tri[k * 3 + 1])
+					st.set_uv(tri[k * 3 + 2])
+					st.add_vertex(tri[k * 3])
+	if detail_enabled:
+		st.index()
+		st.generate_normals()
+		st.generate_tangents()
 	var mi := MeshInstance3D.new()
 	mi.name = "RoadMesh"
 	mi.mesh = st.commit()
@@ -240,6 +256,16 @@ func build_mesh(terrain: Terrain3D) -> void:
 	mat.roughness = 1.0
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mi.material_override = mat
+	if detail_enabled:
+		_road_material = ShaderMaterial.new()
+		_road_material.shader = preload("res://world/shaders/winter_road.gdshader")
+		_road_material.set_shader_parameter("route_length", distances[-1])
+		_road_material.set_shader_parameter("aggregate_albedo", preload("res://assets/road_detail/textures/aggregate_alb.png"))
+		_road_material.set_shader_parameter("aggregate_normal", preload("res://assets/road_detail/textures/aggregate_nrm.png"))
+		_road_material.set_shader_parameter("spatial_fields", preload("res://assets/road_detail/textures/road_fields.png"))
+		_road_material.set_shader_parameter("powder_albedo", preload("res://assets/environment_detail/textures/powder_alb.png"))
+		_road_material.set_shader_parameter("powder_normal", preload("res://assets/environment_detail/textures/powder_nrm.png"))
+		mi.material_override = _road_material
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mi.visibility_range_end = 900.0
 	add_child(mi)
@@ -426,7 +452,17 @@ func build_props(terrain: Terrain3D) -> void:
 		var h2: float = terrain.data.get_height(Vector3(q2.x, 0.0, q2.y))
 		if is_nan(h2):
 			continue
-		_add_sign(kinds[ki % kinds.size()], Vector3(q2.x, h2, q2.y), atan2(-t2.x, -t2.y), wood, steel)
+		# Consume the same old draw even when the new sign faces deterministically.
+		var legacy_flip := randi() % 2
+		var kind: String = kinds[ki % kinds.size()]
+		var facing := atan2(-t2.x, -t2.y)
+		if detail_enabled:
+			facing += PI if side_s > 0.0 else 0.0
+			kind = _contextual_sign(i, ki, side_s)
+			_add_detail_sign(kind, Vector3(q2.x, h2, q2.y), facing)
+		else:
+			_add_sign(kind, Vector3(q2.x, h2, q2.y), facing + (PI if legacy_flip == 1 else 0.0), wood, steel)
+		sign_records.append({"kind":kind,"position":Vector3(q2.x,h2,q2.y),"yaw":facing,"side":side_s,"road_index":i})
 		ki += 1
 	print("ROAD_PROPS poles ", pole_tops.size(), " signs ", ki)
 
@@ -434,7 +470,7 @@ func build_props(terrain: Terrain3D) -> void:
 func _add_sign(kind: String, pos: Vector3, yaw: float, wood: Material, steel: Material) -> void:
 	var s := Node3D.new()
 	s.position = pos
-	s.rotation.y = yaw + (0.0 if randi() % 2 == 0 else PI)
+	s.rotation.y = yaw
 	add_child(s)
 	var post := MeshInstance3D.new()
 	var cm := CylinderMesh.new()
@@ -499,3 +535,38 @@ func _add_sign(kind: String, pos: Vector3, yaw: float, wood: Material, steel: Ma
 	lb.position = Vector3(0.0, 2.25, 0.015)
 	lb.double_sided = false
 	s.add_child(lb)
+
+
+func update_weather(precipitation: float) -> void:
+	if _road_material != null:
+		_road_material.set_shader_parameter("fresh_snow", clampf(precipitation, 0.0, 1.0))
+
+
+func _contextual_sign(index: int, slot: int, side: float) -> String:
+	# Do not install arbitrary STOP signs on an uninterrupted road.
+	var sequence := ["deer", "speed", "bear", "icy", "speed"]
+	var direction := 1 if side < 0.0 else -1
+	var near_i := clampi(index + direction * 4, 0, points.size()-1)
+	var far_i := clampi(index + direction * 18, 0, points.size()-1)
+	var a := (points[near_i] - points[index]).normalized()
+	var b := (points[far_i] - points[near_i]).normalized()
+	var turn := a.cross(b)
+	if slot % sequence.size() == 4 and absf(turn) > 0.20:
+		return "curve_left" if turn < 0.0 else "curve_right"
+	return sequence[slot % sequence.size()]
+
+
+func _add_detail_sign(kind: String, pos: Vector3, yaw: float) -> void:
+	if not _sign_scenes.has(kind):
+		_sign_scenes[kind] = load("res://assets/road_detail/models/" + kind + ".glb") as PackedScene
+	var packed: PackedScene = _sign_scenes[kind]
+	var assembly := packed.instantiate() as Node3D
+	assembly.name = "RoadSign_" + kind
+	assembly.position = pos
+	assembly.rotation.y = yaw
+	add_child(assembly)
+	for node in assembly.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		mesh.visibility_range_end = 220.0
+		mesh.visibility_range_end_margin = 20.0
+		mesh.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF

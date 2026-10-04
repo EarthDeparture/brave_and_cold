@@ -1,6 +1,6 @@
 class_name Player
 extends Node3D
-## First-person player (temporary terrain-snap movement until physics/collision land).
+## First-person custom terrain-following controller with bounded vertical jumping.
 ## Reads snow depth for speed/stamina, tramples snow, emits footstep noise, exposes activity/shelter for BodyTemperature.
 
 const WALK := 3.2
@@ -13,6 +13,10 @@ const STAMINA_DRAIN := 12.0
 const STAMINA_REGEN := 8.0
 const TRAMPLE_STEP := 0.6
 const NOISE_INTERVAL := 0.5
+const JUMP_SPEED := 4.6
+const JUMP_GRAVITY := 16.0
+const JUMP_COST := 8.0
+const HEAD_CLEARANCE := 0.12
 const ACCEL := 16.0          # m/s^2 ramp up/down: no hard start/stop
 const DECEL := 22.0
 const SLOPE_PROBE := 0.6
@@ -82,6 +86,11 @@ var _vel := Vector2.ZERO
 var _snow_mult := 1.0
 var _bob_t := 0.0
 var _bob_amp := 0.0
+var airborne := false
+var _vertical_speed := 0.0
+var _air_support_y := 0.0
+var _jump_cooldown := 0.0
+var _landing_dip := 0.0
 
 
 func start_struggle(attacker: Node, gain: float) -> void:
@@ -146,6 +155,7 @@ func hurt(amount: float, cause: String = "Killed") -> void:
 
 
 func place(x: float, z: float) -> void:
+	reset_jump()
 	position = Vector3(x, 400.0, z)
 	_ready_ground = false
 	_last_pos = position
@@ -167,7 +177,7 @@ func ground_at(x: float, z: float) -> float:
 		if not is_nan(f):
 			return f
 	for structure in spatial_structures:
-		var f: float = structure.call("floor_at_world", Vector3(x, position.y - eye_h, z), th)
+		var f: float = structure.call("floor_at_world", Vector3(x, _surface_probe_y(), z), th)
 		if not is_nan(f):
 			return f
 	return th
@@ -185,7 +195,7 @@ func is_sheltered() -> bool:
 
 func _on_spatial_surface() -> bool:
 	for structure in spatial_structures:
-		var floor_y: float = structure.call("floor_at_world", position - Vector3.UP * eye_h, NAN)
+		var floor_y: float = structure.call("floor_at_world", Vector3(position.x, _surface_probe_y(), position.z), NAN)
 		if not is_nan(floor_y):
 			return true
 	return false
@@ -213,7 +223,7 @@ func zoom_step(s: int) -> void:
 
 
 func _update_aim(delta: float) -> void:
-	var want := aim_req and not dead and not sleeping and not struggling and not sprinting
+	var want := aim_req and not dead and not sleeping and not struggling and not sprinting and not airborne
 	aim_k = move_toward(aim_k, 1.0 if want else 0.0, delta * 5.0)
 	_aim_fov = move_toward(_aim_fov, float(AIM_FOVS[zoom_i]), delta * 90.0)
 	cam.fov = lerpf(HIP_FOV, _aim_fov, aim_k * aim_k * (3.0 - 2.0 * aim_k))
@@ -255,6 +265,7 @@ func _process(delta: float) -> void:
 
 ## Dev noclip: free flight along the camera direction, ignores terrain, cabins and trees.
 func _fly(delta: float) -> void:
+	reset_jump()
 	var b := cam.global_transform.basis
 	var dir := Vector3.ZERO
 	if Input.is_key_pressed(KEY_W): dir -= b.z
@@ -300,6 +311,8 @@ func _move(delta: float) -> void:
 	if wish:
 		want = Vector2(dir.x, dir.z).normalized() * base * _snow_mult * speed_mult * lerpf(1.0, 0.55, aim_k)
 	var rate := ACCEL if want.length_squared() > _vel.length_squared() else DECEL
+	if airborne:
+		rate *= 0.35
 	_vel = _vel.move_toward(want, rate * delta)
 	var sp := _vel.length()
 	moving = sp > 0.3
@@ -314,7 +327,7 @@ func _move(delta: float) -> void:
 			moving = false
 			sprinting = false
 		else:
-			var prior_foot := position - Vector3.UP * eye_h
+			var prior_foot := Vector3(position.x, _surface_probe_y(), position.z)
 			position.x += step.x
 			position.z += step.y
 			var ax := position.x
@@ -332,9 +345,13 @@ func _move(delta: float) -> void:
 				position.x = q3.x
 				position.z = q3.y
 			for structure in spatial_structures:
-				var q4: Vector2 = structure.call("resolve_at", position - Vector3.UP * eye_h, prior_foot, 0.35)
+				var q4: Vector2 = structure.call("resolve_at", Vector3(position.x, _surface_probe_y(), position.z), prior_foot, 0.35)
 				position.x = q4.x
 				position.z = q4.y
+			# A jump cannot enter a doorway/roof whose underside is below the head.
+			if airborne and position.y + HEAD_CLEARANCE > _jump_ceiling() + 0.002:
+				position.x = prior_foot.x
+				position.z = prior_foot.z
 			var push := Vector2(position.x - ax, position.z - az)
 			if push.length_squared() > 1e-8:
 				# slide: drop the velocity component pointing into whatever pushed us out
@@ -344,11 +361,17 @@ func _move(delta: float) -> void:
 	if moving:
 		activity = 2 if sprinting else 1
 	var target_eye := EYE_CROUCH if crouching else EYE
+	var old_feet := position.y - eye_h
 	eye_h = lerpf(eye_h, target_eye, minf(1.0, delta * 8.0))
+	if airborne:
+		position.y = old_feet + eye_h
 	var g: float = _eye_ground(position.x, position.z)
-	if not is_nan(g):
+	_jump_cooldown = maxf(0.0, _jump_cooldown - delta)
+	if airborne:
+		_jump_vertical(delta, g)
+	elif not is_nan(g):
 		position.y = lerpf(position.y, g + eye_h, 1.0 - exp(-delta * 12.0))
-	_head_bob(delta, sp)
+	_head_bob(delta, 0.0 if airborne else sp)
 
 
 ## Ground-slope gate over a 0.6 m lookahead (a 2-5 cm per-frame step made lidar noise look like a wall). Too steep: slide along the contour.
@@ -376,7 +399,7 @@ func _eye_ground(x: float, z: float) -> float:
 		if not is_nan(f):
 			return f
 	for structure in spatial_structures:
-		var f: float = structure.call("floor_at_world", Vector3(x, position.y - eye_h, z), th)
+		var f: float = structure.call("floor_at_world", Vector3(x, _surface_probe_y(), z), th)
 		if not is_nan(f):
 			return f
 	if is_nan(th):
@@ -397,7 +420,8 @@ func _head_bob(delta: float, sp: float) -> void:
 		amp = clampf(sp / WALK, 0.0, 1.7) * (0.55 if crouching else 1.0)
 	_bob_amp = lerpf(_bob_amp, amp, minf(1.0, delta * 6.0))
 	_bob_t += delta * sp * 1.9
-	cam.position = Vector3(sin(_bob_t) * 0.011 * _bob_amp, absf(sin(_bob_t)) * -0.016 * _bob_amp, 0.0)
+	_landing_dip = move_toward(_landing_dip, 0.0, delta * 0.26)
+	cam.position = Vector3(sin(_bob_t) * 0.011 * _bob_amp, absf(sin(_bob_t)) * -0.016 * _bob_amp - _landing_dip, 0.0)
 
 func _stamina(delta: float) -> void:
 	var tier: int = _step_snow_tier()
@@ -406,7 +430,7 @@ func _stamina(delta: float) -> void:
 		if stamina <= 0.0:
 			stamina = 0.0
 			exhausted = true
-	else:
+	elif not airborne:
 		var regen := STAMINA_REGEN * body.stamina_penalty()
 		if moving:
 			regen *= 0.5
@@ -416,6 +440,9 @@ func _stamina(delta: float) -> void:
 
 
 func _footsteps(delta: float) -> void:
+	if airborne:
+		_last_pos = position
+		return
 	if not moving:
 		return
 	_since_trample += position.distance_to(_last_pos)
@@ -442,6 +469,82 @@ func _unhandled_input(e: InputEvent) -> void:
 		yaw -= e.relative.x * ss
 		pitch = clampf(pitch - e.relative.y * ss, -1.5, 1.5)
 	elif e is InputEventKey and e.pressed and not e.echo:
+		if e.is_action_pressed("jump") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+			request_jump()
 		match e.keycode:
 			KEY_G:
 				fire_w = 0.0 if fire_w > 0.0 else 350.0
+
+
+func _surface_probe_y() -> float:
+	# Probe the supporting stair/deck level, never the elevated feet at the apex.
+	return _air_support_y if airborne else position.y - eye_h
+
+
+func reset_jump() -> void:
+	airborne = false
+	_vertical_speed = 0.0
+	_jump_cooldown = 0.0
+	_landing_dip = 0.0
+	_since_trample = 0.0
+	_last_pos = position
+
+
+func request_jump() -> bool:
+	if not _ready_ground or airborne or _jump_cooldown > 0.0 or stamina < JUMP_COST or exhausted:
+		return false
+	if dead or sleeping or struggling or ui_open or frozen or noclip or crouching or Input.is_key_pressed(KEY_C):
+		return false
+	var floor_y := _eye_ground(position.x, position.z)
+	if is_nan(floor_y) or absf(position.y - eye_h - floor_y) > 0.25:
+		return false
+	if _jump_ceiling() < position.y + HEAD_CLEARANCE + 0.06:
+		return false
+	_air_support_y = floor_y
+	position.y = floor_y + eye_h
+	_vertical_speed = JUMP_SPEED * clampf(speed_mult, 0.65, 1.0)
+	stamina -= JUMP_COST
+	airborne = true
+	_since_trample = 0.0
+	_last_pos = position
+	return true
+
+
+func _jump_ceiling() -> float:
+	var ceiling := INF
+	for cabin in cabins:
+		if cabin.has_method("ceiling_at_world"):
+			ceiling = minf(ceiling, float(cabin.call("ceiling_at_world", position)))
+	for structure in spatial_structures:
+		if structure.has_method("ceiling_at_world"):
+			ceiling = minf(ceiling, float(structure.call("ceiling_at_world", position)))
+	return ceiling
+
+
+func _jump_vertical(delta: float, floor_y: float) -> void:
+	var feet := position.y - eye_h
+	var next_feet := feet + _vertical_speed * delta - 0.5 * JUMP_GRAVITY * delta * delta
+	_vertical_speed -= JUMP_GRAVITY * delta
+	var ceiling := _jump_ceiling() - eye_h - HEAD_CLEARANCE
+	if next_feet > ceiling and _vertical_speed > 0.0:
+		next_feet = maxf(feet, ceiling)
+		_vertical_speed = 0.0
+	if not is_nan(floor_y):
+		_air_support_y = floor_y
+		if next_feet <= floor_y and (_vertical_speed <= 0.0 or floor_y > feet + 0.015):
+			position.y = floor_y + eye_h
+			airborne = false
+			_vertical_speed = 0.0
+			_jump_cooldown = 0.15
+			_landing_dip = 0.025
+			_last_pos = position
+			_since_trample = 0.0
+			var radius := maxf(noise_radius(), NoiseBus.RADIUS_WALK) * 1.1
+			stepped.emit(_step_snow_tier(), radius)
+			noise.emit_noise(position, radius, self)
+			if not _on_spatial_surface():
+				snow.trample(position.x, position.z, 0.5)
+				if footprints != null:
+					footprints.step(position.x, ground_at(position.x, position.z), position.z, yaw, _step_snow_tier())
+			return
+	position.y = next_feet + eye_h

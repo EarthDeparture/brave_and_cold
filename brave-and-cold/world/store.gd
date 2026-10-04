@@ -204,3 +204,13 @@ func floor_at(x: float, z: float, terrain_h: float) -> float:
 		var t := (l.y - (HZ + 0.4)) / RAMP_LEN
 		return lerpf(floor_y, terrain_h, t)
 	return NAN
+
+
+## Head clearance for the custom controller; does not affect the walking floor.
+func ceiling_at_world(eye: Vector3) -> float:
+	var p := to_local(eye)
+	if absf(p.x) < DOOR_HALF + 0.20 and absf(p.z - HZ) < 0.30:
+		return global_position.y + 2.30
+	if absf(p.x) > HX or p.z < -HZ or p.z > HZ + 1.5: return INF
+	if p.z > HZ: return global_position.y + 2.70
+	return global_position.y + 2.95 + 1.2 * (1.0 - absf(p.z) / 2.65)

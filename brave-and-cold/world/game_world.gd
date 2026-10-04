@@ -59,6 +59,7 @@ func _ready() -> void:
 	terrain.material.set_shader_param("macro_variation1", Color(0.88, 0.93, 1.0))
 	terrain.material.set_shader_param("macro_variation2", Color(1.0, 0.97, 0.98))
 	road = RoadNet.new()
+	road.detail_enabled = environment_detail_enabled and opts.get("road_detail", "winter") != "baseline"
 	add_child(road)
 	trailnet = TrailNet.new()
 	add_child(trailnet)
@@ -456,6 +457,7 @@ func _process(delta: float) -> void:
 			_say("%s spoiled" % sn)
 	weather.advance(delta, gs)
 	wind = weather.wind
+	road.update_weather(weather.precip)
 	clock.weather_offset_c = weather.temp_off
 	sky_rig.apply_hour(clock.hour)
 	if sky_rig is AtmosphereRig:
@@ -1858,7 +1860,7 @@ func _act_update(delta: float, held: bool) -> void:
 	if not held:
 		_act_cancel("Hold E to finish")
 		return
-	if moved or player.dead or player.struggling or player.ui_open or player.health < _act_hp - 0.01:
+	if moved or player.airborne or player.dead or player.struggling or player.ui_open or player.health < _act_hp - 0.01:
 		_act_cancel("Interrupted")
 		return
 	_act_t += delta
@@ -3151,7 +3153,7 @@ func _sleep_wake(why: String) -> void:
 	_say("%s. Slept %.1f h: +%d health, -%d kcal, -%d water." % [why, hrs, int(player.health - float(_sl["hp0"])), int(float(_sl["cal0"]) - needs.calories), int(float(_sl["water0"]) - needs.water)])
 
 func _safe_to_save() -> bool:
-	if player.dead or inv == null or _sl_on:
+	if player.dead or player.airborne or inv == null or _sl_on:
 		return false
 	for h in get_tree().get_nodes_in_group('hostile'):
 		var n := h as Node3D
@@ -3161,7 +3163,7 @@ func _safe_to_save() -> bool:
 
 
 func save_game() -> bool:
-	if inv == null or player.dead:
+	if inv == null or player.dead or player.airborne:
 		return false
 	var cabs: Array = []
 	for cb in cabins:

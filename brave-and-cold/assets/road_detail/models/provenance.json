@@ -1,0 +1,67 @@
+{
+  "origin": "Original Blender roadside assemblies",
+  "generator": "tools/blender/gen_road_signs.py",
+  "units": "metres",
+  "models": [
+    {
+      "name": "speed",
+      "triangles": 482,
+      "vertices": 520,
+      "width_m": 0.6,
+      "height_m": 0.78,
+      "post_height_m": 2.67,
+      "front": "Godot +Z",
+      "sha256": "5ef909c93e8298ce2a716b634ead593e12af323f8d8b3e6d1c8016c654768726"
+    },
+    {
+      "name": "deer",
+      "triangles": 474,
+      "vertices": 516,
+      "width_m": 0.88,
+      "height_m": 0.88,
+      "post_height_m": 2.67,
+      "front": "Godot +Z",
+      "sha256": "773e73acefb504080ddf3f8c099b984622588349a45333ee4dcd7c79f38a1417"
+    },
+    {
+      "name": "bear",
+      "triangles": 474,
+      "vertices": 516,
+      "width_m": 0.88,
+      "height_m": 0.88,
+      "post_height_m": 2.67,
+      "front": "Godot +Z",
+      "sha256": "839f057e2296f981d1b39bd72860cb69b771dfc70d9aca3838c38551187cca3c"
+    },
+    {
+      "name": "icy",
+      "triangles": 474,
+      "vertices": 516,
+      "width_m": 0.88,
+      "height_m": 0.88,
+      "post_height_m": 2.67,
+      "front": "Godot +Z",
+      "sha256": "7d7581267ba9b939a9edb9b6ba3706fc1986e9232c2112332fb853ae22810c4b"
+    },
+    {
+      "name": "curve_left",
+      "triangles": 474,
+      "vertices": 516,
+      "width_m": 0.88,
+      "height_m": 0.88,
+      "post_height_m": 2.67,
+      "front": "Godot +Z",
+      "sha256": "da73207926ac3b77134414f9471e5d3e45102e29729f8451c66f9a96f51cd269"
+    },
+    {
+      "name": "curve_right",
+      "triangles": 474,
+      "vertices": 516,
+      "width_m": 0.88,
+      "height_m": 0.88,
+      "post_height_m": 2.67,
+      "front": "Godot +Z",
+      "sha256": "aaf2cf972bd17d204c569117d4c0989cdeaf71b122d8fa75d9b0b328c6083095"
+    }
+  ]
+}

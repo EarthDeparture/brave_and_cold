@@ -309,3 +309,11 @@ func restore_location(player: Player, location: Dictionary) -> bool:
 	player._ready_ground = true
 	player._last_pos = player.position
 	return true
+
+
+## Head clearance for the custom controller; does not affect the walking floor.
+func ceiling_at_world(eye: Vector3) -> float:
+	var p := to_local(eye)
+	if not ROOM.has_point(Vector2(p.x, p.z)) or p.y < DECK_Y: return INF
+	# Lowest rafter/header underside; conservative full-room head clearance.
+	return global_position.y + DECK_Y + 2.505
