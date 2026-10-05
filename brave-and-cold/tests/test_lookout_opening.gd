@@ -8,6 +8,7 @@ func freeze(node: Node) -> void:
 	node.set_process(false);node.set_physics_process(false)
 	for child in node.get_children(): freeze(child)
 func run() -> void:
+	create_timer(120).timeout.connect(func()->void:print("FAIL diagnostic timeout");quit(2))
 	SaveGame.pending = {};seed(20261004)
 	var w: Node3D=load("res://world/game_world.gd").new();root.add_child(w)
 	for frame in 600:
@@ -46,17 +47,17 @@ func run() -> void:
 	w.clock.total_game_s+=120;op.advance(120)
 	check(is_equal_approx(float(op.cooking.remaining_s),1170),"cooking cannot advance beyond actual stove burn time")
 	check(op.heat_at(w.fire_lookout.to_global(Vector3(0,1.7,0)))==0,"upstairs stove cannot heat ground through 21 metres")
-	# Live receiver seeks into elapsed audio, and stops rather than queuing missed messages.
-	s.receiver_on=true;s.channel="work";s.last_s=7200+96
+	# Independent live devices seek elapsed audio; neither queues missed messages.
+	s.receiver_on=false;s.last_s=2.5*3600+96
 	op._radio_update()
-	check(op.speaker.playing and w.hud.radio_text!="","late tuning receives live dispatch")
-	check(absf(op.speaker.get_playback_position()-2)<.2,"late tuning starts two real seconds into transmission")
-	s.last_s=7200+1800;op._radio_update()
-	check(not op.speaker.playing and w.hud.radio_text=="","expired dispatch stops without backlog")
-	s.last_s=8*3600;s.channel="public";op._radio_update()
-	check(op.speaker.playing,"public station reaches current bulletin")
+	check(op.walkie.playing and not op.speaker.playing and w.hud.radio_device=="dispatch","personal walkie receives live dispatch with desk off")
+	check(absf(op.walkie.get_playback_position()-2)<.2,"late dispatch starts two real seconds into transmission")
+	s.last_s=3*3600;op._radio_update()
+	check(not op.walkie.playing and w.hud.radio_text=="","expired dispatch stops without backlog")
+	s.last_s=6.5*3600;s.receiver_on=true;op._radio_update()
+	check(op.speaker.playing and not op.walkie.playing,"desk reaches the live noon bulletin alone")
 	s.receiver_on=false;op._radio_update()
-	check(not op.speaker.playing and w.hud.radio_text=="","power switch stops audio and captions")
+	check(not op.speaker.playing and w.hud.radio_text=="","desk switch stops public audio and captions")
 	var boundary:=op.boundary
 	var previous:=boundary.to_global(boundary.ground_local(1.9,8))
 	var candidate:=boundary.to_global(boundary.ground_local(1.9,6.8))

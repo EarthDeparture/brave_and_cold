@@ -9,6 +9,9 @@ var home_model: Node3D
 var relay: Node3D
 var case_model: Node3D
 var speaker: AudioStreamPlayer3D
+var walkie: AudioStreamPlayer
+var _dispatch_token := ""
+var _audio_captions: Dictionary = {}
 var fire_bounce: OmniLight3D
 var fire_loop: AudioStreamPlayer3D
 var fire_light: OmniLight3D
@@ -35,6 +38,7 @@ func home_point(p: Vector3) -> Vector3:
 	return world.fire_lookout.to_global(p + Vector3.UP * FireLookout.DECK_Y)
 func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> void:
 	world = w; state = assignment
+	_audio_captions=state.audio_clips
 	var tower: FireLookout = world.fire_lookout
 	boundary = RefugeBoundary.new(); tower.add_child(boundary); boundary.build(world.terrain)
 	boundary.gate_open = bool(saved.get("gate_open", false)); boundary.sync_gate()
@@ -62,6 +66,8 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 		case_model = _asset(world.stores[0], "depot_reserved_case"); case_model.position = CASE_LOCAL
 		case_model.visible = not state.parts_claimed
 	speaker = AudioStreamPlayer3D.new(); tower.add_child(speaker); speaker.position = Vector3(1.78, FireLookout.DECK_Y + 1.05, -1.17)
+	walkie=AudioStreamPlayer.new(); walkie.name="PersonalWalkie"; world.player.add_child(walkie)
+	walkie.volume_db=-6
 	_build_receiver_indicators(tower)
 	speaker.unit_size = 2; speaker.max_distance = 12; speaker.volume_db = -5
 	fire_light = OmniLight3D.new(); tower.add_child(fire_light); fire_light.position = stove_point(Vector3(0,.48,.62))
@@ -86,7 +92,8 @@ func starting_gear() -> void:
 	for pair: Array in [["axe",1],["knife",1],["service_kit",1],["matches",2],["wood",2],["beans",1],["bandage",1],["parka",1],["sweater",1],["toque",1],["hide_mitts",1],["hide_boots",1],["hide_leggings",1]]:
 		world.inv.add(pair[0], pair[1])
 	for item: String in ["parka","sweater","toque","hide_mitts","hide_boots","hide_leggings"]: world.inv.use(item)
-	world._say("North Ridge assignment: inspect the relay cabinet beside the tower. The service log is on your desk.")
+	world._say("Inspect the relay cabinet beside the tower. Read the service log on your desk.")
+	world._say("Your walkie receives dispatch. The desk radio carries public news.")
 func advance(game_s: float) -> void:
 	state.advance_to(world.clock.total_game_s)
 	var burn := minf(game_s, fuel_s); fuel_s = maxf(0, fuel_s - game_s)
@@ -121,12 +128,12 @@ func update_presentation() -> void:
 	if wood != null: wood.visible = false
 	_update_stock()
 ## Two front-panel lenses belong to the existing receiver. No room-sized light
-## or transmission claim: these report local power and tuning, even in silence.
+## or transmission claim: these report local power and public reception, even in silence.
 func _build_receiver_indicators(tower: FireLookout) -> void:
 	_receiver_power = _receiver_lens(tower,"ReceiverPower",1.127)
 	_receiver_channel = _receiver_lens(tower,"ReceiverChannel",1.022)
 	_receiver_label(tower,"POWER",1.127)
-	_channel_label = _receiver_label(tower,"DISPATCH",1.022)
+	_channel_label = _receiver_label(tower,"PUBLIC",1.022)
 func _receiver_lens(tower: FireLookout, id: String, y: float) -> MeshInstance3D:
 	var rim := MeshInstance3D.new(); rim.name=id+"Bezel"
 	var cylinder := CylinderMesh.new(); cylinder.top_radius=.011; cylinder.bottom_radius=.011; cylinder.height=.006; cylinder.radial_segments=12
@@ -146,31 +153,51 @@ func _receiver_label(tower: FireLookout, text: String, y: float) -> Label3D:
 func _update_receiver_indicators() -> void:
 	if _receiver_power == null: return
 	var on := state.receiver_on and state.powered()
-	var colors: Array[Color] = [Color(.13,1,.28),Color(.15,.48,1) if state.channel=="public" else Color(1,.73,.08)]
+	var colors: Array[Color] = [Color(.13,1,.28),Color(.15,.48,1)]
 	var lenses: Array[MeshInstance3D] = [_receiver_power,_receiver_channel]
 	for i in lenses.size():
 		var mat := lenses[i].material_override as StandardMaterial3D
 		mat.albedo_color=colors[i] if on else Color(.025,.030,.026)
 		mat.emission_enabled=on; mat.emission=colors[i] if on else Color.BLACK
-	_channel_label.text="PUBLIC" if state.channel=="public" else "DISPATCH"
+	_channel_label.text="PUBLIC"
 
-func _radio_update() -> void:
-	var near: bool = world.player.position.distance_to(speaker.global_position) < 12 and not world._sl_on
-	var entry := state.broadcast_at(state.last_s) if near else {}
-	world.hud.radio_heading = ""; world.hud.radio_text = ""
+## One live timeline, two devices. No queues or replay on return/load.
+func _play_live(output: Node, entry: Dictionary, token: String) -> String:
 	if entry.is_empty():
-		if speaker.playing: speaker.stop()
-		_token = ""; return
-	var offset := (state.last_s - float(entry.start_s)) / 48.0
+		output.stop(); return ""
+	var offset := (state.last_s-float(entry.start_s))/state.audio_clock_rate
 	var clip := load(String(entry.audio)) as AudioStream
-	if clip == null or offset >= clip.get_length():
-		speaker.stop(); _token = String(entry.id); return
-	world.hud.radio_heading = ("FIELD DISPATCH" if state.channel == "work" else "NORTH RIDGE PUBLIC RADIO") + " â€¢ " + String(entry.title)
-	# Live captions disappear with the transmission; no backlog or replay menu.
-	world.hud.radio_text = String(entry.text)
-	if _token != String(entry.id) or not speaker.playing:
-		speaker.stream = clip; speaker.play(offset); _token = String(entry.id)
-	elif absf(speaker.get_playback_position() - offset) > 1.5: speaker.seek(offset)
+	if clip==null or offset>=clip.get_length():
+		output.stop(); return String(entry.id)
+	if token!=String(entry.id) or not output.playing:
+		output.stream=clip; output.play(offset)
+	elif absf(output.get_playback_position()-offset)>1.5: output.seek(offset)
+	return String(entry.id)
+## Captions follow the current spoken chunk; earlier lines are not recovered.
+func _live_caption(entry: Dictionary) -> String:
+	var offset := (state.last_s-float(entry.start_s))/state.audio_clock_rate
+	var filename := String(entry.audio).get_file()
+	for cue: Dictionary in _audio_captions.get(filename,{}).get("captions",[]):
+		if offset>=float(cue.start_s) and offset<float(cue.end_s): return String(cue.text)
+	return ""
+func _radio_update() -> void:
+	world.hud.radio_heading=""; world.hud.radio_text=""; world.hud.radio_device=""
+	if world.player.dead:
+		walkie.stop(); speaker.stop(); return
+	var sleeping: bool = world._sl_on and int(world._sl.get("phase",0))!=2
+	var dispatch := state.dispatch_at(state.last_s) if not sleeping else {}
+	var bulletin := state.public_broadcast_at(state.last_s) if not sleeping else {}
+	# Stop conflicting dispatch before starting the desk transmission.
+	_dispatch_token=_play_live(walkie,dispatch,_dispatch_token)
+	_token=_play_live(speaker,bulletin,_token)
+	if walkie.playing and not dispatch.is_empty():
+		world.hud.radio_device="dispatch"
+		world.hud.radio_heading="PERSONAL WALKIE • FIELD DISPATCH • "+String(dispatch.title)
+		world.hud.radio_text=_live_caption(dispatch)
+	elif speaker.playing and not bulletin.is_empty() and world.player.position.distance_to(speaker.global_position)<12:
+		world.hud.radio_device="public"
+		world.hud.radio_heading="DESK RADIO • NORTH RIDGE • "+String(bulletin.title)
+		world.hud.radio_text=_live_caption(bulletin)
 func _action(pos: Vector3, text: String, act: Callable, hold: float = 0, bias: float = 0, work: String = "reach") -> Dictionary:
 	return {"pos":pos,"r":2.1,"tol":.8,"text":text,"hold":hold,"dbias":bias,"act":act,"work":work}
 func actions() -> Array:
@@ -179,20 +206,19 @@ func actions() -> Array:
 	out.append(_action(desk, "Read service log", read_log))
 	var radio := speaker.global_position
 	out.append(_action(radio, "Turn receiver off" if state.receiver_on else "Turn receiver on", toggle_receiver))
-	out.append(_action(radio, "Tune public radio" if state.channel == "work" else "Tune field dispatch", tune_radio, 0, .01))
 	var panel := home_point(Vector3(0,1.15,-2.08))
-	out.append(_action(panel, "Backup: %s â€¢ %.0f%% charge" % ["ON" if state.backup_on else "OFF", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100], toggle_backup))
+	out.append(_action(panel, "Backup: %s • %.0f%% charge" % ["ON" if state.backup_on else "OFF", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100], toggle_backup))
 	if state.repair_stage == 3:
 		out.append(_action(panel, "Automatic transfer: %s" % ("ARMED" if state.auto_transfer_on else "DISABLED"), toggle_auto_transfer, 0, .02))
 	out.append(_action(panel, "Switch desk lamp off" if state.lamp_on else "Switch desk lamp on", toggle_lamp, 0, .01))
 	out.append(_action(pantry.global_position, "Open lookout provisions", func() -> void: world.gear.open_chest(pantry)))
 	var stove: Vector3 = world.fire_lookout.to_global(stove_point(Vector3(0,.55,.301)))
-	out.append(_action(stove, "Stoke stove â€¢ %.1f h fuel" % (fuel_s / 3600), stoke, 2))
+	out.append(_action(stove, "Stoke stove • %.1f h fuel" % (fuel_s / 3600), stoke, 2))
 	if fuel_s > 0:
 		out.append(_action(stove, "Boil snow and drink", boil, 4, .01))
 		if cooking.is_empty() and world.inv.has_raw(): out.append(_action(stove, "Cook one portion on stove", cook, 2, .02))
 	if not cooking.is_empty():
-		out.append(_action(stove, "Take cooked food" if float(cooking.remaining_s) <= 0 else "Cooking â€¢ %d min left" % int(ceil(float(cooking.remaining_s)/60)), take_cooked, 0, .03))
+		out.append(_action(stove, "Take cooked food" if float(cooking.remaining_s) <= 0 else "Cooking • %d min left" % int(ceil(float(cooking.remaining_s)/60)), take_cooked, 0, .03))
 	out.append(_action(home_point(Vector3(1.87,.18,1.55)), "Take firewood (%d left)" % wood_left, take_wood, 1, .03))
 	out.append_array(world._sleep_items(world.fire_lookout))
 	out.append(_action(boundary.gate_point(), "Close compound gate" if boundary.gate_open else "Open compound gate", boundary.toggle_gate))
@@ -202,8 +228,8 @@ func actions() -> Array:
 		1: out.append(_action(cabinet, "Install replacement transfer relay" if world.inv.count("power_relay") > 0 else "Replacement reserved at North Ridge Supply", install_relay, 6))
 		2: out.append(_action(cabinet, "Verify backup transfer", verify_relay, 4))
 		3:
-			out.append(_action(cabinet, "Disable repeater â€¢ save 12 W" if state.relay_enabled else "Enable repeater â€¢ 12 W", toggle_relay))
-			out.append(_action(cabinet, "Relay commissioned â€¢ local service only", func() -> void: world._say("Commissioned relay supports field dispatch and automatic battery transfer. Town grid and public transmitter remain independent."), 0, .01))
+			out.append(_action(cabinet, "Disable repeater • save 12 W" if state.relay_enabled else "Enable repeater • 12 W", toggle_relay))
+			out.append(_action(cabinet, "Relay commissioned • local service only", func() -> void: world._say("Commissioned relay supports site equipment and automatic battery transfer. Your personal dispatch receiver, town grid and public transmitter remain independent."), 0, .01))
 	if case_model != null and not state.parts_claimed:
 		out.append(_action(case_model.global_position + Vector3.UP * .15, "Collect reserved transfer relay", claim_parts, 3))
 	return out
@@ -212,20 +238,19 @@ func read_log() -> void:
 	if not world.stores.is_empty():
 		var d: Vector3 = world.stores[0].global_position - world.fire_lookout.global_position
 		var bearing := fposmod(rad_to_deg(atan2(d.x,-d.z)),360)
-		directions = "North Ridge Supply is approximately %.0f m away on bearing %.0fÂ° (straight-line). Follow the logging track down to the road; collect the reserved relay case at the store counter." % [Vector2(d.x,d.z).length(),bearing]
+		directions = "North Ridge Supply is approximately %.0f m away on bearing %.0f° (straight-line). Follow the logging track down to the road; collect the reserved relay case at the store counter." % [Vector2(d.x,d.z).length(),bearing]
 	var task: String = ["Inspect the ground transfer cabinet with your insulated service kit.","Collect the reserved transfer relay, return and install it in the cabinet.","Verify the cabinet transfer under local power.","Relay signed off. Local service restored."][state.repair_stage]
 	if state.repair_stage==1 and state.parts_claimed:task="Return to the ground cabinet and install the replacement relay."
-	var text := "KESTREL RELAY 07 â€” FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nField dispatch uses the receiver's work channel; local news uses public radio. Green indicates receiver power. Yellow selects field dispatch; blue selects public radio. A lit receiver can be silent between broadcasts. The receiver and desk lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. Keep water, food and dry firewood ready. Stoke the stove, boil snow, and prepare the sleeping berth before the weather closes in." % [task,directions]
-	world.reading.open("North Ridge â€¢ Service log",text,world.player,world.hud)
+	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nField dispatch reaches your always-carried personal walkie-talkie. It is always listening and uses its own supply, independent of the desk receiver and the lookout mains. The desk receiver is public radio only. Bulletins begin at 06:00, 12:00, 17:00 and 00:00; noon recaps the morning. Green indicates receiver power and blue identifies public radio. Public reports are live, not queued: missed bulletins do not return. Dispatch keeps clear of every public slot. A dispatch call wakes you if asleep; public broadcasts do not. Midnight closes the day just lived. The desk receiver and lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer while the repeater is enabled. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. Keep water, food and dry firewood ready. Stoke the stove, boil snow, and prepare the sleeping berth before the weather closes in." % [task,directions]
+	world.reading.open("North Ridge • Service log",text,world.player,world.hud)
 func toggle_receiver() -> void: state.receiver_on = not state.receiver_on; _update_receiver_indicators(); _radio_update()
-func tune_radio() -> void: state.channel = "public" if state.channel == "work" else "work"; _update_receiver_indicators(); _radio_update()
 func toggle_backup() -> void:
 	state.backup_on = not state.backup_on; update_presentation(); _radio_update()
 	world._say("Local backup %s. Charge %.0f%%. Lamp 7 W, receiver 3 W, commissioned relay 12 W." % ["enabled" if state.backup_on else "disabled", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100])
 func toggle_auto_transfer() -> void: state.auto_transfer_on = not state.auto_transfer_on
 func toggle_relay() -> void:
 	state.relay_enabled = not state.relay_enabled; update_presentation(); _radio_update()
-	world._say("Repeater %s. Disabling it saves 12 W and disconnects field dispatch and automatic transfer; the public receiver still works." % ("enabled" if state.relay_enabled else "disabled"))
+	world._say("Repeater %s. Disabling it saves 12 W and prevents automatic backup transfer. Your personal walkie remains independent." % ("enabled" if state.relay_enabled else "disabled"))
 func toggle_lamp() -> void: state.lamp_on = not state.lamp_on; update_presentation()
 func inspect_relay() -> void:
 	if world.inv.count("service_kit") < 1: world._say("Your insulated service kit is required"); return
@@ -243,7 +268,7 @@ func install_relay() -> void:
 		world._say("Need your service kit and the replacement relay"); return
 	if world.inv.remove("power_relay") and state.install(): world._say("Replacement seated. Verify the transfer before signing off.")
 func verify_relay() -> void:
-	if state.verify(): world._say("Transfer verified. Field dispatch restored and automatic backup armed. You can disable the repeater to conserve 12 W. Distant grid failures cannot be repaired here.")
+	if state.verify(): world._say("Transfer verified. Local site equipment restored and automatic backup armed. You can disable the repeater to conserve 12 W. Distant grid failures cannot be repaired here.")
 	elif state.repair_stage == 2: world._say("No local power. Enable backup at the desk panel, then verify.")
 func stoke() -> void:
 	if fuel_s >= 16 * 3600: world._say("Stove fuel capacity reached"); return

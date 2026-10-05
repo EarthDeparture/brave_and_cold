@@ -1,0 +1,1280 @@
+{
+  "status": "Development audio: local synthesized speech; directed human performances remain future production work",
+  "text_source": "data/lookout_broadcasts.json (original project writing)",
+  "data_sha256": "9c26f006c82629c2742c9ad62e8eb00d93aceef78f4b7ffc1cfc946a07cdb437",
+  "synthesis": "Windows System.Speech; actual voice and rate recorded per clip",
+  "processing": "Public: 180-4300 Hz, quiet hiss and station chime. Dispatch: 300-3000 Hz, handset squelch and acknowledgement tone. Mono PCM16 22050 Hz.",
+  "seed": "SHA256 of stable broadcast ID; no downloads or paid service",
+  "clips": {
+    "public_d1_06.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.129954648526077,
+          "text": "Good morning."
+        },
+        {
+          "start_s": 2.129954648526077,
+          "end_s": 5.659954648526077,
+          "text": "This is North Ridge Public Radio at six."
+        },
+        {
+          "start_s": 5.659954648526077,
+          "end_s": 11.569954648526076,
+          "text": "The regional forecast calls for a cold morning and changeable cloud through the afternoon."
+        },
+        {
+          "start_s": 11.569954648526076,
+          "end_s": 16.264954648526075,
+          "text": "Carry winter clothing and allow extra time on the logging roads."
+        },
+        {
+          "start_s": 16.264954648526075,
+          "end_s": 21.209954648526075,
+          "text": "Schools, the clinic and local deliveries are operating normally."
+        },
+        {
+          "start_s": 21.209954648526075,
+          "end_s": 24.024988662131516,
+          "text": "We will have another bulletin at noon."
+        }
+      ],
+      "sha256": "2fb022c9df07466098057b5e52818fe6b90de896f9f6a3747588523339444b46",
+      "seconds": 24.124988662131518,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "a4902b97f4a7948d3007be659c3196eae0bb781f3b70ffb23dc3266c4f8e6b2c"
+    },
+    "public_d1_12.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 3.719954648526077,
+          "text": "It is noon on North Ridge Public Radio."
+        },
+        {
+          "start_s": 3.719954648526077,
+          "end_s": 9.989954648526076,
+          "text": "A recap of this morning: cold weather remains the main concern for northern travellers."
+        },
+        {
+          "start_s": 9.989954648526076,
+          "end_s": 14.439954648526077,
+          "text": "Dress warmly and check road conditions before leaving town."
+        },
+        {
+          "start_s": 14.439954648526077,
+          "end_s": 20.514954648526075,
+          "text": "The clinic and local services remain open, and regular deliveries are expected."
+        },
+        {
+          "start_s": 20.514954648526075,
+          "end_s": 23.979954648526075,
+          "text": "Our next bulletin is at five this afternoon."
+        }
+      ],
+      "sha256": "d0a7d62d67c24585498fc3188676e066a405fb857267afe0bcdfbe21cc3fe8e5",
+      "seconds": 24.079954648526076,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "e5d5894e56d84224ceed2b69ab2f91300ba4438db22d0f23e4df60e3e20a2c10"
+    },
+    "public_d1_17.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 3.2849546485260768,
+          "text": "This is the five o'clock bulletin."
+        },
+        {
+          "start_s": 3.2849546485260768,
+          "end_s": 9.089954648526078,
+          "text": "Authorities on the other side of the country are investigating several violent incidents at hospitals and"
+        },
+        {
+          "start_s": 9.089954648526078,
+          "end_s": 11.354954648526077,
+          "text": "transit stations."
+        },
+        {
+          "start_s": 11.354954648526077,
+          "end_s": 15.719954648526077,
+          "text": "Officials have not established whether the reports are connected."
+        },
+        {
+          "start_s": 15.719954648526077,
+          "end_s": 19.614954648526076,
+          "text": "There are no confirmed local incidents in North Ridge."
+        },
+        {
+          "start_s": 19.614954648526076,
+          "end_s": 22.814954648526076,
+          "text": "Avoid sharing unverified claims."
+        },
+        {
+          "start_s": 22.814954648526076,
+          "end_s": 25.72498866213152,
+          "text": "We will update the story at midnight."
+        }
+      ],
+      "sha256": "9bfeeb11cb96223813d661308319d646f1651774829be7dbf92b3e02e53e8372",
+      "seconds": 25.82498866213152,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "988d6a2e2d230fd106d9e515c8f4f8a2a39c3111799e7a76ecf776bd042d6f58"
+    },
+    "public_d1_24.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.319954648526077,
+          "text": "It is midnight."
+        },
+        {
+          "start_s": 2.319954648526077,
+          "end_s": 6.659954648526077,
+          "text": "Reports of violent attacks now involve several cities."
+        },
+        {
+          "start_s": 6.659954648526077,
+          "end_s": 14.669954648526076,
+          "text": "Hospitals in the affected areas are restricting access, and some emergency crews have stopped answering calls."
+        },
+        {
+          "start_s": 14.669954648526076,
+          "end_s": 17.539954648526077,
+          "text": "Officials still dispute the cause."
+        },
+        {
+          "start_s": 17.539954648526077,
+          "end_s": 21.029954648526076,
+          "text": "No evacuation order has been issued here."
+        },
+        {
+          "start_s": 21.029954648526076,
+          "end_s": 23.479954648526075,
+          "text": "Keep your radio available."
+        },
+        {
+          "start_s": 23.479954648526075,
+          "end_s": 26.289977324263038,
+          "text": "We will return at six in the morning."
+        }
+      ],
+      "sha256": "a221607ab8c2867d6527990821cf751768e2a3590846f91047f221ca40a72049",
+      "seconds": 26.38997732426304,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "f3eeb23a8f4ed3d7bc9589f9a104daf6cdb286410578ed56670c342eda77a84a"
+    },
+    "public_d2_06.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.9999546485260766,
+          "text": "Good morning from North Ridge."
+        },
+        {
+          "start_s": 2.9999546485260766,
+          "end_s": 5.6899546485260775,
+          "text": "The forecast remains cold."
+        },
+        {
+          "start_s": 5.6899546485260775,
+          "end_s": 9.569954648526076,
+          "text": "Overnight disturbances have spread into our region."
+        },
+        {
+          "start_s": 9.569954648526076,
+          "end_s": 15.549954648526077,
+          "text": "The clinic is screening arrivals at its side entrance, and police ask residents to avoid crowds"
+        },
+        {
+          "start_s": 15.549954648526077,
+          "end_s": 18.119954648526075,
+          "text": "and unnecessary travel."
+        },
+        {
+          "start_s": 18.119954648526075,
+          "end_s": 20.899954648526077,
+          "text": "The cause remains unconfirmed."
+        },
+        {
+          "start_s": 20.899954648526077,
+          "end_s": 23.759954648526076,
+          "text": "Keep essential supplies at home."
+        },
+        {
+          "start_s": 23.759954648526076,
+          "end_s": 27.369977324263036,
+          "text": "At noon we will recap the confirmed information."
+        }
+      ],
+      "sha256": "73be0939742f14db85852f90f14df4f7a0ea5c422d3154bc23f11d3c769213b6",
+      "seconds": 27.469977324263038,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "a3472d1fde20c4bb75e5c3b12bbd3851c7d8a6ef52e8c2866846c0a0a9bf930d"
+    },
+    "public_d2_12.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.169954648526077,
+          "text": "It is noon."
+        },
+        {
+          "start_s": 2.169954648526077,
+          "end_s": 10.209954648526077,
+          "text": "A recap of this morning's bulletin: regional hospitals are restricting access after reports of violent behaviour."
+        },
+        {
+          "start_s": 10.209954648526077,
+          "end_s": 14.774954648526077,
+          "text": "Police advise avoiding crowds and unnecessary journeys."
+        },
+        {
+          "start_s": 14.774954648526077,
+          "end_s": 18.974954648526076,
+          "text": "Do not approach injured strangers behaving aggressively."
+        },
+        {
+          "start_s": 18.974954648526076,
+          "end_s": 22.169954648526076,
+          "text": "The cause is still under investigation."
+        },
+        {
+          "start_s": 22.169954648526076,
+          "end_s": 25.239954648526076,
+          "text": "North Ridge deliveries may be delayed."
+        },
+        {
+          "start_s": 25.239954648526076,
+          "end_s": 28.869977324263036,
+          "text": "We will carry further confirmed reports at five."
+        }
+      ],
+      "sha256": "a17e503a91a9c5fb7bb520f82776331323fad73a9938f923c62d36885844b232",
+      "seconds": 28.969977324263038,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "cac654c38b03a48e5de1529080c7b7f11c775dff96425c900faa092fdd054520"
+    },
+    "public_d2_17.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 3.2849546485260768,
+          "text": "This is the five o'clock bulletin."
+        },
+        {
+          "start_s": 3.2849546485260768,
+          "end_s": 9.189954648526077,
+          "text": "There have been attacks on responders near the North Ridge clinic and the western town junction."
+        },
+        {
+          "start_s": 9.189954648526077,
+          "end_s": 12.384954648526076,
+          "text": "Several roads into town are closed."
+        },
+        {
+          "start_s": 12.384954648526076,
+          "end_s": 16.949954648526077,
+          "text": "Shops are shutting early and fuel deliveries have been suspended."
+        },
+        {
+          "start_s": 16.949954648526077,
+          "end_s": 20.174954648526075,
+          "text": "Stay clear of the clinic and roadblocks."
+        },
+        {
+          "start_s": 20.174954648526075,
+          "end_s": 24.944988662131518,
+          "text": "This station is checking reports with the remaining emergency crews."
+        }
+      ],
+      "sha256": "b90f39b7e717ba7cbc0e160fbbb5ef931a6a87dc757324b4fbfb2a34397f0888",
+      "seconds": 25.04498866213152,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "15376589125da6228015a086192164d158893ea745939703cec891151e3d3891"
+    },
+    "public_d2_24.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.319954648526077,
+          "text": "It is midnight."
+        },
+        {
+          "start_s": 2.319954648526077,
+          "end_s": 7.884954648526077,
+          "text": "Responders describe people moving again after injuries they believed were fatal."
+        },
+        {
+          "start_s": 7.884954648526077,
+          "end_s": 13.644954648526078,
+          "text": "Those accounts have not been independently verified, but the attacks are real."
+        },
+        {
+          "start_s": 13.644954648526078,
+          "end_s": 17.054954648526078,
+          "text": "The clinic cannot accept further patients."
+        },
+        {
+          "start_s": 17.054954648526078,
+          "end_s": 26.004954648526077,
+          "text": "Residents should remain indoors where possible, secure entrances, and prepare drinking water, food and heating fuel."
+        },
+        {
+          "start_s": 26.004954648526077,
+          "end_s": 29.219954648526077,
+          "text": "Our next scheduled report is at six."
+        }
+      ],
+      "sha256": "62446068743aadcbd94df18471fd34cc34a00bb0cbcc2c57474ce661c22ee71f",
+      "seconds": 29.31995464852608,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "81edeef63dbe87a6b5a0b95a6f2331fadcfec4ec9566a84adf1a89fe82513ec0"
+    },
+    "public_d3_06.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.129954648526077,
+          "text": "Good morning."
+        },
+        {
+          "start_s": 2.129954648526077,
+          "end_s": 8.374954648526076,
+          "text": "Multiple emergency teams now confirm that some of the dead are rising and attacking the living."
+        },
+        {
+          "start_s": 8.374954648526076,
+          "end_s": 13.959954648526077,
+          "text": "Avoid close contact with anyone showing aggressive or disoriented behaviour."
+        },
+        {
+          "start_s": 13.959954648526077,
+          "end_s": 17.699954648526077,
+          "text": "North Ridge residents should shelter where they can."
+        },
+        {
+          "start_s": 17.699954648526077,
+          "end_s": 22.362829648526077,
+          "text": "Electrical service is becoming unreliable across the region."
+        },
+        {
+          "start_s": 22.362829648526077,
+          "end_s": 27.142857142857142,
+          "text": "Fill clean containers with water and keep a safe source of heat ready."
+        }
+      ],
+      "sha256": "e8ee252b8a4e1d4af891c27c2185940b96e3b90bb5ad5d1f07c3a58a61b45da8",
+      "seconds": 27.242857142857144,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "2f72c74a3d58611dfb39b989a560576afc7eeed0031e23569d730561eb9b4d72"
+    },
+    "public_d3_12.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.169954648526077,
+          "text": "It is noon."
+        },
+        {
+          "start_s": 2.169954648526077,
+          "end_s": 9.694954648526076,
+          "text": "This morning's advice remains in force: avoid close contact with the infected, secure your shelter, and"
+        },
+        {
+          "start_s": 9.694954648526076,
+          "end_s": 13.299954648526077,
+          "text": "prepare water, food and heating fuel."
+        },
+        {
+          "start_s": 13.299954648526077,
+          "end_s": 18.604954648526075,
+          "text": "Reports of the dead rising have been confirmed by several emergency teams."
+        },
+        {
+          "start_s": 18.604954648526075,
+          "end_s": 21.607829648526078,
+          "text": "Electrical failures are spreading."
+        },
+        {
+          "start_s": 21.607829648526078,
+          "end_s": 26.272829648526077,
+          "text": "A repaired local installation cannot restore the regional network."
+        },
+        {
+          "start_s": 26.272829648526077,
+          "end_s": 29.622857142857143,
+          "text": "Travel only when your supplies require it."
+        }
+      ],
+      "sha256": "510429f1390b37e2dfaac457664a5d148e1f891fa9bdca45b9e4e159b13e97c8",
+      "seconds": 29.722857142857144,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "598183d48a5155232d29a9047d4d60d04cc121d2636bd2db2b9b441f8d806910"
+    },
+    "public_d3_17.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 3.2849546485260768,
+          "text": "This is the five o'clock bulletin."
+        },
+        {
+          "start_s": 3.2849546485260768,
+          "end_s": 7.799954648526077,
+          "text": "Emergency assistance cannot reach the northern logging roads."
+        },
+        {
+          "start_s": 7.799954648526077,
+          "end_s": 13.054954648526078,
+          "text": "The town centre is unsafe, and regular deliveries have stopped."
+        },
+        {
+          "start_s": 13.054954648526078,
+          "end_s": 15.694954648526076,
+          "text": "Choose a route before travelling."
+        },
+        {
+          "start_s": 15.694954648526076,
+          "end_s": 21.664954648526077,
+          "text": "Move in daylight, keep away from crowds, and return with enough water and fuel to remain"
+        },
+        {
+          "start_s": 21.664954648526077,
+          "end_s": 23.259954648526076,
+          "text": "sheltered."
+        },
+        {
+          "start_s": 23.259954648526076,
+          "end_s": 29.319954648526075,
+          "text": "This transmitter has reserve power, but our outside reports are becoming scarce."
+        }
+      ],
+      "sha256": "9b73270ec920923cc9b0b8e6aac6b6a8fff272e465de131e4652949f027dca61",
+      "seconds": 29.419954648526076,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "426f3e2af68eed8a760b3f48341a53520c25567d6e7ef20c81aa930baf9ca75b"
+    },
+    "public_d3_24.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.319954648526077,
+          "text": "It is midnight."
+        },
+        {
+          "start_s": 2.319954648526077,
+          "end_s": 5.764954648526077,
+          "text": "No relief convoy has reached North Ridge."
+        },
+        {
+          "start_s": 5.764954648526077,
+          "end_s": 10.244954648526077,
+          "text": "Several communities are no longer answering radio checks."
+        },
+        {
+          "start_s": 10.244954648526077,
+          "end_s": 15.259954648526076,
+          "text": "Do not leave a defensible shelter simply because you expect collection."
+        },
+        {
+          "start_s": 15.259954648526076,
+          "end_s": 20.039954648526077,
+          "text": "Treat water, protect wounds and conserve medical supplies."
+        },
+        {
+          "start_s": 20.039954648526077,
+          "end_s": 24.819954648526075,
+          "text": "We will continue the scheduled bulletins while this station can operate."
+        },
+        {
+          "start_s": 24.819954648526075,
+          "end_s": 26.974965986394558,
+          "text": "The next is at six."
+        }
+      ],
+      "sha256": "7fd22290c6ecfa1b64d1b0085ed9664f10d75f353cb77c026f51a7244083650c",
+      "seconds": 27.07496598639456,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "ba546e8ef566dbc065818bd2b113e5d682e10dc46d175e64718b8e2584f18564"
+    },
+    "public_d4_06.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.129954648526077,
+          "text": "Good morning."
+        },
+        {
+          "start_s": 2.129954648526077,
+          "end_s": 6.6449546485260775,
+          "text": "There is no reliable regional power or emergency service."
+        },
+        {
+          "start_s": 6.6449546485260775,
+          "end_s": 11.719954648526077,
+          "text": "Overnight reports place infected groups on roads into and through town."
+        },
+        {
+          "start_s": 11.719954648526077,
+          "end_s": 15.194954648526076,
+          "text": "Keep enough fuel to stay warm after dark."
+        },
+        {
+          "start_s": 15.194954648526076,
+          "end_s": 20.244954648526075,
+          "text": "If you must seek supplies, plan your return before setting out."
+        },
+        {
+          "start_s": 20.244954648526075,
+          "end_s": 23.354954648526075,
+          "text": "This station cannot promise rescue."
+        },
+        {
+          "start_s": 23.354954648526075,
+          "end_s": 28.099954648526076,
+          "text": "Our noon bulletin will repeat the practical advice we can still verify."
+        }
+      ],
+      "sha256": "3b14a371dfe9b09eb32ee16c850f468b6c7fa272d999655078a5c0e2cee45ab0",
+      "seconds": 28.199954648526077,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "c38c0d1992720f5ebec8d7403163cc5ff10968e6b09abe4fb3105b63472cd236"
+    },
+    "public_d4_12.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.169954648526077,
+          "text": "It is noon."
+        },
+        {
+          "start_s": 2.169954648526077,
+          "end_s": 8.554954648526078,
+          "text": "A recap of this morning's advice: assume help and regular deliveries are unavailable."
+        },
+        {
+          "start_s": 8.554954648526078,
+          "end_s": 15.154954648526077,
+          "text": "Maintain your shelter, treat drinking water, and keep dry heating fuel in reserve."
+        },
+        {
+          "start_s": 15.154954648526077,
+          "end_s": 19.484954648526077,
+          "text": "Infected groups have been reported along the town approaches."
+        },
+        {
+          "start_s": 19.484954648526077,
+          "end_s": 24.279954648526076,
+          "text": "Travel with a return route and leave room to carry useful supplies."
+        },
+        {
+          "start_s": 24.279954648526076,
+          "end_s": 28.124988662131518,
+          "text": "Do not spend your final reserves waiting for rescue."
+        }
+      ],
+      "sha256": "dffacf16ae75920294a56d5305ace8d19af9b417ccf4e3bbaa6f640388c1683e",
+      "seconds": 28.22498866213152,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "4400f0a17eaaf69cb19edb4aec1994a5657bc4364241de76cf5e8f07081692db"
+    },
+    "public_d4_17.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 3.2849546485260768,
+          "text": "This is the five o'clock bulletin."
+        },
+        {
+          "start_s": 3.2849546485260768,
+          "end_s": 8.764954648526077,
+          "text": "We have fewer working contacts and cannot verify the condition of every road."
+        },
+        {
+          "start_s": 8.764954648526077,
+          "end_s": 12.889954648526077,
+          "text": "Silence from a community does not mean that it is safe."
+        },
+        {
+          "start_s": 12.889954648526077,
+          "end_s": 19.109954648526077,
+          "text": "Store doors, clinic grounds and traffic queues remain dangerous places to linger."
+        },
+        {
+          "start_s": 19.109954648526077,
+          "end_s": 22.554954648526078,
+          "text": "There will be no scheduled supply deliveries."
+        },
+        {
+          "start_s": 22.554954648526078,
+          "end_s": 27.554965986394556,
+          "text": "Concentrate on water, warmth and a defensible place to rest."
+        }
+      ],
+      "sha256": "d964a4214d728cfb0853156578fc9d1390722124a134241a327b856d86e01901",
+      "seconds": 27.654965986394558,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "4168cbe6db1a6b18b790719e131e10d6370ff25cf94610bf806d963dd9cbea22"
+    },
+    "public_d4_24.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.319954648526077,
+          "text": "It is midnight."
+        },
+        {
+          "start_s": 2.319954648526077,
+          "end_s": 6.204954648526077,
+          "text": "The station is operating on its remaining reserve."
+        },
+        {
+          "start_s": 6.204954648526077,
+          "end_s": 13.217829648526077,
+          "text": "We can still announce the scheduled bulletins, but there are no dependable outside services behind them."
+        },
+        {
+          "start_s": 13.217829648526077,
+          "end_s": 17.390704648526075,
+          "text": "Keep your local equipment working and conserve what you have."
+        },
+        {
+          "start_s": 17.390704648526075,
+          "end_s": 22.575704648526077,
+          "text": "A familiar voice on the radio is not a promise that somebody can reach you."
+        },
+        {
+          "start_s": 22.575704648526077,
+          "end_s": 24.715736961451245,
+          "text": "We return at six."
+        }
+      ],
+      "sha256": "59891c5c8b58d5780d08458719b69651573490a1923612f6dae2b7f1d8da776b",
+      "seconds": 24.815736961451247,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "6e2a85fa8f9a1133e39f0909ecf83b6e514d8484aa8d12663e54aa2c5548c80b"
+    },
+    "public_d5_06.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.9999546485260766,
+          "text": "Good morning from North Ridge."
+        },
+        {
+          "start_s": 2.9999546485260766,
+          "end_s": 7.629954648526077,
+          "text": "This is expected to be our final day of scheduled broadcasting."
+        },
+        {
+          "start_s": 7.629954648526077,
+          "end_s": 10.874954648526076,
+          "text": "Our reserve power is nearly exhausted."
+        },
+        {
+          "start_s": 10.874954648526076,
+          "end_s": 15.924954648526077,
+          "text": "There is still no confirmed relief operation for the northern communities."
+        },
+        {
+          "start_s": 15.924954648526077,
+          "end_s": 21.074954648526077,
+          "text": "Maintain water, warmth and food before considering another journey."
+        },
+        {
+          "start_s": 21.074954648526077,
+          "end_s": 27.184988662131516,
+          "text": "We intend to return at noon, five, and midnight if the transmitter holds."
+        }
+      ],
+      "sha256": "4587fa3b71a720931e82a1f1abd5061a077f0518d0ded9357274bdec3d5fabf3",
+      "seconds": 27.284988662131518,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "80a0f231069be44fa626ddfd18bffaf8512286b16af42d54d05cc2cdf013c8ae"
+    },
+    "public_d5_12.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.169954648526077,
+          "text": "It is noon."
+        },
+        {
+          "start_s": 2.169954648526077,
+          "end_s": 8.359954648526077,
+          "text": "This morning's notice remains unchanged: today is expected to be the final operating day for this"
+        },
+        {
+          "start_s": 8.359954648526077,
+          "end_s": 9.929954648526078,
+          "text": "station."
+        },
+        {
+          "start_s": 9.929954648526078,
+          "end_s": 13.129954648526077,
+          "text": "No relief service has been confirmed."
+        },
+        {
+          "start_s": 13.129954648526077,
+          "end_s": 20.844954648526077,
+          "text": "Conserve medical supplies, keep drinking water safe, and prepare your shelter for another cold night."
+        },
+        {
+          "start_s": 20.844954648526077,
+          "end_s": 25.854965986394557,
+          "text": "We intend to make the five o'clock report and a final midnight signoff."
+        }
+      ],
+      "sha256": "90eeb38985d2599ef25b9f96392d54cede39915e5aef7921186f3825987b83ec",
+      "seconds": 25.95496598639456,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "2d7f36bd53b3b4e108712ff688875a01f2579d119af0702d20846426ebf0e25c"
+    },
+    "public_d5_17.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 3.2849546485260768,
+          "text": "This is the five o'clock bulletin."
+        },
+        {
+          "start_s": 3.2849546485260768,
+          "end_s": 6.924954648526077,
+          "text": "We have no new verified outside reports."
+        },
+        {
+          "start_s": 6.924954648526077,
+          "end_s": 11.514954648526077,
+          "text": "The transmitter has enough reserve for the planned midnight signoff."
+        },
+        {
+          "start_s": 11.514954648526077,
+          "end_s": 15.504954648526077,
+          "text": "Do not treat the silence afterwards as an all clear."
+        },
+        {
+          "start_s": 15.504954648526077,
+          "end_s": 18.714954648526078,
+          "text": "Continue the precautions you already know."
+        },
+        {
+          "start_s": 18.714954648526078,
+          "end_s": 24.059954648526077,
+          "text": "Keep a route home, keep dry fuel, and help the people you can reach without abandoning"
+        },
+        {
+          "start_s": 24.059954648526077,
+          "end_s": 25.879954648526077,
+          "text": "your own shelter."
+        }
+      ],
+      "sha256": "c17c75dd6743606b589daa791dc1833c34cc9e994b96c8e895d47f2bab14f1d0",
+      "seconds": 25.97995464852608,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "b9a48e58c30662e6627b49d1a54477162c4d339db004de06d8c07518d1b39488"
+    },
+    "public_d5_24.wav": {
+      "captions": [
+        {
+          "start_s": 0.4699546485260771,
+          "end_s": 2.319954648526077,
+          "text": "It is midnight."
+        },
+        {
+          "start_s": 2.319954648526077,
+          "end_s": 7.114954648526077,
+          "text": "This is North Ridge Public Radio's final scheduled transmission."
+        },
+        {
+          "start_s": 7.114954648526077,
+          "end_s": 9.554954648526078,
+          "text": "Our reserve is exhausted."
+        },
+        {
+          "start_s": 9.554954648526078,
+          "end_s": 12.864954648526076,
+          "text": "No further bulletin will follow at six."
+        },
+        {
+          "start_s": 12.864954648526076,
+          "end_s": 19.429954648526078,
+          "text": "If you are listening, keep your shelter secure, your water clean and your people warm."
+        },
+        {
+          "start_s": 19.429954648526078,
+          "end_s": 24.224954648526076,
+          "text": "Remember that you have already survived days without dependable help."
+        },
+        {
+          "start_s": 24.224954648526076,
+          "end_s": 26.429954648526078,
+          "text": "Take care of each other."
+        },
+        {
+          "start_s": 26.429954648526078,
+          "end_s": 28.729977324263036,
+          "text": "North Ridge signing off."
+        }
+      ],
+      "sha256": "40fc5f2c32b2d076b9c332d4adee6d7ac22546efef23f7a86577fe06425d8833",
+      "seconds": 28.829977324263037,
+      "sample_rate": 22050,
+      "device": "public",
+      "voice": "Microsoft David Desktop",
+      "rate": -1,
+      "text_sha256": "5f9b315a52783a6ccd6ce312dffff9d8ee7e2590bac0cf4ee0be1ce3469d0047"
+    },
+    "dispatch_d1_08.wav": {
+      "captions": [
+        {
+          "start_s": 0.18,
+          "end_s": 2.9899999999999998,
+          "text": "Kestrel Seven, dispatch."
+        },
+        {
+          "start_s": 2.9899999999999998,
+          "end_s": 6.27,
+          "text": "Your personal receiver is coming through clearly."
+        },
+        {
+          "start_s": 6.27,
+          "end_s": 10.455,
+          "text": "Inspect the transfer cabinet if you have not already done so."
+        },
+        {
+          "start_s": 10.455,
+          "end_s": 14.25,
+          "text": "A replacement relay was reserved at North Ridge Supply."
+        },
+        {
+          "start_s": 14.25,
+          "end_s": 18.974999999999998,
+          "text": "Keep the standby battery charged and read your desk log before travelling."
+        },
+        {
+          "start_s": 18.974999999999998,
+          "end_s": 20.79501133786848,
+          "text": "We will check in later."
+        }
+      ],
+      "sha256": "fa10dff5dc4291d08dc0db40169ae15346bb82347b09f10673782765a615dec1",
+      "seconds": 20.86997732426304,
+      "sample_rate": 22050,
+      "device": "dispatch",
+      "voice": "Microsoft Zira Desktop",
+      "rate": 0,
+      "text_sha256": "5fde84e19552e5eec938df5c2ba13e6fd9ae361a7e728dfa7dd1c8e4b2497be4"
+    },
+    "dispatch_d1_14.wav": {
+      "captions": [
+        {
+          "start_s": 0.18,
+          "end_s": 3.46,
+          "text": "Kestrel Seven, dispatch checking in."
+        },
+        {
+          "start_s": 3.46,
+          "end_s": 8.53,
+          "text": "If you still need the replacement relay, it was reserved at North Ridge Supply."
+        },
+        {
+          "start_s": 8.53,
+          "end_s": 14.915,
+          "text": "The desk public radio carries the regional bulletins; this handset stays with you for work calls."
+        },
+        {
+          "start_s": 14.915,
+          "end_s": 19.584999999999997,
+          "text": "Take the logging track down to the road and keep enough daylight for the return."
+        },
+        {
+          "start_s": 19.584999999999997,
+          "end_s": 23.87002267573696,
+          "text": "If the job is finished, keep the installation on standby."
+        }
+      ],
+      "sha256": "2fecce11d8b88c7f634edbcff219f24d87a360a2d9ee7e3754e3f015dff5ff33",
+      "seconds": 23.944988662131518,
+      "sample_rate": 22050,
+      "device": "dispatch",
+      "voice": "Microsoft Zira Desktop",
+      "rate": 0,
+      "text_sha256": "e4bc87d0c86252e04941b01f0a6c076c29e45b6b84e371ed3e5c351ed2f9078a"
+    },
+    "dispatch_d1_20.wav": {
+      "captions": [
+        {
+          "start_s": 0.18,
+          "end_s": 3.745,
+          "text": "Kestrel Seven, last work check tonight."
+        },
+        {
+          "start_s": 3.745,
+          "end_s": 9.305,
+          "text": "We have heard the distant reports, but no change to your assignment has been confirmed."
+        },
+        {
+          "start_s": 9.305,
+          "end_s": 12.305,
+          "text": "Stay at the lookout overnight if you can."
+        },
+        {
+          "start_s": 12.305,
+          "end_s": 16.279999999999998,
+          "text": "Keep the stove supplied and leave your local battery charged."
+        },
+        {
+          "start_s": 16.279999999999998,
+          "end_s": 19.40503401360544,
+          "text": "The next routine dispatch call is in the morning."
+        }
+      ],
+      "sha256": "d91258f504c76312e63b9a4e2654208e40e5983d700b7965a15dcc8e5efe81c3",
+      "seconds": 19.48,
+      "sample_rate": 22050,
+      "device": "dispatch",
+      "voice": "Microsoft Zira Desktop",
+      "rate": 0,
+      "text_sha256": "15fe95ebe54ae3e26e7e95da1f921fdfd9154d2872a572448ddebdc25aed3f07"
+    },
+    "dispatch_d2_08.wav": {
+      "captions": [
+        {
+          "start_s": 0.18,
+          "end_s": 2.9899999999999998,
+          "text": "Kestrel Seven, dispatch."
+        },
+        {
+          "start_s": 2.9899999999999998,
+          "end_s": 5.725,
+          "text": "The situation has reached our region."
+        },
+        {
+          "start_s": 5.725,
+          "end_s": 9.26,
+          "text": "Avoid the clinic and any gathering near the town junction."
+        },
+        {
+          "start_s": 9.26,
+          "end_s": 14.299999999999999,
+          "text": "If you still need the reserved part, take what you need and return before dark."
+        },
+        {
+          "start_s": 14.299999999999999,
+          "end_s": 16.63,
+          "text": "Keep this handset on you."
+        },
+        {
+          "start_s": 16.63,
+          "end_s": 21.38503401360544,
+          "text": "Your desk radio is the public news source, not this work channel."
+        }
+      ],
+      "sha256": "a446361e9a880c2a25c43698ebd832fe7e870289e1963749e89b1467f55f6f88",
+      "seconds": 21.46,
+      "sample_rate": 22050,
+      "device": "dispatch",
+      "voice": "Microsoft Zira Desktop",
+      "rate": 0,
+      "text_sha256": "af4f417d12627b776b01e1e978fd693b8022fcb6f5f4f6ef9f54836765b35ced"
+    },
+    "dispatch_d2_14.wav": {
+      "captions": [
+        {
+          "start_s": 0.18,
+          "end_s": 4.495,
+          "text": "Kestrel Seven, the supply truck will not reach your site."
+        },
+        {
+          "start_s": 4.495,
+          "end_s": 6.89,
+          "text": "Do not wait on the road for it."
+        },
+        {
+          "start_s": 6.89,
+          "end_s": 10.475,
+          "text": "Keep your provisions and use the lookout as your base."
+        },
+        {
+          "start_s": 10.475,
+          "end_s": 15.104999999999999,
+          "text": "If your relay is already commissioned, preserve the backup charge."
+        },
+        {
+          "start_s": 15.104999999999999,
+          "end_s": 18.83002267573696,
+          "text": "We cannot promise a replacement crew or another delivery."
+        }
+      ],
+      "sha256": "de2a6944626c3c00315bd9bd62cdc9a5f13b128dd97cb8e3b2017665fdd29633",
+      "seconds": 18.90498866213152,
+      "sample_rate": 22050,
+      "device": "dispatch",
+      "voice": "Microsoft Zira Desktop",
+      "rate": 0,
+      "text_sha256": "afa5ea0b7d6a67762359dff9ce381024ca24578ce82925729b0189b1f3ecefb7"
+    },
+    "dispatch_d2_20.wav": {
+      "captions": [
+        {
+          "start_s": 0.18,
+          "end_s": 2.9899999999999998,
+          "text": "Kestrel Seven, dispatch."
+        },
+        {
+          "start_s": 2.9899999999999998,
+          "end_s": 6.005,
+          "text": "We have lost contact with the town crew."
+        },
+        {
+          "start_s": 6.005,
+          "end_s": 10.065,
+          "text": "The last confirmed report placed them near the western junction."
+        },
+        {
+          "start_s": 10.065,
+          "end_s": 13.575,
+          "text": "Do not go looking for them without a safe return route."
+        },
+        {
+          "start_s": 13.575,
+          "end_s": 17.674999999999997,
+          "text": "Secure your shelter and gather supplies only when you need them."
+        },
+        {
+          "start_s": 17.674999999999997,
+          "end_s": 20.25002267573696,
+          "text": "We will try another call in the morning."
+        }
+      ],
+      "sha256": "818af0b88f3dbf078c54ead73cd4cb0dc6add4445cd01b7c08c5ba59388a7642",
+      "seconds": 20.32498866213152,
+      "sample_rate": 22050,
+      "device": "dispatch",
+      "voice": "Microsoft Zira Desktop",
+      "rate": 0,
+      "text_sha256": "178de5190993f546e76c4f6367a5765f0881140c4e62abb1a86c498f6efca3bb"
+    },
+    "dispatch_d3_08.wav": {
+      "captions": [
+        {
+          "start_s": 0.18,
+          "end_s": 2.9899999999999998,
+          "text": "Kestrel Seven, dispatch."
+        },
+        {
+          "start_s": 2.9899999999999998,
+          "end_s": 5.785,
+          "text": "We cannot send anyone to your site."
+        },
+        {
+          "start_s": 5.785,
+          "end_s": 9.6,
+          "text": "Keep your water, heating fuel and food in reserve."
+        },
+        {
+          "start_s": 9.6,
+          "end_s": 15.895,
+          "text": "Your installation only supports local equipment; repairing it cannot bring the town network back."
+        },
+        {
+          "start_s": 15.895,
+          "end_s": 20.99501133786848,
+          "text": "Check the public station at its scheduled times if your desk receiver still has power."
+        }
+      ],
+      "sha256": "e902ecddf07ea27f5b4ed9d36adeef99151c34228fff3e15c432a12e75ecab0d",
+      "seconds": 21.06997732426304,
+      "sample_rate": 22050,
+      "device": "dispatch",
+      "voice": "Microsoft Zira Desktop",
+      "rate": 0,
+      "text_sha256": "002813034e7feb501a1a5fa9be9fb28598084053d847d658fd92d0385ad980b2"
+    },
+    "dispatch_d3_14.wav": {
+      "captions": [
+        {
+          "start_s": 0.18,
+          "end_s": 3.205,
+          "text": "Kestrel Seven, a short check."
+        },
+        {
+          "start_s": 3.205,
+          "end_s": 6.995,
+          "text": "If the mains have failed, turn off the desk lamp when you do not need it"
+        },
+        {
+          "start_s": 6.995,
+          "end_s": 9.35,
+          "text": "and conserve the local battery."
+        },
+        {
+          "start_s": 9.35,
+          "end_s": 14.115,
+          "text": "Your personal handset has its own supply and receives our calls directly."
+        },
+        {
+          "start_s": 14.115,
+          "end_s": 18.199999999999996,
+          "text": "Do not exhaust your heating fuel trying to finish every job."
+        },
+        {
+          "start_s": 18.199999999999996,
+          "end_s": 20.75002267573696,
+          "text": "Shelter and water come first."
+        }
+      ],
+      "sha256": "ffdb838587aed94a826831279b6a6d67392ca4529dcc76f4aec37cb50fa3eeaa",
+      "seconds": 20.82498866213152,
+      "sample_rate": 22050,
+      "device": "dispatch",
+      "voice": "Microsoft Zira Desktop",
+      "rate": 0,
+      "text_sha256": "7acecb341e104e25d37baa3036fa882a25154e158821c4ffb6735201e99232b0"
+    },
+    "dispatch_d3_20.wav": {
+      "captions": [
+        {
+          "start_s": 0.18,
+          "end_s": 2.9899999999999998,
+          "text": "Kestrel Seven, dispatch."
+        },
+        {
+          "start_s": 2.9899999999999998,
+          "end_s": 6.319999999999999,
+          "text": "There are very few of us left answering this net."
+        },
+        {
+          "start_s": 6.319999999999999,
+          "end_s": 9.605,
+          "text": "Keep treating water and securing your shelter."
+        },
+        {
+          "start_s": 9.605,
+          "end_s": 13.275,
+          "text": "The town cannot be relied on for regular supplies."
+        },
+        {
+          "start_s": 13.275,
+          "end_s": 18.029999999999998,
+          "text": "If you travel, choose the return route first and leave room in your pack."
+        },
+        {
+          "start_s": 18.029999999999998,
+          "end_s": 20.69002267573696,
+          "text": "We will attempt one more morning check."
+        }
+      ],
+      "sha256": "7e48646c2bf883b119d9e828d1822c6f314a92d3f72ba1ad2145b5fdf08d4868",
+      "seconds": 20.76498866213152,
+      "sample_rate": 22050,
+      "device": "dispatch",
+      "voice": "Microsoft Zira Desktop",
+      "rate": 0,
+      "text_sha256": "2d4e887adf73ac41e08d418d23fa18529eb4f062df1ab0b472d73a2716286921"
+    },
+    "dispatch_d4_08.wav": {
+      "captions": [
+        {
+          "start_s": 0.18,
+          "end_s": 3.78,
+          "text": "Kestrel Seven, this may be our last call."
+        },
+        {
+          "start_s": 3.78,
+          "end_s": 6.625,
+          "text": "We cannot maintain the dispatch net."
+        },
+        {
+          "start_s": 6.625,
+          "end_s": 9.139999999999999,
+          "text": "You are released from the assignment."
+        },
+        {
+          "start_s": 9.139999999999999,
+          "end_s": 14.469999999999999,
+          "text": "Use the lookout, the tools and the supplies you can recover to keep yourself alive."
+        },
+        {
+          "start_s": 14.469999999999999,
+          "end_s": 18.644999999999996,
+          "text": "The public station is independent and may still be broadcasting."
+        },
+        {
+          "start_s": 18.644999999999996,
+          "end_s": 20.674999999999997,
+          "text": "Do not wait for us."
+        },
+        {
+          "start_s": 20.674999999999997,
+          "end_s": 22.22,
+          "text": "Dispatch out."
+        }
+      ],
+      "sha256": "d3869bd2f66ccc16899c370a344511241c41a391743025703cc44514537fb285",
+      "seconds": 22.29496598639456,
+      "sample_rate": 22050,
+      "device": "dispatch",
+      "voice": "Microsoft Zira Desktop",
+      "rate": 0,
+      "text_sha256": "56d463a90b8437071198064a56eb47b928e62edfe28947dd085798556f339ec2"
+    }
+  }
+}

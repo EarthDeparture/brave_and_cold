@@ -27,6 +27,7 @@ void fragment() {
 """
 
 var radio_heading := ""
+var radio_device := ""
 var radio_text := ""
 var prompt := ""          # kept for tests: text of the selected action
 var info := ""            # developer overlay extra line
@@ -385,5 +386,5 @@ func _draw_radio(sz: Vector2, k: float) -> void:
 	var height := (52 + lines.size()*23)*k
 	var at := Vector2((sz.x-width)*.5,sz.y-140*k-height)
 	_ui.draw_rect(Rect2(at,Vector2(width,height)),Color(.025,.035,.04,.82))
-	DZ.text(_ui,radio_heading,at+Vector2(18,26)*k,int(16*k),Color(.83,.75,.52))
+	DZ.text(_ui,radio_heading,at+Vector2(18,26)*k,int(16*k),Color(.62,.79,1) if radio_device=="public" else Color(1,.80,.40))
 	for i in lines.size(): DZ.text(_ui,lines[i],at+Vector2(18,51+i*23)*k,int(18*k),Color(.93,.93,.89))

@@ -7,7 +7,7 @@ func check(ok: bool, label: String) -> void:
 func run() -> void:
 	var s := LookoutAssignment.new(); s.new_run(20261004)
 	var other := LookoutAssignment.new(); other.new_run(20261004)
-	check(s.grid_fail_s == other.grid_fail_s and s.source_end_s == other.source_end_s, "seed determines both outage windows")
+	check(s.grid_fail_s == other.grid_fail_s and s.source_end_s == other.source_end_s, "seeded mains and fixed station end are repeatable")
 	check(s.grid_fail_s >= 48*3600 and s.grid_fail_s <= 72*3600, "mains fail within 48-72 hours")
 	check(s.source_end_s > s.grid_fail_s+35*3600, "broadcast transmitter outlasts town grid")
 	check(not s.install() and not s.verify(), "commissioning cannot skip inspection")
@@ -30,21 +30,23 @@ func run() -> void:
 	var restored := LookoutAssignment.new(); restored.restore(s.to_dict())
 	check(restored.to_dict() == s.to_dict(),"power, dates and job state survive dictionary round trip")
 	s=LookoutAssignment.new();s.receiver_on=true
-	check(s.broadcast_at(2*3600-.01).is_empty(),"radio stays silent before dispatch")
-	check(s.broadcast_at(2*3600).get("id","")=="dispatch_check","dispatch airs in its live window")
-	check(s.broadcast_at(2*3600+1800).is_empty(),"missed dispatch never repeats")
-	s.channel="public"
-	check(s.broadcast_at(2*3600).is_empty(),"other channel does not play work dispatch")
-	check(s.broadcast_at(8*3600).get("id","")=="local_reports","public station has independent schedule")
+	check(s.public_broadcast_at(1800-.01).is_empty(),"morning stays silent until 06:00")
+	check(s.public_broadcast_at(1800).get("id","")=="public_d1_06","first morning bulletin is ordinary weather and services")
+	check(s.public_broadcast_at(3600).is_empty(),"morning bulletin cannot replay after its window")
+	check(s.public_broadcast_at(6.5*3600).get("id","")=="public_d1_12","noon recap follows the same calendar day")
+	check(s.public_broadcast_at(11.5*3600).get("id","")=="public_d1_17","first 17:00 bulletin introduces distant incidents")
+	check(s.public_broadcast_at(18.5*3600).get("id","")=="public_d1_24","midnight closes the first lived day")
+	check(s.public_broadcast_at(24.5*3600).get("id","")=="public_d2_06","next morning advances the story")
 	s.receiver_on=false
-	check(s.broadcast_at(8*3600).is_empty(),"off receiver cannot catch transmission")
+	check(s.public_broadcast_at(1800).is_empty(),"desk off cannot catch a public transmission")
+	check(s.dispatch_at(2.5*3600).get("id","")=="dispatch_d1_08","carried dispatch needs no desk switch")
+	check(s.dispatch_at(3*3600).is_empty(),"expired dispatch never repeats")
 	s.receiver_on=true;s.last_s=s.source_end_s;s.backup_on=true
-	check(s.broadcast_at(s.source_end_s).is_empty(),"local battery cannot resurrect distant transmitter")
+	check(s.public_broadcast_at(s.source_end_s).is_empty(),"local battery cannot resurrect distant transmitter")
 	var automatic:=LookoutAssignment.new();automatic.inspect();automatic.install();automatic.verify();automatic.advance_to(automatic.grid_fail_s+3600)
 	check(automatic.backup_on and is_equal_approx(automatic.battery_wh,125),"commissioned automatic transfer powers the home across a slept-through outage")
 	automatic.relay_enabled=false;automatic.lamp_on=false;automatic.receiver_on=true;var charge:=automatic.battery_wh;automatic.advance_to(automatic.last_s+3600)
 	check(is_equal_approx(charge-automatic.battery_wh,3),"repeater and lamp switches preserve radio-only reserve")
-	automatic.channel="work"
-	check(automatic.broadcast_at(30*3600).is_empty(),"disabled repeater cannot carry late field dispatch")
+	check(automatic.dispatch_at(74.5*3600).get("id","")=="dispatch_d4_08","personal dispatch is independent of disabled local repeater")
 	print("LOOKOUT_ASSIGNMENT_TEST failures=",failures)
 	quit(1 if failures else 0)

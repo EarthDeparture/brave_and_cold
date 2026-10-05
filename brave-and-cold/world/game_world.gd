@@ -189,7 +189,8 @@ func _ready() -> void:
 	if loading and sv.has("opening"): opening_state.restore(sv.opening.get("state",{}))
 	elif opening_state.enabled: opening_state.new_run(int(opts.get("opening_seed",Time.get_unix_time_from_system())))
 	opening_zombie_count = int(opts.get("zombies",250))
-	if opening_state.enabled and not loading and not opts.has("hour"): clock.hour = 7.0
+	if opening_state.enabled and not loading and not opts.has("hour"): clock.hour = LookoutAssignment.START_HOUR
+	if not loading: opening_state.align_calendar(clock.day,clock.hour,clock.total_game_s,true)
 	if loading:
 		sp = Vector2(float(sv['player']['x']), float(sv['player']['z']))
 	player.place(sp.x, sp.y)
@@ -490,7 +491,11 @@ func _process(delta: float) -> void:
 	if _sl_on:
 		_sleep_update(delta)
 	# time / lighting
-	var gs := clock.advance(delta)
+	var clock_delta := delta
+	if opening != null and _sl_on and int(_sl.get("phase",0))==1 and clock.time_scale>0:
+		var call_at: float=opening.state.next_dispatch_start(clock.total_game_s,clock.total_game_s+delta*clock.time_scale)
+		if is_finite(call_at): clock_delta=(call_at-clock.total_game_s)/clock.time_scale
+	var gs := clock.advance(clock_delta)
 	if opening != null: opening.advance(gs)
 	if inv != null:
 		for sn in inv.tick(gs):
@@ -3181,7 +3186,13 @@ func _sleep_update(delta: float) -> void:
 
 
 func _sleep_tick(delta: float, cb: Node3D) -> void:
+	if opening != null and not opening.state.dispatch_at(clock.total_game_s).is_empty():
+		_sleep_wake("Your personal walkie wakes you: dispatch is calling")
+		return
 	var gs := delta * sleep_rate
+	if opening != null:
+		var call_at: float=opening.state.next_dispatch_start(clock.total_game_s,clock.total_game_s+gs)
+		if is_finite(call_at): gs=call_at-clock.total_game_s
 	var q := _sleep_quality()
 	player.health = minf(100.0, player.health + 3.0 * q * gs / 3600.0)
 	player.stamina = 100.0
@@ -3388,6 +3399,7 @@ func _apply_save(sv: Dictionary) -> void:
 	clock.hour = float(c['hour'])
 	clock.day = int(c['day'])
 	clock.total_game_s = float(c['total'])
+	if opening_state != null: opening_state.align_calendar(clock.day,clock.hour,clock.total_game_s)
 	if sv.has('weather'):
 		weather.from_dict(sv.weather)
 	if sky_rig is AtmosphereRig:

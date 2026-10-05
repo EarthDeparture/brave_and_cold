@@ -32,3 +32,6 @@ tools/blender/generated/survival_props/tex/
 tools/blender/generated/fire_lookout.blend[0-9]
 tools/blender/generated/fire_lookout.glb
 tools/blender/generated/fire_lookout_geometry.json
+
+# Raw local speech; final filtered audio and manifests are tracked.
+tools/audio/generated/

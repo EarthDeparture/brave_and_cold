@@ -37,8 +37,6 @@ func run() -> void:
 	op.toggle_receiver()
 	check(lit(op._receiver_power) and lit(op._receiver_channel),"receiver switch lights both LEDs immediately")
 	check((op._receiver_power.material_override as StandardMaterial3D).emission.g>.9,"powered receiver is green")
-	check((op._receiver_channel.material_override as StandardMaterial3D).emission.r>.9 and op._channel_label.text=="DISPATCH","dispatch is yellow and labeled")
-	op.tune_radio()
 	check((op._receiver_channel.material_override as StandardMaterial3D).emission.b>.9 and op._channel_label.text=="PUBLIC","public is blue and labeled immediately")
 	s.last_s=10*3600;op._radio_update();op.update_presentation()
 	check(s.broadcast_at(s.last_s).is_empty() and lit(op._receiver_power),"broadcast silence does not imply receiver off")
@@ -80,7 +78,7 @@ func run() -> void:
 	var snapshot: Dictionary=JSON.parse_string(JSON.stringify(w._save_data()))
 	w.queue_free();await process_frame;await process_frame
 	SaveGame.pending=snapshot;w=await build_world();op=w.opening
-	check(op.state.receiver_on and op.state.channel=="public" and lit(op._receiver_power) and op._channel_label.text=="PUBLIC","fresh save load restores tuning and actual LEDs")
+	check(op.state.receiver_on and op.walkie.get_parent()==w.player and lit(op._receiver_power) and op._channel_label.text=="PUBLIC","fresh save load restores public desk, personal walkie and actual LEDs")
 	logs=get_nodes_in_group("logs");check(logs.size()==1,"fresh load restores unsplit log without duplicating it")
 	log=logs[0] as WoodLog;aim_log(w,log,1)
 	var action:=log_action(w);check(not action.is_empty(),"restored log remains targetable at far end")

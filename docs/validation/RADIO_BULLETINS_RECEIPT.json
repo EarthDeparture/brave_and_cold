@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-05",
+  "baseline": "7ee88c5311d116ca76ed2386393d0252e7840c54",
+  "branch": "codex/carried-dispatch-public-bulletins",
+  "checkpoint": "checkpoint/pre-carried-dispatch-2026-10-05",
+  "engine": "Godot 4.7.2 stable",
+  "gameplay_assertions": 320,
+  "tests": [
+    {
+      "test": "test_lookout_assignment",
+      "passed": true,
+      "checks": 27,
+      "exit": 0,
+      "errors": []
+    },
+    {
+      "test": "test_radio_bulletins",
+      "passed": true,
+      "checks": 140,
+      "exit": 0,
+      "errors": []
+    },
+    {
+      "test": "test_lookout_opening",
+      "passed": true,
+      "checks": 53,
+      "exit": 0,
+      "errors": []
+    },
+    {
+      "test": "test_lookout_radio_logs",
+      "passed": true,
+      "checks": 29,
+      "exit": 0,
+      "errors": []
+    },
+    {
+      "test": "test_lookout_door_log",
+      "passed": true,
+      "checks": 35,
+      "exit": 0,
+      "errors": []
+    },
+    {
+      "test": "test_survival_props",
+      "passed": true,
+      "checks": 36,
+      "exit": 0,
+      "errors": []
+    }
+  ],
+  "gpu": "Forward Plus, D3D12, GTX 1080 Ti, 1600x900",
+  "captures": [
+    "communications_service_log.png",
+    "desk_off.png",
+    "desk_public_blue.png",
+    "personal_walkie_outside.png",
+    "public_first_midnight.png",
+    "public_noon_caption.png",
+    "walkie_after_local_power_failure.png"
+  ],
+  "export": "Fresh pack mounted from empty project; schedule/caption hash and all 30 imported audio lengths verified",
+  "known_existing_warnings": "Shutdown CanvasItem/ObjectDB/resource warnings and interpolation deprecations",
+  "human_five_day_playthrough": false,
+  "source_text_sha256": "9c26f006c82629c2742c9ad62e8eb00d93aceef78f4b7ffc1cfc946a07cdb437"
+}

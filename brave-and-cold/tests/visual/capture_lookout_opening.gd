@@ -58,7 +58,7 @@ func run()->void:
 	await shot("reserved_case")
 	hour(19)
 	home_camera(Vector3(.05,1.56,.50),Vector3(1.40,.95,-1.30))
-	op.state.last_s=7200;op.state.receiver_on=true;op.state.channel="work";op._radio_update();op.update_presentation()
+	op.state.last_s=2.5*3600;op.state.receiver_on=true;op._radio_update();op.update_presentation()
 	w.hud.visible=true;w.hud._ui.queue_redraw()
 	await shot("live_dispatch")
 	hour(7);op.state.last_s=0;op.state.receiver_on=false;op.state.backup_on=false;op.update_presentation();op._radio_update()
