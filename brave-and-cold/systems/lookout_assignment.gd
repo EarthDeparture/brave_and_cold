@@ -3,6 +3,12 @@ extends RefCounted
 ## Saved world-time state; no node, rendering or inventory dependencies.
 const DATA := "res://data/lookout_broadcasts.json"
 const BATTERY_CAP_WH := 144.0
+const WALKIE_CAP_WH := 12.0
+const WALKIE_MONITOR_W := 0.5
+const WALKIE_CHARGER_W := 6.0
+const WALKIE_CHARGER_EFFICIENCY := 0.8
+var walkie_carried := true # compatibility default for prior always-carried saves
+var walkie_wh := WALKIE_CAP_WH
 var enabled := true
 var grid_fail_s := 60.0 * 3600.0
 const DAY_S := 86400.0
@@ -38,6 +44,7 @@ func _init() -> void:
 	audio_clips=manifest.get("clips",{})
 func new_run(seed_id:int) -> void:
 	seed_value=seed_id
+	walkie_carried=false; walkie_wh=WALKIE_CAP_WH
 	var rng:=RandomNumberGenerator.new();rng.seed=seed_id
 	grid_fail_s=rng.randf_range(48,72)*3600
 	source_end_s=public_days*DAY_S+public_window_s-calendar_origin_s
@@ -47,13 +54,39 @@ func powered() -> bool:
 	return grid_alive() or (backup_on and battery_wh>.0001)
 func advance_to(now:float) -> void:
 	now=maxf(last_s,now)
-	var grid_delta:=maxf(0,minf(now,grid_fail_s)-minf(last_s,grid_fail_s))
-	battery_wh=minf(BATTERY_CAP_WH,battery_wh+grid_delta/3600*24)
+	var grid_h:=maxf(0,minf(now,grid_fail_s)-minf(last_s,grid_fail_s))/3600
+	battery_wh=minf(BATTERY_CAP_WH,battery_wh+grid_h*24)
+	if walkie_carried: walkie_wh=maxf(0,walkie_wh-grid_h*WALKIE_MONITOR_W)
+	else: walkie_wh=minf(WALKIE_CAP_WH,walkie_wh+grid_h*(WALKIE_CHARGER_W*WALKIE_CHARGER_EFFICIENCY-WALKIE_MONITOR_W))
 	if last_s<grid_fail_s and now>=grid_fail_s and repair_stage==3 and relay_enabled and auto_transfer_on:backup_on=true
-	var reserve_delta:=maxf(0,now-maxf(last_s,grid_fail_s))
-	var watts:float=(7.0 if lamp_on else 0.0)+(3.0 if receiver_on else 0.0)+(12.0 if repair_stage==3 and relay_enabled else 0.0)
-	if backup_on:battery_wh=maxf(0,battery_wh-reserve_delta/3600*watts)
+	var remaining:=maxf(0,now-maxf(last_s,grid_fail_s))/3600
+	var base_w:float=(7.0 if lamp_on else 0.0)+(3.0 if receiver_on else 0.0)+(12.0 if repair_stage==3 and relay_enabled else 0.0)
+	# Split at portable-full and home-empty boundaries. A long sleep/skip cannot
+	# overcharge the handset or draw from a home supply after it is exhausted.
+	while remaining>0.00000001:
+		var supplied:=backup_on and battery_wh>.0001
+		var dock_power:=not walkie_carried and supplied
+		var charging:=dock_power and walkie_wh<WALKIE_CAP_WH-.000001
+		var net_w:=WALKIE_CHARGER_W*WALKIE_CHARGER_EFFICIENCY-WALKIE_MONITOR_W
+		var charger_w:float=(WALKIE_CHARGER_W if charging else WALKIE_MONITOR_W/WALKIE_CHARGER_EFFICIENCY) if dock_power else 0.0
+		var watts:=base_w+charger_w
+		var hours:=remaining
+		if supplied and watts>0:hours=minf(hours,battery_wh/watts)
+		if charging:hours=minf(hours,(WALKIE_CAP_WH-walkie_wh)/net_w)
+		if supplied:battery_wh=maxf(0,battery_wh-hours*watts)
+		if dock_power:walkie_wh=minf(WALKIE_CAP_WH,walkie_wh+(net_w*hours if charging else 0.0))
+		else:walkie_wh=maxf(0,walkie_wh-hours*WALKIE_MONITOR_W)
+		remaining=maxf(0,remaining-hours)
 	last_s=now
+func walkie_ready() -> bool:
+	return enabled and (walkie_wh>.0001 or (not walkie_carried and powered()))
+func walkie_percent() -> int:
+	return 0 if walkie_wh<=.0001 else mini(100,ceili(walkie_wh/WALKIE_CAP_WH*100))
+func walkie_status() -> String:
+	var percent:=walkie_percent()
+	if walkie_carried:return "WALKIE • CARRIED • %d%% • %s"%[percent,"DISPATCH + PUBLIC" if walkie_ready() else "BATTERY EMPTY"]
+	var status:="CHARGING" if powered() and walkie_wh<WALKIE_CAP_WH-.01 else ("FULL • ON EXTERNAL POWER" if powered() else ("MONITORING • NO CHARGER POWER" if walkie_ready() else "BATTERY EMPTY • NO CHARGER POWER"))
+	return "WALKIE • ON DESK • %d%% • %s"%[percent,status]
 func phase() -> String:
 	if last_s>=source_end_s:return "Self-sufficiency"
 	if not grid_alive():return "Abandonment"
@@ -83,11 +116,15 @@ func _live_entry(device: String, now: float) -> Dictionary:
 		if now>=start and now<start+duration:
 			var result := entry.duplicate(); result["start_s"]=start; return result
 	return {}
-func public_broadcast_at(now: float) -> Dictionary:
-	if not enabled or not receiver_on or not (grid_alive(now) or (backup_on and battery_wh>.0001)) or now>=source_end_s: return {}
+func public_signal_at(now: float) -> Dictionary:
+	if not enabled or now>=source_end_s:return {}
 	return _live_entry("public",now)
+func public_broadcast_at(now: float) -> Dictionary:
+	if not receiver_on or not (grid_alive(now) or (backup_on and battery_wh>.0001)):return {}
+	return public_signal_at(now)
 func dispatch_at(now: float) -> Dictionary:
-	# The personal set is always listening and independent of desk/mains/relay.
+	# Signal availability is independent of receivers. LookoutOpening applies
+	# carrying, battery, hearing range and sleep rules to the handset.
 	if not enabled or public_reserved(now): return {}
 	return _live_entry("dispatch",now)
 ## Compatibility for public-receiver callers; dispatch has a separate API.
@@ -110,9 +147,10 @@ func verify() -> bool:
 	if repair_stage!=2 or not powered():return false
 	repair_stage=3;auto_transfer_on=true;relay_enabled=true;return true
 func to_dict() -> Dictionary:
-	return {"schema":2,"enabled":enabled,"seed":seed_value,"grid_fail_s":grid_fail_s,"source_end_s":source_end_s,"last_s":last_s,"battery_wh":battery_wh,"backup_on":backup_on,"auto_transfer_on":auto_transfer_on,"relay_enabled":relay_enabled,"lamp_on":lamp_on,"receiver_on":receiver_on,"calendar_origin_s":calendar_origin_s,"repair_stage":repair_stage,"parts_claimed":parts_claimed,"zombies_seeded":zombies_seeded,"depot_visited":depot_visited}
+	return {"schema":3,"walkie_carried":walkie_carried,"walkie_wh":walkie_wh,"enabled":enabled,"seed":seed_value,"grid_fail_s":grid_fail_s,"source_end_s":source_end_s,"last_s":last_s,"battery_wh":battery_wh,"backup_on":backup_on,"auto_transfer_on":auto_transfer_on,"relay_enabled":relay_enabled,"lamp_on":lamp_on,"receiver_on":receiver_on,"calendar_origin_s":calendar_origin_s,"repair_stage":repair_stage,"parts_claimed":parts_claimed,"zombies_seeded":zombies_seeded,"depot_visited":depot_visited}
 func restore(d:Dictionary) -> void:
 	enabled=bool(d.get("enabled",true));seed_value=int(d.get("seed",0))
+	walkie_carried=bool(d.get("walkie_carried",true));walkie_wh=clampf(float(d.get("walkie_wh",WALKIE_CAP_WH)),0,WALKIE_CAP_WH)
 	grid_fail_s=float(d.get("grid_fail_s",grid_fail_s));source_end_s=maxf(grid_fail_s,float(d.get("source_end_s",source_end_s)))
 	last_s=float(d.get("last_s",0));battery_wh=clampf(float(d.get("battery_wh",BATTERY_CAP_WH)),0,BATTERY_CAP_WH)
 	auto_transfer_on=bool(d.get("auto_transfer_on",false));relay_enabled=bool(d.get("relay_enabled",true))

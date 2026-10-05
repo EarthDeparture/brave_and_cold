@@ -36,5 +36,7 @@ func ambient_c() -> float:
 
 func time_string() -> String:
 	var h := int(hour)
-	var m := int((hour - h) * 60.0)
+	# Prevent an exact minute boundary from displaying the previous minute
+	# because subtracting the hour introduces floating-point round-off.
+	var m := clampi(int((hour - h) * 60.0 + 0.000001), 0, 59)
 	return "Day %d  %02d:%02d" % [day, h, m]

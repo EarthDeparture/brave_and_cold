@@ -31,6 +31,7 @@ func run() -> void:
 	w.hud.visible=true;w.hud._ui.queue_redraw();await shot("public_noon_caption")
 	at(18.5*3600+240);w.hud._ui.queue_redraw();await shot("public_first_midnight")
 	w.opening.read_log();await shot("communications_service_log");w.reading.close()
+	w.opening.state.walkie_carried=true
 	w.sky_rig.apply_shelter(0)
 	camera(Vector3(12,-FireLookout.DECK_Y+2,16),Vector3(17,-FireLookout.DECK_Y+1,26))
 	w.player.position.y=w.terrain.data.get_height(w.player.position)+w.player.eye_h

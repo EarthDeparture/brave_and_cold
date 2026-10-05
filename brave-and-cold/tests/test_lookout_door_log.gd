@@ -42,10 +42,9 @@ func run() -> void:
 	check(result.distance_to(Vector2(finish.x,finish.z))<.001,"fully open door passes player capsule")
 	check(HitZones.building_block([t],eye,direction,3)==INF,"open doorway passes weapon traces")
 	aimed(w,t.to_global(Vector3(0,FireLookout.DECK_Y+p.eye_h,1.55)),t.door_world_pos())
-	w._toggle_lookout_door();check(t.door_open,"closing refuses occupied swing rather than pushing player")
+	w._toggle_lookout_door();check(not t.door_open,"occupied swing still permits closing")
+	check(p.position==t.to_global(Vector3(0,FireLookout.DECK_Y+p.eye_h,1.55)),"closing does not move occupying player")
 	aimed(w,t.to_global(Vector3(0,FireLookout.DECK_Y+p.eye_h,.60)),t.door_world_pos())
-	w._toggle_lookout_door()
-	check(not t.door_open,"clear swing permits close")
 	await create_timer(.6).timeout
 	check(absf(t._door_pivot.rotation.y)<.001,"leaf actually animates to closed hinge angle")
 	w._toggle_lookout_door();await create_timer(.6).timeout

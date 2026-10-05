@@ -35,3 +35,4 @@ tools/blender/generated/fire_lookout_geometry.json
 
 # Raw local speech; final filtered audio and manifests are tracked.
 tools/audio/generated/
+tools/blender/generated/field_walkie/*.blend[0-9]

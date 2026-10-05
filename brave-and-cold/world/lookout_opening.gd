@@ -10,7 +10,14 @@ var relay: Node3D
 var case_model: Node3D
 var speaker: AudioStreamPlayer3D
 var walkie: AudioStreamPlayer
-var _dispatch_token := ""
+var _walkie_token := ""
+var dock_speaker: AudioStreamPlayer3D
+var _dock_token := ""
+var charger_model: Node3D
+var dock_handset: Node3D
+var charger_lens: MeshInstance3D
+var _warned_walkie_low := false
+const CHARGER_LOCAL := Vector3(2.13,.855,-1.09)
 var _audio_captions: Dictionary = {}
 var fire_bounce: OmniLight3D
 var fire_loop: AudioStreamPlayer3D
@@ -68,6 +75,14 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 	speaker = AudioStreamPlayer3D.new(); tower.add_child(speaker); speaker.position = Vector3(1.78, FireLookout.DECK_Y + 1.05, -1.17)
 	walkie=AudioStreamPlayer.new(); walkie.name="PersonalWalkie"; world.player.add_child(walkie)
 	walkie.volume_db=-6
+	charger_model=(load("res://assets/field_walkie/field_walkie.glb") as PackedScene).instantiate() as Node3D
+	tower.add_child(charger_model);charger_model.position=CHARGER_LOCAL+Vector3.UP*FireLookout.DECK_Y
+	dock_handset=charger_model.find_child("Handset",true,false) as Node3D
+	dock_speaker=AudioStreamPlayer3D.new();tower.add_child(dock_speaker);dock_speaker.position=charger_model.position+Vector3.UP*.13
+	dock_speaker.unit_size=2;dock_speaker.max_distance=12;dock_speaker.volume_db=-6
+	charger_lens=MeshInstance3D.new();var lens:=SphereMesh.new();lens.radius=.0035;lens.height=.007;lens.radial_segments=10;lens.rings=5
+	charger_lens.mesh=lens;charger_lens.position=Vector3(.032,.026,.035);charger_model.add_child(charger_lens)
+	var lens_mat:=StandardMaterial3D.new();lens_mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;charger_lens.material_override=lens_mat
 	_build_receiver_indicators(tower)
 	speaker.unit_size = 2; speaker.max_distance = 12; speaker.volume_db = -5
 	fire_light = OmniLight3D.new(); tower.add_child(fire_light); fire_light.position = stove_point(Vector3(0,.48,.62))
@@ -93,7 +108,7 @@ func starting_gear() -> void:
 		world.inv.add(pair[0], pair[1])
 	for item: String in ["parka","sweater","toque","hide_mitts","hide_boots","hide_leggings"]: world.inv.use(item)
 	world._say("Inspect the relay cabinet beside the tower. Read the service log on your desk.")
-	world._say("Your walkie receives dispatch. The desk radio carries public news.")
+	world._say("Your charged walkie is on the desk. Take it to hear dispatch and public news outside.")
 func advance(game_s: float) -> void:
 	state.advance_to(world.clock.total_game_s)
 	var burn := minf(game_s, fuel_s); fuel_s = maxf(0, fuel_s - game_s)
@@ -105,9 +120,21 @@ func advance(game_s: float) -> void:
 		state.zombies_seeded = true
 		world._populate(world.opening_zombie_count, Vector2(world.player.position.x, world.player.position.z))
 		world.pop.specials = world.pop.specials.filter(func(v:Vector3)->bool: return Vector2(v.x-world.player.position.x,v.z-world.player.position.z).length()>120)
+	if state.walkie_carried and state.walkie_wh<=LookoutAssignment.WALKIE_CAP_WH*.15 and not _warned_walkie_low:
+		world._say("Walkie battery low. Return it to the desk charger.");_warned_walkie_low=true
+	if state.walkie_wh>LookoutAssignment.WALKIE_CAP_WH*.20:_warned_walkie_low=false
 	update_presentation(); _radio_update()
 func update_presentation() -> void:
 	_update_receiver_indicators()
+	if dock_handset!=null:
+		dock_handset.visible=not state.walkie_carried
+		var display:=dock_handset.find_child("Display",true,false) as Node3D
+		if display!=null:display.visible=state.walkie_ready()
+	if charger_lens!=null:
+		var cm:=charger_lens.material_override as StandardMaterial3D
+		var active:=not state.walkie_carried and state.powered()
+		var color:=Color(.15,1,.25) if state.walkie_wh>=LookoutAssignment.WALKIE_CAP_WH-.01 else Color(1,.62,.10)
+		cm.albedo_color=color if active else Color(.025,.03,.025);cm.emission_enabled=active;cm.emission=color if active else Color.BLACK
 	var lamp := world.fire_lookout.get_node_or_null("LookoutDeskLamp") as OmniLight3D
 	if lamp != null: lamp.light_energy = .65 if state.powered() and state.lamp_on else 0
 	fire_light.light_energy = (0.80 + .05 * sin(state.last_s * .19)) if fuel_s > 0 else 0
@@ -180,30 +207,56 @@ func _live_caption(entry: Dictionary) -> String:
 	for cue: Dictionary in _audio_captions.get(filename,{}).get("captions",[]):
 		if offset>=float(cue.start_s) and offset<float(cue.end_s): return String(cue.text)
 	return ""
+func dispatch_for_player(now: float) -> Dictionary:
+	if not state.walkie_ready():return {}
+	if not state.walkie_carried and world.player.position.distance_to(dock_speaker.global_position)>=12:return {}
+	return state.dispatch_at(now)
+func next_dispatch_wake(after: float, through: float) -> float:
+	if not state.walkie_carried and world.player.position.distance_to(dock_speaker.global_position)>=12:return INF
+	var call_at:=state.next_dispatch_start(after,through)
+	if not is_finite(call_at):return INF
+	if state.walkie_carried or not state.powered():
+		var needed:=maxf(0,call_at-state.last_s)/3600*LookoutAssignment.WALKIE_MONITOR_W
+		if state.walkie_wh<=needed+.0001:return INF
+	return call_at
 func _radio_update() -> void:
-	world.hud.radio_heading=""; world.hud.radio_text=""; world.hud.radio_device=""
+	world.hud.radio_heading="";world.hud.radio_text="";world.hud.radio_device=""
 	if world.player.dead:
-		walkie.stop(); speaker.stop(); return
-	var sleeping: bool = world._sl_on and int(world._sl.get("phase",0))!=2
-	var dispatch := state.dispatch_at(state.last_s) if not sleeping else {}
-	var bulletin := state.public_broadcast_at(state.last_s) if not sleeping else {}
-	# Stop conflicting dispatch before starting the desk transmission.
-	_dispatch_token=_play_live(walkie,dispatch,_dispatch_token)
-	_token=_play_live(speaker,bulletin,_token)
-	if walkie.playing and not dispatch.is_empty():
-		world.hud.radio_device="dispatch"
-		world.hud.radio_heading="PERSONAL WALKIE • FIELD DISPATCH • "+String(dispatch.title)
-		world.hud.radio_text=_live_caption(dispatch)
-	elif speaker.playing and not bulletin.is_empty() and world.player.position.distance_to(speaker.global_position)<12:
-		world.hud.radio_device="public"
-		world.hud.radio_heading="DESK RADIO • NORTH RIDGE • "+String(bulletin.title)
-		world.hud.radio_text=_live_caption(bulletin)
+		walkie.stop();speaker.stop();dock_speaker.stop();return
+	var sleeping:bool=world._sl_on and int(world._sl.get("phase",0))!=2
+	var dispatch:=state.dispatch_at(state.last_s) if not sleeping and state.walkie_ready() else {}
+	var public_signal:=state.public_signal_at(state.last_s) if not sleeping else {}
+	var desk:=state.public_broadcast_at(state.last_s) if not sleeping else {}
+	var desk_near:bool=world.player.position.distance_to(speaker.global_position)<12
+	# Dispatch has priority, though the station reservation normally makes it
+	# impossible for both signals to be live. A working nearby desk owns public
+	# playback; carrying/docking never starts a second copy beside it.
+	var handset:=dispatch
+	if handset.is_empty() and state.walkie_ready() and not (desk_near and not desk.is_empty()):handset=public_signal
+	_walkie_token=_play_live(walkie,handset if state.walkie_carried else {},_walkie_token)
+	_dock_token=_play_live(dock_speaker,handset if not state.walkie_carried else {},_dock_token)
+	_token=_play_live(speaker,desk,_token)
+	var heard:Dictionary={};var origin:=""
+	if walkie.playing and not handset.is_empty():heard=handset;origin="PERSONAL WALKIE"
+	elif dock_speaker.playing and not handset.is_empty() and world.player.position.distance_to(dock_speaker.global_position)<12:heard=handset;origin="DESK WALKIE"
+	elif speaker.playing and not desk.is_empty() and desk_near:heard=desk;origin="DESK RADIO"
+	if not heard.is_empty():
+		world.hud.radio_device=String(heard.device)
+		world.hud.radio_heading=origin+" • "+("FIELD DISPATCH" if heard.device=="dispatch" else "NORTH RIDGE")+" • "+String(heard.title)
+		world.hud.radio_text=_live_caption(heard)
+func toggle_walkie_dock() -> void:
+	if world.player.position.distance_to(charger_model.global_position)>2.5:
+		world._say("Return to the desk to collect or charge your walkie.");return
+	state.walkie_carried=not state.walkie_carried
+	update_presentation();_radio_update()
+	world._say("Walkie taken • dispatch and public monitoring • %d%% battery"%state.walkie_percent() if state.walkie_carried else "Walkie placed in charger. It needs local mains or backup power to recharge.")
 func _action(pos: Vector3, text: String, act: Callable, hold: float = 0, bias: float = 0, work: String = "reach") -> Dictionary:
 	return {"pos":pos,"r":2.1,"tol":.8,"text":text,"hold":hold,"dbias":bias,"act":act,"work":work}
 func actions() -> Array:
 	var out: Array = []
 	var desk := home_point(Vector3(.95,.88,-1.35))
 	out.append(_action(desk, "Read service log", read_log))
+	out.append(_action(charger_model.global_position+Vector3.UP*.1,("Dock walkie to charge" if state.walkie_carried else "Take walkie")+" • %d%%"%state.walkie_percent(),toggle_walkie_dock,0,.03))
 	var radio := speaker.global_position
 	out.append(_action(radio, "Turn receiver off" if state.receiver_on else "Turn receiver on", toggle_receiver))
 	var panel := home_point(Vector3(0,1.15,-2.08))
@@ -241,12 +294,12 @@ func read_log() -> void:
 		directions = "North Ridge Supply is approximately %.0f m away on bearing %.0f° (straight-line). Follow the logging track down to the road; collect the reserved relay case at the store counter." % [Vector2(d.x,d.z).length(),bearing]
 	var task: String = ["Inspect the ground transfer cabinet with your insulated service kit.","Collect the reserved transfer relay, return and install it in the cabinet.","Verify the cabinet transfer under local power.","Relay signed off. Local service restored."][state.repair_stage]
 	if state.repair_stage==1 and state.parts_claimed:task="Return to the ground cabinet and install the replacement relay."
-	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nField dispatch reaches your always-carried personal walkie-talkie. It is always listening and uses its own supply, independent of the desk receiver and the lookout mains. The desk receiver is public radio only. Bulletins begin at 06:00, 12:00, 17:00 and 00:00; noon recaps the morning. Green indicates receiver power and blue identifies public radio. Public reports are live, not queued: missed bulletins do not return. Dispatch keeps clear of every public slot. A dispatch call wakes you if asleep; public broadcasts do not. Midnight closes the day just lived. The desk receiver and lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer while the repeater is enabled. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. Keep water, food and dry firewood ready. Stoke the stove, boil snow, and prepare the sleeping berth before the weather closes in." % [task,directions]
+	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nTake the walkie from its desk cradle before travelling. Field dispatch and public news are monitored together. Its battery powers both signals away from home, independently of the desk receiver. A full charge lasts about one day. Dock it on this desk to recharge in roughly three hours from local mains or backup power. Amber indicates charging and green indicates full charge. The desk receiver remains public radio only. Bulletins begin at 06:00, 12:00, 17:00 and 00:00; noon recaps the morning. Green indicates receiver power and blue identifies public radio. Public reports are live, not queued: missed bulletins do not return. Dispatch keeps clear of every public slot. A dispatch call wakes you if your powered walkie is carried or within earshot on the desk; public broadcasts do not. Check your wristwatch and walkie charge in Gear (Tab). Midnight closes the day just lived. The desk receiver and lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer while the repeater is enabled. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. Keep water, food and dry firewood ready. Stoke the stove, boil snow, and prepare the sleeping berth before the weather closes in." % [task,directions]
 	world.reading.open("North Ridge • Service log",text,world.player,world.hud)
 func toggle_receiver() -> void: state.receiver_on = not state.receiver_on; _update_receiver_indicators(); _radio_update()
 func toggle_backup() -> void:
 	state.backup_on = not state.backup_on; update_presentation(); _radio_update()
-	world._say("Local backup %s. Charge %.0f%%. Lamp 7 W, receiver 3 W, commissioned relay 12 W." % ["enabled" if state.backup_on else "disabled", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100])
+	world._say("Local backup %s. Charge %.0f%%. Lamp 7 W, receiver 3 W, commissioned relay 12 W, walkie charger up to 6 W." % ["enabled" if state.backup_on else "disabled", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100])
 func toggle_auto_transfer() -> void: state.auto_transfer_on = not state.auto_transfer_on
 func toggle_relay() -> void:
 	state.relay_enabled = not state.relay_enabled; update_presentation(); _radio_update()

@@ -56,6 +56,7 @@ func run() -> void:
 	var tuning:=false
 	for action: Dictionary in op.actions(): tuning=tuning or String(action.text).contains("Tune")
 	check(not tuning and op._channel_label.text=="PUBLIC","desk is public-only with no channel action")
+	op.state.walkie_carried=true # carried receiver routing; docking tested separately
 	op.state.receiver_on=false
 	w.player.position+=Vector3(250,0,0);at(w,9000+96)
 	check(op.walkie.playing and not op.speaker.playing and w.hud.radio_device=="dispatch","dispatch reaches a distant player with desk off")
@@ -64,7 +65,7 @@ func run() -> void:
 	op.state.battery_wh=0;op.state.backup_on=false;op.state.relay_enabled=false;op._radio_update()
 	check(op.walkie.playing and not op.state.powered(),"personal dispatch survives exhausted site power and disabled repeater")
 	op.state.receiver_on=true;at(w,23400+96)
-	check(op.speaker.playing and not op.walkie.playing and w.hud.radio_text=="","distant public audio stays at desk and has no remote captions")
+	check(op.speaker.playing and op.walkie.playing and w.hud.radio_device=="public" and w.hud.radio_heading.begins_with("PERSONAL WALKIE"),"distant public bulletin reaches carried dual-monitor handset")
 	w.player.position=op.speaker.global_position+Vector3(0,.65,1);op._radio_update()
 	check(w.hud.radio_device=="public" and absf(op.speaker.get_playback_position()-2)<.2,"approaching desk hears only remaining noon transmission")
 	op.read_log();var before: float=w.clock.total_game_s
@@ -96,7 +97,7 @@ func run() -> void:
 	# Schema-one save: same calendar/power/job/pantry, obsolete channel discarded.
 	at(w,18.5*3600);op.state.receiver_on=true;op.state.parts_claimed=true
 	var snapshot: Dictionary=JSON.parse_string(JSON.stringify(w._save_data()))
-	var old: Dictionary=snapshot.opening.state;old.erase("calendar_origin_s");old.erase("schema");old.channel="work"
+	var old: Dictionary=snapshot.opening.state;old.erase("calendar_origin_s");old.erase("schema");old.erase("walkie_carried");old.erase("walkie_wh");old.channel="work"
 	var grid: float=old.grid_fail_s;var source: float=old.source_end_s
 	w.queue_free();await process_frame;await process_frame
 	SaveGame.pending=snapshot;w=await build_world();op=w.opening;op._radio_update()
@@ -105,7 +106,7 @@ func run() -> void:
 	check(op.state.receiver_on and op._channel_label.text=="PUBLIC" and op.walkie.get_parent()==w.player,"old dispatch desk selection becomes public; portable dispatch supplied")
 	check(op.pantry.count("beans")==4,"migration does not refill or consume pantry")
 	var fresh: Dictionary=op.state.to_dict()
-	check(fresh.schema==2 and not fresh.has("channel") and fresh.has("calendar_origin_s"),"new snapshot retires channels and keeps calendar anchor")
+	check(fresh.schema==3 and op.state.walkie_carried and op.state.walkie_wh==12 and not fresh.has("channel") and fresh.has("calendar_origin_s"),"new snapshot retires channels and keeps calendar anchor")
 	at(w,23400+1700);var later: Dictionary=JSON.parse_string(JSON.stringify(w._save_data()))
 	w.queue_free();await process_frame;await process_frame
 	SaveGame.pending=later;w=await build_world();w.opening._radio_update()

@@ -51,5 +51,5 @@ for entry in data['broadcasts']:
   captions.append({'start_s':start,'end_s':finish,'text':caption});i=j
  entries[p.name]={'captions':captions,'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'seconds':length,'sample_rate':RATE,'device':entry['device'],'voice':speech[ident]['voice'],'rate':speech[ident]['rate'],'text_sha256':hashlib.sha256(entry['text'].encode()).hexdigest()}
 manifest={'status':'Development audio: local synthesized speech; directed human performances remain future production work','text_source':'data/lookout_broadcasts.json (original project writing)','data_sha256':hashlib.sha256(DATA.read_text(encoding='utf8').replace('\r\n','\n').encode()).hexdigest(),'synthesis':'Windows System.Speech; actual voice and rate recorded per clip','processing':'Public: 180-4300 Hz, quiet hiss and station chime. Dispatch: 300-3000 Hz, handset squelch and acknowledgement tone. Mono PCM16 22050 Hz.','seed':'SHA256 of stable broadcast ID; no downloads or paid service','clips':entries}
-(A/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf8')
+(A/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf8',newline='\n')
 print('RADIO_AUDIO_VALIDATED',len(entries),'longest_seconds',max(e['seconds'] for e in entries.values()))

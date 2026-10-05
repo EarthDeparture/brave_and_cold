@@ -1,7 +1,7 @@
 {
   "status": "Development audio: local synthesized speech; directed human performances remain future production work",
   "text_source": "data/lookout_broadcasts.json (original project writing)",
-  "data_sha256": "9c26f006c82629c2742c9ad62e8eb00d93aceef78f4b7ffc1cfc946a07cdb437",
+  "data_sha256": "31794cc097c97b2641256c34d300218966a1364c6603eaaa66c4a379d6097e44",
   "synthesis": "Windows System.Speech; actual voice and rate recorded per clip",
   "processing": "Public: 180-4300 Hz, quiet hiss and station chime. Dispatch: 300-3000 Hz, handset squelch and acknowledgement tone. Mono PCM16 22050 Hz.",
   "seed": "SHA256 of stable broadcast ID; no downloads or paid service",
@@ -936,27 +936,32 @@
         },
         {
           "start_s": 8.53,
-          "end_s": 14.915,
-          "text": "The desk public radio carries the regional bulletins; this handset stays with you for work calls."
+          "end_s": 12.1,
+          "text": "Your handset monitors dispatch and public news."
         },
         {
-          "start_s": 14.915,
-          "end_s": 19.584999999999997,
+          "start_s": 12.1,
+          "end_s": 15.04,
+          "text": "Recharge it on the desk between trips."
+        },
+        {
+          "start_s": 15.04,
+          "end_s": 19.709999999999997,
           "text": "Take the logging track down to the road and keep enough daylight for the return."
         },
         {
-          "start_s": 19.584999999999997,
-          "end_s": 23.87002267573696,
+          "start_s": 19.709999999999997,
+          "end_s": 23.99501133786848,
           "text": "If the job is finished, keep the installation on standby."
         }
       ],
-      "sha256": "2fecce11d8b88c7f634edbcff219f24d87a360a2d9ee7e3754e3f015dff5ff33",
-      "seconds": 23.944988662131518,
+      "sha256": "0ecbc873c71009d4e2bd280ff0444159bf2407bc5ddccc9e223ac97561ad3bbe",
+      "seconds": 24.06997732426304,
       "sample_rate": 22050,
       "device": "dispatch",
       "voice": "Microsoft Zira Desktop",
       "rate": 0,
-      "text_sha256": "e4bc87d0c86252e04941b01f0a6c076c29e45b6b84e371ed3e5c351ed2f9078a"
+      "text_sha256": "5f98949dea75c14d8075ef609ab9c17690a633787cca9291bc4ab042136148c5"
     },
     "dispatch_d1_20.wav": {
       "captions": [
@@ -1023,17 +1028,22 @@
         },
         {
           "start_s": 16.63,
-          "end_s": 21.38503401360544,
-          "text": "Your desk radio is the public news source, not this work channel."
+          "end_s": 20.694999999999997,
+          "text": "Your handset monitors both work calls and public news."
+        },
+        {
+          "start_s": 20.694999999999997,
+          "end_s": 23.59002267573696,
+          "text": "Recharge it on your desk between journeys."
         }
       ],
-      "sha256": "a446361e9a880c2a25c43698ebd832fe7e870289e1963749e89b1467f55f6f88",
-      "seconds": 21.46,
+      "sha256": "e8882adda8468e54b329068d3a57c3fe5f2c445a16b3e0434d2b31d7b7d638a2",
+      "seconds": 23.66498866213152,
       "sample_rate": 22050,
       "device": "dispatch",
       "voice": "Microsoft Zira Desktop",
       "rate": 0,
-      "text_sha256": "af4f417d12627b776b01e1e978fd693b8022fcb6f5f4f6ef9f54836765b35ced"
+      "text_sha256": "d21496ec6dcd0df16eee44220df7bdd2abef1d7f65a83c8b714670794447ea75"
     },
     "dispatch_d2_14.wav": {
       "captions": [
@@ -1167,27 +1177,32 @@
         },
         {
           "start_s": 9.35,
-          "end_s": 14.115,
-          "text": "Your personal handset has its own supply and receives our calls directly."
+          "end_s": 11.959999999999999,
+          "text": "Your handset has its own battery."
         },
         {
-          "start_s": 14.115,
-          "end_s": 18.199999999999996,
+          "start_s": 11.959999999999999,
+          "end_s": 15.604999999999999,
+          "text": "Recharge it on the desk while local power remains."
+        },
+        {
+          "start_s": 15.604999999999999,
+          "end_s": 19.689999999999998,
           "text": "Do not exhaust your heating fuel trying to finish every job."
         },
         {
-          "start_s": 18.199999999999996,
-          "end_s": 20.75002267573696,
+          "start_s": 19.689999999999998,
+          "end_s": 22.24,
           "text": "Shelter and water come first."
         }
       ],
-      "sha256": "ffdb838587aed94a826831279b6a6d67392ca4529dcc76f4aec37cb50fa3eeaa",
-      "seconds": 20.82498866213152,
+      "sha256": "08c63f2f69a7da963d1408d0ae3e6692017feaf6209cbcd538eee89696a36a7c",
+      "seconds": 22.314965986394558,
       "sample_rate": 22050,
       "device": "dispatch",
       "voice": "Microsoft Zira Desktop",
       "rate": 0,
-      "text_sha256": "7acecb341e104e25d37baa3036fa882a25154e158821c4ffb6735201e99232b0"
+      "text_sha256": "a0a7be8e1948be1a16e6b454d79a8db21a2bfc4f7d846b2b34233ed1f4146938"
     },
     "dispatch_d3_20.wav": {
       "captions": [

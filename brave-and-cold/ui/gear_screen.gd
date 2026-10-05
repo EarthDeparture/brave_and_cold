@@ -416,6 +416,9 @@ func _on_gui(e: InputEvent) -> void:
 
 # ------------------------------------------------------------ drawing
 
+## Permanent wristwatch: uses the same world clock as every broadcast.
+func watch_text() -> String:
+	return "WRISTWATCH • "+clock.time_string()
 func _draw_all() -> void:
 	if inv == null:
 		return
@@ -426,6 +429,8 @@ func _draw_all() -> void:
 	_c.draw_set_transform(_origin(), 0.0, Vector2(s, s))
 	DZ.panel(_c, PANEL_R)
 	DZ.text(_c, "GEAR", Vector2(140, 122), 34, DZ.TEXT)
+	DZ.text(_c,watch_text(),Vector2(520,106),22,DZ.TEXT)
+	if world.opening!=null:DZ.text(_c,world.opening.state.walkie_status(),Vector2(520,137),15,DZ.ACCENT if world.opening.state.walkie_ready() else DZ.WARN)
 	DZ.text(_c, "Tab / Esc: close     click: select     double-click: use     right-click: options     drag: move, wear, drop", Vector2(140, 812), 15, DZ.DIM)
 	_draw_equipment()
 	_draw_condition()

@@ -378,6 +378,8 @@ func _ready() -> void:
 	wolf_test_dist = float(opts.get("wdist", 22.0))
 	walk_secs = float(opts.get("walk", 0.0))
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if (out_path == "" and walk_secs == 0.0) else Input.MOUSE_MODE_VISIBLE
+	# Gear must be ready for Tab before the first gameplay process frame.
+	_ensure_gear()
 
 
 func _args() -> Dictionary:
@@ -493,7 +495,7 @@ func _process(delta: float) -> void:
 	# time / lighting
 	var clock_delta := delta
 	if opening != null and _sl_on and int(_sl.get("phase",0))==1 and clock.time_scale>0:
-		var call_at: float=opening.state.next_dispatch_start(clock.total_game_s,clock.total_game_s+delta*clock.time_scale)
+		var call_at: float=opening.next_dispatch_wake(clock.total_game_s,clock.total_game_s+delta*clock.time_scale)
 		if is_finite(call_at): clock_delta=(call_at-clock.total_game_s)/clock.time_scale
 	var gs := clock.advance(clock_delta)
 	if opening != null: opening.advance(gs)
@@ -2083,12 +2085,6 @@ func _log_list() -> Array:
 func _toggle_lookout_door() -> void:
 	if fire_lookout.door_broken:_say("The door is broken");return
 	if fire_lookout.door_boards>0:_say("Remove the door planks first");return
-	if fire_lookout.door_sweep_contains(player.position-Vector3.UP*player.eye_h,.35):
-		_say("Step clear of the door's swing");return
-	for group: String in ["hostile","prey"]:
-		for actor:Node in get_tree().get_nodes_in_group(group):
-			if actor is Node3D and fire_lookout.door_sweep_contains(actor.global_position,.35):
-				_say("The doorway is obstructed");return
 	fire_lookout.toggle_door()
 
 func _unhandled_input(e: InputEvent) -> void:
@@ -3186,12 +3182,12 @@ func _sleep_update(delta: float) -> void:
 
 
 func _sleep_tick(delta: float, cb: Node3D) -> void:
-	if opening != null and not opening.state.dispatch_at(clock.total_game_s).is_empty():
+	if opening != null and not opening.dispatch_for_player(clock.total_game_s).is_empty():
 		_sleep_wake("Your personal walkie wakes you: dispatch is calling")
 		return
 	var gs := delta * sleep_rate
 	if opening != null:
-		var call_at: float=opening.state.next_dispatch_start(clock.total_game_s,clock.total_game_s+gs)
+		var call_at: float=opening.next_dispatch_wake(clock.total_game_s,clock.total_game_s+gs)
 		if is_finite(call_at): gs=call_at-clock.total_game_s
 	var q := _sleep_quality()
 	player.health = minf(100.0, player.health + 3.0 * q * gs / 3600.0)

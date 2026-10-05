@@ -228,7 +228,7 @@
       "day": 1,
       "hour": 14,
       "title": "Afternoon work check",
-      "text": "Kestrel Seven, dispatch checking in. If you still need the replacement relay, it was reserved at North Ridge Supply. The desk public radio carries the regional bulletins; this handset stays with you for work calls. Take the logging track down to the road and keep enough daylight for the return. If the job is finished, keep the installation on standby.",
+      "text": "Kestrel Seven, dispatch checking in. If you still need the replacement relay, it was reserved at North Ridge Supply. Your handset monitors dispatch and public news. Recharge it on the desk between trips. Take the logging track down to the road and keep enough daylight for the return. If the job is finished, keep the installation on standby.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/dispatch_d1_14.wav"
     },
@@ -248,7 +248,7 @@
       "day": 2,
       "hour": 8,
       "title": "Travel precautions",
-      "text": "Kestrel Seven, dispatch. The situation has reached our region. Avoid the clinic and any gathering near the town junction. If you still need the reserved part, take what you need and return before dark. Keep this handset on you. Your desk radio is the public news source, not this work channel.",
+      "text": "Kestrel Seven, dispatch. The situation has reached our region. Avoid the clinic and any gathering near the town junction. If you still need the reserved part, take what you need and return before dark. Keep this handset on you. Your handset monitors both work calls and public news. Recharge it on your desk between journeys.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/dispatch_d2_08.wav"
     },
@@ -288,7 +288,7 @@
       "day": 3,
       "hour": 14,
       "title": "Conserve local power",
-      "text": "Kestrel Seven, a short check. If the mains have failed, turn off the desk lamp when you do not need it and conserve the local battery. Your personal handset has its own supply and receives our calls directly. Do not exhaust your heating fuel trying to finish every job. Shelter and water come first.",
+      "text": "Kestrel Seven, a short check. If the mains have failed, turn off the desk lamp when you do not need it and conserve the local battery. Your handset has its own battery. Recharge it on the desk while local power remains. Do not exhaust your heating fuel trying to finish every job. Shelter and water come first.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/dispatch_d3_14.wav"
     },

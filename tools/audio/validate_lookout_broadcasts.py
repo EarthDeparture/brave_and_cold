@@ -42,5 +42,5 @@ for e in entries:
  assert ' '.join(c['text'] for c in cues)==e['text'],('caption/script mismatch',e['id'])
  clips.append({'caption_chunks':len(cues),'id':e['id'],'seconds':duration,'rms':rms,'peak':peak,'voice':record['voice']})
 receipt={'date':'2026-10-05','slots':'06:00, 12:00, 17:00, closing-day 00:00','public_bulletins':len(public),'dispatch_calls':len(dispatch),'nonoverlap':'entire dispatch window vs every recurring public slot plus guards','all_pcm_hashes_and_script_hashes_verified':True,'clips':clips}
-out=R/'docs/validation/RADIO_BULLETINS_AUDIO_RECEIPT.json';out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(receipt,indent=2)+'\n',encoding='utf8')
+out=R/'docs/validation/RADIO_BULLETINS_AUDIO_RECEIPT.json';out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(receipt,indent=2)+'\n',encoding='utf8',newline='\n')
 print('BROADCAST_PREFLIGHT_PASS',len(clips),'clips; full windows separated; PCM/hash/script checks passed')

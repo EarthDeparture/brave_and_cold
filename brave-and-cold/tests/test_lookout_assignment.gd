@@ -13,6 +13,7 @@ func run() -> void:
 	check(not s.install() and not s.verify(), "commissioning cannot skip inspection")
 	check(s.inspect() and not s.inspect(), "inspection cannot be duplicated")
 	check(s.install() and s.verify() and not s.install() and not s.verify(), "each commissioning step is one-way")
+	s.walkie_carried = true # isolate home load from charger in this regression
 	s.auto_transfer_on = false
 	s.battery_wh = 0; s.advance_to(3600)
 	check(is_equal_approx(s.battery_wh,24), "mains charge integrates in world hours")

@@ -1,0 +1,18 @@
+{
+  "asset": "field_walkie",
+  "seed": 20261005,
+  "license": "Original project-authored geometry and lettering; no downloaded assets",
+  "source": "tools/blender/gen_field_walkie.py",
+  "native": "tools/blender/generated/field_walkie/field_walkie.blend",
+  "blender": "5.2.2 LTS",
+  "triangles": 4510,
+  "semantic_nodes": [
+    "Cradle",
+    "Handset",
+    "Display"
+  ],
+  "units": "metres",
+  "sha256": "5265d2b66b339afc5bffef7b61589040454328cd7706876bbc06cf5feaeced86",
+  "bytes": 401292,
+  "generator_sha256": "67652412a0afa3fc41bb513cbe5aaa7ec58f61c39aa3c5ff014ce901d43bff3a"
+}

@@ -506,9 +506,18 @@ func door_sweep_contains(foot: Vector3, radius: float) -> bool:
 func resolve_door_at(candidate: Vector3, previous: Vector3, radius: float) -> Vector2:
 	var local:=to_local(previous)
 	if local.y<DECK_Y-.8 or local.y>DECK_Y+2.05:return Vector2(candidate.x,candidate.z)
+	# Door motion never refuses an action or shoves an occupying capsule.
+	if _door_tween!=null and _door_tween.is_running():return Vector2(candidate.x,candidate.z)
 	var a:=_door_pivot.global_position
 	var b:=_door_pivot.to_global(Vector3(1.10,0,0))
 	var q:=Vector2(candidate.x,candidate.z)
+	var old:=Vector2(previous.x,previous.z)
+	var aa:=Vector2(a.x,a.z);var bb:=Vector2(b.x,b.z)
+	var edge:=bb-aa
+	var closest:=aa+edge*clampf((old-aa).dot(edge)/edge.length_squared(),0,1)
+	# Only genuinely embedded capsules may leave through the leaf. The normal
+	# outside contact skin lies beyond this threshold and stays solid.
+	if old.distance_to(closest)<radius+.04-.002:return q
 	var clipped:=RoadNet._rail_contact(Vector2(previous.x,previous.z),q,Vector2(a.x,a.z),Vector2(b.x,b.z),radius+.04)
 	return clipped+(clipped-q).normalized()*.001 if clipped.distance_squared_to(q)>1e-10 else q
 
