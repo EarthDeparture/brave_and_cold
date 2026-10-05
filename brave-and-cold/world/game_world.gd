@@ -1422,11 +1422,9 @@ func _door_cands(cands: Array, cb: Node3D, fwd: Vector3) -> void:
 		return
 	if cb.door_boards < 3:
 		if inv.count("hammer") > 0 and inv.count("plank") > 0 and inv.count("nails") >= 1:
-			cands.append({"m": _lm, "d": dd + 0.04, "text": "Barricade door (%d/3)" % cb.door_boards, "hold": 6.0, "kcal": 8.0, "noise": 22.0, "act": func() -> void:
+			cands.append({"m": _lm, "d": dd + 0.04, "text": "Barricade door (%d/3)" % cb.door_boards, "hold": 6.0, "kcal": 8.0, "noise": 22.0, "work": "hammer", "work_pos": dp, "act": func() -> void:
 				if not cb.door_open and not cb.door_broken and cb.door_boards<3 and _nail_board():
 					cb.add_door_board()
-					if audio != null:
-						audio.play_at("hammer", dp, 2.0, randf_range(0.9, 1.0), 6.0, 70.0)
 					_say("Door barricaded: %d/3" % cb.door_boards)})
 		else:
 			cands.append({"m": _lm, "d": dd + 0.1, "text": "Barricade door (needs hammer, plank, nail)", "act": func() -> void: _say("Need a hammer, a plank and a nail")})
@@ -1548,11 +1546,9 @@ func _opening_cands(cands: Array, fwd: Vector3) -> void:
 				continue
 			if o.boards < Opening.MAX_BOARDS:
 				if inv.count("hammer") > 0 and inv.count("plank") > 0 and inv.count("nails") >= 1:
-					cands.append({"m": _lm, "d": od, "text": "Board up window (%d/%d)" % [o.boards, Opening.MAX_BOARDS], "hold": 5.0, "kcal": 6.0, "noise": 22.0, "act": func() -> void:
+					cands.append({"m": _lm, "d": od, "text": "Board up window (%d/%d)" % [o.boards, Opening.MAX_BOARDS], "hold": 5.0, "kcal": 6.0, "noise": 22.0, "work": "hammer", "work_pos": o.center_world(), "act": func() -> void:
 						if _nail_board():
 							o.add_board()
-							if audio != null:
-								audio.play_at("hammer", o.center_world(), 2.0, randf_range(0.95, 1.05), 6.0, 70.0)
 							_say("Boarded: %d/%d" % [o.boards, Opening.MAX_BOARDS])})
 				else:
 					cands.append({"m": _lm, "d": od + 0.05, "text": "Board up window (needs hammer, plank, nail)", "act": func() -> void: _say("Need a hammer, a plank and a nail")})
@@ -1817,10 +1813,7 @@ func _update_prompt() -> void:
 			var pw := lerpf(0.55, 1.0, inv.condition('axe'))
 			var left := float(forest.chop_hp.get(tk, ForestScatter.hits_total(float(tr["h"]))))
 			cands.append({"m": _lm, "d": float(tr["d"]) + 0.3, "text": "Chop tree (%d hits)" % int(ceil(left / pw)), "label": "Chopping", "hold": 0.85,
-				"start": func() -> void:
-					get_tree().create_timer(0.55 * ACTION_DURATION_MULT).timeout.connect(func() -> void:
-						if not _act.is_empty():
-							viewmodel.swing(true, 1.0 / ACTION_DURATION_MULT)),
+				"work": "chop",
 				"again": func() -> bool: return not forest.felled.has(tk) and inv.count('axe') > 0 and not rifle_up,
 				"act": func() -> void: _chop_hit(tr)})
 	for lg in get_tree().get_nodes_in_group("logs"):
@@ -1830,7 +1823,7 @@ func _update_prompt() -> void:
 		var ld := wl.dist_to(player.position)
 		if ld < 2.2 and _aim_ok(wl.interaction_point(player.position, _view_dir(), 2.6), 2.6, 1.2):
 			if axe_up:
-				cands.append({"m": _lm, "d": ld + 0.2, "text": "Split log (+%d firewood, %d sticks)" % [wl.firewood, wl.sticks], "hold": 5.0, "kcal": 25.0, "noise": 20.0, "act": func() -> void: _split_log(wl)})
+				cands.append({"m": _lm, "d": ld + 0.2, "text": "Split log (+%d firewood, %d sticks)" % [wl.firewood, wl.sticks], "hold": 5.0, "kcal": 25.0, "noise": 20.0, "work": "split", "work_pos": wl.interaction_point(player.position, _view_dir(), 2.6), "act": func() -> void: _split_log(wl)})
 			else:
 				cands.append({"m": _lm, "d": ld + 0.2, "text": "Log (needs a hatchet equipped)", "act": func() -> void: _say('Need a hatchet to split this')})
 	cands = _rank_cands(cands)
@@ -1882,9 +1875,11 @@ var _act_t := 0.0
 var _act_hold := 0.0
 var _act_pos := Vector3.ZERO
 var _act_hp := 100.0
+var _work_cues := 0
 
 
-func _act_begin(c: Dictionary) -> void:
+func _act_begin(c: Dictionary, repeating := false) -> void:
+	_act_cancel()
 	var hold := float(c.get("hold", 0.0))
 	if hold <= 0.0:
 		(c["act"] as Callable).call()
@@ -1894,13 +1889,16 @@ func _act_begin(c: Dictionary) -> void:
 	_act_hold = hold * ACTION_DURATION_MULT
 	_act_pos = player.position
 	_act_hp = player.health
+	_work_cues = 0
+	if viewmodel != null: viewmodel.begin_work(String(c.get("work", "")), _act_hold, repeating)
 	if c.has("start"):
 		(c["start"] as Callable).call()
 	if float(c.get("noise", 0.0)) > 0.0:
 		noise_bus.emit_noise(player.position, float(c["noise"]), player)
 
 
-func _act_cancel(msg := "") -> void:
+func _act_cancel(msg := "", completed := false) -> void:
+	if viewmodel != null: viewmodel.end_work(completed)
 	_act = {}
 	_act_t = 0.0
 	if hud != null:
@@ -1922,18 +1920,30 @@ func _act_update(delta: float, held: bool) -> void:
 	if moved or player.airborne or player.dead or player.struggling or player.ui_open or player.health < _act_hp - 0.01:
 		_act_cancel("Interrupted")
 		return
+	var work := String(_act.get("work", ""))
+	if (work in ["chop","split"] and (inv.count("axe")==0 or rifle_up)) or (work=="hammer" and inv.count("hammer")==0):
+		_act_cancel("Tool put away")
+		return
 	_act_t += delta
+	if viewmodel != null:
+		viewmodel.update_work(_act_t)
+		var cues := viewmodel.work_impacts(minf(_act_t,_act_hold))
+		if cues>_work_cues and audio != null:
+			var at: Vector3 = _act.get("work_pos",_act.get("pos",player.position+_view_dir()*.8))
+			# Feedback does not spend resources or emit additional AI noise.
+			audio.play_at("hammer" if work=="hammer" else "chop",at,-4,1,5,50)
+		_work_cues = cues
 	hud.action_t = _act_t / _act_hold
 	hud.action_label = String(_act.get("label", String(_act.get("text", "")).split(" (")[0]))
 	if _act_t >= _act_hold:
 		var c := _act
-		_act_cancel()
+		_act_cancel("", true)
 		var kc := float(c.get("kcal", 0.0))
 		if kc > 0.0:
 			needs.calories = maxf(0.0, needs.calories - kc)
 		(c["act"] as Callable).call()
 		if held and c.has("again") and not player.dead and (c["again"] as Callable).call():
-			_act_begin(c)
+			_act_begin(c, true)
 
 
 # ---- Wood: chop trees, fell them, split logs
@@ -2120,6 +2130,7 @@ func _unhandled_input(e: InputEvent) -> void:
 	elif e.keycode == KEY_B and inv != null:
 		_build_campfire()
 	elif e.keycode == KEY_X and inv != null and inv.count('rifle') > 0:
+		_act_cancel()
 		rifle_up = not rifle_up
 		_say('Rifle raised' if rifle_up else 'Hatchet')
 	elif e.keycode == KEY_F:
@@ -2365,6 +2376,7 @@ func _add_zombie(p: Vector3, idx: int) -> Zombie:
 func _attack() -> void:
 	if _attack_cd > 0.0 or player.dead or inv == null:
 		return
+	_act_cancel()
 	if rifle_up and inv.count('rifle') > 0:
 		_shoot()
 		return

@@ -360,9 +360,12 @@ def cabin(b):
         inside.box((1.90,-1.65,z),(1.05,.36,.055))
     for x in [1.39,2.41]:
         inside.box((x,-1.65,FLOOR+.62),(.055,.37,1.25))
+    # Supplies are now authoritative runtime stock, not permanently baked cans.
+    # Consume the same seeded palette samples to preserve unrelated geometry colours.
+    retired = Batch("retired_provisions", PALETTE["interior"])
     for i in range(5):
-        inside.cylinder((1.5+i*.18,-1.65,FLOOR+.77),.055,.20,(.35,.43,.37,1),sides=8)
-    inside.box((1.82,-1.65,FLOOR+.32),(.50,.27,.22),(.57,.45,.27,1))
+        retired.cylinder((1.5+i*.18,-1.65,FLOOR+.77),.055,.20,(.35,.43,.37,1),sides=8)
+    retired.box((1.82,-1.65,FLOOR+.32),(.50,.27,.22),(.57,.45,.27,1))
     trim.box((1.65,-2.29,FLOOR+.61),(.72,.04,.27))
     for x in [1.48,1.62,1.80]:
         wood.box((x,-2.315,FLOOR+.62),(.045,.015,.15),(.77,.72,.54,1))

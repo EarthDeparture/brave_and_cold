@@ -24,3 +24,11 @@ tools/blender/generated/route_detail/*.blend[0-9]
 tools/blender/generated/route_identity/*.blend[0-9]
 
 tools/blender/generated/lookout_opening/*.blend[0-9]
+
+# Original procedural prop authoring: native packed source is tracked; exports live in assets.
+tools/blender/generated/survival_props/*.blend[0-9]
+tools/blender/generated/survival_props/*.glb
+tools/blender/generated/survival_props/tex/
+tools/blender/generated/fire_lookout.blend[0-9]
+tools/blender/generated/fire_lookout.glb
+tools/blender/generated/fire_lookout_geometry.json

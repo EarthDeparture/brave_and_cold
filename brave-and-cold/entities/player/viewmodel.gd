@@ -27,6 +27,13 @@ var _right: SurvivorHandRig
 var _left: SurvivorHandRig
 var freeze_t := -1.0  # debug: hold animation at this time
 var _axe: MeshInstance3D
+var _hammer: MeshInstance3D
+var work_kind := ""
+var work_elapsed := 0.0
+var work_duration := 0.0
+var work_period := 1.0
+var _work_tail := -1.0
+var _work_offset := 0.0
 var _rifle: MeshInstance3D
 var _bolt: MeshInstance3D
 var _sl_r: MeshInstance3D
@@ -63,6 +70,8 @@ func _ready() -> void:
 	_sl_r = _pick(sleeves, "vm_sleeve_r")
 	_sl_l = _pick(sleeves, "vm_sleeve_l")
 	_axe = _pick(AXE, "vm_axe")
+	_hammer = _pick("res://assets/survival_props/work_hammer.glb", "work_hammer")
+	_hammer.visible = false
 	_rifle = _pick(RIFLE, "vm_rifle")
 	_bolt = _pick(RIFLE, "vm_bolt")
 	_flash = OmniLight3D.new()
@@ -169,7 +178,9 @@ func _process(delta: float) -> void:
 	if player == null:
 		return
 	_clock += delta
+	if player.ui_open and work_kind != "": end_work(false)
 	if player.dead:
+		end_work(false)
 		visible = false
 		_was_dead = true
 		return
@@ -237,15 +248,24 @@ func _process(delta: float) -> void:
 	off.y -= (1.0 - e) * 0.5
 	off += Vector3(0.025, -0.045, 0.0) * _sprint_k
 	var base := Transform3D(Basis(Vector3.RIGHT, deg_to_rad(-12.0) * _sprint_k) * Basis(Vector3.UP, deg_to_rad(_sway.x * 60.0)), off)
-	var shown := _cur if _equip > 0.0 else ""
-	_axe.visible = shown == "axe"
+	if _work_tail >= 0:
+		_work_tail -= delta
+		work_elapsed += delta
+		if _work_tail <= 0: end_work(false)
+	var working := work_kind != ""
+	var shown := work_kind if working else (_cur if _equip > 0.0 else "")
+	_hammer.visible = shown == "hammer"
+	_axe.visible = shown in ["axe", "split", "chop"]
 	_rifle.visible = shown == "rifle"
 	_bolt.visible = shown == "rifle"
 	_right.visible = shown != ""
 	_left.visible = shown in ["rifle", "fists"]
 	_sl_r.visible = shown != ""
 	_sl_l.visible = shown != "" and shown != "axe"
-	if shown == "axe":
+	if working:
+		# Keep normal arm reach, without moving the player toward distant targets.
+		_pose_work(base)
+	elif shown == "axe":
 		_pose_axe(base)
 	elif shown == "rifle":
 		_pose_rifle(base)
@@ -358,3 +378,49 @@ func _pose_fists(base: Transform3D) -> void:
 	_left.pose("Fist")
 	_aim_sleeve(_sl_r, tr, Vector3.ZERO, base * er)
 	_aim_sleeve(_sl_l, tl, Vector3.ZERO, base * el)
+
+## Action-owned presentation: no timers or gameplay resource mutations here.
+func begin_work(kind: String, duration: float, repeating := false) -> void:
+	end_work(false)
+	if kind not in ["split", "chop", "hammer", "reach"]: return
+	work_kind = kind; work_duration = maxf(duration,.01); work_elapsed = 0
+	var cycles := 1 if kind in ["chop","reach"] else maxi(1,int(ceil(duration/.85)))
+	# Final stroke reaches impact at completion; earlier strokes give rhythm.
+	work_period = work_duration/(float(cycles-1)+.35/SWING_LEN)
+	_work_offset = 0
+	if repeating and kind == "chop":
+		work_period = work_duration
+		_work_offset = .35/SWING_LEN*work_period
+	_swing_t = -1; _fire_t = -1
+func update_work(elapsed: float) -> void:
+	if work_kind != "" and _work_tail<0: work_elapsed = clampf(elapsed,0,work_duration)
+func end_work(completed: bool) -> void:
+	if completed and work_kind != "":
+		work_elapsed = work_duration
+		_work_tail = .47/SWING_LEN*work_period if work_kind != "reach" else .15
+		return
+	work_kind = ""; _work_tail = -1; work_elapsed = 0
+func work_impacts(elapsed: float) -> int:
+	if work_kind not in ["split","hammer"]: return 0
+	return maxi(0,int(floor(elapsed/work_period-.35/SWING_LEN+.00001))+1)
+func _pose_work(base: Transform3D) -> void:
+	_left.visible = false; _sl_l.visible = false
+	if work_kind == "reach":
+		var progress := clampf(work_elapsed/work_duration,0,1)
+		var reach := sin(progress*PI)
+		_right.transform = _free_hand(1,Vector3(.18,-.23,-.42-.14*reach),Vector3(.48,-.56,.26),-25,base)
+		_right.pose("Open","Support",reach*.20)
+		_aim_sleeve(_sl_r,_right.transform,Vector3.ZERO,base*Vector3(.48,-.56,.26))
+		return
+	var phase := fposmod(work_elapsed+_work_offset,work_period)/work_period
+	var a := _swing_curve(phase*SWING_LEN)
+	if work_kind == "hammer": a *= .58
+	var rest := Basis(Vector3.BACK,deg_to_rad(10))*Basis(Vector3.RIGHT,deg_to_rad(-30+a.x*.9))
+	var shoulder := Vector3(.20,-.30,.12)
+	var rot := Basis(Vector3.RIGHT,deg_to_rad(a.x))*Basis(Vector3.UP,deg_to_rad(a.y))*Basis(Vector3.BACK,deg_to_rad(-a.y*.8))
+	var w := base*_about(shoulder,rot)*Transform3D(rest,Vector3(.24,-.13,-.40))
+	var tool := _hammer if work_kind == "hammer" else _axe
+	tool.transform = w.scaled_local(Vector3.ONE*1.2)
+	_right.transform = w*Transform3D(Basis(Vector3.DOWN,Vector3.FORWARD,Vector3.RIGHT),AXE_WRIST)
+	_right.pose("Shaft")
+	_aim_sleeve(_sl_r,_right.transform,Vector3.ZERO,base*_about(shoulder,rot)*Vector3(.48,-.56,.30))

@@ -1,5 +1,6 @@
 class_name StorageChest
 extends Node3D
+signal contents_changed
 ## Craftable wooden storage chest (Blender model chest.glb, lid pivots on the hinge). Holds up to CAP stacks.
 ## Remembers wear and age of what it holds. Perishables age at COLD_RATE of normal (a box out in the snow).
 ## Solid for the player (rect collider like Outbuilding). Node origin is on the ground.
@@ -184,6 +185,7 @@ func tick(game_s: float) -> void:
 		age.erase(id)
 		contents["rotten_meat"] = count("rotten_meat") + n
 		_pile_dirty = true
+	if not spoiled.is_empty(): contents_changed.emit()
 
 
 func count(id: String) -> int:
@@ -223,6 +225,7 @@ func put(id: String, n: int, c: float, a: float) -> void:
 		age[id] = (float(age.get(id, 0.0)) * old + a * n) / float(old + n)
 	contents[id] = old + n
 	_pile_dirty = true
+	contents_changed.emit()
 
 
 func remove(id: String, n: int) -> void:
@@ -234,6 +237,7 @@ func remove(id: String, n: int) -> void:
 	else:
 		contents[id] = left
 	_pile_dirty = true
+	contents_changed.emit()
 
 
 func to_dict() -> Dictionary:
@@ -247,6 +251,7 @@ func load_dict(d: Dictionary) -> void:
 	cond = (d.get("cond", {}) as Dictionary).duplicate()
 	age = (d.get("age", {}) as Dictionary).duplicate()
 	_pile_dirty = true
+	contents_changed.emit()
 
 
 ## A crate occupies its actual height, not an invisible column through the map.

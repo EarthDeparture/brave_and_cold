@@ -1,0 +1,136 @@
+{
+  "seed": 4106,
+  "units": "metres",
+  "license": "Project-authored original geometry and textures; same ownership as repository",
+  "source": "tools/blender/gen_survival_props.py",
+  "source_sha256": "1a36f51822200df6d885bacc6fcfdf5f1c5f380e3b53e26f18acadf3020c5b92",
+  "design": "Weathered split firewood with bark and cut growth rings; beveled planks; tapered forked sticks; individual provisions; fitted claw hammer",
+  "negative_constraints": "No third-party assets, no collision bodies, no map grading, maximum 2000 triangles per unit, maximum 512px new textures",
+  "source_dependencies": {
+    "tools/blender/vmlib.py": "874a5730c03898f2aedd24532dc554fbf62c4dca27672ff12c97a823f0b9ed59",
+    "brave-and-cold/assets/models/viewmodel/tex/vm_ash.png": "628d008c973d79bf130a2bdd074902c6d0e144cada062c4addf7a1a7defebfab",
+    "brave-and-cold/assets/models/viewmodel/tex/vm_leather.png": "ff32d765d3a55b472422e0fa5e09052f6908c1c23222a8236f19121efe22e9c2",
+    "brave-and-cold/assets/models/viewmodel/tex/vm_steel.png": "72b18f1242a57f93992c2b7e8c13d6b3c602cea1f770a82f8b7f1499e2819627"
+  },
+  "assets": {
+    "resource_wood": {
+      "triangles": 106,
+      "blender_bounds": [
+        [
+          -0.20999999344348907,
+          -0.06350333243608475,
+          0.0
+        ],
+        [
+          0.20999999344348907,
+          0.06350333243608475,
+          0.06350333243608475
+        ]
+      ],
+      "bytes": 1943208,
+      "sha256": "5d03daa143f758765803d46146a47fba002d6aa2fb02797fc7fb0652344f0b84"
+    },
+    "resource_stick": {
+      "triangles": 112,
+      "blender_bounds": [
+        [
+          -0.1908990740776062,
+          -0.04121788591146469,
+          0.0010035056620836258
+        ],
+        [
+          0.19065389037132263,
+          0.012673328630626202,
+          0.02240643836557865
+        ]
+      ],
+      "bytes": 990508,
+      "sha256": "2745b14b2d23625938556bf2821f121200566f4854713364f713a4d031394ea2"
+    },
+    "resource_plank": {
+      "triangles": 108,
+      "blender_bounds": [
+        [
+          -0.42500001192092896,
+          -0.07750000059604645,
+          0.0
+        ],
+        [
+          0.42500001192092896,
+          0.07750000059604645,
+          0.02800000086426735
+        ]
+      ],
+      "bytes": 172288,
+      "sha256": "339caa95093024e0756ad2e30fe9755e5fa6d4bc9f8a6b1eafc5e764250234ee"
+    },
+    "ration_tin": {
+      "triangles": 436,
+      "blender_bounds": [
+        [
+          -0.06300000101327896,
+          -0.06300000101327896,
+          0.0
+        ],
+        [
+          0.06300000101327896,
+          0.06300000101327896,
+          0.18400000035762787
+        ]
+      ],
+      "bytes": 504576,
+      "sha256": "f7bda8c273a05a85ebca0591f2c1bf7c491f762d85e79dd1c7f5b3eb5323f6ef"
+    },
+    "ration_pouch": {
+      "triangles": 108,
+      "blender_bounds": [
+        [
+          -0.0949999988079071,
+          -0.05999999865889549,
+          0.0
+        ],
+        [
+          0.0949999988079071,
+          0.05999999865889549,
+          0.1420000046491623
+        ]
+      ],
+      "bytes": 756712,
+      "sha256": "c1ec14eda2e538fa5caf8cc2ca76bb87cce0d99858d98d59770fe9e3cfdd935b"
+    },
+    "provisions_tray": {
+      "triangles": 108,
+      "blender_bounds": [
+        [
+          -0.5249999761581421,
+          -0.18000000715255737,
+          0.0
+        ],
+        [
+          0.5249999761581421,
+          0.18000000715255737,
+          0.014999999664723873
+        ]
+      ],
+      "bytes": 172288,
+      "sha256": "2c9eacb7847140c1e1f63444c4b609f0fa13da688e8c38ebe708c43a4938e76d"
+    },
+    "work_hammer": {
+      "triangles": 552,
+      "blender_bounds": [
+        [
+          -0.02500000037252903,
+          -0.10060694068670273,
+          -0.15000000596046448
+        ],
+        [
+          0.02500000037252903,
+          0.07500000298023224,
+          0.2770000100135803
+        ]
+      ],
+      "bytes": 631104,
+      "sha256": "1d53d4338534b73cfd2d968f5a98dcfcd0269852e46c783e351be5baeebcd6f4"
+    }
+  }
+}

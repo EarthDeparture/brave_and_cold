@@ -1,6 +1,6 @@
 class_name ItemPickup
 extends Node3D
-## An item lying in the snow. Shown as a small coloured block (no per-item 3D models yet). Picked up via the action menu or the Gear screen.
+## Dropped items preserve quantity and condition. Resources use shared, original unit meshes.
 
 var id := ""
 var n := 1
@@ -19,6 +19,9 @@ static func spawn(parent: Node, item_id: String, count: int, pos: Vector3, condi
 
 func _ready() -> void:
 	add_to_group("pickups")
+	if id in ["wood", "plank", "stick"]:
+		_resource_pile()
+		return
 	var m := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	var kind := Inventory.kind_of(id)
@@ -39,3 +42,23 @@ func _ready() -> void:
 	m.position = Vector3(0, bm.size.y * 0.5 - 0.02, 0)
 	m.rotation.y = randf() * TAU
 	add_child(m)
+
+## Bounded unit count, without solid collision or an enlarged interaction footprint.
+## Excess quantities remain accurately reported by the existing pickup prompt.
+func _resource_pile() -> void:
+	var poses: Array[Transform3D] = []
+	var capacity := 12 if id == "wood" else (8 if id == "plank" else 16)
+	for i in mini(maxi(n, 0), capacity):
+		var pos: Vector3
+		var yaw: float
+		if id == "wood":
+			pos = Vector3(0, floorf(float(i)/3)*.066, (float(i%3)-1)*.13)
+			yaw = sin(float(i)*2.7)*.06
+		elif id == "plank":
+			pos = Vector3(0, i*.029, 0)
+			yaw = sin(float(i)*1.9)*.035
+		else:
+			pos = Vector3((float(i%4)-1.5)*.025, floorf(float(i)/4)*.02, (float(i%3)-1)*.032)
+			yaw = sin(float(i)*2.4)*.20
+		poses.append(Transform3D(Basis(Vector3.UP, yaw), pos))
+	SurvivalProps.pile(self, id, poses)

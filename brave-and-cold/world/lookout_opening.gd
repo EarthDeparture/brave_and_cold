@@ -17,6 +17,9 @@ var ember: MeshInstance3D
 var fuel_s := 7200.0
 var wood_left := 12
 var cooking: Dictionary = {}
+var _stock: Node3D
+var _stock_label: Label3D
+var _stock_signature := ""
 var _token := ""
 var _last_grid := true
 var _receiver_power: MeshInstance3D
@@ -53,6 +56,8 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 		pantry.put("beans", 4, 1, 0); pantry.put("jerky", 2, 1, 0); pantry.put("matches", 4, 1, 0); pantry.put("bandage", 2, 1, 0)
 	else:
 		pantry.load_dict(saved.get("storage", {})); fuel_s = float(saved.get("fuel_s", 0)); wood_left = int(saved.get("wood_left", 0)); cooking = saved.get("cooking", {}).duplicate(true)
+	_build_stock(tower)
+	pantry.contents_changed.connect(_update_stock)
 	if not world.stores.is_empty():
 		case_model = _asset(world.stores[0], "depot_reserved_case"); case_model.position = CASE_LOCAL
 		case_model.visible = not state.parts_claimed
@@ -111,9 +116,10 @@ func update_presentation() -> void:
 	m.emission = m.albedo_color * .65
 	if case_model != null: case_model.visible = not state.parts_claimed
 	var food := home_model.get_node_or_null("PantryFood") as Node3D
-	if food != null: food.visible = pantry.count("beans") + pantry.count("jerky") > 0
+	if food != null: food.visible = false
 	var wood := home_model.get_node_or_null("HomeWood") as Node3D
-	if wood != null: wood.visible = wood_left > 0
+	if wood != null: wood.visible = false
+	_update_stock()
 ## Two front-panel lenses belong to the existing receiver. No room-sized light
 ## or transmission claim: these report local power and tuning, even in silence.
 func _build_receiver_indicators(tower: FireLookout) -> void:
@@ -159,14 +165,14 @@ func _radio_update() -> void:
 	var clip := load(String(entry.audio)) as AudioStream
 	if clip == null or offset >= clip.get_length():
 		speaker.stop(); _token = String(entry.id); return
-	world.hud.radio_heading = ("FIELD DISPATCH" if state.channel == "work" else "NORTH RIDGE PUBLIC RADIO") + " • " + String(entry.title)
+	world.hud.radio_heading = ("FIELD DISPATCH" if state.channel == "work" else "NORTH RIDGE PUBLIC RADIO") + " â€¢ " + String(entry.title)
 	# Live captions disappear with the transmission; no backlog or replay menu.
 	world.hud.radio_text = String(entry.text)
 	if _token != String(entry.id) or not speaker.playing:
 		speaker.stream = clip; speaker.play(offset); _token = String(entry.id)
 	elif absf(speaker.get_playback_position() - offset) > 1.5: speaker.seek(offset)
-func _action(pos: Vector3, text: String, act: Callable, hold: float = 0, bias: float = 0) -> Dictionary:
-	return {"pos":pos,"r":2.1,"tol":.8,"text":text,"hold":hold,"dbias":bias,"act":act}
+func _action(pos: Vector3, text: String, act: Callable, hold: float = 0, bias: float = 0, work: String = "reach") -> Dictionary:
+	return {"pos":pos,"r":2.1,"tol":.8,"text":text,"hold":hold,"dbias":bias,"act":act,"work":work}
 func actions() -> Array:
 	var out: Array = []
 	var desk := home_point(Vector3(.95,.88,-1.35))
@@ -175,18 +181,18 @@ func actions() -> Array:
 	out.append(_action(radio, "Turn receiver off" if state.receiver_on else "Turn receiver on", toggle_receiver))
 	out.append(_action(radio, "Tune public radio" if state.channel == "work" else "Tune field dispatch", tune_radio, 0, .01))
 	var panel := home_point(Vector3(0,1.15,-2.08))
-	out.append(_action(panel, "Backup: %s • %.0f%% charge" % ["ON" if state.backup_on else "OFF", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100], toggle_backup))
+	out.append(_action(panel, "Backup: %s â€¢ %.0f%% charge" % ["ON" if state.backup_on else "OFF", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100], toggle_backup))
 	if state.repair_stage == 3:
 		out.append(_action(panel, "Automatic transfer: %s" % ("ARMED" if state.auto_transfer_on else "DISABLED"), toggle_auto_transfer, 0, .02))
 	out.append(_action(panel, "Switch desk lamp off" if state.lamp_on else "Switch desk lamp on", toggle_lamp, 0, .01))
 	out.append(_action(pantry.global_position, "Open lookout provisions", func() -> void: world.gear.open_chest(pantry)))
 	var stove: Vector3 = world.fire_lookout.to_global(stove_point(Vector3(0,.55,.301)))
-	out.append(_action(stove, "Stoke stove • %.1f h fuel" % (fuel_s / 3600), stoke, 2))
+	out.append(_action(stove, "Stoke stove â€¢ %.1f h fuel" % (fuel_s / 3600), stoke, 2))
 	if fuel_s > 0:
 		out.append(_action(stove, "Boil snow and drink", boil, 4, .01))
 		if cooking.is_empty() and world.inv.has_raw(): out.append(_action(stove, "Cook one portion on stove", cook, 2, .02))
 	if not cooking.is_empty():
-		out.append(_action(stove, "Take cooked food" if float(cooking.remaining_s) <= 0 else "Cooking • %d min left" % int(ceil(float(cooking.remaining_s)/60)), take_cooked, 0, .03))
+		out.append(_action(stove, "Take cooked food" if float(cooking.remaining_s) <= 0 else "Cooking â€¢ %d min left" % int(ceil(float(cooking.remaining_s)/60)), take_cooked, 0, .03))
 	out.append(_action(home_point(Vector3(1.87,.18,1.55)), "Take firewood (%d left)" % wood_left, take_wood, 1, .03))
 	out.append_array(world._sleep_items(world.fire_lookout))
 	out.append(_action(boundary.gate_point(), "Close compound gate" if boundary.gate_open else "Open compound gate", boundary.toggle_gate))
@@ -196,8 +202,8 @@ func actions() -> Array:
 		1: out.append(_action(cabinet, "Install replacement transfer relay" if world.inv.count("power_relay") > 0 else "Replacement reserved at North Ridge Supply", install_relay, 6))
 		2: out.append(_action(cabinet, "Verify backup transfer", verify_relay, 4))
 		3:
-			out.append(_action(cabinet, "Disable repeater • save 12 W" if state.relay_enabled else "Enable repeater • 12 W", toggle_relay))
-			out.append(_action(cabinet, "Relay commissioned • local service only", func() -> void: world._say("Commissioned relay supports field dispatch and automatic battery transfer. Town grid and public transmitter remain independent."), 0, .01))
+			out.append(_action(cabinet, "Disable repeater â€¢ save 12 W" if state.relay_enabled else "Enable repeater â€¢ 12 W", toggle_relay))
+			out.append(_action(cabinet, "Relay commissioned â€¢ local service only", func() -> void: world._say("Commissioned relay supports field dispatch and automatic battery transfer. Town grid and public transmitter remain independent."), 0, .01))
 	if case_model != null and not state.parts_claimed:
 		out.append(_action(case_model.global_position + Vector3.UP * .15, "Collect reserved transfer relay", claim_parts, 3))
 	return out
@@ -206,11 +212,11 @@ func read_log() -> void:
 	if not world.stores.is_empty():
 		var d: Vector3 = world.stores[0].global_position - world.fire_lookout.global_position
 		var bearing := fposmod(rad_to_deg(atan2(d.x,-d.z)),360)
-		directions = "North Ridge Supply is approximately %.0f m away on bearing %.0f° (straight-line). Follow the logging track down to the road; collect the reserved relay case at the store counter." % [Vector2(d.x,d.z).length(),bearing]
+		directions = "North Ridge Supply is approximately %.0f m away on bearing %.0fÂ° (straight-line). Follow the logging track down to the road; collect the reserved relay case at the store counter." % [Vector2(d.x,d.z).length(),bearing]
 	var task: String = ["Inspect the ground transfer cabinet with your insulated service kit.","Collect the reserved transfer relay, return and install it in the cabinet.","Verify the cabinet transfer under local power.","Relay signed off. Local service restored."][state.repair_stage]
 	if state.repair_stage==1 and state.parts_claimed:task="Return to the ground cabinet and install the replacement relay."
-	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nField dispatch uses the receiver's work channel; local news uses public radio. Green indicates receiver power. Yellow selects field dispatch; blue selects public radio. A lit receiver can be silent between broadcasts. The receiver and desk lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. Keep water, food and dry firewood ready. Stoke the stove, boil snow, and prepare the sleeping berth before the weather closes in." % [task,directions]
-	world.reading.open("North Ridge • Service log",text,world.player,world.hud)
+	var text := "KESTREL RELAY 07 â€” FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nField dispatch uses the receiver's work channel; local news uses public radio. Green indicates receiver power. Yellow selects field dispatch; blue selects public radio. A lit receiver can be silent between broadcasts. The receiver and desk lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. Keep water, food and dry firewood ready. Stoke the stove, boil snow, and prepare the sleeping berth before the weather closes in." % [task,directions]
+	world.reading.open("North Ridge â€¢ Service log",text,world.player,world.hud)
 func toggle_receiver() -> void: state.receiver_on = not state.receiver_on; _update_receiver_indicators(); _radio_update()
 func tune_radio() -> void: state.channel = "public" if state.channel == "work" else "work"; _update_receiver_indicators(); _radio_update()
 func toggle_backup() -> void:
@@ -246,7 +252,9 @@ func stoke() -> void:
 	if fuel_s <= 0: world.inv.remove("matches")
 	world.inv.remove("wood"); fuel_s = minf(16 * 3600, fuel_s + 2 * 3600); update_presentation()
 func take_wood() -> void:
-	if wood_left > 0 and world.inv.can_add("wood"): world.inv.add("wood"); wood_left -= 1
+	if wood_left > 0 and world.inv.can_add("wood"):
+		world.inv.add("wood"); wood_left -= 1; _update_stock()
+		world.audio.play_at("rustle", pantry.global_position, -6, 1, 3, 18)
 func boil() -> void:
 	if fuel_s > 0: world.needs.drink(35); world._say("Drank boiled snow (+35 water)")
 func cook() -> void:
@@ -296,3 +304,48 @@ func _build_smoke(tower: FireLookout) -> void:
 	var material:=StandardMaterial3D.new();material.albedo_texture=ImageTexture.create_from_image(image);material.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;material.vertex_color_use_as_albedo=true;material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;material.billboard_mode=BaseMaterial3D.BILLBOARD_ENABLED;material.cull_mode=BaseMaterial3D.CULL_DISABLED
 	var quad:=QuadMesh.new();quad.size=Vector2(1.6,1.6);quad.material=material
 	stove_smoke.draw_pass_1=quad;stove_smoke.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+## Counts are derived from authoritative inventory. Rebuild only when they change.
+func _build_stock(tower: FireLookout) -> void:
+	_stock = Node3D.new(); _stock.name = "LookoutSupplies"; tower.add_child(_stock)
+	_stock.position.y = FireLookout.DECK_Y
+	# A shallow insert supports pouches above the tins, within the original rack.
+	var tray := MeshInstance3D.new(); tray.name = "ProvisionsTray"; tower.add_child(tray)
+	tray.mesh = SurvivalProps.mesh_for("tray"); tray.position = Vector3(1.90,FireLookout.DECK_Y+.866,1.65)
+	var wool := home_model.get_node_or_null("PantryFixed") as Node3D
+	if wool != null: wool.position.y -= .0525
+	_stock_label = Label3D.new(); tower.add_child(_stock_label)
+	_stock_label.name = "ProvisionsTag"; _stock_label.font_size = 32; _stock_label.pixel_size = .00055
+	_stock_label.position = Vector3(1.90, FireLookout.DECK_Y+.585, 1.43)
+	_stock_label.rotation.y = PI; _stock_label.no_depth_test = false
+	_stock_label.shaded = true; _stock_label.modulate = Color(.81,.77,.63)
+	_update_stock()
+func _update_stock() -> void:
+	if _stock == null: return
+	var beans := maxi(pantry.count("beans"), 0)
+	var jerky := maxi(pantry.count("jerky"), 0)
+	var other := 0
+	for id: String in pantry.contents:
+		if id not in ["beans", "jerky"]: other += maxi(pantry.count(id),0)
+	var signature := "%d/%d/%d/%d" % [beans,jerky,wood_left,other]
+	if signature == _stock_signature: return
+	_stock_signature = signature
+	for node: Node in _stock.get_children():
+		_stock.remove_child(node); node.queue_free()
+	var wood_poses: Array[Transform3D] = []
+	for i in mini(maxi(wood_left,0),12):
+		wood_poses.append(Transform3D(Basis.IDENTITY, Vector3(1.65+(i%2)*.47, .228+floorf(float(i)/4)*.065, 1.56+(int(i/2)%2)*.14)))
+	SurvivalProps.pile(_stock,"wood",wood_poses)
+	var tin_poses: Array[Transform3D] = []
+	for i in mini(beans,4):
+		tin_poses.append(Transform3D(Basis(Vector3.UP, -.35+i*.16), Vector3(1.52+(i%4)*.23,.678,1.55+floorf(float(i)/4)*.14)))
+	SurvivalProps.pile(_stock,"beans",tin_poses)
+	var pouch_poses: Array[Transform3D] = []
+	for i in mini(jerky,4):
+		pouch_poses.append(Transform3D(Basis(Vector3.UP, -.08+i*.04),Vector3(1.52+i*.23, .881,1.62)))
+	SurvivalProps.pile(_stock,"jerky",pouch_poses)
+	# Food stack capacity is finite; deposits beyond it stay in inventory and are
+	# explicitly marked stored, rather than implying every item is on the shelf.
+	var overflow := maxi(beans-4,0)+maxi(jerky-4,0)+maxi(wood_left-12,0)
+	_stock_label.text = "PROVISIONS • %d tins / %d pouches\nFIREWOOD • %d" % [beans,jerky,maxi(wood_left,0)]
+	if other>0 or overflow>0: _stock_label.text += "\n%d other items%s" % [other," • extra stock stored" if overflow>0 else ""]
