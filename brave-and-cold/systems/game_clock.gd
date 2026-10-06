@@ -1,12 +1,34 @@
 class_name GameClock
 extends RefCounted
-## World clock. hour 0..24. time_scale = game seconds per real second (48 -> a 24 h day lasts 30 real minutes).
+## Game seconds per real second. Preserve the awake rate separately from sleep acceleration.
+
+const LEGACY_TIME_SCALE := 48.0
+const OPENING_TIME_SCALE := 30.0 # 48 real minutes per day.
 
 var hour: float = 16.5
 var day: int = 1
-var time_scale: float = 48.0
+var base_time_scale: float = LEGACY_TIME_SCALE
+var time_scale: float = LEGACY_TIME_SCALE
 var total_game_s: float = 0.0
 var weather_offset_c: float = 0.0  # cold snaps / storms later
+
+
+func set_pace(rate: float) -> void:
+	base_time_scale = rate if is_finite(rate) and rate > 0.0 else LEGACY_TIME_SCALE
+	time_scale = base_time_scale
+
+
+func to_dict() -> Dictionary:
+	return {"hour": hour, "day": day, "total": total_game_s,
+		"pace_schema": 1, "base_time_scale": base_time_scale}
+
+
+func restore(data: Dictionary) -> void:
+	hour = float(data.get("hour", hour))
+	day = int(data.get("day", day))
+	total_game_s = float(data.get("total", total_game_s))
+	# Saves without pace metadata keep the original resource/radio time scale.
+	set_pace(float(data.get("base_time_scale", LEGACY_TIME_SCALE)))
 
 
 func advance(real_delta: float) -> float:

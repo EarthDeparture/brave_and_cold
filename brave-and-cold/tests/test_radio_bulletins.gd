@@ -58,24 +58,25 @@ func run() -> void:
 	check(not tuning and op._channel_label.text=="PUBLIC","desk is public-only with no channel action")
 	op.state.walkie_carried=true # carried receiver routing; docking tested separately
 	op.state.receiver_on=false
-	w.player.position+=Vector3(250,0,0);at(w,9000+96)
+	w.player.position+=Vector3(250,0,0);at(w,9000+op.state.audio_clock_rate*2)
 	check(op.walkie.playing and not op.speaker.playing and w.hud.radio_device=="dispatch","dispatch reaches a distant player with desk off")
 	check(absf(op.walkie.get_playback_position()-2)<.2,"late live dispatch seeks elapsed audio")
-	at(w,op.state.entry_start(op.state.broadcasts.filter(func(e:Dictionary)->bool:return e.id=="dispatch_d4_08")[0])+96)
+	at(w,op.state.entry_start(op.state.broadcasts.filter(func(e:Dictionary)->bool:return e.id=="dispatch_d4_08")[0])+op.state.audio_clock_rate*2)
 	op.state.battery_wh=0;op.state.backup_on=false;op.state.relay_enabled=false;op._radio_update()
 	check(op.walkie.playing and not op.state.powered(),"personal dispatch survives exhausted site power and disabled repeater")
-	op.state.receiver_on=true;at(w,23400+96)
+	op.state.receiver_on=true;at(w,23400+op.state.audio_clock_rate*2)
 	check(op.speaker.playing and op.walkie.playing and w.hud.radio_device=="public" and w.hud.radio_heading.begins_with("PERSONAL WALKIE"),"distant public bulletin reaches carried dual-monitor handset")
 	w.player.position=op.speaker.global_position+Vector3(0,.65,1);op._radio_update()
 	check(w.hud.radio_device=="public" and absf(op.speaker.get_playback_position()-2)<.2,"approaching desk hears only remaining noon transmission")
 	op.read_log();var before: float=w.clock.total_game_s
 	check(w.reading._title.text.contains("•") and not w.reading._body.text.contains("â") and w.reading._body.text.contains("06:00, 12:00, 17:00 and 00:00"),"service log clearly labels both devices and bulletin times without broken encoding")
+	check(not w.reading._body.text.contains("%s") and w.reading._body.text.contains("Inspect the ground transfer cabinet") and w.reading._body.text.contains("bearing") and w.reading._body.text.contains("water above 45%,"),"service log substitutes actual task and directions while preserving literal percentages")
 	await create_timer(.05,true).timeout
 	check(paused and before==w.clock.total_game_s,"reading pauses live broadcast timeline")
 	w.reading.close()
-	at(w,23400+800)
+	at(w,23400+op.state.audio_clock_rate*(800.0/48.0))
 	check(w.hud.radio_text!="" and not w.hud.radio_text.begins_with("It is noon") and w.hud.radio_text.length()<op.state.public_broadcast_at(w.clock.total_game_s).text.length(),"late arrival captions only current spoken chunk, not full missed script")
-	at(w,23400+1700)
+	at(w,23400+op.state.audio_clock_rate*(1700.0/48.0))
 	check(not op.speaker.playing and w.hud.radio_text=="","finished speech never loops inside reserved window")
 	at(w,41400);check(op.speaker.playing and not op.walkie.playing,"17:00 starts its unique later-day bulletin")
 	# Accelerated sleep crosses a public slot silently, but lands on dispatch.
@@ -89,7 +90,7 @@ func run() -> void:
 	check(is_equal_approx(w.clock.total_game_s,9000) and int(w._sl.phase)==1,"accelerated sleep cannot step past dispatch start")
 	check(w.player.health-hp<.011,"sleep health gain uses only time actually advanced to call")
 	w._process(.1)
-	check(int(w._sl.phase)==2 and w.clock.time_scale==48 and w.sleep_last.contains("walkie") and op.walkie.playing,"dispatch wakes player and restores normal clock with live audio")
+	check(int(w._sl.phase)==2 and w.clock.time_scale==w.clock.base_time_scale and w.sleep_last.contains("walkie") and op.walkie.playing,"dispatch wakes player and restores saved awake pace with live audio")
 	w._sl_on=false;w.player.sleeping=false;w.hud.sleep_fade=0
 	at(w,9000+1790);w._sleep_begin(w.fire_lookout,8);w._sleep_update(w.SLEEP_FADE);w._process(.1)
 	check(int(w._sl.phase)==1 and not op.walkie.playing,"going to bed after dispatch speech ends does not wake to silence")

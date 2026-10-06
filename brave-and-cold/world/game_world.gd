@@ -132,8 +132,6 @@ func _ready() -> void:
 		ice_material.set_shader_parameter('surface_noise', preload('res://assets/textures/atmosphere/cloud_fields.png'))
 	snow.build("res://data/maps/valley_b")
 	clock.hour = float(opts.get("hour", 16.5))
-	clock.time_scale = float(opts.get("speed", clock.time_scale))
-	Cabin.game_scale = clock.time_scale
 	sky_rig = SkyRig.new() if opts.get("atmosphere", "winter") == "baseline" else preload("res://world/atmosphere_rig.gd").new()
 	add_child(sky_rig)
 	sky_rig.setup(sun, env, sky_mat)
@@ -195,6 +193,17 @@ func _ready() -> void:
 	opening_state.enabled = opts.get("lookout","1") != "0" and opts.get("opening","assignment") != "survival" and (not loading or sv.has("opening"))
 	if loading and sv.has("opening"): opening_state.restore(sv.opening.get("state",{}))
 	elif opening_state.enabled: opening_state.new_run(int(opts.get("opening_seed",Time.get_unix_time_from_system())))
+	var baseline_pace: bool = opts.get("opening_pace", "winter") == "baseline"
+	if loading:
+		clock.restore(sv.get("clock", {}))
+	else:
+		clock.set_pace(GameClock.OPENING_TIME_SCALE if opening_state.enabled and not baseline_pace else GameClock.LEGACY_TIME_SCALE)
+	if opts.has("speed"):
+		var requested_rate: float = float(opts.speed)
+		if requested_rate > 0.0: clock.set_pace(requested_rate)
+		else: clock.time_scale = 0.0
+	Cabin.game_scale = clock.time_scale
+	opening_state.audio_clock_rate = clock.base_time_scale
 	opening_zombie_count = int(opts.get("zombies",250))
 	if opening_state.enabled and not loading and not opts.has("hour"): clock.hour = LookoutAssignment.START_HOUR
 	if not loading: opening_state.align_calendar(clock.day,clock.hour,clock.total_game_s,true)
@@ -324,7 +333,7 @@ func _ready() -> void:
 	if opts.has("trail"):
 		_lay_trail(int(opts["trail"]))
 	if loading:
-		_apply_save(sv)
+		_apply_save(sv, opts)
 	hud = Hud.new()
 	add_child(hud)
 	hud.setup(player, body, snow, clock)
@@ -350,7 +359,7 @@ func _ready() -> void:
 		first_week=FirstWeekRoute.new();add_child(first_week);first_week.build(self,sv.get("first_week",{}))
 		opening_state.field_load_w=0 if first_week.feeder_isolated else 6
 		if not loading:
-			opening.starting_gear()
+			opening.starting_gear(baseline_pace)
 			var camera_override := false
 			for option: String in ["pos","roadpos","hutpos","icepos","storepos","outpos","hamletpos","cabinpos","lookoutpos"]:
 				if opts.has(option): camera_override = true
@@ -3224,7 +3233,7 @@ func _sleep_tick(delta: float, cb: Node3D) -> void:
 	player.exhausted = false
 	player.position = cb.call("bed_lie_pos")
 	if pop != null:
-		pop.catch_up(maxf(0.0, gs / 48.0 - delta))   # world minutes pass at the normal 48x pace, not at sleep speed
+		pop.catch_up(maxf(0.0, gs / clock.base_time_scale - delta))
 	hud.sleep_text = "Sleeping...  %s     (E to wake)" % clock.time_string()
 	var key := Input.is_key_pressed(KEY_E) or Input.is_key_pressed(KEY_SPACE)
 	if not key:
@@ -3264,7 +3273,7 @@ func _sleep_wake_reason() -> String:
 
 
 func _sleep_restore_clock() -> void:
-	clock.time_scale = float(_sl.get("scale0", 48.0))
+	clock.time_scale = float(_sl.get("scale0", clock.base_time_scale))
 	Cabin.game_scale = clock.time_scale
 	needs.rest_mult = 1.0
 
@@ -3307,7 +3316,7 @@ func _save_data() -> Dictionary:
 	for cf in campfires:
 		fires.append({'x': cf.global_position.x, 'y': cf.global_position.y, 'z': cf.global_position.z, 'fuel': cf.fuel_s,'prepared_water':cf.prepared_water.to_dict(), 'cook': cf.cooking})
 	var d := {
-		'clock': {'hour': clock.hour, 'day': clock.day, 'total': clock.total_game_s},
+		'clock': clock.to_dict(),
 		'weather': weather.to_dict(),
 		'atmosphere': (sky_rig as AtmosphereRig).to_dict() if sky_rig is AtmosphereRig else {},
 		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
@@ -3421,11 +3430,15 @@ func _ground(x: float, z: float) -> Vector3:
 	return Vector3(x, 0.0 if is_nan(h) else h, z)
 
 
-func _apply_save(sv: Dictionary) -> void:
+func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 	var c: Dictionary = sv['clock']
-	clock.hour = float(c['hour'])
-	clock.day = int(c['day'])
-	clock.total_game_s = float(c['total'])
+	clock.restore(c)
+	if launch_options.has("speed"):
+		var requested_rate: float = float(launch_options.speed)
+		if requested_rate > 0.0: clock.set_pace(requested_rate)
+		else: clock.time_scale = 0.0
+	Cabin.game_scale = clock.time_scale
+	if opening_state != null: opening_state.audio_clock_rate = clock.base_time_scale
 	if opening_state != null: opening_state.align_calendar(clock.day,clock.hour,clock.total_game_s)
 	if sv.has('weather'):
 		weather.from_dict(sv.weather)

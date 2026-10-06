@@ -61,7 +61,7 @@ func run()->void:
 	check(String(w._cur.get("text","")).begins_with("Take walkie"),"aiming handset selects it ahead of nearby desk props")
 	await key(KEY_E)
 	check(s.walkie_carried and not op.dock_handset.visible,"E takes unique handset and leaves empty cradle")
-	p.position+=Vector3(250,0,0);at(w,23400+96)
+	p.position+=Vector3(250,0,0);at(w,23400+s.audio_clock_rate*2)
 	check(op.walkie.playing and w.hud.radio_device=="public" and w.hud.radio_heading.begins_with("PERSONAL WALKIE"),"carried handset receives public bulletin away from home")
 	check(absf(op.walkie.get_playback_position()-2)<.2,"pickup during live bulletin seeks remaining speech")
 	s.receiver_on=false;op._radio_update()

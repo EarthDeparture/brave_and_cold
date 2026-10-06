@@ -48,7 +48,7 @@ func run() -> void:
 	check(is_equal_approx(float(op.cooking.remaining_s),1170),"cooking cannot advance beyond actual stove burn time")
 	check(op.heat_at(w.fire_lookout.to_global(Vector3(0,1.7,0)))==0,"upstairs stove cannot heat ground through 21 metres")
 	# Independent live devices seek elapsed audio; neither queues missed messages.
-	s.walkie_carried=true;s.receiver_on=false;s.last_s=2.5*3600+96
+	s.walkie_carried=true;s.receiver_on=false;s.last_s=2.5*3600+s.audio_clock_rate*2
 	op._radio_update()
 	check(op.walkie.playing and not op.speaker.playing and w.hud.radio_device=="dispatch","personal walkie receives live dispatch with desk off")
 	check(absf(op.walkie.get_playback_position()-2)<.2,"late dispatch starts two real seconds into transmission")
