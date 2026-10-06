@@ -21,8 +21,8 @@ func run() -> void:
 	w.clock.hour=10;w.sky_rig.apply_hour(10);w.sky_rig.apply_shelter(1)
 	camera(Vector3(1.48,1.22,.48),Vector3(1.88,.72,1.65))
 	await shot("pantry_full")
-	w.opening.pantry.remove("beans",2);w.opening.pantry.remove("jerky",1);w.opening.wood_left=6;w.opening.update_presentation();await shot("pantry_half")
-	w.opening.pantry.remove("beans",2);w.opening.pantry.remove("jerky",1);w.opening.wood_left=0;w.opening.update_presentation();await shot("pantry_empty")
+	w.opening.pantry.remove("beans",2);w.opening.pantry.remove("jerky",1);w.opening.pantry.remove("wood",3);w.opening.update_presentation();await shot("pantry_half")
+	w.opening.pantry.remove("beans",2);w.opening.pantry.remove("jerky",1);w.opening.pantry.remove("wood",w.opening.wood_left);w.opening.update_presentation();await shot("pantry_empty")
 	for data:Array in [["wood",8,Vector3(-.60,0,.3)],["plank",3,Vector3(.30,0,.25)],["stick",7,Vector3(.15,0,-.4)]]:
 		ItemPickup.spawn(w,data[0],data[1],w.fire_lookout.to_global(data[2]+Vector3.UP*FireLookout.DECK_Y))
 	camera(Vector3(.25,1.2,1.4),Vector3(0,.1,0));await shot("recovered_resources")

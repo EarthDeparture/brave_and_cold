@@ -1,0 +1,167 @@
+{
+  "date": "2026-10-05",
+  "baseline": "721981ffa35a9dfba4f5bbb17778a3954f10a04a",
+  "checkpoint": "checkpoint/pre-bandaging-blood-firewood-2026-10-05",
+  "branch": "codex/bandaging-blood-firewood",
+  "push": false,
+  "medical": {
+    "nutrition_kcal_strictly_above": 900,
+    "water_percent_strictly_above": 45,
+    "core_c_at_least": 35,
+    "awake_health_per_game_hour": 1,
+    "warm_sleep_health_per_game_hour": 3,
+    "blocked_by": [
+      "active bleeding",
+      "symptomatic infection",
+      "dead player"
+    ],
+    "instant_blood_refill": false,
+    "independent_blood_simulation": false
+  },
+  "firewood": {
+    "new_game_home_logs": 6,
+    "new_game_pack_logs": 2,
+    "new_game_lit_stove_hours": 2,
+    "burn_hours_per_log": 2,
+    "total_initial_continuous_burn_hours": 18,
+    "visible_cap": 12,
+    "home_save_schema": 2,
+    "legacy_merge_once": true,
+    "legacy_preserves_weighted_condition": true,
+    "no_partial_log_waste": true
+  },
+  "tests": [
+    {
+      "script": "res://tests/test_blood_recovery.gd",
+      "checks": 26,
+      "failures": 0,
+      "log": "brave-and-cold/shots/medical-firewood/test_blood_recovery.log",
+      "sha256": "c4655842b0a56ef14339d4802540f5e7ad7608defd66b40aaf67daae0371653b"
+    },
+    {
+      "script": "res://tests/test_lookout_door_log.gd",
+      "checks": 35,
+      "failures": 0,
+      "log": "brave-and-cold/shots/medical-firewood/test_lookout_door_log.log",
+      "sha256": "2f65eee09d0fdd5016a157fa0c73baecc52fa56326c2e0a67a540affa20cdc5b"
+    },
+    {
+      "script": "res://tests/test_lookout_opening.gd",
+      "checks": 53,
+      "failures": 0,
+      "log": "brave-and-cold/shots/medical-firewood/test_lookout_opening.log",
+      "sha256": "f44734a6430070599a254b5342d0c23c4fb525f6e29d75080f27b3a017818eba"
+    },
+    {
+      "script": "res://tests/test_lookout_radio_logs.gd",
+      "checks": 29,
+      "failures": 0,
+      "log": "brave-and-cold/shots/medical-firewood/test_lookout_radio_logs.log",
+      "sha256": "c7bd2a71033ff08ddae210aa27f3ecf2063abbcb2969b69a3e27d76bccc36feb"
+    },
+    {
+      "script": "res://tests/test_medical_firewood.gd",
+      "checks": 37,
+      "failures": 0,
+      "log": "brave-and-cold/shots/medical-firewood/test_medical_firewood.log",
+      "sha256": "c07c758475b715e3df0972d6dfaf4250794eec8814b6610974eb3e9e3aabcad7"
+    },
+    {
+      "script": "res://tests/test_radio_bulletins.gd",
+      "checks": 140,
+      "failures": 0,
+      "log": "brave-and-cold/shots/medical-firewood/test_radio_bulletins.log",
+      "sha256": "c017a6354960e1561ea9cba1e7955cf37e7d396806266e5a4e9cc83798a0a2cc"
+    },
+    {
+      "script": "res://tests/test_survival.gd",
+      "checks": 12,
+      "failures": 0,
+      "log": "brave-and-cold/shots/medical-firewood/test_survival.log",
+      "sha256": "b5182f7b2577a558f4d90a65ee1bbc2bfa69fa72a98d82d92a40914e42be3565"
+    },
+    {
+      "script": "res://tests/test_survival_props.gd",
+      "checks": 36,
+      "failures": 0,
+      "log": "brave-and-cold/shots/medical-firewood/test_survival_props.log",
+      "sha256": "b5a227368d851d27fa52e0df3628f96ee185191d4c5348356a8c426279ba3026"
+    },
+    {
+      "script": "res://tests/test_watch_walkie_door.gd",
+      "checks": 46,
+      "failures": 0,
+      "log": "brave-and-cold/shots/medical-firewood/test_watch_walkie_door.log",
+      "sha256": "c1fdee3561527243afd351a2583ad07cc4128c7e06c3d492df3685fa54536610"
+    }
+  ],
+  "total_checks": 414,
+  "gpu_transform_checks": 2,
+  "renderer": "Forward+ Direct3D12 / GTX 1080 Ti",
+  "captures": [
+    {
+      "path": "brave-and-cold/shots/medical-firewood/bandage_use_button.png",
+      "bytes": 402514,
+      "sha256": "bb079a732f508d34c8d2cbd843e0387abae3448e1fb967fa7854c1b39f4bc00f",
+      "visually_reviewed": true
+    },
+    {
+      "path": "brave-and-cold/shots/medical-firewood/bandaged_recovery_status.png",
+      "bytes": 384944,
+      "sha256": "335af0e72c25ff2779f6a592e61290589b366e6f63bba0d18fd915788c6ad84f",
+      "visually_reviewed": true
+    },
+    {
+      "path": "brave-and-cold/shots/medical-firewood/rack_empty.png",
+      "bytes": 962608,
+      "sha256": "e4ded577ec2886ef40cbfb7f7a351fc94d5e4316fabf923e7e7fd8be71e6f193",
+      "visually_reviewed": true
+    },
+    {
+      "path": "brave-and-cold/shots/medical-firewood/rack_full_twelve.png",
+      "bytes": 990234,
+      "sha256": "e77e635ea4b2961024fe4818009efad837e1a4ab768880d1f28259548d89d4a4",
+      "visually_reviewed": true
+    },
+    {
+      "path": "brave-and-cold/shots/medical-firewood/rack_overflow_stored.png",
+      "bytes": 991902,
+      "sha256": "30b192bc2fed7be3a94483480728c381b7ddfb1355650efcca4f67c595f4c369",
+      "visually_reviewed": true
+    },
+    {
+      "path": "brave-and-cold/shots/medical-firewood/rack_replenished_six.png",
+      "bytes": 988661,
+      "sha256": "224b877929468735bb62148524eecec013b9353509f0ed410b44251e74c46601",
+      "visually_reviewed": true
+    },
+    {
+      "path": "brave-and-cold/shots/medical-firewood/rack_starter_six.png",
+      "bytes": 988659,
+      "sha256": "180187f45e34f63b1f9ed17a2dcba1410b2d0f0079c144df4619723aa31deea9",
+      "visually_reviewed": true
+    },
+    {
+      "path": "brave-and-cold/shots/medical-firewood/recovery_water_pause_720p.png",
+      "bytes": 276541,
+      "sha256": "18106029611f4765d2673a38250aadc86c6b9c9122b1d009c427803df07dc0b2",
+      "visually_reviewed": true
+    }
+  ],
+  "import": {
+    "exit_code": 0,
+    "script_or_parse_errors": 0,
+    "existing_diagnostics": [
+      "ERROR: 1 RID allocations of type 'PN13RendererDummy14TextureStorage12DummyTextureE' were leaked at exit.",
+      "WARNING: 1 RID of type \"CanvasItem\" was leaked.",
+      "WARNING: 4 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+      "ERROR: 1 resources still in use at exit (run with --verbose for details)."
+    ],
+    "log": "brave-and-cold/shots/medical-firewood/import.log"
+  },
+  "human_playtest": "pending",
+  "user_save_written": false,
+  "road_work_status": "planning only",
+  "road_work_plan": "docs/design/EARLY_OUTBREAK_ROAD_WORK.md",
+  "revert": "Revert feature commit while preserving subsequent work; refresh imports. See validation document for progressed-save compatibility caveat."
+}

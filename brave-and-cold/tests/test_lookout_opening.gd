@@ -20,7 +20,7 @@ func run() -> void:
 	check(w.fire_lookout.contains_room(p.position),"new assignment starts inside elevated lookout")
 	check(w.inv.count("service_kit")==1 and w.inv.jacket()=="parka","technician starts with service kit and worn winter layers")
 	check(w.pop.all_alive().is_empty(),"opening begins before zombie population seeds")
-	check(op.pantry.count("beans")==4 and op.wood_left==12,"home stock is finite and explicit")
+	check(op.pantry.count("beans")==4 and op.wood_left==6,"home stock is finite and explicit")
 	# Check targets from free standing positions, rather than only calling helpers.
 	var original_pos:=p.position
 	for point:Vector3 in [Vector3(-.45,1.7,-.6),Vector3(-.4,1.7,.45),Vector3(0,1.7,-1.3),Vector3(.65,1.7,-.6),Vector3(1.7,1.7,.8)]:

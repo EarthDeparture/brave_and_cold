@@ -47,7 +47,7 @@ func run() -> void:
 	create_timer(120).timeout.connect(func()->void:print("FAIL timeout");quit(2))
 	SaveGame.pending={};seed(20261004)
 	var w:Node3D=await build_world();var op:LookoutOpening=w.opening;var vm:Viewmodel=w.viewmodel
-	check(units(op,"wood")==12 and units(op,"beans")==4 and units(op,"jerky")==2,"opening displays each of twelve logs, four tins and two pouches")
+	check(units(op,"wood")==6 and units(op,"beans")==4 and units(op,"jerky")==2,"opening displays each of six logs, four tins and two pouches")
 	check(not op.home_model.get_node("HomeWood").visible and not op.home_model.get_node("PantryFood").visible,"old grouped stock remains hidden")
 	var pile:=op._stock.get_node("Stock_wood");op.update_presentation()
 	check(pile==op._stock.get_node("Stock_wood"),"unchanged stock does not rebuild each frame")
@@ -57,11 +57,11 @@ func run() -> void:
 	op.pantry.put("beans",30,1,0)
 	check(units(op,"beans")==4 and op.pantry.count("beans")==34 and "extra stock stored" in op._stock_label.text,"overflow display is bounded and explicitly marked without losing stock")
 	var before:int=w.inv.count("wood");op.take_wood()
-	check(op.wood_left==11 and units(op,"wood")==11 and w.inv.count("wood")==before+1,"taking wood removes exactly one visible and stored log")
+	check(op.wood_left==5 and units(op,"wood")==5 and w.inv.count("wood")==before+1,"taking wood removes exactly one visible and stored log")
 	w.inv.counts["wood"]=100;op.take_wood()
-	check(op.wood_left==11 and units(op,"wood")==11,"full backpack cannot silently consume reserve")
+	check(op.wood_left==5 and units(op,"wood")==5,"full backpack cannot silently consume reserve")
 	w.inv.counts["wood"]=2
-	for i in 11:op.take_wood()
+	for i in 5:op.take_wood()
 	check(op.wood_left==0 and units(op,"wood")==0,"entire loose reserve can visibly run out")
 	for id:String in ["wood","plank","stick"]:
 		var p:=ItemPickup.spawn(w,id,3,w.player.position-Vector3.UP*w.player.eye_h,.45)

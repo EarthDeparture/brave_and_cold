@@ -571,6 +571,9 @@ func _process(delta: float) -> void:
 		player.hurt(sd * delta, 'Died of thirst' if needs.water <= 0.0 else 'Starved to death')
 	if body.core <= BodyTemperature.FATAL:
 		player.hurt(9999.0, "Froze to death")
+	# One recovery pass after needs and damage, using actual clock advancement.
+	var recovering_sleep:bool=_sl_on and int(_sl.get("phase",0))==1
+	player.injury.recover(gs,needs,body.core,Injury.REST_RECOVERY_MULT*_sleep_quality() if recovering_sleep else 1.0)
 	_update_prompt()
 	if out_path != "" and _frames == 40:
 		get_viewport().get_texture().get_image().save_png(out_path)
@@ -1219,6 +1222,8 @@ func gear_use(id: String) -> void:
 	if id == 'flare':
 		_throw_flare()
 		return
+	# Treat the current player even after a load or injury-object replacement.
+	if Inventory.kind_of(id)=="med":Inventory.injury=player.injury
 	_say(inv.use(id))
 
 
@@ -3189,8 +3194,6 @@ func _sleep_tick(delta: float, cb: Node3D) -> void:
 	if opening != null:
 		var call_at: float=opening.next_dispatch_wake(clock.total_game_s,clock.total_game_s+gs)
 		if is_finite(call_at): gs=call_at-clock.total_game_s
-	var q := _sleep_quality()
-	player.health = minf(100.0, player.health + 3.0 * q * gs / 3600.0)
 	player.stamina = 100.0
 	player.exhausted = false
 	player.position = cb.call("bed_lie_pos")

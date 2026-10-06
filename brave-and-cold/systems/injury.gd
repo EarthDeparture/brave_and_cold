@@ -6,6 +6,10 @@ extends RefCounted
 ##  - infection counts GAME seconds: hidden until INCUBATION_S (then fever + slow HP drain), death at DEATH_S.
 ##  - antiseptic works only inside EARLY_S of the last wound; antibiotics cure at any stage.
 
+const RECOVERY_CAL := Needs.HUNGRY
+const RECOVERY_WATER := 45.0
+const RECOVERY_PER_H := 1.0
+const REST_RECOVERY_MULT := 3.0
 const BLEED_HP_PER_S := 0.35
 const CLOT_RATE := 0.004
 const DEEP := 0.35
@@ -37,7 +41,7 @@ func symptomatic() -> bool:
 
 
 func bleeding() -> bool:
-	return bleed > 0.02
+	return bleed >= 0.02
 
 
 func update(game_s: float, dt: float) -> void:
@@ -57,6 +61,26 @@ func update(game_s: float, dt: float) -> void:
 		if inf_t >= DEATH_S:
 			player.hurt(9999.0, "Succumbed to the infection")
 
+
+## Blood is represented by the existing health pool. Game time makes normal
+## updates and accelerated sleep use the same recovery clock, exactly once.
+func recovery_block(needs: Needs, core: float) -> String:
+	if player==null or not is_instance_valid(player) or player.dead:return "Recovery unavailable"
+	if bleeding():return "Bleeding • apply a bandage"
+	if symptomatic():return "Recovery paused • fever"
+	if core<BodyTemperature.HYPOTHERMIA:return "Recovery paused • warm up"
+	if needs.calories<=RECOVERY_CAL:return "Recovery needs food above 900 kcal"
+	if needs.water<=RECOVERY_WATER:return "Recovery needs water above 45%"
+	return ""
+func recovery_status(needs: Needs, core: float) -> String:
+	var blocked:=recovery_block(needs,core)
+	if blocked!="":return blocked
+	return "Blood replenished" if player.health>=100 else "Recovering • fed and hydrated"
+func recover(game_s: float, needs: Needs, core: float, rest_mult: float=1.0) -> float:
+	if game_s<=0 or recovery_block(needs,core)!="" or player.health>=100:return 0
+	var gain:=minf(100-player.health,RECOVERY_PER_H*game_s/3600*clampf(rest_mult,0,REST_RECOVERY_MULT))
+	player.health+=gain
+	return gain
 
 ## true = used up
 func bandage() -> bool:

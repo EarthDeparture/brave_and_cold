@@ -270,6 +270,9 @@ func _entries(id: String, from: String, n: int, node: Node = null) -> Array:
 			out.append({"label": "Take one", "act": func() -> void: world.chest_take(_chest, id, 1)})
 		return out
 	match kind:
+		"med":
+			var label: String={"bandage":"Apply bandage","antiseptic":"Clean wound","antibiotics":"Take antibiotics"}.get(id,"Use medicine")
+			out.append({"label":label,"act":func()->void:world.gear_use(id)})
 		"food":
 			out.append({"label": "Eat", "act": func() -> void: world.gear_use(id)})
 		"clothing":
@@ -610,6 +613,7 @@ func _draw_condition() -> void:
 	_bar(Vector2(x, 508), w, "Food", needs.calories / 1500.0, "%d kcal" % int(needs.calories))
 	_bar(Vector2(x, 536), w, "Water", needs.water / 70.0, "%d%%" % int(needs.water))
 	_bar(Vector2(x, 564), w, "Temperature", (body.core - 32.0) / 4.5, "%.1f C" % body.core)
+	DZ.text(_c,player.injury.recovery_status(needs,body.core),Vector2(140,584),12,DZ.WARN if player.injury.bleeding() else DZ.DIM)
 	DZ.text(_c, "WORN", Vector2(140, 604), 16, DZ.DIM)
 	var worn := inv.worn_list()
 	if worn.is_empty():

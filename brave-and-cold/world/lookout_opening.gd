@@ -25,7 +25,10 @@ var fire_light: OmniLight3D
 var stove_smoke: GPUParticles3D
 var ember: MeshInstance3D
 var fuel_s := 7200.0
-var wood_left := 12
+const STARTING_WOOD := 6
+const VISIBLE_WOOD_CAP := 12
+var wood_left: int:
+	get: return maxi(pantry.count("wood"),0) if pantry!=null else 0
 var cooking: Dictionary = {}
 var _stock: Node3D
 var _stock_label: Label3D
@@ -64,9 +67,14 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 	pantry = StorageChest.new(); pantry.visual_enabled = false; tower.add_child(pantry)
 	pantry.position = Vector3(1.90, FireLookout.DECK_Y + .40, 1.62)
 	if saved.is_empty():
-		pantry.put("beans", 4, 1, 0); pantry.put("jerky", 2, 1, 0); pantry.put("matches", 4, 1, 0); pantry.put("bandage", 2, 1, 0)
+		pantry.put("beans", 4, 1, 0); pantry.put("jerky", 2, 1, 0); pantry.put("matches", 4, 1, 0); pantry.put("bandage", 2, 1, 0); pantry.put("wood",STARTING_WOOD,1,0)
 	else:
-		pantry.load_dict(saved.get("storage", {})); fuel_s = float(saved.get("fuel_s", 0)); wood_left = int(saved.get("wood_left", 0)); cooking = saved.get("cooking", {}).duplicate(true)
+		pantry.load_dict(saved.get("storage", {})); fuel_s = float(saved.get("fuel_s", 0)); cooking = saved.get("cooking", {}).duplicate(true)
+		# Older saves had a separate loose rack and collected wood in storage.
+		# Merge both exactly once; schema-two storage is already authoritative.
+		if int(saved.get("schema",1))<2:
+			var loose:=maxi(int(saved.get("wood_left",0)),0)
+			if loose>0:pantry.put("wood",loose,1,0)
 	_build_stock(tower)
 	pantry.contents_changed.connect(_update_stock)
 	if not world.stores.is_empty():
@@ -272,7 +280,10 @@ func actions() -> Array:
 		if cooking.is_empty() and world.inv.has_raw(): out.append(_action(stove, "Cook one portion on stove", cook, 2, .02))
 	if not cooking.is_empty():
 		out.append(_action(stove, "Take cooked food" if float(cooking.remaining_s) <= 0 else "Cooking • %d min left" % int(ceil(float(cooking.remaining_s)/60)), take_cooked, 0, .03))
-	out.append(_action(home_point(Vector3(1.87,.18,1.55)), "Take firewood (%d left)" % wood_left, take_wood, 1, .03))
+	var rack:=home_point(Vector3(1.87,.18,1.55))
+	out.append(_action(rack, "Take firewood (%d left)" % wood_left, take_wood, 1, .03))
+	if wood_left<VISIBLE_WOOD_CAP and world.inv.count("wood")>0:
+		out.append(_action(rack,"Stack firewood (%d)"%mini(VISIBLE_WOOD_CAP-wood_left,world.inv.count("wood")),stack_wood,1,.05))
 	out.append_array(world._sleep_items(world.fire_lookout))
 	out.append(_action(boundary.gate_point(), "Close compound gate" if boundary.gate_open else "Open compound gate", boundary.toggle_gate))
 	var cabinet := relay.to_global(Vector3(0,1.10,.52))
@@ -294,7 +305,7 @@ func read_log() -> void:
 		directions = "North Ridge Supply is approximately %.0f m away on bearing %.0f° (straight-line). Follow the logging track down to the road; collect the reserved relay case at the store counter." % [Vector2(d.x,d.z).length(),bearing]
 	var task: String = ["Inspect the ground transfer cabinet with your insulated service kit.","Collect the reserved transfer relay, return and install it in the cabinet.","Verify the cabinet transfer under local power.","Relay signed off. Local service restored."][state.repair_stage]
 	if state.repair_stage==1 and state.parts_claimed:task="Return to the ground cabinet and install the replacement relay."
-	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nTake the walkie from its desk cradle before travelling. Field dispatch and public news are monitored together. Its battery powers both signals away from home, independently of the desk receiver. A full charge lasts about one day. Dock it on this desk to recharge in roughly three hours from local mains or backup power. Amber indicates charging and green indicates full charge. The desk receiver remains public radio only. Bulletins begin at 06:00, 12:00, 17:00 and 00:00; noon recaps the morning. Green indicates receiver power and blue identifies public radio. Public reports are live, not queued: missed bulletins do not return. Dispatch keeps clear of every public slot. A dispatch call wakes you if your powered walkie is carried or within earshot on the desk; public broadcasts do not. Check your wristwatch and walkie charge in Gear (Tab). Midnight closes the day just lived. The desk receiver and lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer while the repeater is enabled. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. Keep water, food and dry firewood ready. Stoke the stove, boil snow, and prepare the sleeping berth before the weather closes in." % [task,directions]
+	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nTake the walkie from its desk cradle before travelling. Field dispatch and public news are monitored together. Its battery powers both signals away from home, independently of the desk receiver. A full charge lasts about one day. Dock it on this desk to recharge in roughly three hours from local mains or backup power. Amber indicates charging and green indicates full charge. The desk receiver remains public radio only. Bulletins begin at 06:00, 12:00, 17:00 and 00:00; noon recaps the morning. Green indicates receiver power and blue identifies public radio. Public reports are live, not queued: missed bulletins do not return. Dispatch keeps clear of every public slot. A dispatch call wakes you if your powered walkie is carried or within earshot on the desk; public broadcasts do not. Check your wristwatch and walkie charge in Gear (Tab). Midnight closes the day just lived. The desk receiver and lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer while the repeater is enabled. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. The rack starts with six logs. Each fuels this stove for two hours; collect fallen timber along the logging road, split it with your axe, and restock the rack before dark. Wood deposited in lookout provisions refills the same visible rack. Stoke the stove, boil snow, and prepare the sleeping berth before the weather closes in.\n\nFirst aid\nIn Gear (Tab), select your bandage and choose Apply bandage, or double-click it. One wrap stops bleeding; it does not restore lost blood immediately or cure infection. Recovery needs food above 900 kcal, water above 45%, and no fever or hypothermia. Resting warm restores blood faster. Gather cloth and supplies during the first town visit." % [task,directions]
 	world.reading.open("North Ridge • Service log",text,world.player,world.hud)
 func toggle_receiver() -> void: state.receiver_on = not state.receiver_on; _update_receiver_indicators(); _radio_update()
 func toggle_backup() -> void:
@@ -324,15 +335,20 @@ func verify_relay() -> void:
 	if state.verify(): world._say("Transfer verified. Local site equipment restored and automatic backup armed. You can disable the repeater to conserve 12 W. Distant grid failures cannot be repaired here.")
 	elif state.repair_stage == 2: world._say("No local power. Enable backup at the desk panel, then verify.")
 func stoke() -> void:
-	if fuel_s >= 16 * 3600: world._say("Stove fuel capacity reached"); return
+	if fuel_s + 2 * 3600 > 16 * 3600: world._say("Stove too full for another log; let the current fuel burn down"); return
 	if world.inv.count("wood") < 1: world._say("Need firewood"); return
 	if fuel_s <= 0 and world.inv.count("matches") < 1: world._say("Need a match to relight the stove"); return
 	if fuel_s <= 0: world.inv.remove("matches")
-	world.inv.remove("wood"); fuel_s = minf(16 * 3600, fuel_s + 2 * 3600); update_presentation()
+	world.inv.remove("wood"); fuel_s += 2 * 3600; update_presentation()
 func take_wood() -> void:
 	if wood_left > 0 and world.inv.can_add("wood"):
-		world.inv.add("wood"); wood_left -= 1; _update_stock()
+		world.chest_take(pantry,"wood",1)
 		world.audio.play_at("rustle", pantry.global_position, -6, 1, 3, 18)
+func stack_wood() -> void:
+	var amount:=mini(maxi(VISIBLE_WOOD_CAP-wood_left,0),world.inv.count("wood"))
+	if amount<=0:world._say("The visible rack is full" if wood_left>=VISIBLE_WOOD_CAP else "Gather and split firewood first");return
+	world.chest_put(pantry,"wood",amount)
+	world.audio.play_at("rustle",pantry.global_position,-6,1,3,18)
 func boil() -> void:
 	if fuel_s > 0: world.needs.drink(35); world._say("Drank boiled snow (+35 water)")
 func cook() -> void:
@@ -354,7 +370,7 @@ func is_refuge(point: Vector3) -> bool:
 		if actor is Node3D and not bool(actor.call("is_dead")) and boundary.contains_ground(actor.global_position): return false
 	return true
 func to_dict() -> Dictionary:
-	return {"state":state.to_dict(),"home":{"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open}}
+	return {"state":state.to_dict(),"home":{"schema":2,"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open}}
 func _relay_foundations() -> void:
 	var st := SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for foot: Vector2 in [Vector2(-1.04,-1.1),Vector2(1.04,-1.1),Vector2(0,-2.15),Vector2(-.45,0),Vector2(.45,0),Vector2(-.92,-.35)]:
@@ -404,14 +420,14 @@ func _update_stock() -> void:
 	var jerky := maxi(pantry.count("jerky"), 0)
 	var other := 0
 	for id: String in pantry.contents:
-		if id not in ["beans", "jerky"]: other += maxi(pantry.count(id),0)
+		if id not in ["beans", "jerky", "wood"]: other += maxi(pantry.count(id),0)
 	var signature := "%d/%d/%d/%d" % [beans,jerky,wood_left,other]
 	if signature == _stock_signature: return
 	_stock_signature = signature
 	for node: Node in _stock.get_children():
 		_stock.remove_child(node); node.queue_free()
 	var wood_poses: Array[Transform3D] = []
-	for i in mini(maxi(wood_left,0),12):
+	for i in mini(wood_left,VISIBLE_WOOD_CAP):
 		wood_poses.append(Transform3D(Basis.IDENTITY, Vector3(1.65+(i%2)*.47, .228+floorf(float(i)/4)*.065, 1.56+(int(i/2)%2)*.14)))
 	SurvivalProps.pile(_stock,"wood",wood_poses)
 	var tin_poses: Array[Transform3D] = []
@@ -424,6 +440,6 @@ func _update_stock() -> void:
 	SurvivalProps.pile(_stock,"jerky",pouch_poses)
 	# Food stack capacity is finite; deposits beyond it stay in inventory and are
 	# explicitly marked stored, rather than implying every item is on the shelf.
-	var overflow := maxi(beans-4,0)+maxi(jerky-4,0)+maxi(wood_left-12,0)
+	var overflow := maxi(beans-4,0)+maxi(jerky-4,0)+maxi(wood_left-VISIBLE_WOOD_CAP,0)
 	_stock_label.text = "PROVISIONS • %d tins / %d pouches\nFIREWOOD • %d" % [beans,jerky,maxi(wood_left,0)]
 	if other>0 or overflow>0: _stock_label.text += "\n%d other items%s" % [other," • extra stock stored" if overflow>0 else ""]

@@ -30,7 +30,7 @@ const ITEMS := {
 	"pike_raw": {"shelf_h": 24.0, "name": "Raw Pike", "kind": "food", "stack": 2, "kcal": 450.0, "raw": true, "cooked": "pike_cooked", "desc": "A big, bony pike. Cook it."},
 	"pike_cooked": {"shelf_h": 60.0, "name": "Cooked Pike", "kind": "food", "stack": 2, "kcal": 1000.0, "desc": "A whole pike, roasted. A real meal."},
 	"hammer": {"name": "Hammer", "kind": "tool", "stack": 1, "desc": "Claw hammer. Needed to board up windows and doors. Wears a little with every board (about six fully boarded houses) and breaks at 0%. Loud."},
-	"bandage": {"name": "Bandage", "kind": "med", "stack": 6, "desc": "Clean cloth wrap. Stops bleeding."},
+	"bandage": {"name": "Bandage", "kind": "med", "stack": 6, "desc": "Stops bleeding. Recovery needs >900 kcal and >45% water."},
 	"antiseptic": {"name": "Antiseptic", "kind": "med", "stack": 3, "desc": "Disinfectant. Clean a wound within two hours or the infection takes hold."},
 	"antibiotics": {"name": "Antibiotics", "kind": "med", "stack": 2, "desc": "A full course. Cures an infection at any stage."},
 	"nails": {"name": "Nails", "kind": "misc", "stack": 50, "desc": "Box of nails. One per board."},
