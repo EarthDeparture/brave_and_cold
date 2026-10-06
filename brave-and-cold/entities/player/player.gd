@@ -43,6 +43,7 @@ var ice: IceField   # frozen water is walkable: the surface, not the carved bed 
 
 var yaw := 0.0
 var pitch := 0.0
+var needs:Needs
 var stamina := 100.0
 var exhausted := false
 var crouching := false
@@ -471,6 +472,8 @@ func _head_bob(delta: float, sp: float) -> void:
 
 func _stamina(delta: float) -> void:
 	var tier: int = _step_snow_tier()
+	var capacity:float=needs.stamina_capacity() if needs!=null else 100.0
+	stamina=minf(stamina,capacity)
 	if sprinting:
 		stamina -= STAMINA_DRAIN * SnowField.PLAYER_STAMINA_COST[tier] * delta
 		if stamina <= 0.0:
@@ -480,7 +483,7 @@ func _stamina(delta: float) -> void:
 		var regen := STAMINA_REGEN * body.stamina_penalty()
 		if moving:
 			regen *= 0.5
-		stamina = minf(100.0, stamina + regen * delta)
+		stamina = minf(capacity, stamina + regen * delta)
 		if exhausted and stamina > 25.0:
 			exhausted = false
 

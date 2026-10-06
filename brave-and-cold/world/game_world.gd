@@ -172,6 +172,8 @@ func _ready() -> void:
 	player.footprints = footprints
 	viewmodel = Viewmodel.new()
 	viewmodel.player = player
+	viewmodel.game_clock=clock
+	player.needs=needs
 	viewmodel.detail_enabled = environment_detail_enabled
 	player.cam.add_child(viewmodel)
 	await get_tree().process_frame
@@ -567,7 +569,10 @@ func _process(delta: float) -> void:
 		fw = maxf(fw, cf.heat_at(player.position.x, player.position.z))
 	body.metabolism_mult = needs.metabolism_mult()
 	body.update(gs, clock.ambient_c() + _indoor_c(), wind, player.is_sheltered(), fw, player.activity, 0.0 if player.is_sheltered() else weather.precip * 0.05, false)
+	needs.resting=_sl_on and int(_sl.get("phase",0))==1
+	needs.rest_quality=_sleep_quality() if needs.resting else 1.0
 	needs.update(gs, player.activity, body.core)
+	inv.wear_clothing(gs,player.activity,weather.precip)
 	_act_update(delta, Input.is_key_pressed(KEY_E))
 	Inventory.infinite = player.god
 	for chx in chests:
@@ -596,6 +601,7 @@ func _process(delta: float) -> void:
 		_zombietest_step(delta)
 	if opts_pausetest and _frames == 40:
 		opts_pausetest = false
+		_act_cancel()
 		pause_menu.open()
 		print('PT paused=', get_tree().paused)
 		await get_tree().create_timer(0.6, true).timeout
@@ -1235,7 +1241,9 @@ func gear_use(id: String) -> void:
 		return
 	# Treat the current player even after a load or injury-object replacement.
 	if Inventory.kind_of(id)=="med":Inventory.injury=player.injury
+	var before:=inv.count(id)
 	_say(inv.use(id))
+	if inv.count(id)<before and viewmodel!=null:viewmodel.queue_treatment(id)
 
 
 func gear_hands(rifle: bool) -> void:
@@ -1888,7 +1896,7 @@ func _update_prompt() -> void:
 	hud.info = info
 	hud.rifle_up = rifle_up
 	player.aim_req = aim_override or rifle_up and inv != null and inv.count('rifle') > 0 and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
-	player.speed_mult = inv.speed_mult()
+	player.speed_mult = inv.speed_mult()*needs.travel_mult()
 	hud.kills = _count_kills()
 
 
@@ -1938,7 +1946,7 @@ func _act_update(delta: float, held: bool) -> void:
 			hud.action_t = -1.0
 		return
 	var moved := Vector2(player.position.x - _act_pos.x, player.position.z - _act_pos.z).length() > 0.6
-	if not held:
+	if not held and not bool(_act.get("auto",false)):
 		_act_cancel("Hold E to finish")
 		return
 	if moved or player.airborne or player.dead or player.struggling or player.ui_open or player.health < _act_hp - 0.01:
@@ -3152,7 +3160,7 @@ func _sleep_begin(cb: Node3D, hours: float) -> void:
 
 
 func _sleep_quality() -> float:
-	var q := 1.0
+	var q := lerpf(1.0,.6,body.wetness)
 	if needs.calories < Needs.HUNGRY:
 		q *= 0.4
 	if needs.water < 45.0:
@@ -3301,7 +3309,7 @@ func _save_data() -> Dictionary:
 		'atmosphere': (sky_rig as AtmosphereRig).to_dict() if sky_rig is AtmosphereRig else {},
 		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
 		'body': {'core': body.core, 'wet': body.wetness},
-		'needs': {'cal': needs.calories, 'water': needs.water},
+		'needs': {'cal': needs.calories, 'water': needs.water,'fatigue':needs.fatigue},
 		'inv': {'counts': inv.counts, 'worn': inv.jacket(), 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age},
 		'cabins': cabs,
 		'huts': huts.map(func(h: Hut) -> Dictionary: return h.state_dict()),
@@ -3430,6 +3438,7 @@ func _apply_save(sv: Dictionary) -> void:
 		fire_lookout.restore_door(sv.get('lookout_door',{'open':true}))
 	body.core = float(sv['body']['core'])
 	body.wetness = float(sv['body']['wet'])
+	needs.fatigue=clampf(float(sv['needs'].get('fatigue',0)),0,100)
 	needs.calories = float(sv['needs']['cal'])
 	needs.water = float(sv['needs']['water'])
 	inv = Inventory.new(body)
@@ -3493,6 +3502,8 @@ func _update_viewmodel() -> void:
 	if viewmodel == null:
 		return
 	var m := 'fists'
+	player.needs=needs
+	viewmodel.game_clock=clock
 	viewmodel.glove_item = String(inv.extra.get('hands', '')) if inv != null else ''
 	if inv != null:
 		if rifle_up and inv.count('rifle') > 0:
@@ -3530,3 +3541,11 @@ func _water_action(pot:PreparedWater,point:Vector3,lit:bool)->Dictionary:
 		elif pot.batch>0:_say(pot.status())
 		elif lit:_say(pot.begin(inv))
 		else:_say("Light the fire first")}
+
+func gear_maintain(id:String)->void:
+	if opening==null or player.position.distance_to(opening.home_point(Vector3(.95,.88,-1.35)))>2.6:
+		_say("Return to the lookout desk to maintain your gear");return
+	var why:=FieldMaintenance.reason(inv,id)
+	if why!="":_say(why);return
+	gear.close()
+	_act_begin({"text":"Maintaining "+inv.name_of(id),"hold":6.0,"auto":true,"work":"reach","act":func()->void:_say(FieldMaintenance.complete(inv,id))})

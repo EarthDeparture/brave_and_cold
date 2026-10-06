@@ -11,13 +11,22 @@ const HUNGRY := 900.0
 const STARVING := 300.0
 
 var calories := 2000.0
+var fatigue:=0.0
+var resting:=false
+var rest_quality:=1.0
 var water := 85.0  # 0..100
 var starve_dmg_accum := 0.0
 var rest_mult := 1.0   # < 1 while asleep: resting bodies burn less
 
 
 func update(game_s: float, activity: int, core_temp: float) -> void:
+	if game_s<=0:return
 	var h := game_s / 3600.0
+	if resting:
+		fatigue=maxf(0,fatigue-10*h*clampf(rest_quality,0,1))
+	else:
+		var rate:float=[3.0,5.0,8.0][clampi(activity,0,2)]
+		fatigue=minf(100,fatigue+rate*h*(1.15 if core_temp<36 else 1.0))
 	var burn := (BASE_CAL_PER_H + ACTIVITY_CAL_PER_H[clampi(activity, 0, 2)]) * rest_mult
 	if core_temp < BodyTemperature.SHIVER:
 		burn += SHIVER_BONUS_PER_H
@@ -69,3 +78,11 @@ func damage_per_s() -> float:
 	if water <= 0.0:
 		d += 0.35
 	return d
+
+func stamina_capacity()->float:return 100-fatigue*.55
+func travel_mult()->float:return 1-clampf((fatigue-50)/50,0,1)*.18
+func fatigue_state()->String:
+	if fatigue>=85:return "Exhausted • warm sleep needed"
+	if fatigue>=65:return "Tired • plan a return"
+	if fatigue>=35:return "Awake for a while"
+	return "Rested"

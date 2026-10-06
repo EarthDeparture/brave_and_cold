@@ -22,6 +22,9 @@ func _ready() -> void:
 	if id in ["clean_water","empty_bottle"]:
 		var bottle:Node3D=(load("res://assets/first_week/water_bottle.glb") as PackedScene).instantiate();add_child(bottle)
 		return
+	if id in ["whetstone","sewing_kit","bandage"]:
+		var asset:String="dressing_roll" if id=="bandage" else id
+		add_child((load("res://assets/maintenance/"+asset+".glb") as PackedScene).instantiate());return
 	if id in ["wood", "plank", "stick"]:
 		_resource_pile()
 		return

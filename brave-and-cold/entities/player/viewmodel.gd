@@ -21,6 +21,16 @@ const BOLT_ORIGIN := Vector3(0.0, 0.046, 0.06)
 
 var detail_enabled := false
 var player: Player
+var game_clock:GameClock
+var watch:Node3D
+var watch_hour:Node3D
+var watch_minute:Node3D
+var treatment_pending:=""
+var _cosmetic:=false
+var _roll:Node3D
+var _bottle:Node3D
+var watch_override:=false # deterministic render/test fixture
+var _watch_k:=0.0
 var mode := "fists"  # fists | axe | rifle
 var glove_item := ""  # Existing inventory hands slot; bare when no mitts are worn.
 var _right: SurvivorHandRig
@@ -57,6 +67,16 @@ var _was_dead := false
 
 
 func _ready() -> void:
+	_roll=(load("res://assets/maintenance/dressing_roll.glb") as PackedScene).instantiate();add_child(_roll);_roll.visible=false
+	_bottle=(load("res://assets/first_week/water_bottle.glb") as PackedScene).instantiate();add_child(_bottle);_bottle.visible=false
+	# Uncapped field flask during the sip; inventory retains its reusable container.
+	for part:String in ["Surface_steel","Surface_rubber"]:
+		var n:=_bottle.find_child(part,true,false) as Node3D
+		if n!=null:n.visible=false
+	watch=(load("res://assets/wristwatch/field_watch.glb") as PackedScene).instantiate()
+	add_child(watch);watch.visible=false
+	watch_hour=watch.find_child("HourHand",true,false)
+	watch_minute=watch.find_child("MinuteHand",true,false)
 	_right = SurvivorHandRig.new()
 	_right.name = "RightHand"
 	_right.detail_enabled = detail_enabled
@@ -178,6 +198,14 @@ func _process(delta: float) -> void:
 	if player == null:
 		return
 	_clock += delta
+	_roll.visible=false;_bottle.visible=false
+	if treatment_pending!="" and not player.ui_open and not player.dead and work_kind=="":
+		var kind:=treatment_pending;treatment_pending="";begin_work(kind,1.7);_cosmetic=true
+	if _cosmetic:
+		if player.aim_k>.1 or _swing_t>=0 or _fire_t>=0 or player.struggling or player.ui_open:end_work(false)
+		else:
+			work_elapsed+=delta
+			if work_elapsed>=work_duration:end_work(false)
 	if player.ui_open and work_kind != "": end_work(false)
 	if player.dead:
 		end_work(false)
@@ -253,6 +281,9 @@ func _process(delta: float) -> void:
 		work_elapsed += delta
 		if _work_tail <= 0: end_work(false)
 	var working := work_kind != ""
+	var inspecting:bool=(watch_override or Input.is_physical_key_pressed(KEY_T)) and not player.ui_open and not working and player.aim_k<.1 and _swing_t<0 and _fire_t<0
+	_watch_k=move_toward(_watch_k,1.0 if inspecting else 0.0,delta*3.5)
+	base.origin.y-=_watch_k*.52
 	var shown := work_kind if working else (_cur if _equip > 0.0 else "")
 	_hammer.visible = shown == "hammer"
 	_axe.visible = shown in ["axe", "split", "chop"]
@@ -272,6 +303,24 @@ func _process(delta: float) -> void:
 	elif shown == "fists":
 		_pose_fists(base)
 
+	watch.visible=_watch_k>.01 and not player.ui_open
+	if watch.visible:
+		_pose_watch(_watch_k)
+
+func _pose_watch(k:float)->void:
+	_left.visible=true;_sl_l.visible=true
+	var wrist:=Vector3(.04,-.10-(1-k)*.55,-.36)
+	var elbow:=Vector3(-.50,-.35,.12)
+	var z:=(elbow-wrist).normalized()
+	var y:=(Vector3.BACK-z*Vector3.BACK.dot(z)).normalized()
+	var x:=y.cross(z).normalized()
+	var target:=Transform3D(Basis(x,z.cross(x),z),wrist)
+	_left.transform=target;_left.pose("Fist","Open",.20)
+	_aim_sleeve(_sl_l,target,Vector3.ZERO,elbow)
+	watch.transform=target*Transform3D(Basis.IDENTITY,Vector3(0,0,.05))
+	if game_clock!=null:
+		watch_hour.rotation.y=-TAU*fposmod(game_clock.hour,12)/12
+		watch_minute.rotation.y=-TAU*fposmod(game_clock.hour,1)
 
 func _aim_sleeve(sl: MeshInstance3D, hand: Transform3D, wrist: Vector3, elbow: Vector3) -> void:
 	var wp := hand * wrist
@@ -382,7 +431,7 @@ func _pose_fists(base: Transform3D) -> void:
 ## Action-owned presentation: no timers or gameplay resource mutations here.
 func begin_work(kind: String, duration: float, repeating := false) -> void:
 	end_work(false)
-	if kind not in ["split", "chop", "hammer", "reach"]: return
+	if kind not in ["split", "chop", "hammer", "reach","treat","drink"]: return
 	work_kind = kind; work_duration = maxf(duration,.01); work_elapsed = 0
 	var cycles := 1 if kind in ["chop","reach"] else maxi(1,int(ceil(duration/.85)))
 	# Final stroke reaches impact at completion; earlier strokes give rhythm.
@@ -399,12 +448,14 @@ func end_work(completed: bool) -> void:
 		work_elapsed = work_duration
 		_work_tail = .47/SWING_LEN*work_period if work_kind != "reach" else .15
 		return
-	work_kind = ""; _work_tail = -1; work_elapsed = 0
+	work_kind = ""; _work_tail = -1; work_elapsed = 0;_cosmetic=false
 func work_impacts(elapsed: float) -> int:
 	if work_kind not in ["split","hammer"]: return 0
 	return maxi(0,int(floor(elapsed/work_period-.35/SWING_LEN+.00001))+1)
 func _pose_work(base: Transform3D) -> void:
 	_left.visible = false; _sl_l.visible = false
+	if work_kind in ["treat","drink"]:
+		_pose_consumable(base);return
 	if work_kind == "reach":
 		var progress := clampf(work_elapsed/work_duration,0,1)
 		var reach := sin(progress*PI)
@@ -424,3 +475,21 @@ func _pose_work(base: Transform3D) -> void:
 	_right.transform = w*Transform3D(Basis(Vector3.DOWN,Vector3.FORWARD,Vector3.RIGHT),AXE_WRIST)
 	_right.pose("Shaft")
 	_aim_sleeve(_sl_r,_right.transform,Vector3.ZERO,base*_about(shoulder,rot)*Vector3(.48,-.56,.30))
+
+func queue_treatment(id:String)->void:
+	if id=="bandage":treatment_pending="treat"
+	elif id=="clean_water":treatment_pending="drink"
+func _pose_consumable(base:Transform3D)->void:
+	var t:=clampf(work_elapsed/work_duration,0,1)
+	var lift:=sin(t*PI)
+	if work_kind=="drink":
+		_right.transform=_free_hand(1,Vector3(.15,-.29+.25*lift,-.43+.15*lift),Vector3(.49,-.57,.25),-65,base)
+		_right.pose("Shaft","Support",.15)
+		_bottle.visible=true;_bottle.transform=_right.transform*Transform3D(Basis(Vector3.RIGHT,-.15-.65*lift),Vector3(0,-.10,-.06))
+	else:
+		_left.visible=true;_sl_l.visible=true
+		_left.transform=_free_hand(-1,Vector3(-.12,-.26,-.44),Vector3(-.46,-.57,.22),35,base);_left.pose("Open","Support",.35)
+		_aim_sleeve(_sl_l,_left.transform,Vector3.ZERO,base*Vector3(-.46,-.57,.22))
+		_right.transform=_free_hand(1,Vector3(.11-.07*lift,-.25+.025*sin(t*TAU*2),-.43),Vector3(.46,-.57,.25),-35,base);_right.pose("Shaft","Support",.2)
+		_roll.visible=true;_roll.transform=_right.transform*Transform3D(Basis.IDENTITY,Vector3(0,-.075,-.075))
+	_aim_sleeve(_sl_r,_right.transform,Vector3.ZERO,base*Vector3(.49,-.57,.25))

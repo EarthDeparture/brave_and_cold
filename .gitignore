@@ -45,3 +45,9 @@ tools/blender/generated/clinic/*.blend[0-9]
 tools/blender/generated/infected/*.blend[0-9]
 tools/blender/clinic_build.log
 tools/blender/infected_build.log
+
+tools/blender/generated/wristwatch/*.blend[0-9]
+tools/blender/watch_build.log
+
+/tools/blender/generated/maintenance/*.blend[0-9]
+/tools/blender/generated/maintenance/build.log

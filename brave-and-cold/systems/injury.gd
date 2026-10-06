@@ -1,10 +1,11 @@
 class_name Injury
 extends RefCounted
-## Wounds: bleeding + a lethal, hidden infection timer (Project Zomboid tone).
+## Bleeding, treatable ordinary infection and independently rolled outbreak transmission.
+## Older inf saves retain their existing medicine behaviour; new infected strikes use outbreak_t.
 ##  - wound(sev, p_infect): adds bleeding; p_infect chance to start the infection clock.
 ##  - bleeding drains HP per REAL second; shallow wounds (< DEEP) clot by themselves, deep ones need a bandage.
 ##  - infection counts GAME seconds: hidden until INCUBATION_S (then fever + slow HP drain), death at DEATH_S.
-##  - antiseptic works only inside EARLY_S of the last wound; antibiotics cure at any stage.
+##  - antiseptic and antibiotics treat ordinary infection only, never outbreak transmission.
 
 const RECOVERY_CAL := Needs.HUNGRY
 const RECOVERY_WATER := 45.0
@@ -21,23 +22,28 @@ const SICK_DRAIN_PER_H := 1.5
 var player: Object
 var bleed := 0.0
 var inf_t := -1.0
+var outbreak_t:=-1.0
+var outbreak_exposed:=false
 var wound_age := -1.0
 var rng := RandomNumberGenerator.new()
 
 
-func wound(sev: float, p_infect: float) -> void:
+func wound(sev: float, p_infect: float, outbreak:bool=false) -> void:
 	bleed = minf(1.5, bleed + sev)
 	wound_age = 0.0
-	if inf_t < 0.0 and rng.randf() < p_infect:
+	if outbreak:
+		outbreak_exposed=true
+		if outbreak_t<0 and rng.randf()<p_infect:outbreak_t=0
+	elif inf_t < 0.0 and rng.randf() < p_infect:
 		inf_t = 0.0
 
 
 func infected() -> bool:
-	return inf_t >= 0.0
+	return inf_t >= 0.0 or outbreak_t>=0
 
 
 func symptomatic() -> bool:
-	return inf_t >= INCUBATION_S
+	return inf_t >= INCUBATION_S or outbreak_t>=INCUBATION_S
 
 
 func bleeding() -> bool:
@@ -56,11 +62,15 @@ func update(game_s: float, dt: float) -> void:
 			bleed = maxf(0.0, bleed - CLOT_RATE * dt)
 	if inf_t >= 0.0:
 		inf_t += game_s
-		if symptomatic():
+		if inf_t>=INCUBATION_S:
 			player.hurt(SICK_DRAIN_PER_H * game_s / 3600.0, "Succumbed to the infection")
 		if inf_t >= DEATH_S:
 			player.hurt(9999.0, "Succumbed to the infection")
 
+	if outbreak_t>=0:
+		outbreak_t+=game_s
+		if outbreak_t>=INCUBATION_S:player.hurt(SICK_DRAIN_PER_H*game_s/3600,"Succumbed to the outbreak")
+		if outbreak_t>=DEATH_S:player.hurt(9999,"Succumbed to the outbreak")
 
 ## Blood is represented by the existing health pool. Game time makes normal
 ## updates and accelerated sleep use the same recovery clock, exactly once.
@@ -112,16 +122,18 @@ func status_lines() -> Array[String]:
 	var out: Array[String] = []
 	if bleeding():
 		out.append("Bleeding (heavy)" if bleed >= DEEP else "Bleeding (light)")
+	if outbreak_exposed:out.append("Infected contact • transmission risk")
 	if symptomatic():
 		out.append("Fever: infection")
 	return out
 
 
 func to_dict() -> Dictionary:
-	return {"bleed": bleed, "inf": inf_t, "age": wound_age}
+	return {"bleed": bleed, "inf": inf_t, "age": wound_age,"outbreak_t":outbreak_t,"outbreak_exposed":outbreak_exposed}
 
 
 func from_dict(d: Dictionary) -> void:
 	bleed = float(d.get("bleed", 0.0))
 	inf_t = float(d.get("inf", -1.0))
 	wound_age = float(d.get("age", -1.0))
+	outbreak_t=float(d.get("outbreak_t",-1));outbreak_exposed=bool(d.get("outbreak_exposed",false))

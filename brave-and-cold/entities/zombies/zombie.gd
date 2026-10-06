@@ -397,7 +397,7 @@ func _process(delta: float) -> void:
 		if _attack_windup<=0:
 			_attack_windup=-1
 			if _stagger<=0 and state==State.CHASE and dist<GRAB_RANGE+.08 and absf(pp.y-global_position.y-1)<2 and _can_see_player():
-				grabs+=1;attacked.emit();player.hurt(DAMAGE,"Torn apart by the infected");player.injury.wound(.45,.30)
+				grabs+=1;attacked.emit();player.hurt(DAMAGE,"Torn apart by the infected");player.injury.wound(.45,.30,true)
 	if _stagger > 0.0:
 		want = 0.0
 	_move(want, delta)

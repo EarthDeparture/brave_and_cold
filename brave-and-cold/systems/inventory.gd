@@ -3,6 +3,8 @@ extends RefCounted
 ## Minimal inventory: stackable items + one body clothing slot that drives BodyTemperature insulation.
 
 const ITEMS := {
+	"whetstone":{"name":"Whetstone","kind":"tool","stack":1,"desc":"Hone an axe or knife at the lookout desk. Each session uses a rag and 8% stone condition."},
+	"sewing_kit":{"name":"Sewing Kit","kind":"tool","stack":1,"desc":"Mend clothing at the lookout desk with two rags and cordage. Thread and needle supply wears down."},
 	"clean_water": {"name":"Drinking Water • 0.5 L","kind":"drink","stack":4,"desc":"Boiled water. Drink +25% hydration; keeps its empty bottle."},
 	"empty_bottle": {"name":"Empty Bottle • 0.5 L","kind":"misc","stack":4,"desc":"Reusable water container. Bring it and a snow portion to the lookout kettle."},
 	"snow_portion": {"name":"Clean Snow Portion","kind":"misc","stack":4,"desc":"Gathered snow for 0.5 L of water. Boil it before drinking."},
@@ -34,8 +36,8 @@ const ITEMS := {
 	"pike_cooked": {"shelf_h": 60.0, "name": "Cooked Pike", "kind": "food", "stack": 2, "kcal": 1000.0, "desc": "A whole pike, roasted. A real meal."},
 	"hammer": {"name": "Hammer", "kind": "tool", "stack": 1, "desc": "Claw hammer. Needed to board up windows and doors. Wears a little with every board (about six fully boarded houses) and breaks at 0%. Loud."},
 	"bandage": {"name": "Bandage", "kind": "med", "stack": 6, "desc": "Stops bleeding. Recovery needs >900 kcal and >45% water."},
-	"antiseptic": {"name": "Antiseptic", "kind": "med", "stack": 3, "desc": "Disinfectant. Clean a wound within two hours or the infection takes hold."},
-	"antibiotics": {"name": "Antibiotics", "kind": "med", "stack": 2, "desc": "A full course. Cures an infection at any stage."},
+	"antiseptic": {"name": "Antiseptic", "kind": "med", "stack": 3, "desc": "Disinfectant. Clean recent wounds within two hours. Outbreak risk is separate."},
+	"antibiotics": {"name": "Antibiotics", "kind": "med", "stack": 2, "desc": "A full course. Treats ordinary wound infection. Cannot cure outbreak transmission."},
 	"nails": {"name": "Nails", "kind": "misc", "stack": 50, "desc": "Box of nails. One per board."},
 	"plank": {"name": "Plank", "kind": "misc", "stack": 8, "desc": "Rough plank. Board windows from the inside (4 per window)."},
 	"rag": {"name": "Rags", "kind": "misc", "stack": 10, "desc": "Cloth strips. Two make a curtain that hides your light and your silhouette."},
@@ -70,7 +72,7 @@ const INFINITE_IDS := ["ammo", "flare", "matches"]
 const KIND_ORDER := ["weapon", "tool", "ammo", "clothing", "food", "fuel", "misc"]
 const CAPACITY := 24          # backpack cells
 const EQUIP_ITEMS := ["rifle", "axe"]   # live in equipment slots, not backpack cells
-const WEIGHTS := {"clean_water":.6,"empty_bottle":.1,"snow_portion":.5,"service_kit":1.4,"power_relay":0.7,"wood": 1.2, "stick": 0.15, "thatch": 0.05, "cordage": 0.05, "kindling": 0.1, "bow_drill": 0.4, "jerky": 0.2, "reed": 0.06, "tinder": 0.02, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6, "cured_hide": 1.0, "wolf_fur": 0.7, "bear_fur": 3.0, "toque": 0.1, "hide_cap": 0.3, "wolf_hat": 0.3, "hide_mitts": 0.3, "wolf_mitts": 0.3, "hide_boots": 0.8, "hide_leggings": 0.8, "bear_coat": 4.5, "rotten_meat": 0.5, "hammer": 0.8, "nails": 0.01, "plank": 0.9, "bandage": 0.05, "antiseptic": 0.2, "antibiotics": 0.05, "rag": 0.05, "tackle": 0.1, "trout_raw": 0.6, "trout_cooked": 0.45, "whitefish_raw": 0.5, "whitefish_cooked": 0.38, "pike_raw": 1.6, "pike_cooked": 1.2}
+const WEIGHTS := {"whetstone":.25,"sewing_kit":.15,"clean_water":.6,"empty_bottle":.1,"snow_portion":.5,"service_kit":1.4,"power_relay":0.7,"wood": 1.2, "stick": 0.15, "thatch": 0.05, "cordage": 0.05, "kindling": 0.1, "bow_drill": 0.4, "jerky": 0.2, "reed": 0.06, "tinder": 0.02, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6, "cured_hide": 1.0, "wolf_fur": 0.7, "bear_fur": 3.0, "toque": 0.1, "hide_cap": 0.3, "wolf_hat": 0.3, "hide_mitts": 0.3, "wolf_mitts": 0.3, "hide_boots": 0.8, "hide_leggings": 0.8, "bear_coat": 4.5, "rotten_meat": 0.5, "hammer": 0.8, "nails": 0.01, "plank": 0.9, "bandage": 0.05, "antiseptic": 0.2, "antibiotics": 0.05, "rag": 0.05, "tackle": 0.1, "trout_raw": 0.6, "trout_cooked": 0.45, "whitefish_raw": 0.5, "whitefish_cooked": 0.38, "pike_raw": 1.6, "pike_cooked": 1.2}
 const WEIGHT_SOFT := 30.0   # kg carried before you slow down
 const WEIGHT_HARD := 45.0   # kg hard cap (cannot pick up more)
 const BASE_WARMTH := 0.25
@@ -85,7 +87,7 @@ const WORN_ORDER := ["jacket", "top", "head", "legs", "hands", "feet"]
 const LAYER_K := 0.4          # share of the top's warmth above bare that survives under a jacket (compression)
 
 var counts: Dictionary = {}
-const WEAR_IDS := ["axe", "knife", "hammer", "bow_drill", "tackle"]   # items whose condition is tracked and shown in the Gear screen
+const WEAR_IDS := ["whetstone","sewing_kit","axe", "knife", "hammer", "bow_drill", "tackle"]   # items whose condition is tracked and shown in the Gear screen
 var cond: Dictionary = {}       # id -> 0..1 condition for tools/weapons (missing = 1.0)
 var age: Dictionary = {}           # perishable id -> average age of the stack, game seconds
 var extra: Dictionary = {}          # slot (head/top/jacket/legs/hands/feet) -> id
@@ -165,11 +167,12 @@ func wear(id: String, amt: float) -> float:
 		return condition(id)
 	var c := clampf(condition(id) - amt, 0.0, 1.0)
 	cond[id] = c
+	if is_worn(id):_recompute()
 	return c
 
 
 static func wears(id: String) -> bool:
-	return WEAR_IDS.has(id)
+	return WEAR_IDS.has(id) or kind_of(id)=="clothing"
 
 
 static func kind_of(id: String) -> String:
@@ -313,9 +316,9 @@ func _use_med(id: String) -> String:
 		remove(id)
 		return m
 	if not injury.antibiotics():
-		return "You feel no sign of infection"
+		return "No ordinary wound infection to treat; outbreak risk cannot be removed" if injury.outbreak_exposed else "You feel no sign of infection"
 	remove(id)
-	return "Took the antibiotics: infection cleared"
+	return "Ordinary wound infection cleared; outbreak risk remains" if injury.outbreak_exposed else "Took the antibiotics: infection cleared"
 
 
 ## Toggle equip/unequip. Returns a short status message.
@@ -360,8 +363,8 @@ func _recompute() -> void:
 	var w := BASE_WARMTH
 	var wp := BASE_WINDPROOF
 	var wa := BASE_WATERPROOF
-	var jd: Dictionary = ITEMS[extra["jacket"]] if extra.has("jacket") else {}
-	var td: Dictionary = ITEMS[extra["top"]] if extra.has("top") else {}
+	var jd: Dictionary = _garment_data(extra["jacket"]) if extra.has("jacket") else {}
+	var td: Dictionary = _garment_data(extra["top"]) if extra.has("top") else {}
 	if not jd.is_empty() and not td.is_empty():
 		w = float(jd["warmth"]) + (float(td["warmth"]) - BASE_WARMTH) * LAYER_K
 		wp = float(jd["windproof"]) + (1.0 - float(jd["windproof"])) * float(td["windproof"]) * 0.5
@@ -378,10 +381,19 @@ func _recompute() -> void:
 		if s == "top" or s == "jacket":
 			continue
 		if extra.has(s):
-			var e: Dictionary = ITEMS[extra[s]]
+			var e: Dictionary = _garment_data(extra[s])
 			w += float(e["warmth"])
 			wp += float(e["windproof"])
 			wa += float(e["waterproof"])
 	body.warmth = minf(w, WARM_CAP)
 	body.windproof = minf(wp, PROOF_CAP)
 	body.waterproof = minf(wa, PROOF_CAP)
+
+func _garment_data(id:String)->Dictionary:
+	var d:Dictionary=ITEMS[id].duplicate();var k:=lerpf(.35,1,condition(id))
+	for prop:String in ["warmth","windproof","waterproof"]:d[prop]=float(d.get(prop,0))*k
+	return d
+func wear_clothing(gs:float,activity:int,precip:float)->void:
+	if gs<=0 or infinite or activity==0:return
+	var amount:=gs/3600*(.0045 if activity==1 else .008)*(1+clampf(precip,0,1))
+	for id:String in worn_list():wear(id,amount)

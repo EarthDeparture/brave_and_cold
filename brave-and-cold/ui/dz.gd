@@ -51,6 +51,8 @@ static func panel(ci: CanvasItem, r: Rect2, fill: Color = PANEL, edge: Color = E
 
 static func item_color(id: String) -> Color:
 	match id:
+		"whetstone":return Color(.38,.43,.40)
+		"sewing_kit":return Color(.33,.48,.36)
 		"clean_water": return Color(.38,.64,.70)
 		"empty_bottle": return Color(.48,.53,.48)
 		"snow_portion": return Color(.82,.87,.92)
@@ -125,6 +127,11 @@ static func item_icon(ci: CanvasItem, id: String, r: Rect2, dim: float = 1.0) ->
 	var c := r.get_center()
 	var u := minf(r.size.x, r.size.y) * 0.5   # half extent
 	match id:
+		"whetstone":
+			_quad(ci,c,.80*u,.34*u,-.2,col);_quad(ci,c+Vector2(0,.10*u),.78*u,.08*u,-.2,dark)
+		"sewing_kit":
+			_quad(ci,c,.76*u,.56*u,0,col);ci.draw_line(c+Vector2(-.3*u,-.08*u),c+Vector2(.3*u,-.08*u),lite,2)
+			ci.draw_circle(c+Vector2(-.12*u,.14*u),.085*u,lite);ci.draw_line(c+Vector2(.04*u,.10*u),c+Vector2(.25*u,.22*u),lite,2)
 		"clean_water", "empty_bottle":
 			var shape:=PackedVector2Array([Vector2(-.40,.8),Vector2(.40,.8),Vector2(.40,-.30),Vector2(.19,-.50),Vector2(.19,-.75),Vector2(-.19,-.75),Vector2(-.19,-.50),Vector2(-.40,-.30)])
 			var outline:=PackedVector2Array()

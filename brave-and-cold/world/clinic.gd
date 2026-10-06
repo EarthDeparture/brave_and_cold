@@ -76,7 +76,7 @@ func build_stock(w:Node3D,saved:Dictionary={})->void:
 		var c:=StorageChest.new();c.visual_enabled=false;add_child(c);stock.append(c)
 		if saved.get("stock",[]).size()==3:c.load_dict(saved.stock[i])
 		else:
-			for pair:Array in [[["bandage",5],["rag",4]],[["antiseptic",2],["antibiotics",1]],[["matches",4],["empty_bottle",2],["clean_water",2]]][i]:c.put(pair[0],pair[1],1,0)
+			for pair:Array in [[["bandage",5],["rag",4]],[["antiseptic",2],["antibiotics",1]],[["matches",4],["empty_bottle",2],["clean_water",2],["whetstone",1],["sewing_kit",1]]][i]:c.put(pair[0],pair[1],1,0)
 	restore_state(saved);update_loot_visuals()
 
 func actions()->Array:

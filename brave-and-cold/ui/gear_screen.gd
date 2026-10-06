@@ -288,6 +288,8 @@ func _entries(id: String, from: String, n: int, node: Node = null) -> Array:
 		"weapon":
 			var up: bool = world.rifle_up
 			out.append({"label": "Lower rifle" if up else "Raise rifle", "act": func() -> void: world.gear_hands(not up)})
+	if FieldMaintenance.repairable(id) and inv.condition(id)<.98:
+		out.append({"label":"Maintain at lookout desk","act":func()->void:world.gear_maintain(id)})
 	if inv.count(id) - (1 if from == "pack" and inv.is_worn(id) else 0) >= 1 or from == "equip":
 		out.append({"label": "Drop one" if n > 1 else "Drop", "act": func() -> void: world.drop_item(id, 1)})
 		if n > 1:
@@ -436,6 +438,7 @@ func _draw_all() -> void:
 	DZ.text(_c, "GEAR", Vector2(140, 122), 34, DZ.TEXT)
 	DZ.text(_c,watch_text(),Vector2(520,106),22,DZ.TEXT)
 	if world.opening!=null:DZ.text(_c,world.opening.state.walkie_status(),Vector2(520,137),15,DZ.ACCENT if world.opening.state.walkie_ready() else DZ.WARN)
+	DZ.text(_c,"Fatigue %d%% • %s   /   Clothing %d%% wet"%[roundi(needs.fatigue),needs.fatigue_state(),roundi(body.wetness*100)],Vector2(520,163),14,DZ.WARN if needs.fatigue>=65 else DZ.DIM)
 	DZ.text(_c, "Tab / Esc: close     click: select     double-click: use     right-click: options     drag: move, wear, drop", Vector2(140, 812), 15, DZ.DIM)
 	_draw_equipment()
 	_draw_condition()
