@@ -1,6 +1,6 @@
 class_name Clinic
 extends Node3D
-## Additive community clinic: bigger than the hut, door + 4 windows, three searchable spots (shelves, counter, crates).
+## Original additive clinic, two exits, two windows and three finite shelves.
 ## Same collider API as Cabin/Hut. Local frame: +Z is the door side.
 
 const MODEL := "res://assets/clinic/clinic.glb"
@@ -32,6 +32,7 @@ var looted := [false, false, false]
 var _walls: Array[Rect2] = []
 var openings: Array[Opening] = []
 var _door_pivot: Node3D
+var _exam_fill:OmniLight3D
 var _fill: OmniLight3D
 var _door_rect := Rect2(-DOOR_HALF, HZ - 0.04, 2 * DOOR_HALF, 0.08)
 
@@ -52,8 +53,9 @@ func setup(terrain:Terrain3D,x:float,z:float,yaw_deg:float)->bool:
 	position=Vector3(x,hi-.1,z);floor_y=position.y+.3
 	_dressing=(load(MODEL) as PackedScene).instantiate();add_child(_dressing)
 	for mi:MeshInstance3D in _dressing.find_children("*","MeshInstance3D",true,false):mi.visibility_range_end=160
-	_walls=[Rect2(-5.12,-3.92,1.92,.24),Rect2(-1.8,-3.92,6.92,.24),Rect2(-5.12,3.68,4.42,.24),Rect2(.7,3.68,4.42,.24),Rect2(-5.12,-3.92,.24,7.84),Rect2(4.88,-3.92,.24,7.84),Rect2(.95,-3.7,.10,4.05),Rect2(.95,1.75,.1,1.95),Rect2(-4.9,-.75,1.7,.1),Rect2(-1.8,-.75,2.75,.1),Rect2(-4.85,2.12,2.5,.62),Rect2(-4.45,-.30,2.5,.66),Rect2(2.35,-1.68,2.2,.96),Rect2(2.8,-3.65,1.9,.55),Rect2(-4.78,-2.98,1.2,.62)]
-	_fill=OmniLight3D.new();_fill.position=Vector3(0,2.8,1);_fill.light_color=Color(.78,.87,1);_fill.omni_range=8;_fill.light_energy=.35;add_child(_fill)
+	_walls=[Rect2(-5.12,-3.92,1.92,.24),Rect2(-1.8,-3.92,6.92,.24),Rect2(-5.12,3.68,4.42,.24),Rect2(.7,3.68,4.42,.24),Rect2(-5.12,-3.92,.24,7.84),Rect2(4.88,-3.92,.24,7.84),Rect2(.95,-3.7,.10,4.05),Rect2(.95,1.75,.1,1.95),Rect2(-4.9,-.75,1.7,.1),Rect2(-1.8,-.75,2.75,.1),Rect2(-4.85,2.12,2.5,.62),Rect2(-4.45,-.30,2.5,.66),Rect2(2.35,-1.68,2.2,.96),Rect2(2.8,-3.65,1.9,.55),Rect2(-4.78,-2.98,1.2,.62),Rect2(1.9,-2.96,.4,.33)]
+	_fill=OmniLight3D.new();_fill.position=Vector3(0,2.8,1);_fill.light_color=Color(.87,.91,.86);_fill.omni_range=5.5;_fill.light_energy=.55;add_child(_fill)
+	_exam_fill=OmniLight3D.new();add_child(_exam_fill);_exam_fill.position=Vector3(3.4,2.7,-1.2);_exam_fill.omni_range=4.5;_exam_fill.light_color=Color(.90,.92,.86);_exam_fill.light_energy=.35
 	_build_door();_door_rect=Rect2(-.7,3.70,1.4,.20)
 	rear=Node3D.new();rear.position=Vector3(-3.2,.3,-3.8);add_child(rear)
 	var leaf:=MeshInstance3D.new();var bm:=BoxMesh.new();bm.size=Vector3(1.4,2.04,.07);leaf.mesh=bm;leaf.position=Vector3(.7,1.02,0);leaf.material_override=Opening.wood_material();rear.add_child(leaf)
@@ -69,6 +71,15 @@ func update_loot_visuals()->void:
 	for i in stock.size():
 		var node:Node3D=_dressing.find_child(["MedicalStock","TreatmentStock","MaintenanceStock"][i],true,false)
 		if node!=null:node.visible=not stock[i].is_empty()
+	if stock.size()==3:
+		for i in 5:
+			var n:=_dressing.find_child("DressingUnit"+str(i),true,false) as Node3D
+			if n!=null:n.visible=i<stock[0].count("bandage")
+		for i in 2:
+			var n:=_dressing.find_child("AntisepticUnit"+str(i),true,false) as Node3D
+			if n!=null:n.visible=i<stock[1].count("antiseptic")
+		var medicine:=_dressing.find_child("AntibioticUnit",true,false) as Node3D
+		if medicine!=null:medicine.visible=stock[1].count("antibiotics")>0
 
 func build_stock(w:Node3D,saved:Dictionary={})->void:
 	world=w
@@ -89,7 +100,7 @@ func actions()->Array:
 func toggle_rear()->void:
 	rear_open=not rear_open;create_tween().tween_property(rear,"rotation:y",deg_to_rad(-105) if rear_open else 0.0,.45)
 func read_notice()->void:
-	var entries:=["Monday / Routine hours. Check in at reception. Return unused dressings to the supply room. Rear exit leads to the service yard.","Tuesday / Additional respiratory cases reported. Waiting room separated from treatment. Deliveries delayed. Keep the rear exit clear.","Wednesday / No staff on site. District transfer cancelled. First-aid reserve remains in supply room; take only what you can carry. Do not bring fever cases into the waiting room.","Thursday / Evacuation transport did not return. We left on foot towards the logging junction. Do not wait here for a vehicle.","Friday / The district line has gone silent. This is the last written notice. There is no replenishment scheduled."]
+	var entries:=["Monday / Routine hours. Nurse Sam Roy is covering house calls. Check in at reception; leave a note if the desk is unattended. Return unused dressings to the supply room. Rear exit leads to the service yard.","Tuesday / Additional respiratory cases reported. Waiting room separated from treatment. Deliveries delayed. Keep the rear exit clear.","Wednesday / No staff on site. District transfer cancelled. First-aid reserve remains in supply room; take only what you can carry. Do not bring fever cases into the waiting room.","Thursday / Evacuation transport did not return. Mara brought the town crew through the service yard. We left on foot towards the logging junction. Keep the last dressings dry. Do not wait here for a vehicle. — Sam Roy","Friday / The district line has gone silent. This is the last written notice. There is no replenishment scheduled."]
 	world.reading.open("North Ridge • clinic shift board",entries[clampi(collapse_phase,0,4)]+"\n\nBandages stop bleeding; food, water and warmth support gradual recovery. Antibiotics treat ordinary wound infection. An infected attack carries a separate outbreak risk.",world.player,world.hud)
 func _build_door() -> void:
 	_door_pivot = Node3D.new()
@@ -110,7 +121,8 @@ func _build_door() -> void:
 
 func set_night(f: float) -> void:
 	if _fill != null:
-		_fill.light_energy = 0.9 * clampf(1.0 - f, 0.0, 1.0)
+		_fill.light_energy = .55 * clampf(1.0 - f, 0.0, 1.0)*(1-.45*world.weather.precip if world!=null else 1.0)
+		_exam_fill.light_energy=.35*clampf(1-f,0,1)*(1-.45*world.weather.precip if world!=null else 1.0)
 
 
 func toggle_door() -> void:

@@ -1,0 +1,37 @@
+{
+  "source": "Original deterministic local synthesis; no external recordings",
+  "generator_sha256": "1c1790d0f67249d6ec0a70307303ca15399893fa48fd93eae720f4fe3291c4de",
+  "sample_rate": 22050,
+  "clips": {
+    "cloth_wrap": {
+      "sha256": "ed9446abd10acf02027491ef5d00733dbcb96c412f51b7f9a10965bdd3b309fd",
+      "seconds": 1.2,
+      "peak": 0.25,
+      "rms": 0.02960521558378824
+    },
+    "bottle_sip": {
+      "sha256": "f28b5668d184ca0b198d39f31a7231c6d7215364e58b3f9378370f1dd6ffbddf",
+      "seconds": 1.4,
+      "peak": 0.25,
+      "rms": 0.032524159656018965
+    },
+    "switch_click": {
+      "sha256": "bdb4ac5e45ad8195b441470f640fbc4cfa12cad1441b448f57276e49e28346bc",
+      "seconds": 0.16,
+      "peak": 0.23623853211009177,
+      "rms": 0.02295429600085859
+    },
+    "stone_hone": {
+      "sha256": "fb529392fc576f5f373531ad3bd33d782f2d52f58a45eb9603755f7ed34e2c8b",
+      "seconds": 1.1,
+      "peak": 0.25,
+      "rms": 0.030319263472787506
+    },
+    "paper_turn": {
+      "sha256": "c9cf06e24d37bc4ffcc8ace3e83fe711b6358b4bd5e68987d1a495549c0aa737",
+      "seconds": 0.6,
+      "peak": 0.25,
+      "rms": 0.04684416278163019
+    }
+  }
+}

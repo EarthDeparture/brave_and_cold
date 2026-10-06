@@ -1,0 +1,18 @@
+{
+  "city_letter": {
+    "triangles": 378,
+    "bytes": 59204,
+    "sha256": "34a2b0663a30b033f82e375f99a0fae6b5790c2d8719be47c4a5a5d1980ee085",
+    "source": "tools/blender/generated/city_letter/city_letter.blend",
+    "source_sha256": "c58fa9c8a54e9a1dd22d69dd13bfd87fddc5a2569316d31bb07b3a5c9e2ac963",
+    "mesh_nodes": 2
+  },
+  "provenance": {
+    "license": "Original project-authored geometry and illustration",
+    "units": "metres",
+    "generator_sha256": "17cf3eca6fc148abf32ad1f57ed324ffe88ca61585f6bf6113b5ec1d53289c47"
+  },
+  "graphics": {
+    "letter.png": "bc774324627889f30da1569061f0c391b7b170fce3d16a894f9fbbdb9f7c3cfa"
+  }
+}

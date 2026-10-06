@@ -438,7 +438,7 @@ func _draw_all() -> void:
 	DZ.text(_c, "GEAR", Vector2(140, 122), 34, DZ.TEXT)
 	DZ.text(_c,watch_text(),Vector2(520,106),22,DZ.TEXT)
 	if world.opening!=null:DZ.text(_c,world.opening.state.walkie_status(),Vector2(520,137),15,DZ.ACCENT if world.opening.state.walkie_ready() else DZ.WARN)
-	DZ.text(_c,"Fatigue %d%% • %s   /   Clothing %d%% wet"%[roundi(needs.fatigue),needs.fatigue_state(),roundi(body.wetness*100)],Vector2(520,163),14,DZ.WARN if needs.fatigue>=65 else DZ.DIM)
+	DZ.text(_c,"Fatigue %d%% • %s   /   Clothing %d%% wet%s"%[roundi(needs.fatigue),needs.fatigue_state(),roundi(body.wetness*100)," • "+drying_text() if body.wetness>.005 else ""],Vector2(520,163),14,DZ.WARN if needs.fatigue>=65 else DZ.DIM)
 	DZ.text(_c, "Tab / Esc: close     click: select     double-click: use     right-click: options     drag: move, wear, drop", Vector2(140, 812), 15, DZ.DIM)
 	_draw_equipment()
 	_draw_condition()
@@ -808,3 +808,9 @@ func _draw_tooltip() -> void:
 	var r := Rect2(_mouse + Vector2(18, 18), Vector2(w, 30))
 	DZ.panel(_c, r, Color(0.04, 0.045, 0.04, 0.96))
 	DZ.text(_c, t, r.position + Vector2(10, 21), 15, DZ.TEXT)
+
+func drying_text()->String:
+	var external:float=body.last_gain_w-BodyTemperature.BASE_METABOLISM_W*body.metabolism_mult-BodyTemperature.ACTIVITY_W[clampi(world.player.activity,0,2)]
+	if external>100:return "drying by heat"
+	if clock.ambient_c()+world._indoor_c()>0:return "drying slowly"
+	return "seek heat"

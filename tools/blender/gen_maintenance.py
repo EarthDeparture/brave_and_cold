@@ -2,7 +2,7 @@
 from pathlib import Path
 import bpy,json,hashlib,math
 src=Path(__file__).with_name('gen_first_week.py').read_text(encoding='utf-8');exec(src[:src.index('clear()\n# Reusable')]);OUT=R/'tools/blender/generated/maintenance';RT=R/'brave-and-cold/assets/maintenance';OUT.mkdir(parents=True,exist_ok=True);RT.mkdir(parents=True,exist_ok=True);receipt={};clear()
-M['stone']=mat('AbrasiveStone',(.25,.29,.27),.95,texture=OUT/'stone.png');M['canvas']=mat('DressingCotton',(.72,.70,.62),.98,texture=R/'tools/blender/generated/clinic/cloth.png')
+M['stone']=mat('AbrasiveStone',(.25,.29,.27),.95,texture=OUT/'stone.png');M['canvas']=mat('DressingCotton',(.72,.70,.62),.98,texture=OUT/'cotton.png')
 box('Whetstone',(0,.021,0),(.17,.040,.060),'stone',.005);box('RubberFoot',(0,.004,0),(.15,.008,.052),'rubber',.002);export('whetstone')
 box('SewingTin',(0,.025,0),(.15,.05,.11),'forest_enamel',.008);box('FoldedTinLid',(0,.052,0),(.151,.010,.111),'steel',.004)
 label('SewingPrint',(0,.027,.056),(.13,.029),'sewing')

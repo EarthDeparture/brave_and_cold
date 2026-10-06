@@ -357,8 +357,7 @@ func _ready() -> void:
 				player.position = fire_lookout.to_global(Vector3(0,FireLookout.DECK_Y+player.eye_h,.3))
 				player.yaw = fire_lookout.rotation.y; player.pitch = -.08
 	reading=ReadingModal.new();add_child(reading)
-	if not clinic_plan.is_empty():
-		collapse=FirstWeekCollapse.new();add_child(collapse);collapse.build(self,clinic_plan,sv.get("collapse",{}))
+	collapse=FirstWeekCollapse.new();add_child(collapse);collapse.build(self,clinic_plan,sv.get("collapse",{}))
 	pause_menu = PauseMenu.new()
 	add_child(pause_menu)
 	dev = DevMenu.new()
@@ -1243,7 +1242,9 @@ func gear_use(id: String) -> void:
 	if Inventory.kind_of(id)=="med":Inventory.injury=player.injury
 	var before:=inv.count(id)
 	_say(inv.use(id))
-	if inv.count(id)<before and viewmodel!=null:viewmodel.queue_treatment(id)
+	if inv.count(id)<before and viewmodel!=null:
+		viewmodel.queue_treatment(id)
+		if id in ["bandage","clean_water"]:audio.play_at("cloth_wrap" if id=="bandage" else "bottle_sip",player.position,-14,1,1,4)
 
 
 func gear_hands(rifle: bool) -> void:
@@ -3010,6 +3011,7 @@ func _take_cooked(cf: Campfire) -> void:
 
 
 func _near_fire() -> bool:
+	if opening!=null and opening.heat_at(player.position)>100:return true
 	for cf in campfires:
 		if cf.is_lit() and cf.global_position.distance_to(player.position) < 4.0:
 			return true
@@ -3548,4 +3550,4 @@ func gear_maintain(id:String)->void:
 	var why:=FieldMaintenance.reason(inv,id)
 	if why!="":_say(why);return
 	gear.close()
-	_act_begin({"text":"Maintaining "+inv.name_of(id),"hold":6.0,"auto":true,"work":"reach","act":func()->void:_say(FieldMaintenance.complete(inv,id))})
+	_act_begin({"text":"Maintaining "+inv.name_of(id),"hold":6.0,"auto":true,"work":"reach","start":func()->void:audio.play_at("stone_hone" if id in ["axe","knife"] else "cloth_wrap",player.position,-13,1,1,8),"act":func()->void:_say(FieldMaintenance.complete(inv,id))})

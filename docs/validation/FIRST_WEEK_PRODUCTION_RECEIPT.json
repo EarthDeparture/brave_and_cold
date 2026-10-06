@@ -1,0 +1,353 @@
+{
+  "packages": {
+    "first_week": {
+      "assets": {
+        "water_bottle": {
+          "triangles": 1046,
+          "bytes": 231612,
+          "sha256": "a2934b1596af4d34766eb54138b89375c711ce62c4b2463140799fc39866a931",
+          "source": "tools/blender/generated/first_week/water_bottle.blend",
+          "source_sha256": "453f1e86179818d99e2a0e5f531199f477751b84bd5db3544e8ef8679f7b90bf",
+          "mesh_nodes": 4,
+          "file": "brave-and-cold/assets/first_week/water_bottle.glb"
+        },
+        "field_cache": {
+          "triangles": 4924,
+          "bytes": 971832,
+          "sha256": "5ab33518c150a9415ba338807d9b43244f02c599fac7a47977b17f972475831e",
+          "source": "tools/blender/generated/first_week/field_cache.blend",
+          "source_sha256": "96dcdae9e98873480675c1e19cf8e2fc11feab0d35ce83b8a48dabdb88d00903",
+          "mesh_nodes": 13,
+          "file": "brave-and-cold/assets/first_week/field_cache.glb"
+        },
+        "timber_marker": {
+          "triangles": 1210,
+          "bytes": 588088,
+          "sha256": "0a9ae10c5b1c4fca0a52f9ef1ec0d159d6869cbcda24926b63c0720ee9167c0a",
+          "source": "tools/blender/generated/first_week/timber_marker.blend",
+          "source_sha256": "de037e809a840d55f5ecfa6a581f7588b8c5bfacafe4ebc4b3a97ac15a631a46",
+          "mesh_nodes": 4,
+          "file": "brave-and-cold/assets/first_week/timber_marker.glb"
+        },
+        "feeder_cabinet": {
+          "triangles": 2420,
+          "bytes": 520408,
+          "sha256": "bf8aface307abe81f5b0b011cdd179118ae893a4d07d86a254c0e02e26064dcd",
+          "source": "tools/blender/generated/first_week/feeder_cabinet.blend",
+          "source_sha256": "377958f6b1d6c66a73003c7084ffd451430120e8d9cdbad4effd4bc26a6f386c",
+          "mesh_nodes": 7,
+          "file": "brave-and-cold/assets/first_week/feeder_cabinet.glb"
+        }
+      },
+      "provenance": {
+        "license": "Original project-authored geometry/graphics; existing original timber texture reused",
+        "blender": "5.2.2 LTS",
+        "units": "metres",
+        "generator_sha256": "158c041109b01122abd14f7f2ab946d9518610bcf8d6ce5226dcd4e05911511e"
+      },
+      "graphics_verified": 6
+    },
+    "clinic": {
+      "assets": {
+        "clinic": {
+          "triangles": 17228,
+          "bytes": 2250144,
+          "sha256": "cbf5876bfd927ceabc824e136c93db453d8aed6103381e9abc44ab54736a51ca",
+          "source": "tools/blender/generated/clinic/clinic.blend",
+          "source_sha256": "07bf1acfb808e6ef996ae8743ca3199f58965ca446b90157102e15800fa85c73",
+          "mesh_nodes": 30,
+          "file": "brave-and-cold/assets/clinic/clinic.glb"
+        }
+      },
+      "provenance": {
+        "license": "Original project-authored geometry and graphics",
+        "blender": "5.2.2 LTS",
+        "units": "metres",
+        "generator_sha256": "48a543b8cfdd0d05a5568bfb9ae95be01d6eda1cf3c0453234b85bcf1cf35689"
+      },
+      "graphics_verified": 11
+    },
+    "infected": {
+      "assets": {
+        "winter_infected": {
+          "triangles": 13536,
+          "bytes": 562320,
+          "sha256": "4c54800b968f7935eebdde8814e9c63fa5cf8f7782f5a20341bef783a4090b62",
+          "source": "tools/blender/generated/infected/winter_infected.blend",
+          "source_sha256": "db607ec3605a11f1aad38011873a20741079c8cd2351ca04f9dec18b45548237",
+          "mesh_nodes": 21,
+          "file": "brave-and-cold/assets/infected/winter_infected.glb"
+        },
+        "proxy": {
+          "triangles": 2163,
+          "sha256": "b1a0e371aa9d4997ccebf2e04e14e6962f9f9214012f1323c615606662e8ae3b",
+          "file": "brave-and-cold/assets/infected/winter_infected_proxy.glb",
+          "derived_from": "tools/blender/generated/infected/winter_infected.blend"
+        }
+      },
+      "provenance": {
+        "license": "Original project-authored geometry; original project canvas graphic",
+        "blender": "5.2.2 LTS",
+        "rig": "Node joints / shoulder, elbow, hip, knee",
+        "units": "metres",
+        "generator_sha256": "07e3d86f3942610ba99837d5f2100a8e6d13c68d0bb1524b651cd73d3f2d1aee"
+      },
+      "graphics_verified": 0
+    },
+    "maintenance": {
+      "assets": {
+        "whetstone": {
+          "triangles": 376,
+          "bytes": 275836,
+          "sha256": "3d8cfc69018083c0e6d866aeb4eb872172561bf27a76b5bcddd75bd439072f40",
+          "source": "tools/blender/generated/maintenance/whetstone.blend",
+          "source_sha256": "8affcc615e7b4518808d5595dd8b0a32bb417dfdf1e721f223531da3b917ccae",
+          "mesh_nodes": 2,
+          "file": "brave-and-cold/assets/maintenance/whetstone.glb"
+        },
+        "sewing_kit": {
+          "triangles": 974,
+          "bytes": 209296,
+          "sha256": "b56de018fb2e1fba41fbd9d097de5ff865dffc86f3314a8ca5fad5f8fc3772a0",
+          "source": "tools/blender/generated/maintenance/sewing_kit.blend",
+          "source_sha256": "003585d3a4187f9ccfdc65c95c827f37232947a4ffc2795f28f6273fdd229713",
+          "mesh_nodes": 5,
+          "file": "brave-and-cold/assets/maintenance/sewing_kit.glb"
+        },
+        "dressing_roll": {
+          "triangles": 1080,
+          "bytes": 193748,
+          "sha256": "1b676c9e9f6d790747fa90d7870bfe1671a4b591992bdaaa7d5906e7a999aafa",
+          "source": "tools/blender/generated/maintenance/dressing_roll.blend",
+          "source_sha256": "ff5bc153efa5149fa36d7f90c547a9f60fc24e1e5f8a7872a61ead3fafd8bb94",
+          "mesh_nodes": 2,
+          "file": "brave-and-cold/assets/maintenance/dressing_roll.glb"
+        }
+      },
+      "provenance": {
+        "license": "Original project-authored geometry and printwork",
+        "blender": "5.2.2 LTS",
+        "units": "metres",
+        "generator_sha256": "bb542a23e8872c3ed7008fc3e592e43b376152a54c4fd3b2b64e05a49c115e7a"
+      },
+      "graphics_verified": 3
+    },
+    "wristwatch": {
+      "assets": {
+        "field_watch": {
+          "triangles": 750,
+          "bytes": 50560,
+          "sha256": "f340291f8ca42bdb4e5701432089508edbf34cf66051145b62253c6586667f2b",
+          "source": "tools/blender/generated/wristwatch/field_watch.blend",
+          "source_sha256": "1e5fe1b1b0fbed2d1b31d117ca330aab2be7719c32d06037b191cc56bef48c81",
+          "mesh_nodes": 5,
+          "file": "brave-and-cold/assets/wristwatch/field_watch.glb"
+        }
+      },
+      "provenance": {
+        "license": "Original project-authored geometry/printwork",
+        "blender": "5.2.2 LTS",
+        "units": "metres",
+        "generator_sha256": "f8d304252ec190944f06cb9d37320d386ca1ceda65e2e56428a6d09f7ee672a1"
+      },
+      "graphics_verified": 1
+    },
+    "city_letter": {
+      "assets": {
+        "city_letter": {
+          "triangles": 378,
+          "bytes": 59204,
+          "sha256": "34a2b0663a30b033f82e375f99a0fae6b5790c2d8719be47c4a5a5d1980ee085",
+          "source": "tools/blender/generated/city_letter/city_letter.blend",
+          "source_sha256": "c58fa9c8a54e9a1dd22d69dd13bfd87fddc5a2569316d31bb07b3a5c9e2ac963",
+          "mesh_nodes": 2,
+          "file": "brave-and-cold/assets/city_letter/city_letter.glb"
+        }
+      },
+      "provenance": {
+        "license": "Original project-authored geometry and illustration",
+        "units": "metres",
+        "generator_sha256": "17cf3eca6fc148abf32ad1f57ed324ffe88ca61585f6bf6113b5ec1d53289c47"
+      },
+      "graphics_verified": 1
+    }
+  },
+  "foley": {
+    "source": "Original deterministic local synthesis; no external recordings",
+    "generator_sha256": "1c1790d0f67249d6ec0a70307303ca15399893fa48fd93eae720f4fe3291c4de",
+    "sample_rate": 22050,
+    "clips": {
+      "cloth_wrap": {
+        "sha256": "ed9446abd10acf02027491ef5d00733dbcb96c412f51b7f9a10965bdd3b309fd",
+        "seconds": 1.2,
+        "peak": 0.25,
+        "rms": 0.02960521558378824
+      },
+      "bottle_sip": {
+        "sha256": "f28b5668d184ca0b198d39f31a7231c6d7215364e58b3f9378370f1dd6ffbddf",
+        "seconds": 1.4,
+        "peak": 0.25,
+        "rms": 0.032524159656018965
+      },
+      "switch_click": {
+        "sha256": "bdb4ac5e45ad8195b441470f640fbc4cfa12cad1441b448f57276e49e28346bc",
+        "seconds": 0.16,
+        "peak": 0.23623853211009177,
+        "rms": 0.02295429600085859
+      },
+      "stone_hone": {
+        "sha256": "fb529392fc576f5f373531ad3bd33d782f2d52f58a45eb9603755f7ed34e2c8b",
+        "seconds": 1.1,
+        "peak": 0.25,
+        "rms": 0.030319263472787506
+      },
+      "paper_turn": {
+        "sha256": "c9cf06e24d37bc4ffcc8ace3e83fe711b6358b4bd5e68987d1a495549c0aa737",
+        "seconds": 0.6,
+        "peak": 0.25,
+        "rms": 0.04684416278163019
+      }
+    }
+  },
+  "validation": {
+    "test_first_week_core_final.log": {
+      "result": "FIRST_WEEK_CORE_TEST checks=33 failures=0",
+      "sha256": "2092131428ba17abd2ebb2b4374bbb74a3a247ea7d2cabc070fe086f589b04ea"
+    },
+    "test_first_week_collapse_verified.log": {
+      "result": "FIRST_WEEK_COLLAPSE_TEST checks=185 failures=0",
+      "sha256": "b207cf2e28b00bc8610454ecd1854301e00236d6f83a0006dc189a62803f46f2"
+    },
+    "test_field_survival_final.log": {
+      "result": "FIELD_SURVIVAL_TEST checks=32 failures=0",
+      "sha256": "5a102916e19476f23efc8b50cacd76a1e718102e3121b10836f2912cdf771197"
+    },
+    "test_first_week_story_verified.log": {
+      "result": "FIRST_WEEK_STORY_TEST checks=38 failures=0",
+      "sha256": "b38dce57bf72e42bca0c575339ccf1d78b29fd306d31973cf10ffccf48d543d7"
+    },
+    "test_medical_firewood_final.log": {
+      "result": "MEDICAL_FIREWOOD_TEST checks=37 failures=0",
+      "sha256": "baf1a0f02d4733f52fe5e25a06151079bf0e81f3a44041aa35e43160f84ad2db"
+    },
+    "test_watch_walkie_door_final.log": {
+      "result": "WATCH_WALKIE_DOOR_TEST checks=46 failures=0",
+      "sha256": "99f2320b18a4c6e27a7786aa33290b686e3da8fc3960e0e25c2a89e301daeab3"
+    },
+    "test_radio_bulletins_final.log": {
+      "result": "RADIO_BULLETINS_TEST failures=0",
+      "sha256": "347d83ce3b76fac06e9cb7de4980947ae0bb75a84ae4ecd8f95a2864814ead5d"
+    },
+    "test_lookout_radio_logs_final.log": {
+      "result": "RADIO_LOG_TEST failures=0",
+      "sha256": "202c6b0a06d99dd8791dddc96774b95668f691204cd56e8eb6336048c56ab0ff"
+    },
+    "test_lookout_opening_final.log": {
+      "result": "LOOKOUT_OPENING_TEST failures=0",
+      "sha256": "18de3b6011ac522feb2a720faf4ca6e329cab4f540cecaa83326692d2f9c56dc"
+    },
+    "test_walk_surfaces_collapse.log": {
+      "result": "WALK_SURFACE_TEST_COMPLETE failures=0 routes=192 max_contact_error_m=0.00001522116364 max_camera_step_change_m=0.00607363879681",
+      "sha256": "08f137fcc299680ceaa5b3e9796fc064ceae0bed57ccad1cd241880c18cf6371"
+    }
+  },
+  "date": "2026-10-06",
+  "baseline": "ccf1c79eb8640cab7e17b445a65761e6f73d0fba",
+  "checkpoint": "checkpoint/pre-first-week-production-2026-10-05",
+  "branch": "codex/first-week-production",
+  "gpu": {
+    "before": {
+      "gpu": "NVIDIA GeForce GTX 1080 Ti",
+      "limitations": "Stationary route-camera samples with active AI/proxies, bounded deterministic pool ticks; world survival and weather updates frozen. Not a complete gameplay benchmark.",
+      "population": 250,
+      "renderer": "Forward+ D3D12",
+      "resolution": [
+        1600,
+        900
+      ],
+      "samples": [
+        {
+          "alive": 250,
+          "avg_fps": 157.861087505032,
+          "camera": "lookout",
+          "frames": 300,
+          "max_active": 0,
+          "max_proxy": 0,
+          "p95_ms": 6.858,
+          "p99_ms": 7.076
+        },
+        {
+          "alive": 250,
+          "avg_fps": 169.208077993643,
+          "camera": "town_exterior",
+          "frames": 300,
+          "max_active": 58,
+          "max_proxy": 38,
+          "p95_ms": 6.24,
+          "p99_ms": 8.424
+        },
+        {
+          "alive": 250,
+          "avg_fps": 163.925737269664,
+          "camera": "clinic_interior",
+          "frames": 300,
+          "max_active": 59,
+          "max_proxy": 29,
+          "p95_ms": 7.355,
+          "p99_ms": 8.182
+        }
+      ],
+      "seed": 20261004
+    },
+    "after": {
+      "gpu": "NVIDIA GeForce GTX 1080 Ti",
+      "limitations": "Stationary route-camera samples with active AI/proxies, bounded deterministic pool ticks; world survival and weather updates frozen. Not a complete gameplay benchmark.",
+      "population": 250,
+      "renderer": "Forward+ D3D12",
+      "resolution": [
+        1600,
+        900
+      ],
+      "samples": [
+        {
+          "alive": 250,
+          "avg_fps": 158.542927082937,
+          "camera": "lookout",
+          "frames": 300,
+          "max_active": 0,
+          "max_proxy": 0,
+          "p95_ms": 6.717,
+          "p99_ms": 6.988
+        },
+        {
+          "alive": 250,
+          "avg_fps": 171.812843124565,
+          "camera": "town_exterior",
+          "frames": 300,
+          "max_active": 58,
+          "max_proxy": 38,
+          "p95_ms": 6.181,
+          "p99_ms": 6.991
+        },
+        {
+          "alive": 250,
+          "avg_fps": 154.33146695146,
+          "camera": "clinic_interior",
+          "frames": 300,
+          "max_active": 59,
+          "max_proxy": 29,
+          "p95_ms": 8.06,
+          "p99_ms": 8.949
+        }
+      ],
+      "seed": 20261004
+    }
+  },
+  "limits": [
+    "Seven-day diagnostic advances actual world calendar and state modules; it is not an autonomous player survival playthrough.",
+    "GPU results are stationary bounded samples on one GTX 1080 Ti, with active AI/proxies and survival/weather frozen. Host scheduling varies; these are not a complete gameplay benchmark or a speedup guarantee.",
+    "Speech is original writing with local development synthesized performance, not directed human voice acting.",
+    "Existing Godot shutdown resource/CanvasItem warnings remain; no gameplay script errors were present in the accepted runs.",
+    "Human pacing, combat feel and animation review remain playtest items."
+  ]
+}

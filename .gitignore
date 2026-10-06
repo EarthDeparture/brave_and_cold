@@ -51,3 +51,8 @@ tools/blender/watch_build.log
 
 /tools/blender/generated/maintenance/*.blend[0-9]
 /tools/blender/generated/maintenance/build.log
+
+/tools/blender/generated/city_letter/*.blend[0-9]
+/tools/blender/generated/city_letter/build.log
+/tools/blender/generated/clinic/build.log
+/tools/__pycache__/

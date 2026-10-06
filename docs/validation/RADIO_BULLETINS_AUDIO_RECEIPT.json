@@ -7,51 +7,51 @@
   "all_pcm_hashes_and_script_hashes_verified": true,
   "clips": [
     {
-      "caption_chunks": 6,
-      "id": "public_d1_06",
-      "seconds": 24.124988662131518,
-      "rms": 0.09291211303586763,
-      "peak": 0.618011474609375,
-      "voice": "Microsoft David Desktop"
-    },
-    {
-      "caption_chunks": 5,
-      "id": "public_d1_12",
-      "seconds": 24.079954648526076,
-      "rms": 0.09262788520073731,
-      "peak": 0.62518310546875,
-      "voice": "Microsoft David Desktop"
-    },
-    {
-      "caption_chunks": 7,
-      "id": "public_d1_17",
-      "seconds": 25.82498866213152,
-      "rms": 0.09238902149904774,
-      "peak": 0.625518798828125,
-      "voice": "Microsoft David Desktop"
-    },
-    {
-      "caption_chunks": 7,
-      "id": "public_d1_24",
-      "seconds": 26.38997732426304,
-      "rms": 0.08810768109361111,
-      "peak": 0.620361328125,
-      "voice": "Microsoft David Desktop"
-    },
-    {
       "caption_chunks": 8,
+      "id": "public_d1_06",
+      "seconds": 28.964988662131518,
+      "rms": 0.08597077228870825,
+      "peak": 0.617034912109375,
+      "voice": "Microsoft David Desktop"
+    },
+    {
+      "caption_chunks": 7,
+      "id": "public_d1_12",
+      "seconds": 24.18498866213152,
+      "rms": 0.09007753837996878,
+      "peak": 0.61322021484375,
+      "voice": "Microsoft David Desktop"
+    },
+    {
+      "caption_chunks": 6,
+      "id": "public_d1_17",
+      "seconds": 25.314965986394558,
+      "rms": 0.09158956439487564,
+      "peak": 0.63006591796875,
+      "voice": "Microsoft David Desktop"
+    },
+    {
+      "caption_chunks": 9,
+      "id": "public_d1_24",
+      "seconds": 29.93496598639456,
+      "rms": 0.08447727785786162,
+      "peak": 0.624664306640625,
+      "voice": "Microsoft David Desktop"
+    },
+    {
+      "caption_chunks": 9,
       "id": "public_d2_06",
-      "seconds": 27.469977324263038,
-      "rms": 0.08967458265284328,
-      "peak": 0.620819091796875,
+      "seconds": 28.989977324263037,
+      "rms": 0.08445021290115777,
+      "peak": 0.623046875,
       "voice": "Microsoft David Desktop"
     },
     {
       "caption_chunks": 7,
       "id": "public_d2_12",
-      "seconds": 28.969977324263038,
-      "rms": 0.08944268278444706,
-      "peak": 0.62542724609375,
+      "seconds": 28.41496598639456,
+      "rms": 0.08937906733045954,
+      "peak": 0.621612548828125,
       "voice": "Microsoft David Desktop"
     },
     {
@@ -87,11 +87,11 @@
       "voice": "Microsoft David Desktop"
     },
     {
-      "caption_chunks": 7,
+      "caption_chunks": 6,
       "id": "public_d3_17",
-      "seconds": 29.419954648526076,
-      "rms": 0.09118804157951366,
-      "peak": 0.623321533203125,
+      "seconds": 25.41496598639456,
+      "rms": 0.0932250428681931,
+      "peak": 0.6292724609375,
       "voice": "Microsoft David Desktop"
     },
     {
@@ -127,11 +127,11 @@
       "voice": "Microsoft David Desktop"
     },
     {
-      "caption_chunks": 6,
+      "caption_chunks": 8,
       "id": "public_d4_24",
-      "seconds": 24.815736961451247,
-      "rms": 0.0886308551279729,
-      "peak": 0.628448486328125,
+      "seconds": 24.89074829931973,
+      "rms": 0.08762943720119784,
+      "peak": 0.634552001953125,
       "voice": "Microsoft David Desktop"
     },
     {
@@ -161,89 +161,89 @@
     {
       "caption_chunks": 8,
       "id": "public_d5_24",
-      "seconds": 28.829977324263037,
-      "rms": 0.08874620706220226,
-      "peak": 0.62548828125,
+      "seconds": 28.92997732426304,
+      "rms": 0.0885831261390305,
+      "peak": 0.627227783203125,
       "voice": "Microsoft David Desktop"
     },
     {
-      "caption_chunks": 6,
+      "caption_chunks": 7,
       "id": "dispatch_d1_08",
-      "seconds": 20.86997732426304,
-      "rms": 0.07689377761354715,
-      "peak": 0.53497314453125,
+      "seconds": 23.174965986394557,
+      "rms": 0.0749759737348931,
+      "peak": 0.523590087890625,
       "voice": "Microsoft Zira Desktop"
     },
     {
-      "caption_chunks": 6,
+      "caption_chunks": 7,
       "id": "dispatch_d1_14",
-      "seconds": 24.06997732426304,
-      "rms": 0.07282994850803025,
-      "peak": 0.529449462890625,
+      "seconds": 23.154965986394558,
+      "rms": 0.07407143804510344,
+      "peak": 0.519378662109375,
       "voice": "Microsoft Zira Desktop"
     },
     {
-      "caption_chunks": 5,
+      "caption_chunks": 7,
       "id": "dispatch_d1_20",
-      "seconds": 19.48,
-      "rms": 0.07205487281881243,
-      "peak": 0.5274658203125,
-      "voice": "Microsoft Zira Desktop"
-    },
-    {
-      "caption_chunks": 7,
-      "id": "dispatch_d2_08",
-      "seconds": 23.66498866213152,
-      "rms": 0.07122745054212756,
-      "peak": 0.482177734375,
-      "voice": "Microsoft Zira Desktop"
-    },
-    {
-      "caption_chunks": 5,
-      "id": "dispatch_d2_14",
-      "seconds": 18.90498866213152,
-      "rms": 0.07684411777489007,
-      "peak": 0.52069091796875,
-      "voice": "Microsoft Zira Desktop"
-    },
-    {
-      "caption_chunks": 6,
-      "id": "dispatch_d2_20",
-      "seconds": 20.32498866213152,
-      "rms": 0.07460084233372417,
-      "peak": 0.511627197265625,
-      "voice": "Microsoft Zira Desktop"
-    },
-    {
-      "caption_chunks": 5,
-      "id": "dispatch_d3_08",
-      "seconds": 21.06997732426304,
-      "rms": 0.07190440991156524,
-      "peak": 0.490509033203125,
-      "voice": "Microsoft Zira Desktop"
-    },
-    {
-      "caption_chunks": 7,
-      "id": "dispatch_d3_14",
       "seconds": 22.314965986394558,
-      "rms": 0.0774780643647963,
-      "peak": 0.518035888671875,
+      "rms": 0.06862614572024926,
+      "peak": 0.5150146484375,
       "voice": "Microsoft Zira Desktop"
     },
     {
       "caption_chunks": 6,
-      "id": "dispatch_d3_20",
-      "seconds": 20.76498866213152,
-      "rms": 0.07434335496784315,
-      "peak": 0.52825927734375,
+      "id": "dispatch_d2_08",
+      "seconds": 21.974965986394558,
+      "rms": 0.0744376077616174,
+      "peak": 0.509735107421875,
       "voice": "Microsoft Zira Desktop"
     },
     {
       "caption_chunks": 7,
+      "id": "dispatch_d2_14",
+      "seconds": 21.48,
+      "rms": 0.07194478123613739,
+      "peak": 0.507080078125,
+      "voice": "Microsoft Zira Desktop"
+    },
+    {
+      "caption_chunks": 8,
+      "id": "dispatch_d2_20",
+      "seconds": 21.76,
+      "rms": 0.07378638097702271,
+      "peak": 0.524078369140625,
+      "voice": "Microsoft Zira Desktop"
+    },
+    {
+      "caption_chunks": 8,
+      "id": "dispatch_d3_08",
+      "seconds": 24.629977324263038,
+      "rms": 0.06872371043478183,
+      "peak": 0.50384521484375,
+      "voice": "Microsoft Zira Desktop"
+    },
+    {
+      "caption_chunks": 8,
+      "id": "dispatch_d3_14",
+      "seconds": 24.45496598639456,
+      "rms": 0.07636810120177115,
+      "peak": 0.546173095703125,
+      "voice": "Microsoft Zira Desktop"
+    },
+    {
+      "caption_chunks": 7,
+      "id": "dispatch_d3_20",
+      "seconds": 22.44997732426304,
+      "rms": 0.07416234049186046,
+      "peak": 0.5257568359375,
+      "voice": "Microsoft Zira Desktop"
+    },
+    {
+      "caption_chunks": 9,
       "id": "dispatch_d4_08",
-      "seconds": 22.29496598639456,
-      "rms": 0.07292239822483704,
-      "peak": 0.51898193359375,
+      "seconds": 24.554965986394556,
+      "rms": 0.06974870438638257,
+      "peak": 0.507354736328125,
       "voice": "Microsoft Zira Desktop"
     }
   ]

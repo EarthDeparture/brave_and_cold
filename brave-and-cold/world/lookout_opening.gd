@@ -32,6 +32,7 @@ var wood_left: int:
 var water:=PreparedWater.new()
 var water_label:Label3D
 var kettle_steam:GPUParticles3D
+var city_letter:Node3D
 var repair_stock:Node3D
 var bottle_stock:Node3D
 var cooking: Dictionary = {}
@@ -83,6 +84,7 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 	water.restore(saved.get("prepared_water",{}))
 	if saved.is_empty():
 		for pair:Array in [["clean_water",2],["empty_bottle",2],["whetstone",1],["sewing_kit",1],["rag",4],["cordage",2]]:pantry.put(pair[0],pair[1],1,0)
+	city_letter=(load("res://assets/city_letter/city_letter.glb") as PackedScene).instantiate();tower.add_child(city_letter);city_letter.position=Vector3(.55,FireLookout.DECK_Y+.907,-1.28);city_letter.rotation.y=-.15
 	repair_stock=Node3D.new();tower.add_child(repair_stock);repair_stock.position=Vector3(1.9,FireLookout.DECK_Y+.70,1.43)
 	for id:String in ["whetstone","sewing_kit"]:
 		var n:Node3D=(load("res://assets/maintenance/"+id+".glb") as PackedScene).instantiate();n.name=id;repair_stock.add_child(n);n.position.x=-.13 if id=="whetstone" else .12
@@ -278,6 +280,7 @@ func actions() -> Array:
 	var out: Array = []
 	var desk := home_point(Vector3(.95,.88,-1.35))
 	out.append(_action(desk, "Read service log", read_log))
+	out.append(_action(city_letter.global_position,"Read Elise’s city letter",read_city_letter,0,.025))
 	out.append(_action(charger_model.global_position+Vector3.UP*.1,("Dock walkie to charge" if state.walkie_carried else "Take walkie")+" • %d%%"%state.walkie_percent(),toggle_walkie_dock,0,.03))
 	var radio := speaker.global_position
 	out.append(_action(radio, "Turn receiver off" if state.receiver_on else "Turn receiver on", toggle_receiver))
@@ -334,7 +337,9 @@ func read_log() -> void:
 	if state.repair_stage==1 and state.parts_claimed:task="Return to the ground cabinet and install the replacement relay."
 	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nTake the walkie from its desk cradle before travelling. Field dispatch and public news are monitored together. Its battery powers both signals away from home, independently of the desk receiver. A full charge lasts about one day. Dock it on this desk to recharge in roughly three hours from local mains or backup power. Amber indicates charging and green indicates full charge. The desk receiver remains public radio only. Bulletins begin at 06:00, 12:00, 17:00 and 00:00; noon recaps the morning. Green indicates receiver power and blue identifies public radio. Public reports are live, not queued: missed bulletins do not return. Dispatch keeps clear of every public slot. A dispatch call wakes you if your powered walkie is carried or within earshot on the desk; public broadcasts do not. Hold T to look at your wristwatch, or check time and walkie charge in Gear (Tab). Midnight closes the day just lived. The desk receiver and lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer while the repeater is enabled. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. The rack starts with six logs. Each fuels this stove for two hours; collect fallen timber along the logging road, split it with your axe, and restock the rack before dark. Wood deposited in lookout provisions refills the same visible rack. Bring snow portions and empty bottles to the kettle. A batch prepares up to 2 L in 20 game minutes while the stove burns; collect it into your pack, drink in Gear or store it for tomorrow. Follow the timber markers for dry wood, a finite crew cache and the labelled crew-spur disconnect. Stoke the stove and prepare the sleeping berth before the weather closes in.\n\nFirst aid\nIn Gear (Tab), select your bandage and choose Apply bandage, or double-click it. One wrap stops bleeding; it does not restore lost blood immediately or cure infection. Recovery needs food above 900 kcal, water above 45%, and no fever or hypothermia. Resting warm restores blood faster. Gather cloth and supplies during the first town visit. Outbreak transmission is a separate risk from ordinary wound infection; antibiotics cannot remove it.\n\nRest and maintenance\nFatigue accumulates over game hours. Warm, fed, hydrated sleep restores it; it lowers sustained stamina gradually. Wet clothes reduce sleep quality. At this desk, choose Maintain in Gear for a worn item. A whetstone and rag hone an axe or knife. A sewing kit, two rags and cordage mend clothing. A service kit, stick and two nails repair a hammer. Movement or damage interrupts work before its materials are spent." % [task,directions]
 	world.reading.open("North Ridge • Service log",text,world.player,world.hud)
-func toggle_receiver() -> void: state.receiver_on = not state.receiver_on; _update_receiver_indicators(); _radio_update()
+func toggle_receiver() -> void:
+	world.audio.play_at("switch_click",speaker.global_position,-12,1,2,9)
+	state.receiver_on = not state.receiver_on; _update_receiver_indicators(); _radio_update()
 func toggle_backup() -> void:
 	state.backup_on = not state.backup_on; update_presentation(); _radio_update()
 	world._say("Local backup %s. Charge %.0f%%. Lamp 7 W, receiver 3 W, commissioned relay 12 W, walkie charger up to 6 W, unused crew spur 6 W until isolated." % ["enabled" if state.backup_on else "disabled", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100])
@@ -475,3 +480,7 @@ func _update_stock() -> void:
 	var overflow := maxi(beans-4,0)+maxi(jerky-4,0)+maxi(wood_left-VISIBLE_WOOD_CAP,0)
 	_stock_label.text = "PROVISIONS • %d tins / %d pouches\nFIREWOOD • %d" % [beans,jerky,maxi(wood_left,0)]
 	if other>0 or overflow>0: _stock_label.text += "\n%d other items%s" % [other," • extra stock stored" if overflow>0 else ""]
+
+func read_city_letter()->void:
+	world.audio.play_at("paper_turn",city_letter.global_position,-12,1,2,8)
+	world.reading.open("From Elise • Sunday",FirstWeekStory.CITY_LETTER,world.player,world.hud)

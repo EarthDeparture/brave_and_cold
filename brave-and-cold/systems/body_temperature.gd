@@ -37,8 +37,10 @@ func update(delta: float, ambient: float, wind: float, sheltered: bool, fire_w: 
 	if in_water:
 		wet_gain = 0.5
 	var dry := 0.0
-	if ambient > 0.0 or fire_w > 100.0:
-		dry = 0.004
+	if fire_w>100:
+		dry=1.0/(2*3600) # saturated layers take two game hours beside useful heat
+	elif ambient>0:
+		dry=1.0/(6*3600)
 	wetness = clampf(wetness + (wet_gain - dry) * delta, 0.0, 1.0)
 
 	var insulation := clampf(warmth * (1.0 - 0.65 * wetness), 0.0, 0.97)

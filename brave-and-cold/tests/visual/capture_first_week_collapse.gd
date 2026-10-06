@@ -27,4 +27,7 @@ func run()->void:
  await shot("infected_close",p-z.basis.z*2.6+Vector3.UP*1.6,p+Vector3.UP*1.15)
  z._apply_coat(73);z._attack_windup=.17;z._animate(.01);await shot("infected_attack",p-z.basis.z*2.6+Vector3.UP*1.6,p+Vector3.UP*1.15)
  w.clock.hour=21;w.sky_rig.apply_hour(21);w.collapse.update(0);await shot("clinic_night",c.to_global(Vector3(3,1.7,8)),c.to_global(Vector3(0,1.7,2)))
+ w.clock.hour=11;w.sky_rig.apply_hour(11);w.weather.precip=.9;w.weather.wind=16;w.sky_rig.apply_shelter(1);c.set_night(0);await shot("clinic_storm_interior",c.to_global(Vector3(1.5,1.9,2.3)),c.to_global(Vector3(3.5,1.2,-1.2)))
+ w.sky_rig.apply_shelter(1);var op:LookoutOpening=w.opening;await shot("city_letter",op.city_letter.global_position+Vector3(0,.40,.20),op.city_letter.global_position)
+ op.read_city_letter();await shot("city_letter_modal",op.city_letter.global_position+Vector3(0,.40,.20),op.city_letter.global_position);w.reading.close()
  print("COLLAPSE_CAPTURE_DONE");quit()

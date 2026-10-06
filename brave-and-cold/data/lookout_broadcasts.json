@@ -18,7 +18,7 @@
       "day": 1,
       "hour": 6,
       "title": "Morning weather",
-      "text": "Good morning. This is North Ridge Public Radio at six. The regional forecast calls for a cold morning and changeable cloud through the afternoon. Carry winter clothing and allow extra time on the logging roads. Schools, the clinic and local deliveries are operating normally. We will have another bulletin at noon.",
+      "text": "Good morning. Elliot Ward here, North Ridge Public Radio at six. A cold start, with changeable cloud later. The clinic is open; Nurse Roy is covering house calls this morning. Regular deliveries are expected. Logging crews, keep the junction clear for the fuel truck. City trains are running normally. Another bulletin at noon.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/public_d1_06.wav"
     },
@@ -28,7 +28,7 @@
       "day": 1,
       "hour": 12,
       "title": "Midday recap",
-      "text": "It is noon on North Ridge Public Radio. A recap of this morning: cold weather remains the main concern for northern travellers. Dress warmly and check road conditions before leaving town. The clinic and local services remain open, and regular deliveries are expected. Our next bulletin is at five this afternoon.",
+      "text": "It is noon. Elliot Ward with the morning recap: cold weather, normal deliveries, and the clinic open for essential care. Nurse Roy asks callers to check in before entering the treatment room. Logging-road crews should leave the junction clear. The city rail service is operating. Our next bulletin is at five.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/public_d1_12.wav"
     },
@@ -38,7 +38,7 @@
       "day": 1,
       "hour": 17,
       "title": "Distant incidents",
-      "text": "This is the five o'clock bulletin. Authorities on the other side of the country are investigating several violent incidents at hospitals and transit stations. Officials have not established whether the reports are connected. There are no confirmed local incidents in North Ridge. Avoid sharing unverified claims. We will update the story at midnight.",
+      "text": "Elliot Ward with the five o'clock report. Hospitals and transit stations on the other side of the country are reporting violent incidents. Officials have not linked them. There are no confirmed North Ridge cases. City rail departures continue, though some stations are closing early. We will verify what we can before midnight.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/public_d1_17.wav"
     },
@@ -48,7 +48,7 @@
       "day": 1,
       "hour": 24,
       "title": "First overnight update",
-      "text": "It is midnight. Reports of violent attacks now involve several cities. Hospitals in the affected areas are restricting access, and some emergency crews have stopped answering calls. Officials still dispute the cause. No evacuation order has been issued here. Keep your radio available. We will return at six in the morning.",
+      "text": "It is midnight. Elliot Ward, still at North Ridge. Several cities now report violent attacks. Hospitals are restricting access, and some emergency crews are not answering. Intercity trains have been suspended. Officials still dispute the cause. No local evacuation order has been issued. Keep your radio available. We will return at six.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/public_d1_24.wav"
     },
@@ -58,7 +58,7 @@
       "day": 2,
       "hour": 6,
       "title": "Regional precautions",
-      "text": "Good morning from North Ridge. The forecast remains cold. Overnight disturbances have spread into our region. The clinic is screening arrivals at its side entrance, and police ask residents to avoid crowds and unnecessary travel. The cause remains unconfirmed. Keep essential supplies at home. At noon we will recap the confirmed information.",
+      "text": "Good morning. Elliot Ward here. Overnight disturbances have reached our region. Nurse Roy has moved clinic screening to the rear service yard; keep its exit clear. Police advise avoiding crowds and unnecessary travel. Deliveries may be delayed. The city rail service remains suspended. Keep essential supplies at home. A recap at noon.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/public_d2_06.wav"
     },
@@ -68,7 +68,7 @@
       "day": 2,
       "hour": 12,
       "title": "Regional midday recap",
-      "text": "It is noon. A recap of this morning's bulletin: regional hospitals are restricting access after reports of violent behaviour. Police advise avoiding crowds and unnecessary journeys. Do not approach injured strangers behaving aggressively. The cause is still under investigation. North Ridge deliveries may be delayed. We will carry further confirmed reports at five.",
+      "text": "It is noon. This morning's advice remains: avoid crowds and unnecessary travel. The clinic is screening in its rear yard; do not enter without checking the notice. Hospitals report violent behaviour, and the cause remains unconfirmed. City trains are still suspended. North Ridge deliveries are delayed. Further confirmed information at five.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/public_d2_12.wav"
     },
@@ -118,7 +118,7 @@
       "day": 3,
       "hour": 17,
       "title": "Northern isolation",
-      "text": "This is the five o'clock bulletin. Emergency assistance cannot reach the northern logging roads. The town centre is unsafe, and regular deliveries have stopped. Choose a route before travelling. Move in daylight, keep away from crowds, and return with enough water and fuel to remain sheltered. This transmitter has reserve power, but our outside reports are becoming scarce.",
+      "text": "Elliot Ward with the five o'clock bulletin. Nurse Roy's final message says the clinic staff left on foot after transport failed. Do not wait there for a vehicle. Assistance cannot reach the logging roads. Choose your return route before travelling. This transmitter has reserve power, but our outside contacts are becoming scarce.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/public_d3_17.wav"
     },
@@ -168,7 +168,7 @@
       "day": 4,
       "hour": 24,
       "title": "Station reserve warning",
-      "text": "It is midnight. The station is operating on its remaining reserve. We can still announce the scheduled bulletins, but there are no dependable outside services behind them. Keep your local equipment working and conserve what you have. A familiar voice on the radio is not a promise that somebody can reach you. We return at six.",
+      "text": "It is midnight. Elliot Ward. We are on reserve power. I kept the regular times because someone might still be waiting for a familiar voice. There are no dependable services behind these bulletins. Keep your local equipment working. A voice is not a promise of rescue. We will try again at six.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/public_d4_24.wav"
     },
@@ -208,7 +208,7 @@
       "day": 5,
       "hour": 24,
       "title": "Final signoff",
-      "text": "It is midnight. This is North Ridge Public Radio's final scheduled transmission. Our reserve is exhausted. No further bulletin will follow at six. If you are listening, keep your shelter secure, your water clean and your people warm. Remember that you have already survived days without dependable help. Take care of each other. North Ridge signing off.",
+      "text": "It is midnight. Elliot Ward, North Ridge Public Radio. This is our final scheduled transmission. No bulletin will follow at six. The names on our call sheet are still here, even when nobody answers. Keep your shelter secure, your water clean and your people warm. You have already survived without dependable help. North Ridge signing off.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/public_d5_24.wav"
     },
@@ -218,7 +218,7 @@
       "day": 1,
       "hour": 8,
       "title": "Assignment check",
-      "text": "Kestrel Seven, dispatch. Your personal receiver is coming through clearly. Inspect the transfer cabinet if you have not already done so. A replacement relay was reserved at North Ridge Supply. Keep the standby battery charged and read your desk log before travelling. We will check in later.",
+      "text": "Kestrel Seven, June at dispatch. Good signal. Inspect the transfer cabinet; your replacement relay is reserved at North Ridge Supply. Mara left timber markers and a crew cache on the access track. Check the labelled feeder before isolating it. The lookout is yours for the week. Read the desk log before travelling.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/dispatch_d1_08.wav"
     },
@@ -228,7 +228,7 @@
       "day": 1,
       "hour": 14,
       "title": "Afternoon work check",
-      "text": "Kestrel Seven, dispatch checking in. If you still need the replacement relay, it was reserved at North Ridge Supply. Your handset monitors dispatch and public news. Recharge it on the desk between trips. Take the logging track down to the road and keep enough daylight for the return. If the job is finished, keep the installation on standby.",
+      "text": "Kestrel Seven, June. Mara says the crew cache has drinking water and dressings. It is a reserve, not tomorrow's delivery. The replacement relay is at North Ridge Supply. Take the logging track and leave daylight for the climb back. Your handset monitors public news too. Put it in its charger between trips.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/dispatch_d1_14.wav"
     },
@@ -238,7 +238,7 @@
       "day": 1,
       "hour": 20,
       "title": "End of shift",
-      "text": "Kestrel Seven, last work check tonight. We have heard the distant reports, but no change to your assignment has been confirmed. Stay at the lookout overnight if you can. Keep the stove supplied and leave your local battery charged. The next routine dispatch call is in the morning.",
+      "text": "Kestrel Seven, June's last check tonight. Mara made it back to the junction. We heard the distant reports, but your assignment still stands. Stay at the lookout. Feed the stove and charge the handset. If somebody in the city is not answering, try again tomorrow. We will check in at eight.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/dispatch_d1_20.wav"
     },
@@ -248,7 +248,7 @@
       "day": 2,
       "hour": 8,
       "title": "Travel precautions",
-      "text": "Kestrel Seven, dispatch. The situation has reached our region. Avoid the clinic and any gathering near the town junction. If you still need the reserved part, take what you need and return before dark. Keep this handset on you. Your handset monitors both work calls and public news. Recharge it on your desk between journeys.",
+      "text": "Kestrel Seven, June. This has reached our region. Mara is taking the town crew towards the clinic service yard; the waiting room is crowded. Keep clear unless supplies force a visit. Collect your reserved relay if it is safe, then come home. Take the handset and leave enough daylight for the stairs.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/dispatch_d2_08.wav"
     },
@@ -258,7 +258,7 @@
       "day": 2,
       "hour": 14,
       "title": "Delivery cancelled",
-      "text": "Kestrel Seven, the supply truck will not reach your site. Do not wait on the road for it. Keep your provisions and use the lookout as your base. If your relay is already commissioned, preserve the backup charge. We cannot promise a replacement crew or another delivery.",
+      "text": "Kestrel Seven, June. The supply truck is cancelled. Do not wait beside the road. Mara asked me to tell you the marked cache is yours if you need it. Nothing more is being sent. Keep the lookout as your base. Commission the relay if you can, but water and heating fuel come first.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/dispatch_d2_14.wav"
     },
@@ -268,7 +268,7 @@
       "day": 2,
       "hour": 20,
       "title": "Town crew missing",
-      "text": "Kestrel Seven, dispatch. We have lost contact with the town crew. The last confirmed report placed them near the western junction. Do not go looking for them without a safe return route. Secure your shelter and gather supplies only when you need them. We will try another call in the morning.",
+      "text": "Kestrel Seven, June. Mara's last call was from the western junction. Then the town crew stopped answering. Do not go searching without water and a way home. I know you have people in the city. We cannot get a message through there either. Secure the lookout. I will try you in the morning.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/dispatch_d2_20.wav"
     },
@@ -278,7 +278,7 @@
       "day": 3,
       "hour": 8,
       "title": "Working independently",
-      "text": "Kestrel Seven, dispatch. We cannot send anyone to your site. Keep your water, heating fuel and food in reserve. Your installation only supports local equipment; repairing it cannot bring the town network back. Check the public station at its scheduled times if your desk receiver still has power.",
+      "text": "Kestrel Seven, June. We cannot send anyone. Nurse Roy left a notice at the clinic; supplies are still on its shelves, but do not expect staff. Your installation only supports local equipment. Repairing it will not restore the town. Keep water, heating fuel and food in reserve. Listen for public reports when you can.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/dispatch_d3_08.wav"
     },
@@ -288,7 +288,7 @@
       "day": 3,
       "hour": 14,
       "title": "Conserve local power",
-      "text": "Kestrel Seven, a short check. If the mains have failed, turn off the desk lamp when you do not need it and conserve the local battery. Your handset has its own battery. Recharge it on the desk while local power remains. Do not exhaust your heating fuel trying to finish every job. Shelter and water come first.",
+      "text": "Kestrel Seven, June. If mains have failed, switch off lights you do not need. Isolating the labelled crew spur reduces standby drain. Charge the handset while local power lasts. Mara has not answered. I am leaving her channel open, but you should not spend your last reserves waiting with me. Shelter and water first.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/dispatch_d3_14.wav"
     },
@@ -298,7 +298,7 @@
       "day": 3,
       "hour": 20,
       "title": "Dispatch thinning out",
-      "text": "Kestrel Seven, dispatch. There are very few of us left answering this net. Keep treating water and securing your shelter. The town cannot be relied on for regular supplies. If you travel, choose the return route first and leave room in your pack. We will attempt one more morning check.",
+      "text": "Kestrel Seven, June. There are very few names answering now. Keep treating water and securing your shelter. Town stock will not be replenished. Choose the return route before leaving, and leave room in your pack. I will try one more morning check. You do not need to finish the assignment to deserve a rest.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/dispatch_d3_20.wav"
     },
@@ -308,9 +308,16 @@
       "day": 4,
       "hour": 8,
       "title": "Last dispatch call",
-      "text": "Kestrel Seven, this may be our last call. We cannot maintain the dispatch net. You are released from the assignment. Use the lookout, the tools and the supplies you can recover to keep yourself alive. The public station is independent and may still be broadcasting. Do not wait for us. Dispatch out.",
+      "text": "Kestrel Seven. June. I cannot maintain this net. You are released from the assignment. Use the lookout and the tools to keep yourself alive. The public station is independent; it may still be broadcasting. If Mara reaches you, tell her I stayed as long as I could. Do not wait for us. Dispatch out.",
       "window_game_s": 1800,
       "audio": "res://assets/audio/radio_bulletins/dispatch_d4_08.wav"
     }
-  ]
+  ],
+  "characters": {
+    "public": "Elliot Ward",
+    "dispatch": "June Mercer",
+    "crew": "Mara Chen",
+    "clinic": "Nurse Sam Roy",
+    "family": "Elise, your sister in the city"
+  }
 }
