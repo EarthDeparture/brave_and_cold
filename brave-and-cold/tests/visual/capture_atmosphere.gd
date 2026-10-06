@@ -72,6 +72,8 @@ func run() -> void:
 	]
 	for state in states:
 		for location in locations:
+			if options.has("captures") and not (String(state.id) + "-" + String(location.id)) in String(options.captures).split(","):
+				continue
 			if options.has("only") and String(options.only) != String(state.id) + "-" + String(location.id):
 				continue
 			world.player.global_position = location.eye
@@ -139,6 +141,14 @@ func run() -> void:
 	for path in ["res://world/game_world.gd","res://world/sky_rig.gd","res://world/atmosphere_rig.gd","res://systems/weather.gd","res://world/snow_fall.gd","res://world/shaders/winter_sky.gdshader","res://world/shaders/winter_snow.gdshader","res://world/shaders/frozen_water.gdshader","res://data/terrain/terrain_winter_assets.tres","res://assets/textures/atmosphere/cloud_fields.png","res://world/forest_scatter.gd","res://world/weather_presentation.gd","res://world/shaders/boreal_detail.gdshader","res://world/shaders/winter_timber.gdshader","res://world/shaders/winter_vapour.gdshader","res://data/terrain/terrain_environment_assets.tres","res://assets/environment_detail/textures/provenance.json","res://assets/environment_detail/trees/provenance.json","res://assets/environment_detail/viewmodel/provenance.json"]:
 		sources[path]=FileAccess.get_sha256(path)
 	manifest["source_hashes"]=sources
+	manifest["forest_diversity"] = options.get("forest_diversity", "winter")
+	if world.forest != null:
+		var variants := {}
+		for key: Vector3i in world.forest._mms:
+			variants[ForestScatter.VARIANTS[key.z]] = int(variants.get(ForestScatter.VARIANTS[key.z], 0)) + (world.forest._mms[key][0] as MultiMesh).instance_count
+		manifest["tree_variants"] = variants
+		manifest["forest_lod_draw_groups"] = world.forest._mms.size() * 2
+	manifest["tree_asset_receipt"] = FileAccess.get_sha256("res://assets/environment_detail/tree_diversity/admission_receipt.json")
 	manifest["render_settings"]={"msaa":root.msaa_3d,"ssao":world.env.ssao_enabled,"tonemap":world.env.tonemap_mode,"sun_bias":world.sun.shadow_bias,"sun_normal_bias":world.sun.shadow_normal_bias,"sun_shadow_distance":world.sun.directional_shadow_max_distance}
 	var file := FileAccess.open(output.path_join("manifest.json"),FileAccess.WRITE)
 	file.store_string(JSON.stringify(manifest,"\t"))

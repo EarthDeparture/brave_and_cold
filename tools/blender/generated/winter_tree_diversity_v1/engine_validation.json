@@ -1,0 +1,254 @@
+{
+  "schema": 1,
+  "actual_gpu_gallery": {
+    "captures": [
+      {
+        "file": "res://shots/tree_diversity/gallery/family-near.png",
+        "id": "family-near",
+        "sha256": "96f0a1764683c9b5185897248a58ed5765cf135fb72e9c1b7526c1a0f40f949c"
+      },
+      {
+        "file": "res://shots/tree_diversity/gallery/family-far.png",
+        "id": "family-far",
+        "sha256": "fcff78d6941c53ec2b51bb3b3bfb7e82255662dc444f6829c589f94612c68cb9"
+      },
+      {
+        "file": "res://shots/tree_diversity/gallery/family-back.png",
+        "id": "family-back",
+        "sha256": "5adf29647aea788a4779eb1bce821ed84439295925a89726492226b39536d02a"
+      },
+      {
+        "file": "res://shots/tree_diversity/gallery/snow_pine_open-bough.png",
+        "id": "snow_pine_open-bough",
+        "sha256": "990ef83cc790c92cf3208ae1892c09fdd539550a7f4b243d9d2b099030549e3d"
+      },
+      {
+        "file": "res://shots/tree_diversity/gallery/snow_fir_full-bough.png",
+        "id": "snow_fir_full-bough",
+        "sha256": "cb61fe39975055d3eea676a31ae039add6a97158b14b58752f53e3e8f1354645"
+      },
+      {
+        "file": "res://shots/tree_diversity/gallery/snow_spruce_wind-bough.png",
+        "id": "snow_spruce_wind-bough",
+        "sha256": "01a3a51877ee774758ff0a59de682e1d6d8abc9551473da031e62b13e766380e"
+      }
+    ],
+    "driver": "vulkan",
+    "engine": "4.7.2-stable (official)",
+    "gpu": "NVIDIA GeForce GTX 1080 Ti",
+    "live_shader": "4ecfbb788d1966790409ff8cde5bd23ef4b8b5bffd1ce996ead60c18093edf2c",
+    "resolution": [
+      1600,
+      1000
+    ],
+    "schema": 1
+  },
+  "runtime_contracts": {
+    "runtime_test": {
+      "result": "passed",
+      "checks": [
+        "entire map retains tree population",
+        "every tree root, collision radius and occlusion trunk is unchanged",
+        "all saved-coordinate identities, height, girth and yaw transforms survive diversification",
+        "near and far instances have identical placement transforms",
+        "all five new families appear alongside all original spruces",
+        "snow_pine_open uses the unchanged smooth walking trunk response",
+        "felling retains correct mesh and transform: snow_pine_open",
+        "cut removes both LODs and records the existing save key",
+        "repeated cut cannot duplicate a new-family tree",
+        "diverse cut replays into original presentation with identical wood metadata",
+        "falling visual keeps new tree mesh and alpha/snow shader",
+        "new-family fall completes the existing log callback once",
+        "imported LOD fits single-surface geometry budget",
+        "imported bark normal map has valid tangent storage",
+        "imported LOD fits single-surface geometry budget",
+        "imported bark normal map has valid tangent storage",
+        "snow_fir_full uses the unchanged smooth walking trunk response",
+        "felling retains correct mesh and transform: snow_fir_full",
+        "cut removes both LODs and records the existing save key",
+        "repeated cut cannot duplicate a new-family tree",
+        "diverse cut replays into original presentation with identical wood metadata",
+        "falling visual keeps new tree mesh and alpha/snow shader",
+        "new-family fall completes the existing log callback once",
+        "imported LOD fits single-surface geometry budget",
+        "imported bark normal map has valid tangent storage",
+        "imported LOD fits single-surface geometry budget",
+        "imported bark normal map has valid tangent storage",
+        "snow_snag uses the unchanged smooth walking trunk response",
+        "felling retains correct mesh and transform: snow_snag",
+        "cut removes both LODs and records the existing save key",
+        "repeated cut cannot duplicate a new-family tree",
+        "diverse cut replays into original presentation with identical wood metadata",
+        "falling visual keeps new tree mesh and alpha/snow shader",
+        "new-family fall completes the existing log callback once",
+        "imported LOD fits single-surface geometry budget",
+        "imported bark normal map has valid tangent storage",
+        "imported LOD fits single-surface geometry budget",
+        "imported bark normal map has valid tangent storage",
+        "winter_birch uses the unchanged smooth walking trunk response",
+        "felling retains correct mesh and transform: winter_birch",
+        "cut removes both LODs and records the existing save key",
+        "repeated cut cannot duplicate a new-family tree",
+        "diverse cut replays into original presentation with identical wood metadata",
+        "falling visual keeps new tree mesh and alpha/snow shader",
+        "new-family fall completes the existing log callback once",
+        "imported LOD fits single-surface geometry budget",
+        "imported bark normal map has valid tangent storage",
+        "imported LOD fits single-surface geometry budget",
+        "imported bark normal map has valid tangent storage",
+        "snow_spruce_wind uses the unchanged smooth walking trunk response",
+        "felling retains correct mesh and transform: snow_spruce_wind",
+        "cut removes both LODs and records the existing save key",
+        "repeated cut cannot duplicate a new-family tree",
+        "diverse cut replays into original presentation with identical wood metadata",
+        "falling visual keeps new tree mesh and alpha/snow shader",
+        "new-family fall completes the existing log callback once",
+        "imported LOD fits single-surface geometry budget",
+        "imported bark normal map has valid tangent storage",
+        "imported LOD fits single-surface geometry budget",
+        "imported bark normal map has valid tangent storage",
+        "fresh generation has the same full population",
+        "fresh diverse forest restores all five species' saved cuts",
+        "seeded species and transforms remain stable after save reload",
+        "seeded species and transforms remain stable after save reload",
+        "seeded species and transforms remain stable after save reload",
+        "seeded species and transforms remain stable after save reload",
+        "seeded species and transforms remain stable after save reload"
+      ],
+      "output_sha256": "ff6e85a715fc908c5644357cbd38f67f536ec3073270ba077f7c973501c178ee"
+    },
+    "environment_test": {
+      "result": "passed",
+      "checks": [
+        "candidate presentation enabled",
+        "world completes startup with materials, audio, and survival",
+        "depth layers remain within original particle count",
+        "tree population and exclusions preserved",
+        "every trunk location and collision radius preserved",
+        "all tree instance transforms and variant assignments preserved",
+        "felling returns identical interaction and transform metadata",
+        "ground powder cannot spawn upstairs or inside lookout",
+        "both snowfall layers share actual building roof masks",
+        "wind powder follows the actual ice/ground rather than a flat emitter plane",
+        "breath stops after death",
+        "cloth cuffs retain the anatomical rig's 5cm forearm overlap in fists",
+        "cloth cuffs retain the anatomical rig's 5cm forearm overlap in axe",
+        "cloth cuffs retain the anatomical rig's 5cm forearm overlap in rifle",
+        "terrain texture IDs remain compatible with original control maps",
+        "original material audio imports: step_wood.wav",
+        "original material audio imports: step_ice.wav",
+        "original material audio imports: timber_creak.wav",
+        "original material audio imports: window_rattle.wav"
+      ],
+      "output_sha256": "8f9dde13463234af54cf43c7f22f09fc25856a457c8c322d48fe8c98fffa7c5b"
+    },
+    "log_gameplay_test": {
+      "result": "passed",
+      "checks": [
+        "receiver starts with both LEDs dark",
+        "receiver switch lights both LEDs immediately",
+        "powered receiver is green",
+        "public is blue and labeled immediately",
+        "broadcast silence does not imply receiver off",
+        "receiver off extinguishes both LEDs immediately",
+        "mains outage extinguishes LEDs despite selected on switch",
+        "backup restores receiver indicators immediately",
+        "battery exhaustion extinguishes both receiver LEDs",
+        "local power indicator survives distant transmitter shutdown",
+        "test uses an actual tree outside the lookout fence",
+        "hatchet chopping actually fells the outside tree",
+        "fall animation completion creates one harvestable log",
+        "log node now has its actual world location",
+        "visible trunk can be targeted at fraction 0.0",
+        "visible trunk can be targeted at fraction 0.5",
+        "visible trunk can be targeted at fraction 1.0",
+        "fresh save load restores public desk, personal walkie and actual LEDs",
+        "fresh load restores unsplit log without duplicating it",
+        "restored log remains targetable at far end",
+        "cancelled splitting leaves the trunk intact",
+        "missing hatchet at completion cannot harvest trunk",
+        "unequipped log explains tool requirement",
+        "log work retains halved 2.5 second action",
+        "completed trunk harvest yields existing fuel and sticks once",
+        "duplicate completion cannot duplicate wood",
+        "restored firewood enables existing plank recipe",
+        "plank crafting consumes one wood and makes two planks",
+        "full backpack leaves harvested firewood on the ground"
+      ],
+      "output_sha256": "e10efa837e07ea89576d0d7b431e1ba758cbfcb81930eb52e2b0ab347df282bd"
+    }
+  },
+  "world_population_with_exclusions": 114022,
+  "whole_map_population_without_exclusions": 115845,
+  "world_tree_counts": {
+    "snow_fir_full": 11424,
+    "snow_pine_open": 21202,
+    "snow_snag": 2168,
+    "snow_spruce_wind": 12205,
+    "spruce_a": 22741,
+    "spruce_b": 21993,
+    "spruce_c": 20767,
+    "winter_birch": 1522
+  },
+  "world_lod_draw_groups": 3048,
+  "original_lod_draw_groups": 1536,
+  "timing_observations": [
+    {
+      "view": "clear-lookout",
+      "baseline_median_ms": 9.898,
+      "candidate_median_ms": 13.429,
+      "candidate_p99_ms": 14.547
+    },
+    {
+      "view": "clear-forest",
+      "baseline_median_ms": 8.013,
+      "candidate_median_ms": 10.33,
+      "candidate_p99_ms": 10.831
+    },
+    {
+      "view": "clear-bough",
+      "baseline_median_ms": 7.317,
+      "candidate_median_ms": 10.572,
+      "candidate_p99_ms": 11.253
+    },
+    {
+      "view": "overcast-forest",
+      "baseline_median_ms": 8.135,
+      "candidate_median_ms": 10.462,
+      "candidate_p99_ms": 11.017
+    },
+    {
+      "view": "dusk-forest",
+      "baseline_median_ms": 6.8,
+      "candidate_median_ms": 8.153,
+      "candidate_p99_ms": 9.152
+    }
+  ],
+  "timing_scope": "1600x900, Forward+ Vulkan on GTX 1080 Ti; isolated frozen world, AI disabled. Single final run per profile; these are render-review observations, not a gameplay FPS guarantee.",
+  "native_verification": {
+    "schema": 1,
+    "native_reopen": "passed",
+    "blender_version": "5.2.2 LTS",
+    "editable_export_meshes": [
+      "snow_pine_open",
+      "snow_pine_open_far",
+      "snow_fir_full",
+      "snow_fir_full_far",
+      "snow_spruce_wind",
+      "snow_spruce_wind_far",
+      "snow_snag",
+      "snow_snag_far",
+      "winter_birch",
+      "winter_birch_far"
+    ],
+    "actual_scale_linked_previews": 5,
+    "packed_original_images": [
+      "winter_bark.png",
+      "winter_bark_normal.png",
+      "winter_boughs_far.png",
+      "winter_twigs.png"
+    ],
+    "native_sha256": "2efbd9f862eded1d6a8e4c3fe497cc40aaca14fcb82a18c59e38bf1a0c3b86d6"
+  },
+  "admission_sha256": "556983db748857062b9d9e7c797530b8c57becccbbe030e7858413100f160bb4"
+}

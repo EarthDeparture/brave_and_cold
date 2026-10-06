@@ -29,6 +29,7 @@ func run() -> void:
 	# banks against the same completed exclusion snapshot.
 	var candidate := ForestScatter.new()
 	candidate.detail_enabled = true
+	candidate.diversity_enabled = false  # Compare the original spruce banks; diversity has its own placement/save contract.
 	root.add_child(candidate)
 	candidate.set_process(false)
 	candidate.exclude = baseline.exclude
@@ -76,7 +77,7 @@ func run() -> void:
 	for mode in ["fists","axe","rifle"]:
 		vm.mode=mode;vm._cur=mode;vm._equip=1.0;vm.freeze_t=0
 		vm._process(0)
-		check(vm._right.position.distance_to(vm._sl_r.position)<.0001 and (not vm._left.visible or vm._left.position.distance_to(vm._sl_l.position)<.0001),"new cloth cuffs stay attached in "+mode)
+		check(absf(vm._right.position.distance_to(vm._sl_r.position)-.050)<.0001 and (not vm._left.visible or absf(vm._left.position.distance_to(vm._sl_l.position)-.050)<.0001),"cloth cuffs retain the anatomical rig's 5cm forearm overlap in "+mode)
 	var presentation_assets := ResourceLoader.load("res://data/terrain/terrain_environment_assets.tres","",ResourceLoader.CACHE_MODE_IGNORE) as Terrain3DAssets
 	var material_count: int = presentation_assets.get_texture_count()
 	var original_assets := load("res://data/terrain/terrain_winter_assets.tres") as Terrain3DAssets

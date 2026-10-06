@@ -8,10 +8,12 @@ const SPACING := 5.0
 const MIN_CANOPY_M := 6.0
 const VIS_END := 700.0
 var near_end := 140.0
-const VARIANTS := ["spruce_a", "spruce_b", "spruce_c"]
+const BASE_VARIANT_COUNT := 3
+const VARIANTS := ["spruce_a", "spruce_b", "spruce_c", "snow_pine_open", "snow_fir_full", "snow_spruce_wind", "snow_snag", "winter_birch"]
 const TREE_UNIT_M := 1.0  # source models are 1.0 high; scale = real canopy height
 
 var detail_enabled := false
+var diversity_enabled := true  # Presentation only; legacy profile retains its original three trees.
 var weather: Weather
 var terrain: Terrain3D
 var map_dir := "res://data/maps/valley_b"
@@ -206,15 +208,22 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 	var meshes: Array[Mesh] = []
 	_half = half
 	var far_meshes: Array[Mesh] = []
-	for v in VARIANTS:
-		meshes.append(_load_mesh(("res://assets/environment_detail/trees/%s.glb" if detail_enabled else "res://assets/models/trees/%s.glb") % v))
-		far_meshes.append(_load_mesh(("res://assets/environment_detail/trees/%s_far.glb" if detail_enabled else "res://assets/models/trees/%s_far.glb") % v))
+	var variant_count := VARIANTS.size() if detail_enabled and diversity_enabled else BASE_VARIANT_COUNT
+	for vi in range(variant_count):
+		var v: String = VARIANTS[vi]
+		var bank := "res://assets/environment_detail/tree_diversity" if vi >= BASE_VARIANT_COUNT else ("res://assets/environment_detail/trees" if detail_enabled else "res://assets/models/trees")
+		meshes.append(_load_mesh(bank + "/%s.glb" % v))
+		far_meshes.append(_load_mesh(bank + "/%s_far.glb" % v))
 	var mat: Material
 	if detail_enabled:
 		near_end = 140.0
 		var surface := ShaderMaterial.new()
 		surface.shader = preload("res://world/shaders/boreal_detail.gdshader")
 		surface.set_shader_parameter("bough_albedo", preload("res://assets/environment_detail/textures/bough_albedo.png"))
+		surface.set_shader_parameter("diversity_albedo", preload("res://assets/environment_detail/tree_diversity/winter_twigs.png"))
+		surface.set_shader_parameter("diversity_far_albedo", preload("res://assets/environment_detail/tree_diversity/winter_boughs_far.png"))
+		surface.set_shader_parameter("diversity_bark", preload("res://assets/environment_detail/tree_diversity/winter_bark.png"))
+		surface.set_shader_parameter("diversity_bark_normal", preload("res://assets/environment_detail/tree_diversity/winter_bark_normal.png"))
 		mat = surface
 	else:
 		var surface := StandardMaterial3D.new()
@@ -225,6 +234,11 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
+	var habitat := FastNoiseLite.new()
+	habitat.seed = seed_value + 701
+	habitat.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	habitat.frequency = 0.0035
+	habitat.fractal_octaves = 2
 	_mat = mat
 	# chunk key -> per-variant transform arrays
 	var buckets := {}
@@ -257,9 +271,16 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 			var girth := height_m * rng.randf_range(0.9, 1.3)
 			var b := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(girth, height_m, girth))
 			var key := Vector2i(int(floor((wx + half) / CHUNK)), int(floor((wz + half) / CHUNK)))
-			var vi := rng.randi() % VARIANTS.size()
+			# Consume precisely the old random roll. Adding a new RNG call here
+			# shifts every later root and breaks saved felled-tree coordinates.
+			var roll := rng.randi()
+			var vi := roll % BASE_VARIANT_COUNT
+			if variant_count > BASE_VARIANT_COUNT:
+				vi = _winter_variant(roll, habitat.get_noise_2d(wx, wz), h, slope.get_pixel(px, py).r * 90.0, height_m)
 			if not buckets.has(key):
-				buckets[key] = [[], [], []]
+				var arrays: Array = []
+				for unused in range(variant_count): arrays.append([])
+				buckets[key] = arrays
 			buckets[key][vi].append(Transform3D(b, Vector3(wx, h - 0.15, wz)))
 			tree_count += 1
 			var ck := Vector2i(int(floor(wx / TRUNK_CELL)), int(floor(wz / TRUNK_CELL)))
@@ -270,7 +291,7 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 	_meshes = meshes
 	for key in buckets:
 		var per_variant: Array = buckets[key]
-		for vi in range(VARIANTS.size()):
+		for vi in range(variant_count):
 			var xf: Array = per_variant[vi]
 			if xf.is_empty():
 				continue
@@ -298,6 +319,28 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 			_mms[Vector3i(key.x, key.y, vi)] = pair
 	print("FOREST_EXCL ", excluded)
 	print("FOREST_TREES ", tree_count, " chunks ", buckets.size())
+	if variant_count > BASE_VARIANT_COUNT:
+		var counts := {}
+		for key: Vector3i in _mms: counts[VARIANTS[key.z]] = int(counts.get(VARIANTS[key.z], 0)) + (_mms[key][0] as MultiMesh).instance_count
+		print("FOREST_DIVERSITY ", counts)
+
+
+func _winter_variant(roll: int, habitat: float, elevation: float, slope: float, height: float) -> int:
+	var choice := float((roll >> 8) & 65535) / 65535.0
+	if choice < 0.032 and absf(habitat) > 0.18: return 6  # Deadwood pockets; avoid a rare species draw in every chunk.
+	if elevation < 115.0 and slope < 16.0 and height < 23.0 and habitat < -0.32:
+		if choice < 0.32: return 7  # Sheltered leafless birch pockets.
+		if choice < 0.65: return 4
+	elif elevation > 175.0 and habitat < 0.15:
+		if choice < 0.48: return 5  # Exposed upper-slope weathered crowns.
+	elif habitat > 0.18:
+		if choice < 0.65: return 3  # Open-crowned pine stands.
+	elif habitat < -0.18:
+		if choice < 0.62: return 4
+	# Closely related legacy spruces form local cohorts instead of paying for all
+	# three nearly identical meshes in every chunk of every new species stand.
+	# This affects presentation only; the disabled profile keeps the original roll.
+	return 0 if habitat < -0.10 else (2 if habitat > 0.10 else 1)
 
 
 func _load_mesh(path: String) -> Mesh:

@@ -96,6 +96,7 @@ func _ready() -> void:
 	if opts.get("trees", "1") == "1":
 		forest = ForestScatter.new()
 		forest.detail_enabled = environment_detail_enabled
+		forest.diversity_enabled = opts.get("forest_diversity", "winter") != "baseline"
 		forest.weather = weather
 		add_child(forest)
 		forest.exclude = func(x: float, z: float) -> bool:

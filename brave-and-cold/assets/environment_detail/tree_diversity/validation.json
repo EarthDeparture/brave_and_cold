@@ -1,0 +1,258 @@
+{
+  "schema": 1,
+  "static_glb_validation": "passed",
+  "native_digest_verified": true,
+  "original_atlas_digest_verified": true,
+  "assets": {
+    "snow_pine_open": {
+      "triangles": 3298,
+      "dimensions_unit_m": [
+        0.37210623919963837,
+        1.0007786750793457,
+        0.33149443566799164
+      ],
+      "bounds_godot": [
+        [
+          -0.18179315328598022,
+          0.0,
+          -0.1661853939294815
+        ],
+        [
+          0.19031308591365814,
+          1.0007786750793457,
+          0.16530904173851013
+        ]
+      ],
+      "one_identity_mesh": true,
+      "finite_unit_normals": true,
+      "degenerate_triangles": 0,
+      "bytes": 166012,
+      "sha256": "fd9813e47e4e150e5054992729c814ec8f7bba970bad24a93dd0874c6aae300e"
+    },
+    "snow_pine_open_far": {
+      "triangles": 342,
+      "dimensions_unit_m": [
+        0.39463283121585846,
+        1.0007786750793457,
+        0.35819223523139954
+      ],
+      "bounds_godot": [
+        [
+          -0.1961502730846405,
+          0.0,
+          -0.1857815682888031
+        ],
+        [
+          0.19848255813121796,
+          1.0007786750793457,
+          0.17241066694259644
+        ]
+      ],
+      "one_identity_mesh": true,
+      "finite_unit_normals": true,
+      "degenerate_triangles": 0,
+      "bytes": 25312,
+      "sha256": "945aa0f89f23ee3f3d256f87a224c6e095bf7f392193943ea1a644ba357e7bfe"
+    },
+    "snow_fir_full": {
+      "triangles": 3730,
+      "dimensions_unit_m": [
+        0.39935651421546936,
+        1.0004565715789795,
+        0.3916100412607193
+      ],
+      "bounds_godot": [
+        [
+          -0.21674808859825134,
+          0.0,
+          -0.21117202937602997
+        ],
+        [
+          0.18260842561721802,
+          1.0004565715789795,
+          0.18043801188468933
+        ]
+      ],
+      "one_identity_mesh": true,
+      "finite_unit_normals": true,
+      "degenerate_triangles": 0,
+      "bytes": 190124,
+      "sha256": "08f90f310567fc3975ea5c185247fe86ad785977a7b082e155c200d5cb7320d5"
+    },
+    "snow_fir_full_far": {
+      "triangles": 418,
+      "dimensions_unit_m": [
+        0.4275112897157669,
+        1.0004565715789795,
+        0.4089546203613281
+      ],
+      "bounds_godot": [
+        [
+          -0.22884061932563782,
+          0.0,
+          -0.2249283492565155
+        ],
+        [
+          0.1986706703901291,
+          1.0004565715789795,
+          0.18402627110481262
+        ]
+      ],
+      "one_identity_mesh": true,
+      "finite_unit_normals": true,
+      "degenerate_triangles": 0,
+      "bytes": 29924,
+      "sha256": "a7635ffd9b89c60a06ea04a45c473105efc840c01a99eabc794b9435a1279ce6"
+    },
+    "snow_spruce_wind": {
+      "triangles": 3170,
+      "dimensions_unit_m": [
+        0.3635644018650055,
+        1.0018174648284912,
+        0.3741532415151596
+      ],
+      "bounds_godot": [
+        [
+          -0.1163264811038971,
+          0.0,
+          -0.18642158806324005
+        ],
+        [
+          0.2472379207611084,
+          1.0018174648284912,
+          0.18773165345191956
+        ]
+      ],
+      "one_identity_mesh": true,
+      "finite_unit_normals": true,
+      "degenerate_triangles": 0,
+      "bytes": 157648,
+      "sha256": "b05bc808ab7e6a89af1d6b038762b7b22a29823b3562d0a9257148e2e34c66e2"
+    },
+    "snow_spruce_wind_far": {
+      "triangles": 302,
+      "dimensions_unit_m": [
+        0.3742784485220909,
+        1.0018174648284912,
+        0.37536369264125824
+      ],
+      "bounds_godot": [
+        [
+          -0.11851497739553452,
+          0.0,
+          -0.18328145146369934
+        ],
+        [
+          0.2557634711265564,
+          1.0018174648284912,
+          0.1920822411775589
+        ]
+      ],
+      "one_identity_mesh": true,
+      "finite_unit_normals": true,
+      "degenerate_triangles": 0,
+      "bytes": 23156,
+      "sha256": "315302243c46d4be1e6dc836575b43579a2c40b7f46e4fafe786c1410c12f2f1"
+    },
+    "snow_snag": {
+      "triangles": 2120,
+      "dimensions_unit_m": [
+        0.24657151103019714,
+        1.0000370740890503,
+        0.26826195418834686
+      ],
+      "bounds_godot": [
+        [
+          -0.12605205178260803,
+          0.0,
+          -0.13160020112991333
+        ],
+        [
+          0.12051945924758911,
+          1.0000370740890503,
+          0.13666175305843353
+        ]
+      ],
+      "one_identity_mesh": true,
+      "finite_unit_normals": true,
+      "degenerate_triangles": 0,
+      "bytes": 65092,
+      "sha256": "77647c9bbb59b1ba6caa187f264b3c3e7f58f37110e21850ce50387b6d719d0e"
+    },
+    "snow_snag_far": {
+      "triangles": 700,
+      "dimensions_unit_m": [
+        0.2465357482433319,
+        1.0000351667404175,
+        0.2625339478254318
+      ],
+      "bounds_godot": [
+        [
+          -0.1260162889957428,
+          0.0,
+          -0.1258815973997116
+        ],
+        [
+          0.12051945924758911,
+          1.0000351667404175,
+          0.13665235042572021
+        ]
+      ],
+      "one_identity_mesh": true,
+      "finite_unit_normals": true,
+      "degenerate_triangles": 0,
+      "bytes": 23368,
+      "sha256": "02a09f1cc40c091b77c97c63c0c70652c4552b704790762411fb09bce883ac7a"
+    },
+    "winter_birch": {
+      "triangles": 1814,
+      "dimensions_unit_m": [
+        0.4507639706134796,
+        1.0000331401824951,
+        0.39963220059871674
+      ],
+      "bounds_godot": [
+        [
+          -0.23041586577892303,
+          0.0,
+          -0.22282195091247559
+        ],
+        [
+          0.22034810483455658,
+          1.0000331401824951,
+          0.17681024968624115
+        ]
+      ],
+      "one_identity_mesh": true,
+      "finite_unit_normals": true,
+      "degenerate_triangles": 0,
+      "bytes": 54420,
+      "sha256": "22a5ac5cfc77dd57e477afda13674d30b9b75f70aaa6ebd77550a4713a336498"
+    },
+    "winter_birch_far": {
+      "triangles": 808,
+      "dimensions_unit_m": [
+        0.45067232847213745,
+        1.0000306367874146,
+        0.39960916340351105
+      ],
+      "bounds_godot": [
+        [
+          -0.230350062251091,
+          0.0,
+          -0.22277016937732697
+        ],
+        [
+          0.22032226622104645,
+          1.0000306367874146,
+          0.17683899402618408
+        ]
+      ],
+      "one_identity_mesh": true,
+      "finite_unit_normals": true,
+      "degenerate_triangles": 0,
+      "bytes": 26024,
+      "sha256": "c1d4b84848cecf4bad2de3951e0c06ae9d3d98b29e821d2c2ad1a88d9ae07307"
+    }
+  }
+}

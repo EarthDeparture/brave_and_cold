@@ -1,0 +1,29 @@
+{
+  "origin": "Original procedural drawing using Python/Pillow; no reference pixels or external textures",
+  "size": [
+    1024,
+    1024
+  ],
+  "format": "RGBA8 sRGB; transparent botanical twig silhouettes",
+  "seeds": [
+    613,
+    719,
+    823,
+    929
+  ],
+  "sha256": "4a083f75619571382e059bafd789e840d665debc99f1b6714e93efc99b35a7e9",
+  "tile_order_top_left": [
+    "open pine",
+    "full fir",
+    "weathered spruce",
+    "spare pine"
+  ],
+  "mip_gutter_px": 24,
+  "bark_textures": {
+    "winter_bark.png": "88f250538f6d61cffd351db9122d25c089961a2df2d559d52677dbd182b0cb0b",
+    "winter_bark_normal.png": "3daa9e0d9debf515c10c426822cf89ed3738cf07cf6a89f3fd003d76cc3a580e"
+  },
+  "bark_origin": "Original NumPy height fields and Pillow birch scars; OpenGL +Y tangent normal map",
+  "far_bough_sha256": "d0f49c41e45d76d5613ce9a4c4d844e6c5b6bb3d209058f09060f6d336c66a53",
+  "far_bough_origin": "Original twig tiles composed along the same four branchlet positions; baked foliage coverage for reduced distant planes"
+}

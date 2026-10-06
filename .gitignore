@@ -88,3 +88,7 @@ tools/blender/watch_build.log
 /tools/hand_weapon_*.log
 /tools/blender/generated/live_hand_rig_v2/*candidate*.json
 /tools/blender/generated/live_hand_rig_v2/contact_profiles.json
+
+# Original winter tree authoring: retain editable source, verified exports and reviews.
+/tools/blender/generated/winter_tree_diversity_v1/*.log
+/tools/blender/generated/winter_tree_diversity_v1/*.blend[0-9]
