@@ -1,0 +1,538 @@
+{
+  "static_glb": "passed",
+  "assets": {
+    "propane_cylinder": {
+      "triangles": 3092,
+      "dimensions_m": [
+        0.3240000009536743,
+        0.5015000104904175,
+        0.3240000009536743
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 4,
+      "embedded_images": 8,
+      "bytes": 1375680,
+      "pivots_verified": [
+        "propane_cylinder__Socket_carry"
+      ]
+    },
+    "canvas_backpack": {
+      "triangles": 10124,
+      "dimensions_m": [
+        0.5659999847412109,
+        0.681000051879888,
+        0.32749999687075615
+      ],
+      "lowest_y_m": 0.02499997615814209,
+      "degenerate_triangles": 0,
+      "materials": 5,
+      "embedded_images": 15,
+      "bytes": 3364552,
+      "pivots_verified": [
+        "canvas_backpack__Socket_back_attachment",
+        "canvas_backpack__Socket_carry"
+      ]
+    },
+    "jaw_trap_open": {
+      "triangles": 6988,
+      "dimensions_m": [
+        0.46500004558242186,
+        0.061669330053877966,
+        0.30799999833106995
+      ],
+      "lowest_y_m": 0.0009999839616264238,
+      "degenerate_triangles": 0,
+      "materials": 2,
+      "embedded_images": 4,
+      "bytes": 932916,
+      "pivots_verified": [
+        "jaw_trap_open__Pivot_Jaw_L",
+        "jaw_trap_open__Pivot_Jaw_R",
+        "jaw_trap_open__Socket_trigger"
+      ]
+    },
+    "jaw_trap_closed": {
+      "triangles": 6988,
+      "dimensions_m": [
+        0.46500004558242186,
+        0.14908834648561625,
+        0.30799999833106995
+      ],
+      "lowest_y_m": 0.0009999839616264238,
+      "degenerate_triangles": 0,
+      "materials": 2,
+      "embedded_images": 4,
+      "bytes": 933648,
+      "pivots_verified": [
+        "jaw_trap_closed__Pivot_Jaw_L",
+        "jaw_trap_closed__Pivot_Jaw_R",
+        "jaw_trap_closed__Socket_trigger"
+      ]
+    },
+    "camp_pot_large": {
+      "triangles": 2300,
+      "dimensions_m": [
+        0.3779999911785126,
+        0.17800000309944153,
+        0.2840000092983246
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 2,
+      "embedded_images": 4,
+      "bytes": 771040,
+      "pivots_verified": [
+        "camp_pot_large__Socket_contents"
+      ]
+    },
+    "camp_pot_small": {
+      "triangles": 2300,
+      "dimensions_m": [
+        0.27000001072883606,
+        0.07000000029802322,
+        0.17599999904632568
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 2,
+      "embedded_images": 4,
+      "bytes": 771292,
+      "pivots_verified": [
+        "camp_pot_small__Socket_contents"
+      ]
+    },
+    "skillet_large": {
+      "triangles": 816,
+      "dimensions_m": [
+        0.27000001072883606,
+        0.04800000041723251,
+        0.4400000050663948
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 3,
+      "embedded_images": 7,
+      "bytes": 1112768,
+      "pivots_verified": [
+        "skillet_large__Socket_grip"
+      ]
+    },
+    "skillet_small": {
+      "triangles": 816,
+      "dimensions_m": [
+        0.1720000058412552,
+        0.04800000041723251,
+        0.301999993622303
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 3,
+      "embedded_images": 7,
+      "bytes": 1112884,
+      "pivots_verified": [
+        "skillet_small__Socket_grip"
+      ]
+    },
+    "water_bottle_tall": {
+      "triangles": 840,
+      "dimensions_m": [
+        0.06800000369548798,
+        0.25999999046325684,
+        0.06800000369548798
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 2,
+      "embedded_images": 6,
+      "bytes": 1149644,
+      "pivots_verified": [
+        "water_bottle_tall__Pivot_Cap",
+        "water_bottle_tall__Socket_grip",
+        "water_bottle_tall__Socket_mouth"
+      ]
+    },
+    "water_bottle_short": {
+      "triangles": 1080,
+      "dimensions_m": [
+        0.07519999891519547,
+        0.20499999821186066,
+        0.07519999891519547
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 4,
+      "embedded_images": 8,
+      "bytes": 1550980,
+      "pivots_verified": [
+        "water_bottle_short__Pivot_Cap",
+        "water_bottle_short__Socket_grip",
+        "water_bottle_short__Socket_mouth"
+      ]
+    },
+    "fuel_jerrycan": {
+      "triangles": 1730,
+      "dimensions_m": [
+        0.2549999952316284,
+        0.44849999994039536,
+        0.14899999648332596
+      ],
+      "lowest_y_m": 0.004500001668930054,
+      "degenerate_triangles": 0,
+      "materials": 3,
+      "embedded_images": 7,
+      "bytes": 1133252,
+      "pivots_verified": [
+        "fuel_jerrycan__Pivot_FuelCap",
+        "fuel_jerrycan__Socket_carry"
+      ]
+    },
+    "first_aid_case": {
+      "triangles": 1620,
+      "dimensions_m": [
+        0.2549999952316284,
+        0.25350000336766243,
+        0.10150000220164657
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 4,
+      "embedded_images": 12,
+      "bytes": 2271388,
+      "pivots_verified": [
+        "first_aid_case__Pivot_MedicalLid",
+        "first_aid_case__Socket_carry"
+      ]
+    },
+    "portable_radio": {
+      "triangles": 3430,
+      "dimensions_m": [
+        0.30000001192092896,
+        0.4699999988079071,
+        0.10700000252109021
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 7,
+      "embedded_images": 13,
+      "bytes": 2285804,
+      "pivots_verified": [
+        "portable_radio__Pivot_Antenna",
+        "portable_radio__Pivot_TuningKnob",
+        "portable_radio__Socket_carry"
+      ]
+    },
+    "matchbox_closed": {
+      "triangles": 326,
+      "dimensions_m": [
+        0.05569999938597903,
+        0.019499999471008778,
+        0.07500000298023224
+      ],
+      "lowest_y_m": 0.0005000000819563866,
+      "degenerate_triangles": 0,
+      "materials": 4,
+      "embedded_images": 10,
+      "bytes": 1691220,
+      "pivots_verified": [
+        "matchbox_closed__Pivot_MatchTray"
+      ]
+    },
+    "matchbox_open": {
+      "triangles": 1034,
+      "dimensions_m": [
+        0.05569999938597903,
+        0.019499999471008778,
+        0.09799999434850307
+      ],
+      "lowest_y_m": 0.0005000000819563866,
+      "degenerate_triangles": 0,
+      "materials": 5,
+      "embedded_images": 13,
+      "bytes": 2240600,
+      "pivots_verified": [
+        "matchbox_open__Pivot_MatchTray"
+      ]
+    },
+    "field_flashlight": {
+      "triangles": 3440,
+      "dimensions_m": [
+        0.05000000074505806,
+        0.20400000363588333,
+        0.05000000074505806
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 4,
+      "embedded_images": 10,
+      "bytes": 1889432,
+      "pivots_verified": [
+        "field_flashlight__Socket_beam",
+        "field_flashlight__Socket_grip"
+      ]
+    },
+    "battery_aa": {
+      "triangles": 396,
+      "dimensions_m": [
+        0.01489999983459711,
+        0.05050000350456685,
+        0.015299999620765448
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 4,
+      "embedded_images": 8,
+      "bytes": 1278224,
+      "pivots_verified": []
+    },
+    "battery_d": {
+      "triangles": 396,
+      "dimensions_m": [
+        0.03440000116825104,
+        0.061500003444962204,
+        0.03480000048875809
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 4,
+      "embedded_images": 8,
+      "bytes": 1278220,
+      "pivots_verified": []
+    },
+    "field_compass_closed": {
+      "triangles": 1764,
+      "dimensions_m": [
+        0.057999998331069946,
+        0.018200000980868936,
+        0.07150000333786011
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 4,
+      "embedded_images": 8,
+      "bytes": 1324920,
+      "pivots_verified": [
+        "field_compass_closed__Pivot_CompassLid",
+        "field_compass_closed__Pivot_Needle",
+        "field_compass_closed__Socket_lanyard"
+      ]
+    },
+    "field_compass_open": {
+      "triangles": 1764,
+      "dimensions_m": [
+        0.057999998331069946,
+        0.06779895976616973,
+        0.08975787570993884
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 4,
+      "embedded_images": 8,
+      "bytes": 1324968,
+      "pivots_verified": [
+        "field_compass_open__Pivot_CompassLid",
+        "field_compass_open__Pivot_Needle",
+        "field_compass_open__Socket_lanyard"
+      ]
+    },
+    "food_can_beans": {
+      "triangles": 1544,
+      "dimensions_m": [
+        0.07459999620914459,
+        0.11079999932553619,
+        0.07459999620914459
+      ],
+      "lowest_y_m": 0.0007000000914558768,
+      "degenerate_triangles": 0,
+      "materials": 3,
+      "embedded_images": 5,
+      "bytes": 749612,
+      "pivots_verified": [
+        "food_can_beans__Socket_contents"
+      ]
+    },
+    "food_can_soup": {
+      "triangles": 1544,
+      "dimensions_m": [
+        0.07459999620914459,
+        0.11079999932553619,
+        0.07459999620914459
+      ],
+      "lowest_y_m": 0.0007000000914558768,
+      "degenerate_triangles": 0,
+      "materials": 3,
+      "embedded_images": 5,
+      "bytes": 750724,
+      "pivots_verified": [
+        "food_can_soup__Socket_contents"
+      ]
+    },
+    "food_can_fish": {
+      "triangles": 1544,
+      "dimensions_m": [
+        0.07459999620914459,
+        0.11079999932553619,
+        0.07459999620914459
+      ],
+      "lowest_y_m": 0.0007000000914558768,
+      "degenerate_triangles": 0,
+      "materials": 3,
+      "embedded_images": 5,
+      "bytes": 749660,
+      "pivots_verified": [
+        "food_can_fish__Socket_contents"
+      ]
+    },
+    "food_can_fruit": {
+      "triangles": 1544,
+      "dimensions_m": [
+        0.07459999620914459,
+        0.11079999932553619,
+        0.07459999620914459
+      ],
+      "lowest_y_m": 0.0007000000914558768,
+      "degenerate_triangles": 0,
+      "materials": 3,
+      "embedded_images": 5,
+      "bytes": 748944,
+      "pivots_verified": [
+        "food_can_fruit__Socket_contents"
+      ]
+    },
+    "rolled_bandage": {
+      "triangles": 1816,
+      "dimensions_m": [
+        0.057999998331069946,
+        0.05000000074505806,
+        0.05849999934434891
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 2,
+      "embedded_images": 4,
+      "bytes": 690788,
+      "pivots_verified": []
+    },
+    "field_shovel": {
+      "triangles": 840,
+      "dimensions_m": [
+        0.21381062269210815,
+        1.0494534343015403,
+        0.04399999976158142
+      ],
+      "lowest_y_m": 0.0005466074217110872,
+      "degenerate_triangles": 0,
+      "materials": 4,
+      "embedded_images": 10,
+      "bytes": 1640048,
+      "pivots_verified": [
+        "field_shovel__Socket_cutting_edge",
+        "field_shovel__Socket_grip_primary",
+        "field_shovel__Socket_grip_support"
+      ]
+    },
+    "hunting_knife": {
+      "triangles": 516,
+      "dimensions_m": [
+        0.03700000047683716,
+        0.26961565017700195,
+        0.020999999345993156
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 4,
+      "embedded_images": 10,
+      "bytes": 1846720,
+      "pivots_verified": [
+        "hunting_knife__Socket_blade_tip",
+        "hunting_knife__Socket_grip_primary"
+      ]
+    },
+    "woodcutting_hatchet": {
+      "triangles": 524,
+      "dimensions_m": [
+        0.21062830463051796,
+        0.5564553141593933,
+        0.042500002309679985
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 3,
+      "embedded_images": 7,
+      "bytes": 1109692,
+      "pivots_verified": [
+        "woodcutting_hatchet__Socket_cutting_edge",
+        "woodcutting_hatchet__Socket_grip_primary",
+        "woodcutting_hatchet__Socket_grip_support"
+      ]
+    },
+    "improvised_stone_axe": {
+      "triangles": 3444,
+      "dimensions_m": [
+        0.1639999970793724,
+        0.5799999833106995,
+        0.052399837857557696
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 4,
+      "embedded_images": 12,
+      "bytes": 2665368,
+      "pivots_verified": [
+        "improvised_stone_axe__Socket_cutting_edge",
+        "improvised_stone_axe__Socket_grip_primary",
+        "improvised_stone_axe__Socket_grip_support"
+      ]
+    },
+    "rescue_hatchet": {
+      "triangles": 524,
+      "dimensions_m": [
+        0.21062830463051796,
+        0.44645535945892334,
+        0.042500001242966184
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 4,
+      "embedded_images": 10,
+      "bytes": 1626444,
+      "pivots_verified": [
+        "rescue_hatchet__Socket_cutting_edge",
+        "rescue_hatchet__Socket_grip_primary",
+        "rescue_hatchet__Socket_grip_support"
+      ]
+    },
+    "camp_pot_lid_large": {
+      "triangles": 812,
+      "dimensions_m": [
+        0.2840000092983246,
+        0.0430000014603138,
+        0.2840000092983246
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 2,
+      "embedded_images": 4,
+      "bytes": 722200,
+      "pivots_verified": [
+        "camp_pot_lid_large__Socket_grip"
+      ]
+    },
+    "camp_pot_lid_small": {
+      "triangles": 812,
+      "dimensions_m": [
+        0.17599999904632568,
+        0.0430000014603138,
+        0.17599999904632568
+      ],
+      "lowest_y_m": 0.0,
+      "degenerate_triangles": 0,
+      "materials": 2,
+      "embedded_images": 4,
+      "bytes": 722208,
+      "pivots_verified": [
+        "camp_pot_lid_small__Socket_grip"
+      ]
+    }
+  }
+}

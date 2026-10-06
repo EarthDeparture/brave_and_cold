@@ -1,0 +1,759 @@
+{
+  "propane_cylinder": {
+    "description": "Weathered refillable field propane cylinder",
+    "nominal_size_m": [
+      0.32,
+      0.5,
+      0.32
+    ],
+    "measured_size_m": [
+      0.3240000009536743,
+      0.5015000104904175,
+      0.3240000009536743
+    ],
+    "triangles": 3092,
+    "mesh_nodes": 4,
+    "materials": 4,
+    "pivots": [
+      "propane_cylinder__Socket_carry"
+    ],
+    "glb": "godot/propane_cylinder.glb",
+    "glb_sha256": "ce2875f9e63f5c13134e14b89f9d039a6a51ed2546c2c6400fb73b8dca3e19fb",
+    "native": "source/propane_cylinder.blend",
+    "native_sha256": "f5b35339e7ebb3dc70e9260d8875ab9993ed39f9d33b5812ff9f899f7b83206e"
+  },
+  "canvas_backpack": {
+    "description": "Canvas rucksack with external bedroll and usable buckles",
+    "nominal_size_m": [
+      0.56,
+      0.7,
+      0.28
+    ],
+    "measured_size_m": [
+      0.5659999847412109,
+      0.6810000538825989,
+      0.32750000059604645
+    ],
+    "triangles": 10124,
+    "mesh_nodes": 5,
+    "materials": 5,
+    "pivots": [
+      "canvas_backpack__Socket_back_attachment",
+      "canvas_backpack__Socket_carry"
+    ],
+    "glb": "godot/canvas_backpack.glb",
+    "glb_sha256": "b4ada7991241fe7d1c9d15c9872614ad82a85e4aa81513c8c1bb6c5d3c6c22a9",
+    "native": "source/canvas_backpack.blend",
+    "native_sha256": "fa11eb029c33f12d37452f4028cb0565c6d445848e6cfd72bf6129c90570a157"
+  },
+  "jaw_trap_open": {
+    "description": "Mechanical trapping prop; jaws and trigger retain separate pivots",
+    "nominal_size_m": [
+      0.4,
+      0.06,
+      0.3
+    ],
+    "measured_size_m": [
+      0.4649999886751175,
+      0.06166931474581361,
+      0.30799999833106995
+    ],
+    "triangles": 6988,
+    "mesh_nodes": 4,
+    "materials": 2,
+    "pivots": [
+      "jaw_trap_open__Pivot_Jaw_L",
+      "jaw_trap_open__Pivot_Jaw_R",
+      "jaw_trap_open__Socket_trigger"
+    ],
+    "glb": "godot/jaw_trap_open.glb",
+    "glb_sha256": "d27ca63ace9f357edc6f0466b727b0a0f2c759360a2af929564116b4bf425259",
+    "native": "source/jaw_trap_open.blend",
+    "native_sha256": "d9bd93593e416d3ae0c3696ac3f295a7df027eee17c0dc2a8ee12574812b607e"
+  },
+  "jaw_trap_closed": {
+    "description": "Mechanical trapping prop; jaws and trigger retain separate pivots",
+    "nominal_size_m": [
+      0.4,
+      0.16,
+      0.3
+    ],
+    "measured_size_m": [
+      0.4649999886751175,
+      0.14908834034577012,
+      0.30799999833106995
+    ],
+    "triangles": 6988,
+    "mesh_nodes": 4,
+    "materials": 2,
+    "pivots": [
+      "jaw_trap_closed__Pivot_Jaw_L",
+      "jaw_trap_closed__Pivot_Jaw_R",
+      "jaw_trap_closed__Socket_trigger"
+    ],
+    "glb": "godot/jaw_trap_closed.glb",
+    "glb_sha256": "e610ca583732740ad8164b3bbf1baf5edbf0fa233bdf52bfa55a858ed9eb0725",
+    "native": "source/jaw_trap_closed.blend",
+    "native_sha256": "85a19fc579567ce00e0be5941ea816a58779ef65ac02cb3b4343fb579209cf34"
+  },
+  "camp_pot_large": {
+    "description": "Open thick-walled camp cooking pot",
+    "nominal_size_m": [
+      0.33,
+      0.175,
+      0.28
+    ],
+    "measured_size_m": [
+      0.3779999911785126,
+      0.17800000309944153,
+      0.2840000092983246
+    ],
+    "triangles": 2300,
+    "mesh_nodes": 2,
+    "materials": 2,
+    "pivots": [
+      "camp_pot_large__Socket_contents"
+    ],
+    "glb": "godot/camp_pot_large.glb",
+    "glb_sha256": "3f3eea7eb0eabcf401a13e1496ef16ed4bea85bb07185aab6fd47cdb5742b6ad",
+    "native": "source/camp_pot_large.blend",
+    "native_sha256": "8ad7f467fcbdd84c6215db4e65c3aa0dde23ea27cf018f56eda286b457ecdfb5"
+  },
+  "camp_pot_small": {
+    "description": "Open thick-walled camp cooking pot",
+    "nominal_size_m": [
+      0.22199999999999998,
+      0.067,
+      0.172
+    ],
+    "measured_size_m": [
+      0.27000001072883606,
+      0.07000000029802322,
+      0.17599999904632568
+    ],
+    "triangles": 2300,
+    "mesh_nodes": 2,
+    "materials": 2,
+    "pivots": [
+      "camp_pot_small__Socket_contents"
+    ],
+    "glb": "godot/camp_pot_small.glb",
+    "glb_sha256": "cf5bf4ce710e47f389baa70ff4d62f5bf57d09ee9cb745ae00332f12f80c7cb3",
+    "native": "source/camp_pot_small.blend",
+    "native_sha256": "ad2e98a93236f20e61b3d185e94a1df248bf47faa97ef7cc44364811fc13ba21"
+  },
+  "skillet_large": {
+    "description": "Cast skillet with wooden grip and continuous hollow bowl",
+    "nominal_size_m": [
+      0.27,
+      0.048,
+      0.44000000000000006
+    ],
+    "measured_size_m": [
+      0.27000001072883606,
+      0.04800000041723251,
+      0.4400000125169754
+    ],
+    "triangles": 816,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "pivots": [
+      "skillet_large__Socket_grip"
+    ],
+    "glb": "godot/skillet_large.glb",
+    "glb_sha256": "225c1ca003568fadaf9c27b3b42d8ae3626e8efcba18fff84b219b8816f032e0",
+    "native": "source/skillet_large.blend",
+    "native_sha256": "25f24074725818cf02f8818bb19bbaff33a7b1e3b038dc14796a10db44d99222"
+  },
+  "skillet_small": {
+    "description": "Cast skillet with wooden grip and continuous hollow bowl",
+    "nominal_size_m": [
+      0.172,
+      0.048,
+      0.302
+    ],
+    "measured_size_m": [
+      0.1720000058412552,
+      0.04800000041723251,
+      0.301999993622303
+    ],
+    "triangles": 816,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "pivots": [
+      "skillet_small__Socket_grip"
+    ],
+    "glb": "godot/skillet_small.glb",
+    "glb_sha256": "c80fa6594256f02513c542dadf3945f41be5b2e795af06574f684eee4b181d7a",
+    "native": "source/skillet_small.blend",
+    "native_sha256": "4f1e0cb74bb009ee8ee54e3c728c905f69f4cbe2ca1489804fbee9e273bb8eb1"
+  },
+  "water_bottle_tall": {
+    "description": "Reusable screw-top water bottle; separate cap pivot",
+    "nominal_size_m": [
+      0.068,
+      0.26,
+      0.068
+    ],
+    "measured_size_m": [
+      0.06800000369548798,
+      0.25999999046325684,
+      0.06800000369548798
+    ],
+    "triangles": 840,
+    "mesh_nodes": 2,
+    "materials": 2,
+    "pivots": [
+      "water_bottle_tall__Pivot_Cap",
+      "water_bottle_tall__Socket_grip",
+      "water_bottle_tall__Socket_mouth"
+    ],
+    "glb": "godot/water_bottle_tall.glb",
+    "glb_sha256": "d6d58c40c5f7774cb22ef77f2dc9f8a4e6d53ec50f1705ccb9ee4a29ef0134bb",
+    "native": "source/water_bottle_tall.blend",
+    "native_sha256": "547303f398f194d64ff83bd89706e2460a2784e04a28398aa52512c62b0a2d54"
+  },
+  "water_bottle_short": {
+    "description": "Reusable screw-top water bottle; separate cap pivot",
+    "nominal_size_m": [
+      0.074,
+      0.205,
+      0.074
+    ],
+    "measured_size_m": [
+      0.07519999891519547,
+      0.20499999821186066,
+      0.07519999891519547
+    ],
+    "triangles": 1080,
+    "mesh_nodes": 4,
+    "materials": 4,
+    "pivots": [
+      "water_bottle_short__Pivot_Cap",
+      "water_bottle_short__Socket_grip",
+      "water_bottle_short__Socket_mouth"
+    ],
+    "glb": "godot/water_bottle_short.glb",
+    "glb_sha256": "2e1a2da44478fafecb86ab1669195a5313074b617c85d8498db97b6808d536e2",
+    "native": "source/water_bottle_short.blend",
+    "native_sha256": "545c559b0894c4497eb96d1f591bf7e850273e386fe1856719b9449bc40f2954"
+  },
+  "fuel_jerrycan": {
+    "description": "Ribbed 10 litre fuel can with open carrying handle",
+    "nominal_size_m": [
+      0.26,
+      0.46,
+      0.15
+    ],
+    "measured_size_m": [
+      0.2549999952316284,
+      0.44850000739097595,
+      0.14899999648332596
+    ],
+    "triangles": 1730,
+    "mesh_nodes": 4,
+    "materials": 3,
+    "pivots": [
+      "fuel_jerrycan__Pivot_FuelCap",
+      "fuel_jerrycan__Socket_carry"
+    ],
+    "glb": "godot/fuel_jerrycan.glb",
+    "glb_sha256": "4bca532863d2cc35ecbdb03baee1f218ebc58b566c3f4ab0176a3a36733bcc65",
+    "native": "source/fuel_jerrycan.blend",
+    "native_sha256": "f9a8bc1643a96aaaeee1b37f74d5792bfec6bb4ab9d882b04dc9c8edc620da0d"
+  },
+  "first_aid_case": {
+    "description": "Hard field first-aid case; lid and latch pivots",
+    "nominal_size_m": [
+      0.255,
+      0.23,
+      0.09
+    ],
+    "measured_size_m": [
+      0.2549999952316284,
+      0.2535000145435333,
+      0.1015000008046627
+    ],
+    "triangles": 1620,
+    "mesh_nodes": 5,
+    "materials": 4,
+    "pivots": [
+      "first_aid_case__Pivot_MedicalLid",
+      "first_aid_case__Socket_carry"
+    ],
+    "glb": "godot/first_aid_case.glb",
+    "glb_sha256": "246ff07bcf92f11393f6eec0d280711d1ae02947de4d6dfb12ff1deb283cbda2",
+    "native": "source/first_aid_case.blend",
+    "native_sha256": "dd55d9199e310c975e3cdf285b5204c0d40f5395dc0f6ec032614620889b6ffc"
+  },
+  "portable_radio": {
+    "description": "Public AM/FM radio with real speaker grille and tuning marker",
+    "nominal_size_m": [
+      0.3,
+      0.235,
+      0.09
+    ],
+    "measured_size_m": [
+      0.30000001192092896,
+      0.4699999988079071,
+      0.10700000450015068
+    ],
+    "triangles": 3430,
+    "mesh_nodes": 9,
+    "materials": 7,
+    "pivots": [
+      "portable_radio__Pivot_Antenna",
+      "portable_radio__Pivot_TuningKnob",
+      "portable_radio__Socket_carry"
+    ],
+    "glb": "godot/portable_radio.glb",
+    "glb_sha256": "86e61301a700ec6e096d718ce64f0318598f511a7924ee16b236fc87367f06f2",
+    "native": "source/portable_radio.blend",
+    "native_sha256": "950328c744d7974ef52e5a90d91d64272014ea59c064a78fe7d7f35c3a485630"
+  },
+  "matchbox_closed": {
+    "description": "Safety matchbox; sliding tray and actual wooden matches",
+    "nominal_size_m": [
+      0.055,
+      0.019,
+      0.075
+    ],
+    "measured_size_m": [
+      0.05569999851286411,
+      0.019499999471008778,
+      0.07500000298023224
+    ],
+    "triangles": 326,
+    "mesh_nodes": 4,
+    "materials": 4,
+    "pivots": [
+      "matchbox_closed__Pivot_MatchTray"
+    ],
+    "glb": "godot/matchbox_closed.glb",
+    "glb_sha256": "c14bd65462a104433a35e8439722998c99bef319c2fca4e8716b14c39f3a8c54",
+    "native": "source/matchbox_closed.blend",
+    "native_sha256": "0dca397f1e87e2a50ca5fcc2284832e47a7ffc93177c09222671bc5ed002f188"
+  },
+  "matchbox_open": {
+    "description": "Safety matchbox; sliding tray and actual wooden matches",
+    "nominal_size_m": [
+      0.055,
+      0.019,
+      0.1
+    ],
+    "measured_size_m": [
+      0.05569999851286411,
+      0.019499999471008778,
+      0.09799999743700027
+    ],
+    "triangles": 1034,
+    "mesh_nodes": 5,
+    "materials": 5,
+    "pivots": [
+      "matchbox_open__Pivot_MatchTray"
+    ],
+    "glb": "godot/matchbox_open.glb",
+    "glb_sha256": "ed95a1825625a6f1e9399a61d72c5fbf552ec8473e26333c958d588e91aac696",
+    "native": "source/matchbox_open.blend",
+    "native_sha256": "5e76ee32f2ade1c08d62716f699313edf1b2e61c876b82f5ec5f37471474e245"
+  },
+  "field_flashlight": {
+    "description": "Sealed field torch; beam origin and holding socket",
+    "nominal_size_m": [
+      0.047,
+      0.22,
+      0.047
+    ],
+    "measured_size_m": [
+      0.05000000074505806,
+      0.20399999618530273,
+      0.05000000074505806
+    ],
+    "triangles": 3440,
+    "mesh_nodes": 4,
+    "materials": 4,
+    "pivots": [
+      "field_flashlight__Socket_beam",
+      "field_flashlight__Socket_grip"
+    ],
+    "glb": "godot/field_flashlight.glb",
+    "glb_sha256": "e1ffdfa15e646d629fce4b0efa9a5cac9f9219df0381c97e78f7f94ed660df68",
+    "native": "source/field_flashlight.blend",
+    "native_sha256": "81e2ce2ff01c5dd4ab03d56f21c2b71edcd7bc32935b54787bb38ce23bcf35e8"
+  },
+  "battery_aa": {
+    "description": "Primary alkaline cell; plus terminal and polarity print",
+    "nominal_size_m": [
+      0.0145,
+      0.0505,
+      0.0145
+    ],
+    "measured_size_m": [
+      0.01489999983459711,
+      0.05050000175833702,
+      0.015299999620765448
+    ],
+    "triangles": 396,
+    "mesh_nodes": 4,
+    "materials": 4,
+    "pivots": [],
+    "glb": "godot/battery_aa.glb",
+    "glb_sha256": "2dc69ce6d4da41a50780e2b164be6351ca1f9b1caae1c1ab2685805ab91dc409",
+    "native": "source/battery_aa.blend",
+    "native_sha256": "788a61a633a5511c25dd599bdcc0e6aa956f21dec335620f237dd2df6f81a1ac"
+  },
+  "battery_d": {
+    "description": "Primary alkaline cell; plus terminal and polarity print",
+    "nominal_size_m": [
+      0.034,
+      0.0615,
+      0.034
+    ],
+    "measured_size_m": [
+      0.03440000116825104,
+      0.061500001698732376,
+      0.03480000048875809
+    ],
+    "triangles": 396,
+    "mesh_nodes": 4,
+    "materials": 4,
+    "pivots": [],
+    "glb": "godot/battery_d.glb",
+    "glb_sha256": "6204b8cd7381bb197fe8bdc0cb0e49ba7e65b24e45cf993e15a3c1b59791700d",
+    "native": "source/battery_d.blend",
+    "native_sha256": "f05e2e5571b95f70faef705d2fe13639969e597117b975fd4b07f269ab9fb124"
+  },
+  "field_compass_closed": {
+    "description": "Field compass with pivoted lid and independent needle",
+    "nominal_size_m": [
+      0.061,
+      0.017,
+      0.061
+    ],
+    "measured_size_m": [
+      0.057999998331069946,
+      0.018200000748038292,
+      0.07150000333786011
+    ],
+    "triangles": 1764,
+    "mesh_nodes": 5,
+    "materials": 4,
+    "pivots": [
+      "field_compass_closed__Pivot_CompassLid",
+      "field_compass_closed__Pivot_Needle",
+      "field_compass_closed__Socket_lanyard"
+    ],
+    "glb": "godot/field_compass_closed.glb",
+    "glb_sha256": "2dcbbea1e1acd5387feeb0ed62d036b25a39d75cac2e478fd74daba4e6a2400f",
+    "native": "source/field_compass_closed.blend",
+    "native_sha256": "7b88a2a7ec448893aa2e814192f49ef2a98ea055273039c1bc2fdb05e1dbb8f7"
+  },
+  "field_compass_open": {
+    "description": "Field compass with pivoted lid and independent needle",
+    "nominal_size_m": [
+      0.061,
+      0.075,
+      0.061
+    ],
+    "measured_size_m": [
+      0.057999998331069946,
+      0.06779895722866058,
+      0.08975787088274956
+    ],
+    "triangles": 1764,
+    "mesh_nodes": 5,
+    "materials": 4,
+    "pivots": [
+      "field_compass_open__Pivot_CompassLid",
+      "field_compass_open__Pivot_Needle",
+      "field_compass_open__Socket_lanyard"
+    ],
+    "glb": "godot/field_compass_open.glb",
+    "glb_sha256": "dc8edd1e72884fc8bc1fc85c0f373e56d868487a9d54c32bef492148ee9285be",
+    "native": "source/field_compass_open.blend",
+    "native_sha256": "add3329057f00ebb05786fd3785dc396932725f60e4ce2da9dcd86971c63d5f9"
+  },
+  "food_can_beans": {
+    "description": "400 g pantry tin / beans",
+    "nominal_size_m": [
+      0.074,
+      0.11,
+      0.074
+    ],
+    "measured_size_m": [
+      0.07459999620914459,
+      0.11080000235233456,
+      0.07459999620914459
+    ],
+    "triangles": 1544,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "pivots": [
+      "food_can_beans__Socket_contents"
+    ],
+    "glb": "godot/food_can_beans.glb",
+    "glb_sha256": "bdacbeac7be37fa865eee759b9d1f2fd7d0ea14731a93c286c37187d9c414c36",
+    "native": "source/food_can_beans.blend",
+    "native_sha256": "bc355c87445d52118729cf8106ad314a731e56aff1f651dd3af44ff646b06102"
+  },
+  "food_can_soup": {
+    "description": "400 g pantry tin / soup",
+    "nominal_size_m": [
+      0.074,
+      0.11,
+      0.074
+    ],
+    "measured_size_m": [
+      0.07459999620914459,
+      0.11080000235233456,
+      0.07459999620914459
+    ],
+    "triangles": 1544,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "pivots": [
+      "food_can_soup__Socket_contents"
+    ],
+    "glb": "godot/food_can_soup.glb",
+    "glb_sha256": "c8d072daab54b0e3e5d36b2cfb4d0bf6336e8fab258e8c3e618385d86b26591f",
+    "native": "source/food_can_soup.blend",
+    "native_sha256": "a90eb02caf637e9f68a2299262b2a154864824e3d4a8a2b3b8bc40f834f1ec11"
+  },
+  "food_can_fish": {
+    "description": "400 g pantry tin / fish",
+    "nominal_size_m": [
+      0.074,
+      0.11,
+      0.074
+    ],
+    "measured_size_m": [
+      0.07459999620914459,
+      0.11080000235233456,
+      0.07459999620914459
+    ],
+    "triangles": 1544,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "pivots": [
+      "food_can_fish__Socket_contents"
+    ],
+    "glb": "godot/food_can_fish.glb",
+    "glb_sha256": "6b4a091e19976494cbb8eeb69eed28357a251ed84a0de14d79f5e138bf7d38b5",
+    "native": "source/food_can_fish.blend",
+    "native_sha256": "a84104564fa3d22a4d92f9765e949ee070f89d32f1346598d3061e3638593867"
+  },
+  "food_can_fruit": {
+    "description": "400 g pantry tin / fruit",
+    "nominal_size_m": [
+      0.074,
+      0.11,
+      0.074
+    ],
+    "measured_size_m": [
+      0.07459999620914459,
+      0.11080000235233456,
+      0.07459999620914459
+    ],
+    "triangles": 1544,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "pivots": [
+      "food_can_fruit__Socket_contents"
+    ],
+    "glb": "godot/food_can_fruit.glb",
+    "glb_sha256": "e15b4efb875253c0099ce136d9b26be5afe6b4f84801bd6c53ee166af5b249f8",
+    "native": "source/food_can_fruit.blend",
+    "native_sha256": "edc9afaa0f595da9c8c16368ac28e85abab46a2d4ceb2490a71144a1a3fcb971"
+  },
+  "rolled_bandage": {
+    "description": "Cotton field dressing with hollow core and print sleeve",
+    "nominal_size_m": [
+      0.061,
+      0.05,
+      0.061
+    ],
+    "measured_size_m": [
+      0.057999998331069946,
+      0.05000000074505806,
+      0.05849999934434891
+    ],
+    "triangles": 1816,
+    "mesh_nodes": 2,
+    "materials": 2,
+    "pivots": [],
+    "glb": "godot/rolled_bandage.glb",
+    "glb_sha256": "47e00fda362d9406167589dda2fc2ae2a559ed9b684705726d548bdfe22e62cd",
+    "native": "source/rolled_bandage.blend",
+    "native_sha256": "a7fe2f108a8d6b19fe5168f59c666afc9ec4ee09f79c8bb8f94ba63a8a8b14d9"
+  },
+  "field_shovel": {
+    "description": "Short field shovel with curved blade and open D handle",
+    "nominal_size_m": [
+      0.215,
+      1.05,
+      0.095
+    ],
+    "measured_size_m": [
+      0.21381062269210815,
+      1.0494534641038626,
+      0.04399999976158142
+    ],
+    "triangles": 840,
+    "mesh_nodes": 4,
+    "materials": 4,
+    "pivots": [
+      "field_shovel__Socket_cutting_edge",
+      "field_shovel__Socket_grip_primary",
+      "field_shovel__Socket_grip_support"
+    ],
+    "glb": "godot/field_shovel.glb",
+    "glb_sha256": "b7af98e7eb339713e5190d26902c1eb9fd971e488bed915b6ac66f0cdada0c6d",
+    "native": "source/field_shovel.blend",
+    "native_sha256": "6a194a95e61a439aff4d0d0a5fc51df28c2aa3583af0c30974d7dfc4ac3c4af7"
+  },
+  "hunting_knife": {
+    "description": "Full-tang field knife with separate blade and grip materials",
+    "nominal_size_m": [
+      0.037,
+      0.27,
+      0.02
+    ],
+    "measured_size_m": [
+      0.03700000047683716,
+      0.26961565017700195,
+      0.020999999716877937
+    ],
+    "triangles": 516,
+    "mesh_nodes": 4,
+    "materials": 4,
+    "pivots": [
+      "hunting_knife__Socket_blade_tip",
+      "hunting_knife__Socket_grip_primary"
+    ],
+    "glb": "godot/hunting_knife.glb",
+    "glb_sha256": "0813f2fbafc1c50db5d90c17b709232848e7e9ba8cdac3c316c4c05c2851a173",
+    "native": "source/hunting_knife.blend",
+    "native_sha256": "89c01b6f99ed3cd4e3e8cb8c363ce4df43df19d2cfce12ccfd051aa5db7cd22c"
+  },
+  "woodcutting_hatchet": {
+    "description": "Field axe with original fitted head and two holding sockets",
+    "nominal_size_m": [
+      0.2,
+      0.58,
+      0.043
+    ],
+    "measured_size_m": [
+      0.21062830463051796,
+      0.5564553141593933,
+      0.042500002309679985
+    ],
+    "triangles": 524,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "pivots": [
+      "woodcutting_hatchet__Socket_cutting_edge",
+      "woodcutting_hatchet__Socket_grip_primary",
+      "woodcutting_hatchet__Socket_grip_support"
+    ],
+    "glb": "godot/woodcutting_hatchet.glb",
+    "glb_sha256": "18bb23cb0c5e9353533c457ec74c0627d8c4362a3e319fe588c6675ffc789866",
+    "native": "source/woodcutting_hatchet.blend",
+    "native_sha256": "0b2aadb148361ae2b4f26dbbfcf2100fbe183814ba07dfdfc4555d45a85d02d7"
+  },
+  "improvised_stone_axe": {
+    "description": "Field axe with original fitted head and two holding sockets",
+    "nominal_size_m": [
+      0.2,
+      0.58,
+      0.043
+    ],
+    "measured_size_m": [
+      0.1639999970793724,
+      0.5799999833106995,
+      0.052399829030036926
+    ],
+    "triangles": 3444,
+    "mesh_nodes": 4,
+    "materials": 4,
+    "pivots": [
+      "improvised_stone_axe__Socket_cutting_edge",
+      "improvised_stone_axe__Socket_grip_primary",
+      "improvised_stone_axe__Socket_grip_support"
+    ],
+    "glb": "godot/improvised_stone_axe.glb",
+    "glb_sha256": "abd2199d91a798188960b2017df89834288c114cf91fa43461eb8301a2cf93c1",
+    "native": "source/improvised_stone_axe.blend",
+    "native_sha256": "b482f344b12db4d5e3a05227118bb685bead6881b7290bc85f70ca8f13b3a043"
+  },
+  "rescue_hatchet": {
+    "description": "Field axe with original fitted head and two holding sockets",
+    "nominal_size_m": [
+      0.2,
+      0.47,
+      0.043
+    ],
+    "measured_size_m": [
+      0.21062830463051796,
+      0.44645535945892334,
+      0.042500002309679985
+    ],
+    "triangles": 524,
+    "mesh_nodes": 4,
+    "materials": 4,
+    "pivots": [
+      "rescue_hatchet__Socket_cutting_edge",
+      "rescue_hatchet__Socket_grip_primary",
+      "rescue_hatchet__Socket_grip_support"
+    ],
+    "glb": "godot/rescue_hatchet.glb",
+    "glb_sha256": "52817f2e70980a7d2730bcbda7f208ce4f191c7dd405f8bc6e176e5494f56c33",
+    "native": "source/rescue_hatchet.blend",
+    "native_sha256": "484e6eb7014a6192a2c975b8924881163d39b1f66663c14f1d50ab1782216c34"
+  },
+  "camp_pot_lid_large": {
+    "description": "Matching removable cooking-pot lid",
+    "nominal_size_m": [
+      0.284,
+      0.034,
+      0.284
+    ],
+    "measured_size_m": [
+      0.2840000092983246,
+      0.0430000014603138,
+      0.2840000092983246
+    ],
+    "triangles": 812,
+    "mesh_nodes": 2,
+    "materials": 2,
+    "pivots": [
+      "camp_pot_lid_large__Socket_grip"
+    ],
+    "glb": "godot/camp_pot_lid_large.glb",
+    "glb_sha256": "040ad35da242d8d4366ad45a6ef630d4aaccbef96edd55bb044c98249f377b76",
+    "native": "source/camp_pot_lid_large.blend",
+    "native_sha256": "ffc837d0cb73f80ea5ee7a777bf9ce80e5d3e1968d4558d3db1fe9bc60297c6e"
+  },
+  "camp_pot_lid_small": {
+    "description": "Matching removable cooking-pot lid",
+    "nominal_size_m": [
+      0.176,
+      0.034,
+      0.176
+    ],
+    "measured_size_m": [
+      0.17599999904632568,
+      0.0430000014603138,
+      0.17599999904632568
+    ],
+    "triangles": 812,
+    "mesh_nodes": 2,
+    "materials": 2,
+    "pivots": [
+      "camp_pot_lid_small__Socket_grip"
+    ],
+    "glb": "godot/camp_pot_lid_small.glb",
+    "glb_sha256": "cf3ce3f587612e60225da838e2e32bea4104a23ca5080b21043ce203067c8743",
+    "native": "source/camp_pot_lid_small.blend",
+    "native_sha256": "bbd2be8b854661a75ef43d3e704bdea4935f068dd8a574634aca531ac867e74f"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "asset_count": 32,
+  "triangles": 66708,
+  "static_glb": "passed",
+  "native_reopen": "32 passed",
+  "godot_gpu_import_and_pivots": "32 passed",
+  "renderer": "Forward+ D3D12 / GTX 1080 Ti",
+  "runtime_replacement": false,
+  "accepted_log_hashes": {
+    "native_check.log": "b441f8a490aa3e93ab0894d41848580c2709aef46baf5705e4a363b11b8cf653",
+    "godot_gpu_final.log": "4e9c6d3863328cbb36d99c285a96abe7242c52df265bf4f05585ef70bba0fd26",
+    "godot_import_final.log": "f21f406ed52491abbbc037a09504b8b04c26c51ad40baa7c7eb0f29165caf9e4"
+  },
+  "reviewed": "Blender sheet and Godot close-ups; original reference used as guidance; no human gameplay assessment claimed."
+}
