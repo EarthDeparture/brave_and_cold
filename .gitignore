@@ -64,3 +64,12 @@ tools/blender/watch_build.log
 /tools/blender/generated/field_survival_kit_v1/godot/*.png
 /tools/blender/generated/field_survival_kit_v1/godot/*.import
 /tools/blender/generated/field_survival_kit_v1/*.zip
+
+# Standalone weapon-kit review caches, archives and authoring backups.
+/tools/blender/generated/north_ridge_weapon_kit_v1/*.log
+/tools/blender/generated/north_ridge_weapon_kit_v1/*.blend[0-9]
+/tools/blender/generated/north_ridge_weapon_kit_v1/source/*.blend[0-9]
+/tools/blender/generated/north_ridge_weapon_kit_v1/godot/*.png
+/tools/blender/generated/north_ridge_weapon_kit_v1/godot/*.import
+/tools/blender/generated/north_ridge_weapon_kit_v1/*.zip
+/tools/blender/generated/north_ridge_weapon_kit_v1/previews/iteration_review.png

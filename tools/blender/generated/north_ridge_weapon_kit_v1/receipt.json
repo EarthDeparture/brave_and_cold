@@ -1,0 +1,18 @@
+{
+  "assets": 18,
+  "weapons": 8,
+  "reload_extras": 10,
+  "animation_clips": 67,
+  "triangles": 65604,
+  "glb_geometry_and_animation": "passed",
+  "native_sources_and_action_playback": "18 passed / 67 clips",
+  "godot_gpu_playback": "18 passed / 67 clips",
+  "renderer": "Forward+ Vulkan / GTX 1080 Ti",
+  "runtime_replacement": false,
+  "human_hand_fitting": false,
+  "accepted_logs": {
+    "native_check_final.log": "cb9cc9625a6ae034010dd58d9e4d54edc07fdeaee4c13f4c4e9992b190b154ce",
+    "godot_gpu_final.log": "fe70704f2571d87aeeda4e130f4960285f4b857bbea423394af24b2d56a31795",
+    "godot_import_final.log": "1d51ab4f7028287aab7c58b107c759fc5227f2a08f61b20e1f8fa9305e2170b3"
+  }
+}

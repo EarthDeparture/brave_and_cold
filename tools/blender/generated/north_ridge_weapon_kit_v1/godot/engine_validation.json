@@ -1,0 +1,511 @@
+{
+  "assets": {
+    "brush_lever_rifle": {
+      "animations": {
+        "cycle": {
+          "actual_motion": true,
+          "duration_s": 0.899999976158142,
+          "tracks": 14
+        },
+        "equip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 14
+        },
+        "fire": {
+          "actual_motion": true,
+          "duration_s": 0.300000011920929,
+          "tracks": 14
+        },
+        "idle": {
+          "actual_motion": true,
+          "duration_s": 1.20000004768372,
+          "tracks": 14
+        },
+        "inspect": {
+          "actual_motion": true,
+          "duration_s": 2.0,
+          "tracks": 14
+        },
+        "reload_end": {
+          "actual_motion": true,
+          "duration_s": 0.466666668653488,
+          "tracks": 14
+        },
+        "reload_insert": {
+          "actual_motion": true,
+          "duration_s": 0.899999976158142,
+          "tracks": 14
+        },
+        "reload_start": {
+          "actual_motion": true,
+          "duration_s": 0.466666668653488,
+          "tracks": 14
+        },
+        "unequip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 14
+        }
+      },
+      "dimensions_m": [
+        0.0720005333423615,
+        0.268864214420319,
+        0.973900020122528
+      ],
+      "nodes": 19
+    },
+    "compact_patrol_rifle": {
+      "animations": {
+        "cycle": {
+          "actual_motion": true,
+          "duration_s": 0.899999976158142,
+          "tracks": 14
+        },
+        "equip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 14
+        },
+        "fire": {
+          "actual_motion": true,
+          "duration_s": 0.300000011920929,
+          "tracks": 14
+        },
+        "idle": {
+          "actual_motion": true,
+          "duration_s": 1.20000004768372,
+          "tracks": 14
+        },
+        "inspect": {
+          "actual_motion": true,
+          "duration_s": 2.0,
+          "tracks": 14
+        },
+        "reload_empty": {
+          "actual_motion": true,
+          "duration_s": 3.0,
+          "tracks": 14
+        },
+        "reload_tactical": {
+          "actual_motion": true,
+          "duration_s": 2.40000009536743,
+          "tracks": 14
+        },
+        "stock_fold": {
+          "actual_motion": true,
+          "duration_s": 0.600000023841858,
+          "tracks": 14
+        },
+        "stock_unfold": {
+          "actual_motion": true,
+          "duration_s": 0.600000023841858,
+          "tracks": 14
+        },
+        "unequip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 14
+        }
+      },
+      "dimensions_m": [
+        0.0822157561779022,
+        0.292073547840118,
+        0.876999974250793
+      ],
+      "nodes": 18
+    },
+    "compact_patrol_rifle_spare_magazine": {
+      "animations": {},
+      "dimensions_m": [
+        0.0390000008046627,
+        0.163715541362762,
+        0.0939517021179199
+      ],
+      "nodes": 2
+    },
+    "expedition_rifle": {
+      "animations": {
+        "cycle": {
+          "actual_motion": true,
+          "duration_s": 0.899999976158142,
+          "tracks": 13
+        },
+        "equip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 13
+        },
+        "fire": {
+          "actual_motion": true,
+          "duration_s": 0.300000011920929,
+          "tracks": 13
+        },
+        "idle": {
+          "actual_motion": true,
+          "duration_s": 1.20000004768372,
+          "tracks": 13
+        },
+        "inspect": {
+          "actual_motion": true,
+          "duration_s": 2.0,
+          "tracks": 13
+        },
+        "reload_empty": {
+          "actual_motion": true,
+          "duration_s": 3.0,
+          "tracks": 13
+        },
+        "reload_tactical": {
+          "actual_motion": true,
+          "duration_s": 2.40000009536743,
+          "tracks": 13
+        },
+        "unequip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 13
+        }
+      },
+      "dimensions_m": [
+        0.0794999971985817,
+        0.281625688076019,
+        1.11389994621277
+      ],
+      "nodes": 17
+    },
+    "expedition_rifle_spare_magazine": {
+      "animations": {},
+      "dimensions_m": [
+        0.0390000008046627,
+        0.163715541362762,
+        0.0939517021179199
+      ],
+      "nodes": 2
+    },
+    "frontier_vented_rifle": {
+      "animations": {
+        "cycle": {
+          "actual_motion": true,
+          "duration_s": 0.899999976158142,
+          "tracks": 13
+        },
+        "equip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 13
+        },
+        "fire": {
+          "actual_motion": true,
+          "duration_s": 0.300000011920929,
+          "tracks": 13
+        },
+        "idle": {
+          "actual_motion": true,
+          "duration_s": 1.20000004768372,
+          "tracks": 13
+        },
+        "inspect": {
+          "actual_motion": true,
+          "duration_s": 2.0,
+          "tracks": 13
+        },
+        "reload_empty": {
+          "actual_motion": true,
+          "duration_s": 3.0,
+          "tracks": 13
+        },
+        "reload_tactical": {
+          "actual_motion": true,
+          "duration_s": 2.40000009536743,
+          "tracks": 13
+        },
+        "unequip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 13
+        }
+      },
+      "dimensions_m": [
+        0.0804999992251396,
+        0.233999997377396,
+        1.05390000343323
+      ],
+      "nodes": 17
+    },
+    "frontier_vented_rifle_spare_magazine": {
+      "animations": {},
+      "dimensions_m": [
+        0.0390000008046627,
+        0.113715574145317,
+        0.0839707106351852
+      ],
+      "nodes": 2
+    },
+    "north_service_rifle": {
+      "animations": {
+        "cycle": {
+          "actual_motion": true,
+          "duration_s": 0.899999976158142,
+          "tracks": 13
+        },
+        "equip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 13
+        },
+        "fire": {
+          "actual_motion": true,
+          "duration_s": 0.300000011920929,
+          "tracks": 13
+        },
+        "idle": {
+          "actual_motion": true,
+          "duration_s": 1.20000004768372,
+          "tracks": 13
+        },
+        "inspect": {
+          "actual_motion": true,
+          "duration_s": 2.0,
+          "tracks": 13
+        },
+        "reload_empty": {
+          "actual_motion": true,
+          "duration_s": 3.0,
+          "tracks": 13
+        },
+        "reload_tactical": {
+          "actual_motion": true,
+          "duration_s": 2.40000009536743,
+          "tracks": 13
+        },
+        "unequip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 13
+        }
+      },
+      "dimensions_m": [
+        0.0794999971985817,
+        0.281625688076019,
+        1.06389999389648
+      ],
+      "nodes": 17
+    },
+    "north_service_rifle_spare_magazine": {
+      "animations": {},
+      "dimensions_m": [
+        0.0390000008046627,
+        0.133715584874153,
+        0.0938271284103394
+      ],
+      "nodes": 2
+    },
+    "ranger_box_rifle": {
+      "animations": {
+        "cycle": {
+          "actual_motion": true,
+          "duration_s": 0.899999976158142,
+          "tracks": 13
+        },
+        "equip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 13
+        },
+        "fire": {
+          "actual_motion": true,
+          "duration_s": 0.300000011920929,
+          "tracks": 13
+        },
+        "idle": {
+          "actual_motion": true,
+          "duration_s": 1.20000004768372,
+          "tracks": 13
+        },
+        "inspect": {
+          "actual_motion": true,
+          "duration_s": 2.0,
+          "tracks": 13
+        },
+        "reload_empty": {
+          "actual_motion": true,
+          "duration_s": 3.0,
+          "tracks": 13
+        },
+        "reload_tactical": {
+          "actual_motion": true,
+          "duration_s": 2.40000009536743,
+          "tracks": 13
+        },
+        "unequip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 13
+        }
+      },
+      "dimensions_m": [
+        0.0794999971985817,
+        0.252715587615967,
+        1.02390003204346
+      ],
+      "nodes": 17
+    },
+    "ranger_box_rifle_spare_magazine": {
+      "animations": {},
+      "dimensions_m": [
+        0.0390000008046627,
+        0.14371557533741,
+        0.0840849280357361
+      ],
+      "nodes": 2
+    },
+    "ridge_scout_rifle": {
+      "animations": {
+        "cycle": {
+          "actual_motion": true,
+          "duration_s": 0.899999976158142,
+          "tracks": 13
+        },
+        "equip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 13
+        },
+        "fire": {
+          "actual_motion": true,
+          "duration_s": 0.300000011920929,
+          "tracks": 13
+        },
+        "idle": {
+          "actual_motion": true,
+          "duration_s": 1.20000004768372,
+          "tracks": 13
+        },
+        "inspect": {
+          "actual_motion": true,
+          "duration_s": 2.0,
+          "tracks": 13
+        },
+        "reload_empty": {
+          "actual_motion": true,
+          "duration_s": 3.0,
+          "tracks": 13
+        },
+        "reload_tactical": {
+          "actual_motion": true,
+          "duration_s": 2.40000009536743,
+          "tracks": 13
+        },
+        "unequip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 13
+        }
+      },
+      "dimensions_m": [
+        0.0794999971985817,
+        0.236000001430511,
+        1.09389996528625
+      ],
+      "nodes": 17
+    },
+    "ridge_scout_rifle_spare_magazine": {
+      "animations": {},
+      "dimensions_m": [
+        0.0390000008046627,
+        0.113715574145317,
+        0.0839707106351852
+      ],
+      "nodes": 2
+    },
+    "round_loading_strip": {
+      "animations": {},
+      "dimensions_m": [
+        0.0570000000298023,
+        0.010800002142787,
+        0.0535000041127205
+      ],
+      "nodes": 1
+    },
+    "timber_bolt_carbine": {
+      "animations": {
+        "cycle": {
+          "actual_motion": true,
+          "duration_s": 0.899999976158142,
+          "tracks": 14
+        },
+        "equip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 14
+        },
+        "fire": {
+          "actual_motion": true,
+          "duration_s": 0.300000011920929,
+          "tracks": 14
+        },
+        "idle": {
+          "actual_motion": true,
+          "duration_s": 1.20000004768372,
+          "tracks": 14
+        },
+        "inspect": {
+          "actual_motion": true,
+          "duration_s": 2.0,
+          "tracks": 14
+        },
+        "reload_empty": {
+          "actual_motion": true,
+          "duration_s": 3.0,
+          "tracks": 14
+        },
+        "reload_tactical": {
+          "actual_motion": true,
+          "duration_s": 2.40000009536743,
+          "tracks": 14
+        },
+        "unequip": {
+          "actual_motion": true,
+          "duration_s": 0.533333361148834,
+          "tracks": 14
+        }
+      },
+      "dimensions_m": [
+        0.0939998924732208,
+        0.217169314622879,
+        0.963899970054626
+      ],
+      "nodes": 17
+    },
+    "timber_bolt_carbine_spare_magazine": {
+      "animations": {},
+      "dimensions_m": [
+        0.0390000008046627,
+        0.0987155735492706,
+        0.0838868618011475
+      ],
+      "nodes": 2
+    },
+    "visual_rifle_round": {
+      "animations": {},
+      "dimensions_m": [
+        0.0107999946922064,
+        0.0107999974861741,
+        0.0496999993920326
+      ],
+      "nodes": 1
+    },
+    "visual_spent_case": {
+      "animations": {},
+      "dimensions_m": [
+        0.0107999946922064,
+        0.0107999974861741,
+        0.0346999987959862
+      ],
+      "nodes": 1
+    }
+  },
+  "engine": "Godot 4.7.2",
+  "scope": "Isolated metre-scale import and animation playback; no live hand fitting or gameplay replacement."
+}
