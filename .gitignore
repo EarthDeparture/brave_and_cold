@@ -73,3 +73,11 @@ tools/blender/watch_build.log
 /tools/blender/generated/north_ridge_weapon_kit_v1/godot/*.import
 /tools/blender/generated/north_ridge_weapon_kit_v1/*.zip
 /tools/blender/generated/north_ridge_weapon_kit_v1/previews/iteration_review.png
+
+# Standalone anatomical-hand review caches and authoring backups.
+/tools/blender/anatomical_hands_*.log
+/tools/blender/generated/anatomical_hands_v2/*.blend[0-9]
+/tools/blender/generated/anatomical_hands_v2/*.zip
+/tools/blender/generated/anatomical_hands_v2/godot/*.png
+/tools/blender/generated/anatomical_hands_v2/godot/*.import
+/tools/blender/generated/anatomical_hands_v2/source/*.blend[0-9]

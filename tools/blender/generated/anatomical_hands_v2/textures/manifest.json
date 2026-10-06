@@ -1,0 +1,11 @@
+{
+  "size": 2048,
+  "original": true,
+  "normal": "OpenGL +Y, metric UV-derived tangent space",
+  "uv_coverage_pixels": 2300726,
+  "files": {
+    "skin_albedo.png": "b5ec9b9fd217f4b5ddf73f38f9dd560089c89cdf9c7d038d24bf2a84d938c7c2",
+    "skin_normal.png": "e625aee3eacfe08d4f4ebff366a631ca6c14edf843a80d966e71aeabfa0bf142",
+    "skin_roughness.png": "1738d0704a223586f2999d35cf705f7a4e635e213671ead757631f5f4a03e818"
+  }
+}

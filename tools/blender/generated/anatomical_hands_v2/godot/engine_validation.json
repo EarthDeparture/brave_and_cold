@@ -1,0 +1,99 @@
+{
+  "bones_per_skeleton": 17,
+  "clips": {
+    "Bolt": {
+      "changed_bones": 30,
+      "corrective_max": {
+        "BareHand": 1.0,
+        "BareHandLeft": 1.0
+      },
+      "duration_s": 1.0,
+      "tracks": 46
+    },
+    "Fist": {
+      "changed_bones": 30,
+      "corrective_max": {
+        "BareHand": 1.0,
+        "BareHandLeft": 1.0
+      },
+      "duration_s": 1.0,
+      "tracks": 46
+    },
+    "FlexCycle": {
+      "changed_bones": 30,
+      "corrective_max": {
+        "BareHand": 1.0,
+        "BareHandLeft": 1.0
+      },
+      "duration_s": 2.59999990463257,
+      "tracks": 46
+    },
+    "Magazine": {
+      "changed_bones": 30,
+      "corrective_max": {
+        "BareHand": 1.0,
+        "BareHandLeft": 1.0
+      },
+      "duration_s": 1.0,
+      "tracks": 46
+    },
+    "Open": {
+      "changed_bones": 0,
+      "corrective_max": {
+        "BareHand": 0.0,
+        "BareHandLeft": 0.0
+      },
+      "duration_s": 1.0,
+      "tracks": 46
+    },
+    "PinchReady": {
+      "changed_bones": 30,
+      "corrective_max": {
+        "BareHand": 1.0,
+        "BareHandLeft": 1.0
+      },
+      "duration_s": 1.0,
+      "tracks": 46
+    },
+    "Relaxed": {
+      "changed_bones": 30,
+      "corrective_max": {
+        "BareHand": 1.0,
+        "BareHandLeft": 1.0
+      },
+      "duration_s": 1.0,
+      "tracks": 46
+    },
+    "Shaft": {
+      "changed_bones": 30,
+      "corrective_max": {
+        "BareHand": 1.0,
+        "BareHandLeft": 1.0
+      },
+      "duration_s": 1.0,
+      "tracks": 46
+    },
+    "Support": {
+      "changed_bones": 30,
+      "corrective_max": {
+        "BareHand": 1.0,
+        "BareHandLeft": 1.0
+      },
+      "duration_s": 1.0,
+      "tracks": 46
+    },
+    "Trigger": {
+      "changed_bones": 30,
+      "corrective_max": {
+        "BareHand": 1.0,
+        "BareHandLeft": 1.0
+      },
+      "duration_s": 1.0,
+      "tracks": 46
+    }
+  },
+  "engine": "4.7.2-stable (official)",
+  "renderer": "forward_plus",
+  "scope": "Isolated GPU import, bone and corrective playback; no live gameplay integration.",
+  "skeletons": 2
+}
