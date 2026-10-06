@@ -1,0 +1,452 @@
+{
+  "brush_lever_rifle/hold/right": {
+    "initial_solid_overlap_m": 0.001991049386560917,
+    "fitted_solid_overlap_m": 0.001991049386560917,
+    "worst_region": "ring_03",
+    "near_surface_vertices": 1867,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 57,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "brush_lever_rifle/hold/left": {
+    "initial_solid_overlap_m": 0.0019269660115242004,
+    "fitted_solid_overlap_m": 0.0019269660115242004,
+    "worst_region": "middle_03",
+    "near_surface_vertices": 1593,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 57,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "compact_patrol_rifle/hold/right": {
+    "initial_solid_overlap_m": 0.001684681512415409,
+    "fitted_solid_overlap_m": 0.001684681512415409,
+    "worst_region": "middle_03",
+    "near_surface_vertices": 560,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 60,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "compact_patrol_rifle/hold/left": {
+    "initial_solid_overlap_m": 0.0019269734621047974,
+    "fitted_solid_overlap_m": 0.0019269734621047974,
+    "worst_region": "middle_03",
+    "near_surface_vertices": 1593,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 60,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "compact_patrol_rifle/magazine/left": {
+    "initial_solid_overlap_m": 0.0016065379604697227,
+    "fitted_solid_overlap_m": 0.0016065379604697227,
+    "worst_region": "index_03",
+    "near_surface_vertices": 1022,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 60,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "expedition_rifle/hold/right": {
+    "initial_solid_overlap_m": 0.001683657057583332,
+    "fitted_solid_overlap_m": 0.001683657057583332,
+    "worst_region": "middle_03",
+    "near_surface_vertices": 557,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 67,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "expedition_rifle/hold/left": {
+    "initial_solid_overlap_m": 0.0019269585609436035,
+    "fitted_solid_overlap_m": 0.0019269585609436035,
+    "worst_region": "middle_03",
+    "near_surface_vertices": 1593,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 67,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "expedition_rifle/magazine/left": {
+    "initial_solid_overlap_m": 0.0016064787050709128,
+    "fitted_solid_overlap_m": 0.0016064787050709128,
+    "worst_region": "index_03",
+    "near_surface_vertices": 1022,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 67,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "frontier_vented_rifle/hold/right": {
+    "initial_solid_overlap_m": 0.0029032807797193527,
+    "fitted_solid_overlap_m": 0.0029032807797193527,
+    "worst_region": "middle_02",
+    "near_surface_vertices": 1720,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 58,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "frontier_vented_rifle/hold/left": {
+    "initial_solid_overlap_m": 0.0019269809126853943,
+    "fitted_solid_overlap_m": 0.0019269809126853943,
+    "worst_region": "middle_03",
+    "near_surface_vertices": 1593,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 58,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "frontier_vented_rifle/magazine/left": {
+    "initial_solid_overlap_m": 0.001574166351929307,
+    "fitted_solid_overlap_m": 0.001574166351929307,
+    "worst_region": "index_03",
+    "near_surface_vertices": 1004,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 58,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "north_service_rifle/hold/right": {
+    "initial_solid_overlap_m": 0.0016837073490023613,
+    "fitted_solid_overlap_m": 0.0016837073490023613,
+    "worst_region": "middle_03",
+    "near_surface_vertices": 557,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 63,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "north_service_rifle/hold/left": {
+    "initial_solid_overlap_m": 0.0019269660115242004,
+    "fitted_solid_overlap_m": 0.0019269660115242004,
+    "worst_region": "middle_03",
+    "near_surface_vertices": 1593,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 63,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "north_service_rifle/magazine/left": {
+    "initial_solid_overlap_m": 0.001544248778373003,
+    "fitted_solid_overlap_m": 0.001544248778373003,
+    "worst_region": "index_03",
+    "near_surface_vertices": 927,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 63,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "ranger_box_rifle/hold/right": {
+    "initial_solid_overlap_m": 0.0029013510793447495,
+    "fitted_solid_overlap_m": 0.0029013510793447495,
+    "worst_region": "middle_02",
+    "near_surface_vertices": 1720,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 56,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "ranger_box_rifle/hold/left": {
+    "initial_solid_overlap_m": 0.0019269660115242004,
+    "fitted_solid_overlap_m": 0.0019269660115242004,
+    "worst_region": "middle_03",
+    "near_surface_vertices": 1593,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 56,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "ranger_box_rifle/magazine/left": {
+    "initial_solid_overlap_m": 0.0014310249825939536,
+    "fitted_solid_overlap_m": 0.0014310249825939536,
+    "worst_region": "index_03",
+    "near_surface_vertices": 831,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 56,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "ridge_scout_rifle/hold/right": {
+    "initial_solid_overlap_m": 0.0029069308657199144,
+    "fitted_solid_overlap_m": 0.0029069308657199144,
+    "worst_region": "middle_02",
+    "near_surface_vertices": 1720,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 58,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "ridge_scout_rifle/hold/left": {
+    "initial_solid_overlap_m": 0.001926906406879425,
+    "fitted_solid_overlap_m": 0.001926906406879425,
+    "worst_region": "middle_03",
+    "near_surface_vertices": 1593,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 58,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "ridge_scout_rifle/magazine/left": {
+    "initial_solid_overlap_m": 0.0015741366660222411,
+    "fitted_solid_overlap_m": 0.0015741366660222411,
+    "worst_region": "index_03",
+    "near_surface_vertices": 1004,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 58,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "timber_bolt_carbine/bolt/right": {
+    "initial_solid_overlap_m": 0.0029521887190639973,
+    "fitted_solid_overlap_m": 0.0029521887190639973,
+    "worst_region": "index_01",
+    "near_surface_vertices": 1068,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 60,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "timber_bolt_carbine/hold/right": {
+    "initial_solid_overlap_m": 0.002904424909502268,
+    "fitted_solid_overlap_m": 0.002904424909502268,
+    "worst_region": "middle_02",
+    "near_surface_vertices": 1720,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 58,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "timber_bolt_carbine/hold/left": {
+    "initial_solid_overlap_m": 0.001926921308040619,
+    "fitted_solid_overlap_m": 0.001926921308040619,
+    "worst_region": "middle_03",
+    "near_surface_vertices": 1593,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 58,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "timber_bolt_carbine/magazine/left": {
+    "initial_solid_overlap_m": 0.0015186747768893838,
+    "fitted_solid_overlap_m": 0.0015186747768893838,
+    "worst_region": "index_03",
+    "near_surface_vertices": 952,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 58,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "tool/right": {
+    "initial_solid_overlap_m": 0.0,
+    "fitted_solid_overlap_m": 0.0,
+    "worst_region": "little_03",
+    "near_surface_vertices": 1019,
+    "wrist_offset_weapon_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closed_components": 3,
+    "metric": "solid-angle winding per welded closed component, actual closest-triangle depth; excludes forearm, open surfaces are contact-only",
+    "wrist_offset_socket_space_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "files": {
+    "anatomical_hand_rig.blend": "a610f3c19b425a20df8c978fd5b20006f4de31903a66f56a6bca112f5a4e4f39",
+    "anatomical_hand_rig.glb": "6c8ba2b710faa1059ce5508cbd20ee5a87f793060c579b4d8fd9c8bfc504f5db",
+    "contact_fit_audit.json": "1f20ab279f1bb67d118b850fb7f2f40fb320ad66d487da724d2ccf3ba4901781",
+    "leather_albedo.png": "9f6acbc11d63ba724d8e64791352090b83145774a2777d4028d88ad7a7e57aa4",
+    "leather_normal.png": "5711aa31037740b6c7e7a323bc7503b92312d8b1023a18d5db10805c94b7076b",
+    "manifest.json": "533f388a00e460aaf9fd8d1b51200473c16dc6e4ab15cb01e4fa0924685467b1",
+    "morph_export.json": "e88d6ebd167a699d13d737b6b38943354739b51ca671c321849c7a760c8cd010",
+    "pose_audit.json": "8ed2b46bb28c2c5407449719db381ffb6fed00ec7259a64073effe27c710d632",
+    "previews/hands_in_game.png": "66e1536ecd7edc10ed4e5fc57c26e0f435b146304ef9a05a81d67b95ce32cce6",
+    "previews/survival_actions.png": "7262ccd1c42120dc01d72fb20b65535d590572345bfd993c41d1eb21141f7906",
+    "previews/weapon_stances.png": "e18ca64d99c0fb47079569b662c81507edacd66a8fc20a6f8095f24ac45292db",
+    "runtime_contact_profiles.json": "b83dca720c5861570745ccc6c72adf7cc3b0e2453c739d688e05765a9e5fecdf",
+    "validation.json": "f37fa5a4c01f86b0fb3128bcccbfb4e95c7d5c55938700b14b030927913533a5"
+  }
+}

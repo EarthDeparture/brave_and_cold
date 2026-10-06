@@ -44,8 +44,13 @@ var work_duration := 0.0
 var work_period := 1.0
 var _work_tail := -1.0
 var _work_offset := 0.0
-var _rifle: MeshInstance3D
-var _bolt: MeshInstance3D
+var _rifle: WeaponPresentation
+var _bolt: Node3D
+var weapon_id := "timber_bolt_carbine"
+var _weapon_clip := ""
+var _weapon_clip_t := 0.0
+var _guard_k := 0.0
+var _combat_hold := 0.0
 var _sl_r: MeshInstance3D
 var _sl_l: MeshInstance3D
 var _cur := ""
@@ -77,6 +82,12 @@ func _ready() -> void:
 	add_child(watch);watch.visible=false
 	watch_hour=watch.find_child("HourHand",true,false)
 	watch_minute=watch.find_child("MinuteHand",true,false)
+	# Seat the existing bracelet on the narrower anatomical forearm. Keep the
+	# dial circular; only the leather loop needs a different cross-section.
+	var band := watch.find_child("Surface_rubber",true,false) as Node3D
+	if band != null: band.scale=Vector3(.82,.57,1)
+	for part:Node3D in watch.get_children():
+		if part != band: part.position.y-=.012
 	_right = SurvivorHandRig.new()
 	_right.name = "RightHand"
 	_right.detail_enabled = detail_enabled
@@ -92,15 +103,15 @@ func _ready() -> void:
 	_axe = _pick(AXE, "vm_axe")
 	_hammer = _pick("res://assets/survival_props/work_hammer.glb", "work_hammer")
 	_hammer.visible = false
-	_rifle = _pick(RIFLE, "vm_rifle")
-	_bolt = _pick(RIFLE, "vm_bolt")
+	_rifle = WeaponPresentation.new(); add_child(_rifle); _rifle.set_weapon(weapon_id)
+	_bolt = _rifle.model.find_child(weapon_id+"__Pivot_Bolt",true,false)
 	_flash = OmniLight3D.new()
 	_flash.light_color = Color(1.0, 0.72, 0.38)
 	_flash.omni_range = 6.0
 	_flash.light_energy = 0.0
 	_flash.shadow_enabled = false
 	_flash.position = Vector3(0.0, 0.040, -0.76)
-	_rifle.add_child(_flash)
+	add_child(_flash)
 
 
 func _pick(path: String, node_name: String) -> MeshInstance3D:
@@ -156,6 +167,7 @@ func swing(has_axe: bool, speed := 1.0) -> void:
 	_swing_axe = has_axe
 	_swing_speed = speed
 	_swing_t = 0.0
+	if not has_axe: _combat_hold = .8
 
 
 func fire() -> void:
@@ -198,6 +210,14 @@ func _process(delta: float) -> void:
 	if player == null:
 		return
 	_clock += delta
+	_combat_hold = maxf(0,_combat_hold-delta)
+	var guarding := not player.ui_open and (_combat_hold > 0 or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT))
+	_guard_k = move_toward(_guard_k,1.0 if guarding else 0.0,delta*5.0)
+	if _weapon_clip != "":
+		if player.dead or player.ui_open or mode != "rifle" or work_kind != "": cancel_weapon_clip()
+		elif freeze_t < 0:
+			_weapon_clip_t += delta
+			if _weapon_clip_t >= _rifle.clip_length(_weapon_clip): cancel_weapon_clip()
 	_roll.visible=false;_bottle.visible=false
 	if treatment_pending!="" and not player.ui_open and not player.dead and work_kind=="":
 		var kind:=treatment_pending;treatment_pending="";begin_work(kind,1.7);_cosmetic=true
@@ -221,6 +241,7 @@ func _process(delta: float) -> void:
 	_left.set_gloved(glove_item in ["hide_mitts", "wolf_mitts"])
 	# equip / mode switching: lower the old thing, raise the new
 	if mode != _cur:
+		cancel_weapon_clip()
 		_equip -= delta * 3.2
 		if _equip <= 0.0:
 			_equip = 0.0
@@ -288,7 +309,7 @@ func _process(delta: float) -> void:
 	_hammer.visible = shown == "hammer"
 	_axe.visible = shown in ["axe", "split", "chop"]
 	_rifle.visible = shown == "rifle"
-	_bolt.visible = shown == "rifle"
+	# Bolt and magazines remain children of the complete animated weapon.
 	_right.visible = shown != ""
 	_left.visible = shown in ["rifle", "fists"]
 	_sl_r.visible = shown != ""
@@ -317,7 +338,7 @@ func _pose_watch(k:float)->void:
 	var target:=Transform3D(Basis(x,z.cross(x),z),wrist)
 	_left.transform=target;_left.pose("Fist","Open",.20)
 	_aim_sleeve(_sl_l,target,Vector3.ZERO,elbow)
-	watch.transform=target*Transform3D(Basis.IDENTITY,Vector3(0,0,.05))
+	watch.transform=target*Transform3D(Basis.IDENTITY,Vector3(0,0,.026))
 	if game_clock!=null:
 		watch_hour.rotation.y=-TAU*fposmod(game_clock.hour,12)/12
 		watch_minute.rotation.y=-TAU*fposmod(game_clock.hour,1)
@@ -325,9 +346,13 @@ func _pose_watch(k:float)->void:
 func _aim_sleeve(sl: MeshInstance3D, hand: Transform3D, wrist: Vector3, elbow: Vector3) -> void:
 	var wp := hand * wrist
 	var along := elbow - wp
+	var rig := _right if sl == _sl_r else _left
+	rig.align_forearm(hand.affine_inverse()*elbow)
+	var cuff := wp+along.normalized()*.050
+	along = elbow-cuff
 	var q := Quaternion(Vector3.BACK, along.normalized())
-	var b := Basis(q).scaled_local(Vector3(1.0, 1.0, along.length() / SLEEVE_LENGTH))
-	sl.transform = Transform3D(b, wp)
+	var b := Basis(q).scaled_local(Vector3(1.28, 1.28, along.length() / SLEEVE_LENGTH))
+	sl.transform = Transform3D(b, cuff)
 
 
 ## Hand whose forearm axis points at a hidden elbow (so cuff and sleeve always line up), twisted about that axis.
@@ -346,90 +371,131 @@ func _pose_axe(base: Transform3D) -> void:
 	var w := base * _about(shoulder, rot) * Transform3D(rest, Vector3(0.24, -0.13, -0.40))
 	_axe.transform = w.scaled_local(Vector3.ONE * 1.2)
 	_right.transform = w * Transform3D(Basis(Vector3.DOWN, Vector3.FORWARD, Vector3.RIGHT), AXE_WRIST)
-	_right.pose("Shaft")
+	_right.pose("ToolGrip")
 	var arm := base * _about(shoulder, rot)
 	_aim_sleeve(_sl_r, _right.transform, Vector3.ZERO, arm * Vector3(0.48, -0.56, 0.30))
 
 
-func _pose_rifle(base: Transform3D) -> void:
-	var kick := 0.0
-	var bolt_roll := 0.0
-	var bolt_slide := 0.0
-	if _fire_t >= 0.0:
-		var t := _fire_t
-		kick = (t / 0.05) if t < 0.05 else exp(-(t - 0.05) * 7.0)
-		kick *= _kick
-		if _kick > 0.5:
-			if t > 0.45 and t < 0.56:
-				bolt_roll = 70.0 * _sstep((t - 0.45) / 0.11)
-			elif t >= 0.56 and t < 0.68:
-				bolt_roll = 70.0
-				bolt_slide = 0.055 * _sstep((t - 0.56) / 0.12)
-			elif t >= 0.68 and t < 0.78:
-				bolt_roll = 70.0
-				bolt_slide = 0.055 * (1.0 - _sstep((t - 0.68) / 0.10))
-			elif t >= 0.78 and t < 0.9:
-				bolt_roll = 70.0 * (1.0 - _sstep((t - 0.78) / 0.12))
-	var ak := player.aim_k
-	# The narrow aim FOV magnifies the gun along with the world. Slide it away along the view axis (the sight line IS the axis,
-	# so the sight picture stays true) so the receiver does not swallow the bottom of the screen: farther the more you zoom.
-	var mag := tan(deg_to_rad(Player.AIM_FOV * 0.5)) / tan(deg_to_rad(player.cam.fov * 0.5))
-	var apos := Vector3(AIM_POS.x, AIM_POS.y, AIM_POS.z - 0.12 - 0.17 * clampf(mag - 1.0, 0.0, 1.8))
-	var rpos := Vector3(0.075, -0.105, -0.45).lerp(apos, ak)
-	var rb := Basis(Vector3.UP, deg_to_rad(30.0 * (1.0 - ak))) * Basis(Vector3.RIGHT, deg_to_rad(lerpf(-2.0, 2.7, ak)))   # +2.7 deg levels the sight line (rear->front slopes down 2.7 deg in the model)
-	var butt := rpos + Vector3(0.0, 0.0, 0.4)
-	var kb := Basis(Vector3.RIGHT, deg_to_rad(lerpf(9.0, 5.0, ak) * kick))
-	var w := base * _about(butt, kb) * Transform3D(rb, rpos + Vector3(0.0, 0.01 * kick, 0.0))
-	_rifle.transform = w
-	_bolt.transform = w * Transform3D(Basis(Vector3.BACK, deg_to_rad(bolt_roll)), BOLT_ORIGIN + Vector3(0.0, 0.0, bolt_slide))
-	# Dorsum faces outward at the stock; fingers curl under it, thumb opposes.
-	var rz := Vector3(0.40, 0.60, 0.693).normalized()
-	var ry := (Vector3.RIGHT - rz * Vector3.RIGHT.dot(rz)).normalized()
-	var rx := ry.cross(rz).normalized()
-	var trigger := w * Transform3D(Basis(rx, ry, rz), RIFLE_WRIST_R)
-	var bz := Vector3(0.55, 0.0, 0.835).normalized()
-	var bx := Vector3.DOWN
-	var by := bz.cross(bx)
-	var bw := _bolt.transform * Transform3D(Basis.IDENTITY, -BOLT_ORIGIN)
-	var bolt_grip := bw * Transform3D(Basis(bx, by, bz), BOLT_WRIST)
-	var reach := 0.0
-	if _fire_t >= 0.40 and _fire_t < FIRE_LEN and _kick > 0.5:
-		if _fire_t < 0.50:
-			reach = _sstep((_fire_t - 0.40) / 0.10)
-		elif _fire_t < 0.90:
-			reach = 1.0
-		else:
-			reach = 1.0 - _sstep((_fire_t - 0.90) / (FIRE_LEN - 0.90))
-	_right.transform = trigger.interpolate_with(bolt_grip, reach)
-	# Lift outside the receiver while releasing the stock. Both fitted endpoints
-	# stay exact; the fingers relax in the middle and close onto the bolt knob.
-	var clearance := sin(PI * reach)
-	_right.position += w.basis * Vector3(.12, .035, 0.0) * clearance
-	_right.pose("Trigger", "Bolt", reach, .55 * clearance)
-	_left.transform = w * Transform3D(Basis(Vector3.FORWARD, Vector3.DOWN, Vector3.LEFT), RIFLE_WRIST_L)
-	_left.pose("Support")
-	var arm := base * _about(butt, kb)
-	_aim_sleeve(_sl_r, _right.transform, Vector3.ZERO, arm * Vector3(0.46, -0.56, 0.32))
-	_aim_sleeve(_sl_l, _left.transform, Vector3.ZERO, arm * Vector3(-0.46, -0.58, 0.28))
+func equip_weapon(id: String) -> void:
+	assert(id in WeaponPresentation.IDS)
+	cancel_weapon_clip(); weapon_id = id
+	_fire_t = -1.0
+	if _rifle != null:
+		_rifle.set_weapon(id)
+		_bolt = _rifle.model.find_child(id+"__Pivot_Bolt",true,false)
 
+func weapon_busy() -> bool:
+	return _weapon_clip != ""
+
+## Presentation only: existing inventory remains the owner of each fired round.
+func play_weapon_clip(clip: String) -> bool:
+	if mode != "rifle" or work_kind != "" or _fire_t >= 0 or player.dead or player.ui_open: return false
+	if _rifle.clip_length(clip) <= 0: return false
+	_weapon_clip = clip; _weapon_clip_t = 0.0
+	return true
+
+func cancel_weapon_clip() -> void:
+	_weapon_clip = ""; _weapon_clip_t = 0.0
+
+func _right_weapon_basis() -> Basis:
+	var z := Vector3(.22,0,.975).normalized() if _rifle.is_pistol_grip() else Vector3(.40,.60,.693).normalized()
+	var y := z.cross(Vector3.DOWN).normalized() if _rifle.is_pistol_grip() else (Vector3.RIGHT-z*z.x).normalized()
+	return Basis(y.cross(z).normalized(),y,z)
+
+func _bolt_weapon_basis() -> Basis:
+	var z := Vector3(.55,0,.835).normalized()
+	var x := Vector3.UP
+	return Basis(x,z.cross(x),z)
+
+func _pose_rifle(base: Transform3D) -> void:
+	if _rifle.weapon_id != weapon_id: equip_weapon(weapon_id)
+	var ak := player.aim_k
+	var kick := 0.0
+	if _fire_t >= 0:
+		kick = ((_fire_t/.05) if _fire_t < .05 else exp(-(_fire_t-.05)*7.0))*_kick
+	var clip := "idle"; var time := fposmod(_clock,1.2); var cycle := -1.0
+	if _weapon_clip != "":
+		clip = _weapon_clip; time = _weapon_clip_t
+	elif _fire_t >= 0 and _kick > .5:
+		if _fire_t < .30: clip = "fire"; time = _fire_t
+		elif _rifle.is_bolt_action() or _rifle.is_lever_action():
+			clip = "cycle"; cycle = clampf((_fire_t-.30)/.75*.9,0,.9); time = cycle
+	# Socket_Aim belongs to the complete imported model, including inspect tilt.
+	_rifle.sample(clip,time)
+	var mag := tan(deg_to_rad(Player.AIM_FOV*.5))/tan(deg_to_rad(player.cam.fov*.5))
+	var aimed := Vector3(0,-.127,-.18-.12-.17*clampf(mag-1,0,1.8))
+	var rpos := Vector3(.10,-.17,-.42).lerp(aimed,ak)
+	var rb := Basis(Vector3.UP,deg_to_rad(24*(1-ak)))
+	var butt := rpos+Vector3(0,0,.38)
+	var recoil := _about(butt,Basis(Vector3.RIGHT,deg_to_rad(lerpf(7,4,ak)*kick)))
+	var w := base*recoil*Transform3D(rb,rpos)
+	_rifle.transform = w
+	var right_offset := Vector3(.024,.054,.0585) if not _rifle.is_pistol_grip() else Vector3(.057,-.037,.050)
+	var trigger := _rifle.resting_socket_transform("HandR")*Transform3D(_right_weapon_basis(),right_offset)
+	var support := _rifle.resting_socket_transform("HandL")*Transform3D(Basis(Vector3.FORWARD,Vector3.DOWN,Vector3.LEFT),Vector3(-.042,-.035,.030))
+	trigger.origin += _rifle.resting_socket_transform("HandR").basis*_rifle.contact_offset("hold","right")
+	support.origin += _rifle.resting_socket_transform("HandL").basis*_rifle.contact_offset("hold","left")
+	var right := trigger; var left := support; var reach := 0.0
+	var left_grip := "ForeGrip"; var left_mix := 0.0
+	if cycle >= 0 and not _rifle.is_lever_action():
+		reach = _sstep(cycle/.16) if cycle < .16 else (1.0-_sstep((cycle-.78)/.12) if cycle > .78 else 1.0)
+	if clip in ["reload_tactical","reload_empty"]:
+		var duration := _rifle.clip_length(clip)
+		left_mix = _sstep(time/.30) if time < .30 else (1.0-_sstep((time-1.85)/(duration-1.85)) if time > 1.85 else 1.0)
+		var mag_hand := _rifle.socket_transform("MagazineHand")
+		# Keep the fingers at the actual moving magazine, including withdrawal.
+		var mag_pose := mag_hand*Transform3D(Basis(Vector3.FORWARD,Vector3.LEFT,Vector3.UP),Vector3(-.061,.045,.018))
+		mag_pose.origin += mag_hand.basis*_rifle.contact_offset("magazine","left")
+		left = support.interpolate_with(mag_pose,left_mix)
+		left.origin += w.basis*Vector3(-.10,-.035,0)*sin(PI*left_mix)
+		left_grip = "Magazine"
+		if clip == "reload_empty" and time > 1.85:
+			reach = _sstep((time-1.85)/.28) if time < 2.13 else (1.0-_sstep((time-2.63)/.37) if time > 2.63 else 1.0)
+	elif clip in ["reload_start","reload_insert","reload_end"] and _rifle.is_lever_action():
+		left_mix = _sstep(time/.45) if clip == "reload_start" else (1.0-_sstep(time/.45) if clip == "reload_end" else 1.0)
+		var gate := _rifle.socket_transform("LoadingGate")*Transform3D(Basis(Vector3.FORWARD,Vector3.LEFT,Vector3.UP),Vector3(-.060,.04,.015))
+		left = support.interpolate_with(gate,left_mix); left_grip = "PinchReady"
+	if reach > 0:
+		var bolt := _rifle.socket_transform("BoltHand")*Transform3D(_bolt_weapon_basis(),Vector3(.066,.047,.043))
+		bolt.origin += _rifle.socket_transform("BoltHand").basis*_rifle.contact_offset("bolt","right")
+		right = trigger.interpolate_with(bolt,reach)
+		right.origin += w.basis*Vector3(.115,.035,.025)*sin(PI*reach)
+	_right.transform = right
+	_right.pose("Trigger" if _rifle.is_pistol_grip() else "StockGrip","PinchReady",reach,.55*sin(PI*reach))
+	if reach == 0 and _fire_t >= 0 and _fire_t < .22 and _kick > .5:
+		var press := sin(PI*_fire_t/.22)
+		_right.pose("Trigger" if _rifle.is_pistol_grip() else "StockGrip","PistolFire" if _rifle.is_pistol_grip() else "StockFire",press)
+	if _rifle.is_lever_action() and cycle >= 0:
+		_right.transform = _rifle.socket_transform("HandR")*Transform3D(_right_weapon_basis(),right_offset)
+		_right.position += _rifle.socket_transform("HandR").basis*_rifle.contact_offset("hold","right")
+		_right.pose("StockGrip","ToolGrip",sin(PI*cycle/.9)*.6)
+	_left.transform = left; _left.pose("ForeGrip",left_grip,left_mix,.45*sin(PI*left_mix))
+	_aim_sleeve(_sl_r,_right.transform,Vector3.ZERO,base*Vector3(.46,-.56,.32))
+	_aim_sleeve(_sl_l,left,Vector3.ZERO,base*Vector3(-.46,-.58,.28))
+	_flash.position = _rifle.socket_transform("Muzzle").origin
 
 func _pose_fists(base: Transform3D) -> void:
 	var jab := 0.0
 	if _swing_t >= 0.0 and not _swing_axe:
 		jab = sin(clampf(_swing_t / 0.38, 0.0, 1.0) * PI)
+	var guard := _guard_k
+	if _swing_t >= 0 and not _swing_axe: guard = maxf(guard,_sstep(_swing_t/.07))
 	var er := Vector3(0.48, -0.65, 0.40)
 	var el := Vector3(-0.48, -0.65, 0.40)
-	var tr := _free_hand(1.0, Vector3(0.22, -0.24 + 0.05 * jab, -0.34 - 0.24 * jab), er, FIST_ROLL, base)
-	var tl := _free_hand(-1.0, Vector3(-0.22, -0.25, -0.34), el, -FIST_ROLL, base)
+	var wr := Vector3(.23,-.29,-.40).lerp(Vector3(.22,-.24,-.34),guard)+Vector3(0,.05*jab,-.24*jab)
+	var wl := Vector3(-.23,-.30,-.40).lerp(Vector3(-.22,-.25,-.34),guard)
+	var tr := _free_hand(1.0, wr, er, FIST_ROLL, base)
+	var tl := _free_hand(-1.0, wl, el, -FIST_ROLL, base)
 	_right.transform = tr
-	_right.pose("Fist")
+	_right.pose("Relaxed","Fist",guard)
 	_left.transform = tl
-	_left.pose("Fist")
+	_left.pose("Relaxed","Fist",guard)
 	_aim_sleeve(_sl_r, tr, Vector3.ZERO, base * er)
 	_aim_sleeve(_sl_l, tl, Vector3.ZERO, base * el)
 
 ## Action-owned presentation: no timers or gameplay resource mutations here.
 func begin_work(kind: String, duration: float, repeating := false) -> void:
+	cancel_weapon_clip()
 	end_work(false)
 	if kind not in ["split", "chop", "hammer", "reach","treat","drink"]: return
 	work_kind = kind; work_duration = maxf(duration,.01); work_elapsed = 0
@@ -473,7 +539,7 @@ func _pose_work(base: Transform3D) -> void:
 	var tool := _hammer if work_kind == "hammer" else _axe
 	tool.transform = w.scaled_local(Vector3.ONE*1.2)
 	_right.transform = w*Transform3D(Basis(Vector3.DOWN,Vector3.FORWARD,Vector3.RIGHT),AXE_WRIST)
-	_right.pose("Shaft")
+	_right.pose("ToolGrip")
 	_aim_sleeve(_sl_r,_right.transform,Vector3.ZERO,base*_about(shoulder,rot)*Vector3(.48,-.56,.30))
 
 func queue_treatment(id:String)->void:
@@ -484,8 +550,11 @@ func _pose_consumable(base:Transform3D)->void:
 	var lift:=sin(t*PI)
 	if work_kind=="drink":
 		_right.transform=_free_hand(1,Vector3(.15,-.29+.25*lift,-.43+.15*lift),Vector3(.49,-.57,.25),-65,base)
-		_right.pose("Shaft","Support",.15)
-		_bottle.visible=true;_bottle.transform=_right.transform*Transform3D(Basis(Vector3.RIGHT,-.15-.65*lift),Vector3(0,-.10,-.06))
+		# Tilt the wrist and flask together; the flask must not rotate through
+		# fingers whose grip stays fixed during a sip.
+		_right.transform.basis*=Basis(Vector3.RIGHT,-.15-.65*lift)
+		_right.pose("BottleGrip")
+		_bottle.visible=true;_bottle.transform=_right.transform*Transform3D(Basis(Vector3.BACK,PI*.5),Vector3(.12,-.062,-.095))
 	else:
 		_left.visible=true;_sl_l.visible=true
 		_left.transform=_free_hand(-1,Vector3(-.12,-.26,-.44),Vector3(-.46,-.57,.22),35,base);_left.pose("Open","Support",.35)

@@ -75,7 +75,7 @@ func run() -> void:
 	var action:={"hold":6.0,"work":"hammer","text":"Work test","act":func()->void:results.n+=1}
 	w._act_begin(action);w._act_update(1,true);vm._process(0)
 	check(vm._hammer.visible and not vm._rifle.visible and not vm._axe.visible,"hammering uses the service hammer while actual equipment remains rifle")
-	check(vm._right.position.distance_to(vm._sl_r.position)<.0001,"working sleeve is attached to actual rigged wrist")
+	check(absf(vm._right.position.distance_to(vm._sl_r.position)-.05)<.0001,"working sleeve overlaps the anatomical forearm at its cuff")
 	check(vm.work_impacts(3)==4,"all hammer strikes align with action ending at final impact")
 	w._act_update(.1,false);vm._process(0)
 	check(results.n==0 and w.inv.count("plank")==initial and vm.work_kind=="" and vm._rifle.visible,"release cancels work, consumes nothing and restores equipped rifle")
@@ -87,7 +87,7 @@ func run() -> void:
 		vm.begin_work(kind,2.5)
 		for i in 51:
 			vm.update_work(2.5*i/50);vm._process(0)
-			if not vm._right.transform.origin.is_finite() or vm._right.position.distance_to(vm._sl_r.position)>.0001:check(false,"pose continuity "+kind)
+			if not vm._right.transform.origin.is_finite() or absf(vm._right.position.distance_to(vm._sl_r.position)-.05)>.0001:check(false,"pose continuity "+kind)
 		check(vm._right.visible and not vm._left.visible,kind+" maintains bounded, attached right-arm presentation")
 	vm.begin_work("hammer",3);vm.update_work(.7);vm._process(0)
 	for gloved:bool in [false,true]:

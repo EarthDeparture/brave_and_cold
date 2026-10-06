@@ -81,3 +81,10 @@ tools/blender/watch_build.log
 /tools/blender/generated/anatomical_hands_v2/godot/*.png
 /tools/blender/generated/anatomical_hands_v2/godot/*.import
 /tools/blender/generated/anatomical_hands_v2/source/*.blend[0-9]
+/tools/blender/generated/live_hand_rig_v2/*.blend[0-9]
+/tools/blender/live_hand_rig_build.log
+/tools/blender/live_hand_pose_audit.log
+/tools/blender/runtime_contact*.log
+/tools/hand_weapon_*.log
+/tools/blender/generated/live_hand_rig_v2/*candidate*.json
+/tools/blender/generated/live_hand_rig_v2/contact_profiles.json

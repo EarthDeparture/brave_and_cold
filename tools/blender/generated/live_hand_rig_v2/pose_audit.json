@@ -1,0 +1,251 @@
+{
+  "BareHand": {
+    "Open": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Relaxed": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Fist": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Shaft": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Trigger": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Support": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Bolt": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "PinchReady": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Magazine": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "ToolGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "ForeGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "PistolFire": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "StockFire": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "StockGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "BottleGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    }
+  },
+  "BareHandLeft": {
+    "Open": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Relaxed": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Fist": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Shaft": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Trigger": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Support": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Bolt": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "PinchReady": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Magazine": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "ToolGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "ForeGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "PistolFire": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "StockFire": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "StockGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "BottleGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    }
+  },
+  "LeatherGlove": {
+    "Open": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Relaxed": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Fist": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Shaft": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Trigger": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Support": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Bolt": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "PinchReady": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Magazine": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "ToolGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "ForeGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "PistolFire": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "StockFire": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "StockGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "BottleGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    }
+  },
+  "LeatherGloveLeft": {
+    "Open": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Relaxed": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Fist": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Shaft": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Trigger": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Support": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Bolt": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "PinchReady": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "Magazine": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "ToolGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "ForeGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "PistolFire": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "StockFire": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "StockGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    },
+    "BottleGrip": {
+      "non_neighbour_intersections": 0,
+      "regions": {}
+    }
+  },
+  "source_sha256": "a610f3c19b425a20df8c978fd5b20006f4de31903a66f56a6bca112f5a4e4f39"
+}
