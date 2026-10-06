@@ -9,7 +9,7 @@ signal attacked   # for GameAudio: grunt from this body
 signal damaged
 signal died
 
-const MODEL := "res://assets/models/animals/zombie.glb"
+const MODEL := "res://assets/infected/winter_infected.glb"
 const IDLE_SPEED := 0.8
 const INVESTIGATE_SPEED := 1.5
 const CHASE_SPEED := 2.4
@@ -52,6 +52,11 @@ var _cd := 0.0
 var _stagger := 0.0
 var _phase := 0.0
 var _arms: Array[Node3D] = []
+var _knees:Array[Node3D]=[]
+var _elbows:Array[Node3D]=[]
+var _attack_windup:=-1.0
+var _coat_meshes:Array[MeshInstance3D]=[]
+static var _coats:Array[StandardMaterial3D]=[]
 var _legs: Array[Node3D] = []
 var _model: Node3D
 var _rng := RandomNumberGenerator.new()
@@ -87,23 +92,16 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	bus.register(self)
 	_model = (load(MODEL) as PackedScene).instantiate()
 	add_child(_model)
-	if _mats.is_empty():
-		var mr := RandomNumberGenerator.new()
-		mr.seed = 4242
-		for q in 6:
-			var m := StandardMaterial3D.new()
-			m.vertex_color_use_as_albedo = true
-			m.roughness = 1.0
-			m.cull_mode = BaseMaterial3D.CULL_DISABLED
-			var kk := 0.75 + 0.4 * float(q) / 5.0
-			m.albedo_color = Color(kk, kk * mr.randf_range(0.92, 1.05), kk * mr.randf_range(0.9, 1.08))
-			_mats.append(m)
-	var mat: StandardMaterial3D = _mats[_rng.randi() % _mats.size()]
-	for mi in _model.find_children("*", "MeshInstance3D", true, false):
-		(mi as MeshInstance3D).material_override = mat
+	if _coats.is_empty():
+		for color:Color in [Color(.64,.77,.59),Color(.43,.55,.75)]:
+			var m:=StandardMaterial3D.new();m.albedo_color=color;m.albedo_texture=load("res://assets/infected/winter_infected_cloth.png");m.roughness=.93;_coats.append(m)
+	for mi:MeshInstance3D in _model.find_children("*","MeshInstance3D",true,false):
+		if String(mi.name).contains("winter_canvas"):_coat_meshes.append(mi)
+	_apply_coat(seed_value)
 	for n in ["l", "r"]:
 		_arms.append(_model.find_child("zombie_arm_" + n, true, false))
 		_legs.append(_model.find_child("zombie_leg_" + n, true, false))
+		_knees.append(_model.find_child("zombie_knee_"+n,true,false));_elbows.append(_model.find_child("zombie_elbow_"+n,true,false))
 	_base_scale = _rng.randf_range(0.94, 1.06)
 	_model.scale = Vector3.ONE * _base_scale
 	_phase = _rng.randf() * TAU
@@ -136,6 +134,9 @@ func activate(p: Vector3, seed_value: int, k: int = 0) -> void:
 	_hx = 1e9
 	_hz = 1e9
 	_last_seen_t = 0.0
+	_attack_windup=-1;_apply_coat(seed_value)
+	for joint:Node3D in _arms+_legs+_knees+_elbows:
+		if joint!=null:joint.rotation=Vector3.ZERO
 	_model.rotation = Vector3.ZERO
 	_model.position = Vector3.ZERO
 	kind = k
@@ -382,10 +383,7 @@ func _process(delta: float) -> void:
 				_face(pp, delta, 10.0)
 				if _cd <= 0.0 and _stagger <= 0.0:
 					_cd = COOLDOWN
-					grabs += 1
-					attacked.emit()
-					player.hurt(DAMAGE, "Torn apart by the infected")
-					player.injury.wound(0.45, 0.30)
+					_attack_windup=.35
 			var cb = _shut_cabin_with_player()
 			if cb != null and not cb.contains_xz(global_position.x, global_position.z):
 				want = _breach(cb, delta, want)   # smash a window / the door to get in
@@ -394,6 +392,12 @@ func _process(delta: float) -> void:
 				_bo = null
 			if _last_seen_t > 8.0 and cb == null:
 				_set_state(State.INVESTIGATE)
+	if _attack_windup>=0:
+		_attack_windup-=delta
+		if _attack_windup<=0:
+			_attack_windup=-1
+			if _stagger<=0 and state==State.CHASE and dist<GRAB_RANGE+.08 and absf(pp.y-global_position.y-1)<2 and _can_see_player():
+				grabs+=1;attacked.emit();player.hurt(DAMAGE,"Torn apart by the infected");player.injury.wound(.45,.30)
 	if _stagger > 0.0:
 		want = 0.0
 	_move(want, delta)
@@ -530,18 +534,22 @@ func _move(want: float, delta: float) -> void:
 	global_position = pos
 
 
-func _animate(delta: float) -> void:
-	_phase += delta * (1.5 + speed_now * 2.6)
-	var amp := clampf(speed_now / CHASE_SPEED, 0.0, 1.0) * 0.55
-	var s := sin(_phase)
-	if _legs.size() == 2 and _legs[0] != null:
-		_legs[0].rotation.x = s * amp
-		_legs[1].rotation.x = -s * amp
-	if _arms.size() == 2 and _arms[0] != null:
-		var reach := 0.0 if state == State.CHASE else 0.35
-		_arms[0].rotation.x = reach + 0.08 * sin(_phase * 0.8)
-		_arms[1].rotation.x = reach + 0.08 * sin(_phase * 0.8 + 1.3)
-	_model.rotation.z = sin(_phase * 0.5) * 0.04
+func _apply_coat(id:int)->void:
+	if _coats.is_empty():return
+	for mesh:MeshInstance3D in _coat_meshes:mesh.material_override=_coats[posmod(id,2)]
+func _animate(delta:float)->void:
+	_phase+=delta*speed_now*TAU/.92
+	var amp:=clampf(speed_now/CHASE_SPEED,0,1)*.48
+	for i in mini(2,_legs.size()):
+		var wave:=sin(_phase+i*PI)
+		if _legs[i]!=null:_legs[i].rotation.x=wave*amp
+		if _knees[i]!=null:_knees[i].rotation.x=-maxf(0,-wave)*amp*.9
+		var reach:= .60 if state==State.CHASE else .08
+		if _attack_windup>=0:reach=.90+sin((.35-_attack_windup)/.35*PI)*.35
+		elif _bo!=null or _bdoor:reach=.6+.25*sin(_state_t*6+i)
+		if _arms[i]!=null:_arms[i].rotation.x=reach-wave*amp*.3
+		if _elbows[i]!=null:_elbows[i].rotation.x=.15+amp*.1
+	_model.rotation.z=sin(_phase*.5)*.035+sin(_state_t*12)*.10*clampf(_stagger/.5,0,1)
 
 
 func is_dead() -> bool:

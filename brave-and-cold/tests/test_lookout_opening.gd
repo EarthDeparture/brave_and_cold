@@ -93,8 +93,8 @@ func run() -> void:
 	check(w._sl_on and not w.save_game(),"tower sleep uses existing rest system and blocks unsafe mid-sleep save")
 	w._sleep_restore_clock();w._sl_on=false;w.player.sleeping=false
 	# Scheduled world population must seed once even after long time skips.
-	w.clock.total_game_s=29*3600;op.advance(0)
-	check(s.zombies_seeded,"disruption seeds population once")
+	w.clock.total_game_s=29*3600;op.advance(0);w.collapse.update(0)
+	check(w.collapse.stage==1,"disruption issues only the first persistent population cohort")
 	s.backup_on=true;s.receiver_on=true;s.last_s=s.grid_fail_s;s.battery_wh=22
 	w.clock.total_game_s=s.grid_fail_s+3600;op.advance(3600)
 	check(s.battery_wh==0 and not s.powered(),"blackout and backup exhaustion affect live world")

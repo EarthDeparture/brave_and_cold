@@ -54,6 +54,7 @@ func build(w: Node3D, saved: Dictionary={}) -> void:
 	if saved.has("cache"):cache.load_dict(saved.cache)
 	else:
 		for pair: Array in [["matches",4],["beans",2],["bandage",2],["clean_water",2],["empty_bottle",2]]:cache.put(pair[0],pair[1],1,0)
+	cache.rotation.y=models[1].rotation.y
 	models.append(asset("feeder_cabinet",points[2]))
 	_label=Label3D.new();add_child(_label);_label.global_position=points[2]+Vector3(0,1.65,.24);_label.font_size=32;_label.pixel_size=.003;_label.outline_size=4;_label.visible=false
 	update(0)

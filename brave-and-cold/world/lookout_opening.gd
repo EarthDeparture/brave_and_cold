@@ -136,10 +136,6 @@ func advance(game_s: float) -> void:
 	pantry.tick(game_s)
 	if _last_grid and not state.grid_alive(): world._say("The mains have gone silent. " + ("Local backup is supplying the site." if state.backup_on else "Enable local backup at the desk panel."))
 	_last_grid = state.grid_alive()
-	if state.last_s >= 28 * 3600 and not state.zombies_seeded:
-		state.zombies_seeded = true
-		world._populate(world.opening_zombie_count, Vector2(world.player.position.x, world.player.position.z))
-		world.pop.specials = world.pop.specials.filter(func(v:Vector3)->bool: return Vector2(v.x-world.player.position.x,v.z-world.player.position.z).length()>120)
 	if state.walkie_carried and state.walkie_wh<=LookoutAssignment.WALKIE_CAP_WH*.15 and not _warned_walkie_low:
 		world._say("Walkie battery low. Return it to the desk charger.");_warned_walkie_low=true
 	if state.walkie_wh>LookoutAssignment.WALKIE_CAP_WH*.20:_warned_walkie_low=false

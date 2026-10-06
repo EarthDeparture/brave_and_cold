@@ -1,0 +1,23 @@
+{
+  "clinic": {
+    "triangles": 16150,
+    "bytes": 1703684,
+    "sha256": "3e10db81868841ba496cd42cef59045ea593dc4a170924901e8bb7dc559d650f",
+    "source": "tools/blender/generated/clinic/clinic.blend",
+    "source_sha256": "9e3974a937e7dce59160d9a6d6b3ccd66737c7afb3036a236cd9fc97f35921fe",
+    "mesh_nodes": 13
+  },
+  "provenance": {
+    "license": "Original project-authored geometry and graphics",
+    "blender": "5.2.2 LTS",
+    "units": "metres",
+    "generator_sha256": "36fef7f99821bb7d00328abcb0c9c68c0f053416569fe8834a233d9ce662f974"
+  },
+  "graphics": {
+    "cloth.png": "4da609f19ed4db458bd724f7ee8918b44728f6152794e0f1c5b9d957923ad209",
+    "hours.png": "400a1e8661a2549020e09bf937373285f5d12d40bf1260216c845fa8336bbdd2",
+    "notice.png": "c30725a984ac563a5e33a22739e37cc0c4fbbbda642c35368e66891af40ba24b",
+    "plaster.png": "5518921636448dbecb8ee95ed7db2f5fc7c60556a4886247f56f1cb0cf4d37ee",
+    "sign.png": "834010b999c6cb3cefa02a03845136cc8e5f0b0f25ed8471bf9354812b5cd61e"
+  }
+}

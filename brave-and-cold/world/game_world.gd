@@ -34,6 +34,8 @@ var cabins: Array[Cabin] = []
 var fire_lookout: FireLookout # Standalone additive mountain structure; never a ground cabin collider.
 var opening: LookoutOpening
 var first_week:FirstWeekRoute
+var collapse:FirstWeekCollapse
+var clinic_plan:Dictionary={}
 var opening_state: LookoutAssignment
 var opening_zombie_count := 250
 var out_path := ""
@@ -86,6 +88,7 @@ func _ready() -> void:
 			_plan_hamlet(wimg)
 		if opts.get('store', '1') == '1':
 			_plan_store(wimg)
+			if opts.get("clinic","1")=="1":clinic_plan=FirstWeekCollapse.plan(self,wimg)
 		for hs in hut_sites:
 			var hp := Vector2(float(hs['x']), float(hs['z']))
 			var hyaw := deg_to_rad(float(hs['yaw']))
@@ -352,6 +355,8 @@ func _ready() -> void:
 				player.position = fire_lookout.to_global(Vector3(0,FireLookout.DECK_Y+player.eye_h,.3))
 				player.yaw = fire_lookout.rotation.y; player.pitch = -.08
 	reading=ReadingModal.new();add_child(reading)
+	if not clinic_plan.is_empty():
+		collapse=FirstWeekCollapse.new();add_child(collapse);collapse.build(self,clinic_plan,sv.get("collapse",{}))
 	pause_menu = PauseMenu.new()
 	add_child(pause_menu)
 	dev = DevMenu.new()
@@ -503,6 +508,7 @@ func _process(delta: float) -> void:
 	var gs := clock.advance(clock_delta)
 	if opening != null: opening.advance(gs)
 	if first_week!=null:first_week.update(gs)
+	if collapse!=null:collapse.update(gs)
 	if inv != null:
 		for sn in inv.tick(gs):
 			_say("%s spoiled" % sn)
@@ -521,6 +527,7 @@ func _process(delta: float) -> void:
 			break
 	if fire_lookout != null and fire_lookout.contains_room(player.position):
 		in_cabin = true
+	if collapse!=null and collapse.clinic!=null and collapse.clinic.contains_xz(player.position.x,player.position.z):in_cabin=true
 	_indoor_k = move_toward(_indoor_k, 1.0 if in_cabin else 0.0, delta * 2.0)
 	if sky_rig is AtmosphereRig:
 		(sky_rig as AtmosphereRig).apply_shelter(_indoor_k)
@@ -1533,6 +1540,7 @@ func _opening_cands(cands: Array, fwd: Vector3) -> void:
 	var blds: Array = []
 	blds.append_array(cabins)
 	blds.append_array(huts)
+	if collapse!=null and collapse.clinic!=null:blds.append(collapse.clinic)
 	for bld in blds:
 		var inside: bool = bld.contains_xz(player.position.x, player.position.z)
 		if inside and bld is Cabin:
@@ -1739,6 +1747,10 @@ func _update_prompt() -> void:
 			var point: Vector3 = it.pos
 			if _aim_ok(point,float(it.get("r",2.1)),float(it.get("tol",.8))):
 				it["m"] = _lm; it["d"] = point.distance_to(player.position)+float(it.get("dbias",0)); cands.append(it)
+	if collapse!=null:
+		for it:Dictionary in collapse.actions():
+			var pt:Vector3=it.pos
+			if _aim_ok(pt,float(it.get("r",2.1)),float(it.get("tol",.8))):it["m"]=_lm;it["d"]=pt.distance_to(player.position)+float(it.get("dbias",0));cands.append(it)
 	_chest_cands(cands)
 	_opening_cands(cands, fwd)
 	for cf in campfires:
@@ -2429,6 +2441,7 @@ func _building_list() -> Array:
 	out.append_array(huts)
 	out.append_array(stores)
 	out.append_array(outbuildings)
+	if collapse!=null and collapse.clinic!=null:out.append(collapse.clinic)
 	return out
 
 
@@ -2462,7 +2475,8 @@ func _add_chest(p: Vector3, yaw: float) -> StorageChest:
 	c.global_position = p
 	c.rotation.y = yaw
 	chests.append(c)
-	player.chests = chests
+	player.chests = chests.duplicate()
+	if first_week!=null and first_week.cache!=null:player.chests.append(first_week.cache)
 	return c
 
 
@@ -3316,6 +3330,7 @@ func _save_data() -> Dictionary:
 			d['lookout_location'] = elevated_location
 	if opening != null: d['opening'] = opening.to_dict()
 	if first_week!=null:d["first_week"]=first_week.to_dict()
+	if collapse!=null:d["collapse"]=collapse.to_dict()
 	return d
 
 

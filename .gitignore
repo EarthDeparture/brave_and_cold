@@ -40,3 +40,8 @@ tools/blender/generated/field_walkie/*.blend[0-9]
 tools/blender/generated/first_week/*.blend[0-9]
 tools/blender/first_week_build.log
 tools/first_week_import.log
+
+tools/blender/generated/clinic/*.blend[0-9]
+tools/blender/generated/infected/*.blend[0-9]
+tools/blender/clinic_build.log
+tools/blender/infected_build.log
