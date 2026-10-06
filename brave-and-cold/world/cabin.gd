@@ -24,6 +24,7 @@ var tint := Color.WHITE   # per-cabin weathering variation (hamlet), multiplies 
 var door_hp := 100.0
 var door_broken := false
 var stove_fuel_s := 0.0
+var prepared_water:=PreparedWater.new()
 var wood_pile := 6
 var crate_looted := false
 var _door_pivot: Node3D
@@ -407,6 +408,7 @@ func _process(delta: float) -> void:
 		_was_lit = stove_fuel_s > 0.0
 		_apply_glow()
 	if stove_fuel_s > 0.0:
+		prepared_water.advance(minf(stove_fuel_s,delta*game_scale))
 		stove_fuel_s = maxf(0.0, stove_fuel_s - delta * game_scale)
 		var fl := 0.75 + 0.25 * sin(_t * 11.0) * sin(_t * 7.3) + 0.1 * sin(_t * 23.0)
 		_fire_mat.emission_energy_multiplier = 3.0 * fl

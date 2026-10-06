@@ -29,6 +29,10 @@ const STARTING_WOOD := 6
 const VISIBLE_WOOD_CAP := 12
 var wood_left: int:
 	get: return maxi(pantry.count("wood"),0) if pantry!=null else 0
+var water:=PreparedWater.new()
+var water_label:Label3D
+var kettle_steam:GPUParticles3D
+var bottle_stock:Node3D
 var cooking: Dictionary = {}
 var _stock: Node3D
 var _stock_label: Label3D
@@ -75,6 +79,13 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 		if int(saved.get("schema",1))<2:
 			var loose:=maxi(int(saved.get("wood_left",0)),0)
 			if loose>0:pantry.put("wood",loose,1,0)
+	water.restore(saved.get("prepared_water",{}))
+	if saved.is_empty():pantry.put("clean_water",2,1,0);pantry.put("empty_bottle",2,1,0)
+	bottle_stock=Node3D.new();tower.add_child(bottle_stock);bottle_stock.position=Vector3(1.9,FireLookout.DECK_Y+.70,1.7)
+	water_label=Label3D.new();tower.add_child(water_label);water_label.position=stove_point(Vector3(0,1.1,.5));water_label.rotation.y=FireLookout.STOVE_YAW;water_label.pixel_size=.0017;water_label.font_size=28;water_label.visible=false
+	kettle_steam=GPUParticles3D.new();tower.add_child(kettle_steam);kettle_steam.position=stove_point(Vector3(.23,.95,0));kettle_steam.amount=14;kettle_steam.lifetime=1.5;kettle_steam.emitting=false;kettle_steam.visibility_aabb=AABB(Vector3(-.4,-.1,-.4),Vector3(.8,1,.8))
+	var steam_process:=ParticleProcessMaterial.new();steam_process.direction=Vector3.UP;steam_process.spread=14;steam_process.gravity=Vector3(0,.06,0);steam_process.initial_velocity_min=.10;steam_process.initial_velocity_max=.16;steam_process.scale_min=.05;steam_process.scale_max=.12;kettle_steam.process_material=steam_process
+	var steam_mesh:=QuadMesh.new();steam_mesh.size=Vector2.ONE;var steam_mat:=ShaderMaterial.new();steam_mat.shader=preload("res://world/shaders/winter_vapour.gdshader");steam_mat.set_shader_parameter("opacity",.11);steam_mesh.material=steam_mat;kettle_steam.draw_pass_1=steam_mesh
 	_build_stock(tower)
 	pantry.contents_changed.connect(_update_stock)
 	if not world.stores.is_empty():
@@ -112,7 +123,7 @@ func _asset(parent: Node3D, id: String) -> Node3D:
 	return node
 func starting_gear() -> void:
 	world.inv = Inventory.new(world.body); world.inv.needs = world.needs
-	for pair: Array in [["axe",1],["knife",1],["service_kit",1],["matches",2],["wood",2],["beans",1],["bandage",1],["parka",1],["sweater",1],["toque",1],["hide_mitts",1],["hide_boots",1],["hide_leggings",1]]:
+	for pair: Array in [["clean_water",2],["empty_bottle",2],["axe",1],["knife",1],["service_kit",1],["matches",2],["wood",2],["beans",1],["bandage",1],["parka",1],["sweater",1],["toque",1],["hide_mitts",1],["hide_boots",1],["hide_leggings",1]]:
 		world.inv.add(pair[0], pair[1])
 	for item: String in ["parka","sweater","toque","hide_mitts","hide_boots","hide_leggings"]: world.inv.use(item)
 	world._say("Inspect the relay cabinet beside the tower. Read the service log on your desk.")
@@ -120,6 +131,7 @@ func starting_gear() -> void:
 func advance(game_s: float) -> void:
 	state.advance_to(world.clock.total_game_s)
 	var burn := minf(game_s, fuel_s); fuel_s = maxf(0, fuel_s - game_s)
+	water.advance(burn)
 	if not cooking.is_empty(): cooking["remaining_s"] = maxf(0, float(cooking.remaining_s) - burn)
 	pantry.tick(game_s)
 	if _last_grid and not state.grid_alive(): world._say("The mains have gone silent. " + ("Local backup is supplying the site." if state.backup_on else "Enable local backup at the desk panel."))
@@ -133,6 +145,7 @@ func advance(game_s: float) -> void:
 	if state.walkie_wh>LookoutAssignment.WALKIE_CAP_WH*.20:_warned_walkie_low=false
 	update_presentation(); _radio_update()
 func update_presentation() -> void:
+	if kettle_steam!=null:kettle_steam.emitting=water.batch>0 and fuel_s>0
 	_update_receiver_indicators()
 	if dock_handset!=null:
 		dock_handset.visible=not state.walkie_carried
@@ -276,7 +289,10 @@ func actions() -> Array:
 	var stove: Vector3 = world.fire_lookout.to_global(stove_point(Vector3(0,.55,.301)))
 	out.append(_action(stove, "Stoke stove • %.1f h fuel" % (fuel_s / 3600), stoke, 2))
 	if fuel_s > 0:
-		out.append(_action(stove, "Boil snow and drink", boil, 4, .01))
+		if water.batch==0 and water.ready==0:out.append(_action(stove,water.status(),boil,4,.01))
+	if water.ready>0:out.append(_action(stove,water.status(),take_water,1,.01))
+	elif water.batch>0:out.append(_action(stove,water.status(),func()->void:world._say("Boiling progresses while the stove burns"),0,.01))
+	if fuel_s>0:
 		if cooking.is_empty() and world.inv.has_raw(): out.append(_action(stove, "Cook one portion on stove", cook, 2, .02))
 	if not cooking.is_empty():
 		out.append(_action(stove, "Take cooked food" if float(cooking.remaining_s) <= 0 else "Cooking • %d min left" % int(ceil(float(cooking.remaining_s)/60)), take_cooked, 0, .03))
@@ -296,7 +312,17 @@ func actions() -> Array:
 			out.append(_action(cabinet, "Relay commissioned • local service only", func() -> void: world._say("Commissioned relay supports site equipment and automatic battery transfer. Your personal dispatch receiver, town grid and public transmitter remain independent."), 0, .01))
 	if case_model != null and not state.parts_claimed:
 		out.append(_action(case_model.global_position + Vector3.UP * .15, "Collect reserved transfer relay", claim_parts, 3))
+	if world.first_week!=null:out.append_array(world.first_week.actions())
+	if not world.player.is_sheltered() and world._view_dir().y<-.2:
+		var gather:Vector3=world.player.position+world._view_dir()*1.4
+		out.append(_action(world._ground(gather.x,gather.z)+Vector3.UP*.04,"Gather clean snow portion",gather_snow,3,.15))
 	return out
+func gather_snow() -> void:
+	if world.player.is_sheltered():return
+	if world.inv.can_add("snow_portion"):world.inv.add("snow_portion");world._say("Gathered snow; boil it with an empty bottle at the stove")
+	else:world._say("Pack full")
+func take_water() -> void:
+	var n:=water.collect(world.inv);world._say("Collected %.1f L drinking water"%(n*.5) if n>0 else "Make room in your backpack; water stays in the kettle");update_presentation()
 func read_log() -> void:
 	var directions := "Follow the logging track down to the road and North Ridge Supply."
 	if not world.stores.is_empty():
@@ -305,12 +331,12 @@ func read_log() -> void:
 		directions = "North Ridge Supply is approximately %.0f m away on bearing %.0f° (straight-line). Follow the logging track down to the road; collect the reserved relay case at the store counter." % [Vector2(d.x,d.z).length(),bearing]
 	var task: String = ["Inspect the ground transfer cabinet with your insulated service kit.","Collect the reserved transfer relay, return and install it in the cabinet.","Verify the cabinet transfer under local power.","Relay signed off. Local service restored."][state.repair_stage]
 	if state.repair_stage==1 and state.parts_claimed:task="Return to the ground cabinet and install the replacement relay."
-	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nTake the walkie from its desk cradle before travelling. Field dispatch and public news are monitored together. Its battery powers both signals away from home, independently of the desk receiver. A full charge lasts about one day. Dock it on this desk to recharge in roughly three hours from local mains or backup power. Amber indicates charging and green indicates full charge. The desk receiver remains public radio only. Bulletins begin at 06:00, 12:00, 17:00 and 00:00; noon recaps the morning. Green indicates receiver power and blue identifies public radio. Public reports are live, not queued: missed bulletins do not return. Dispatch keeps clear of every public slot. A dispatch call wakes you if your powered walkie is carried or within earshot on the desk; public broadcasts do not. Check your wristwatch and walkie charge in Gear (Tab). Midnight closes the day just lived. The desk receiver and lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer while the repeater is enabled. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. The rack starts with six logs. Each fuels this stove for two hours; collect fallen timber along the logging road, split it with your axe, and restock the rack before dark. Wood deposited in lookout provisions refills the same visible rack. Stoke the stove, boil snow, and prepare the sleeping berth before the weather closes in.\n\nFirst aid\nIn Gear (Tab), select your bandage and choose Apply bandage, or double-click it. One wrap stops bleeding; it does not restore lost blood immediately or cure infection. Recovery needs food above 900 kcal, water above 45%, and no fever or hypothermia. Resting warm restores blood faster. Gather cloth and supplies during the first town visit." % [task,directions]
+	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nTake the walkie from its desk cradle before travelling. Field dispatch and public news are monitored together. Its battery powers both signals away from home, independently of the desk receiver. A full charge lasts about one day. Dock it on this desk to recharge in roughly three hours from local mains or backup power. Amber indicates charging and green indicates full charge. The desk receiver remains public radio only. Bulletins begin at 06:00, 12:00, 17:00 and 00:00; noon recaps the morning. Green indicates receiver power and blue identifies public radio. Public reports are live, not queued: missed bulletins do not return. Dispatch keeps clear of every public slot. A dispatch call wakes you if your powered walkie is carried or within earshot on the desk; public broadcasts do not. Check your wristwatch and walkie charge in Gear (Tab). Midnight closes the day just lived. The desk receiver and lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer while the repeater is enabled. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. The rack starts with six logs. Each fuels this stove for two hours; collect fallen timber along the logging road, split it with your axe, and restock the rack before dark. Wood deposited in lookout provisions refills the same visible rack. Bring snow portions and empty bottles to the kettle. A batch prepares up to 2 L in 20 game minutes while the stove burns; collect it into your pack, drink in Gear or store it for tomorrow. Follow the timber markers for dry wood, a finite crew cache and the labelled crew-spur disconnect. Stoke the stove and prepare the sleeping berth before the weather closes in.\n\nFirst aid\nIn Gear (Tab), select your bandage and choose Apply bandage, or double-click it. One wrap stops bleeding; it does not restore lost blood immediately or cure infection. Recovery needs food above 900 kcal, water above 45%, and no fever or hypothermia. Resting warm restores blood faster. Gather cloth and supplies during the first town visit." % [task,directions]
 	world.reading.open("North Ridge • Service log",text,world.player,world.hud)
 func toggle_receiver() -> void: state.receiver_on = not state.receiver_on; _update_receiver_indicators(); _radio_update()
 func toggle_backup() -> void:
 	state.backup_on = not state.backup_on; update_presentation(); _radio_update()
-	world._say("Local backup %s. Charge %.0f%%. Lamp 7 W, receiver 3 W, commissioned relay 12 W, walkie charger up to 6 W." % ["enabled" if state.backup_on else "disabled", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100])
+	world._say("Local backup %s. Charge %.0f%%. Lamp 7 W, receiver 3 W, commissioned relay 12 W, walkie charger up to 6 W, unused crew spur 6 W until isolated." % ["enabled" if state.backup_on else "disabled", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100])
 func toggle_auto_transfer() -> void: state.auto_transfer_on = not state.auto_transfer_on
 func toggle_relay() -> void:
 	state.relay_enabled = not state.relay_enabled; update_presentation(); _radio_update()
@@ -350,7 +376,8 @@ func stack_wood() -> void:
 	world.chest_put(pantry,"wood",amount)
 	world.audio.play_at("rustle",pantry.global_position,-6,1,3,18)
 func boil() -> void:
-	if fuel_s > 0: world.needs.drink(35); world._say("Drank boiled snow (+35 water)")
+	if fuel_s>0:world._say(water.begin(world.inv));update_presentation()
+	else:world._say("Light the stove before boiling")
 func cook() -> void:
 	if not cooking.is_empty() or fuel_s <= 0: return
 	for id: String in world.inv.counts:
@@ -370,7 +397,7 @@ func is_refuge(point: Vector3) -> bool:
 		if actor is Node3D and not bool(actor.call("is_dead")) and boundary.contains_ground(actor.global_position): return false
 	return true
 func to_dict() -> Dictionary:
-	return {"state":state.to_dict(),"home":{"schema":2,"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open}}
+	return {"state":state.to_dict(),"home":{"schema":2,"prepared_water":water.to_dict(),"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open}}
 func _relay_foundations() -> void:
 	var st := SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for foot: Vector2 in [Vector2(-1.04,-1.1),Vector2(1.04,-1.1),Vector2(0,-2.15),Vector2(-.45,0),Vector2(.45,0),Vector2(-.92,-.35)]:
@@ -421,9 +448,12 @@ func _update_stock() -> void:
 	var other := 0
 	for id: String in pantry.contents:
 		if id not in ["beans", "jerky", "wood"]: other += maxi(pantry.count(id),0)
-	var signature := "%d/%d/%d/%d" % [beans,jerky,wood_left,other]
+	var signature := "%d/%d/%d/%d/%d" % [beans,jerky,wood_left,other,pantry.count("clean_water")]
 	if signature == _stock_signature: return
 	_stock_signature = signature
+	for n:Node in bottle_stock.get_children():bottle_stock.remove_child(n);n.queue_free()
+	for i in mini(pantry.count("clean_water"),4):
+		var n:Node3D=(load("res://assets/first_week/water_bottle.glb") as PackedScene).instantiate();bottle_stock.add_child(n);n.position=Vector3((i-1.5)*.085,0,0)
 	for node: Node in _stock.get_children():
 		_stock.remove_child(node); node.queue_free()
 	var wood_poses: Array[Transform3D] = []

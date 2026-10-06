@@ -68,7 +68,7 @@ func run() -> void:
 	check(w.forest.felled.has(key),"hatchet chopping actually fells the outside tree")
 	for child: Node in w.get_children():
 		if child is FallingTree:child._process(10)
-	var logs:=get_nodes_in_group("logs")
+	var logs:=get_nodes_in_group("logs").filter(func(n:Node)->bool:return not n.has_meta("authored_stop"))
 	check(logs.size()==1,"fall animation completion creates one harvestable log")
 	if logs.size()!=1:w.queue_free();quit(1);return
 	var log: WoodLog=logs[0]
@@ -79,7 +79,7 @@ func run() -> void:
 	w.queue_free();await process_frame;await process_frame
 	SaveGame.pending=snapshot;w=await build_world();op=w.opening
 	check(op.state.receiver_on and op.walkie.get_parent()==w.player and lit(op._receiver_power) and op._channel_label.text=="PUBLIC","fresh save load restores public desk, personal walkie and actual LEDs")
-	logs=get_nodes_in_group("logs");check(logs.size()==1,"fresh load restores unsplit log without duplicating it")
+	logs=get_nodes_in_group("logs").filter(func(n:Node)->bool:return not n.has_meta("authored_stop"));check(logs.size()==1,"fresh load restores unsplit log without duplicating it")
 	log=logs[0] as WoodLog;aim_log(w,log,1)
 	var action:=log_action(w);check(not action.is_empty(),"restored log remains targetable at far end")
 	w._act_begin(action);w._act_update(.5,false)
@@ -99,7 +99,7 @@ func run() -> void:
 	check(w.inv.count("wood")==before-1 and w.inv.count("plank")==planks+2,"plank crafting consumes one wood and makes two planks")
 	# A full pack must drop finite yields rather than destroy the harvested wood.
 	w._land_tree(tree.x,tree.y,Vector3.FORWARD,20,.3)
-	log=get_nodes_in_group("logs").filter(func(n:Node)->bool:return not n.is_queued_for_deletion())[0] as WoodLog
+	log=get_nodes_in_group("logs").filter(func(n:Node)->bool:return not n.has_meta("authored_stop")).filter(func(n:Node)->bool:return not n.is_queued_for_deletion())[0] as WoodLog
 	w.inv.counts["wood"]=100
 	var dropped_before:=get_nodes_in_group("pickups").size();w._split_log(log)
 	var dropped:=0

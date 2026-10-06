@@ -21,6 +21,7 @@ var audio_clock_rate := 48.0
 var public_days := 5
 var last_s := 0.0
 var battery_wh := BATTERY_CAP_WH
+var field_load_w:=0.0
 var backup_on := false
 var auto_transfer_on := false
 var relay_enabled := true
@@ -60,7 +61,7 @@ func advance_to(now:float) -> void:
 	else: walkie_wh=minf(WALKIE_CAP_WH,walkie_wh+grid_h*(WALKIE_CHARGER_W*WALKIE_CHARGER_EFFICIENCY-WALKIE_MONITOR_W))
 	if last_s<grid_fail_s and now>=grid_fail_s and repair_stage==3 and relay_enabled and auto_transfer_on:backup_on=true
 	var remaining:=maxf(0,now-maxf(last_s,grid_fail_s))/3600
-	var base_w:float=(7.0 if lamp_on else 0.0)+(3.0 if receiver_on else 0.0)+(12.0 if repair_stage==3 and relay_enabled else 0.0)
+	var base_w:float=field_load_w+(7.0 if lamp_on else 0.0)+(3.0 if receiver_on else 0.0)+(12.0 if repair_stage==3 and relay_enabled else 0.0)
 	# Split at portable-full and home-empty boundaries. A long sleep/skip cannot
 	# overcharge the handset or draw from a home supply after it is exhausted.
 	while remaining>0.00000001:

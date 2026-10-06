@@ -51,6 +51,9 @@ static func panel(ci: CanvasItem, r: Rect2, fill: Color = PANEL, edge: Color = E
 
 static func item_color(id: String) -> Color:
 	match id:
+		"clean_water": return Color(.38,.64,.70)
+		"empty_bottle": return Color(.48,.53,.48)
+		"snow_portion": return Color(.82,.87,.92)
 		"wood": return Color(0.55, 0.36, 0.18)
 		"matches": return Color(0.80, 0.64, 0.30)
 		"flare": return Color(0.85, 0.12, 0.08)
@@ -122,6 +125,14 @@ static func item_icon(ci: CanvasItem, id: String, r: Rect2, dim: float = 1.0) ->
 	var c := r.get_center()
 	var u := minf(r.size.x, r.size.y) * 0.5   # half extent
 	match id:
+		"clean_water", "empty_bottle":
+			var shape:=PackedVector2Array([Vector2(-.40,.8),Vector2(.40,.8),Vector2(.40,-.30),Vector2(.19,-.50),Vector2(.19,-.75),Vector2(-.19,-.75),Vector2(-.19,-.50),Vector2(-.40,-.30)])
+			var outline:=PackedVector2Array()
+			for v:Vector2 in shape:outline.append(c+v*u)
+			ci.draw_colored_polygon(outline,col);_quad(ci,c+Vector2(0,-.79*u),.47*u,.16*u,0,dark)
+			if id=="clean_water":_quad(ci,c+Vector2(0,.16*u),.57*u,.39*u,0,lite)
+		"snow_portion":
+			for angle:float in [0,PI/3,2*PI/3]:ci.draw_line(c+Vector2.from_angle(angle)*u*.7,c-Vector2.from_angle(angle)*u*.7,col,3)
 		"wood":
 			for k in 3:
 				var off := Vector2((k - 1) * u * 0.42, (0.22 if k == 1 else -0.12) * u)

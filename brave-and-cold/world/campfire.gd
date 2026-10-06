@@ -11,6 +11,7 @@ const COOK_S := 1200.0   # 20 game-minutes per piece of meat
 const SLOTS := 4
 
 var fuel_s := 0.0
+var prepared_water:=PreparedWater.new()
 var cooking: Array = []  # [{id: cooked item id, t: game seconds left}]
 var _light: OmniLight3D
 var _flames: CPUParticles3D
@@ -183,6 +184,7 @@ func take_done() -> Dictionary:
 
 func advance(game_s: float) -> void:
 	if fuel_s > 0.0:
+		prepared_water.advance(minf(fuel_s,game_s))
 		for c in cooking:
 			c["t"] = maxf(0.0, float(c["t"]) - game_s)
 		fuel_s = maxf(0.0, fuel_s - game_s)

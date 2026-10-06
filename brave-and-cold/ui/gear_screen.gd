@@ -270,6 +270,8 @@ func _entries(id: String, from: String, n: int, node: Node = null) -> Array:
 			out.append({"label": "Take one", "act": func() -> void: world.chest_take(_chest, id, 1)})
 		return out
 	match kind:
+		"drink":
+			out.append({"label":"Drink 0.5 L","act":func()->void:world.gear_use(id)})
 		"med":
 			var label: String={"bandage":"Apply bandage","antiseptic":"Clean wound","antibiotics":"Take antibiotics"}.get(id,"Use medicine")
 			out.append({"label":label,"act":func()->void:world.gear_use(id)})

@@ -19,6 +19,9 @@ static func spawn(parent: Node, item_id: String, count: int, pos: Vector3, condi
 
 func _ready() -> void:
 	add_to_group("pickups")
+	if id in ["clean_water","empty_bottle"]:
+		var bottle:Node3D=(load("res://assets/first_week/water_bottle.glb") as PackedScene).instantiate();add_child(bottle)
+		return
 	if id in ["wood", "plank", "stick"]:
 		_resource_pile()
 		return

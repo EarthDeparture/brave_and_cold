@@ -33,6 +33,7 @@ var footprints: Footprints
 var cabins: Array[Cabin] = []
 var fire_lookout: FireLookout # Standalone additive mountain structure; never a ground cabin collider.
 var opening: LookoutOpening
+var first_week:FirstWeekRoute
 var opening_state: LookoutAssignment
 var opening_zombie_count := 250
 var out_path := ""
@@ -340,6 +341,8 @@ func _ready() -> void:
 	if opening_state.enabled and fire_lookout != null:
 		opening = LookoutOpening.new(); add_child(opening)
 		opening.build(self,opening_state,sv.get("opening",{}).get("home",{}))
+		first_week=FirstWeekRoute.new();add_child(first_week);first_week.build(self,sv.get("first_week",{}))
+		opening_state.field_load_w=0 if first_week.feeder_isolated else 6
 		if not loading:
 			opening.starting_gear()
 			var camera_override := false
@@ -499,6 +502,7 @@ func _process(delta: float) -> void:
 		if is_finite(call_at): clock_delta=(call_at-clock.total_game_s)/clock.time_scale
 	var gs := clock.advance(clock_delta)
 	if opening != null: opening.advance(gs)
+	if first_week!=null:first_week.update(gs)
 	if inv != null:
 		for sn in inv.tick(gs):
 			_say("%s spoiled" % sn)
@@ -1690,9 +1694,6 @@ func _update_prompt() -> void:
 			{"pos": cb.stove_world_pos(), "r": 1.7, "text": "Cook meat", "hold": 3.0, "hide": not (cb.is_lit() and inv.has_raw()), "act": func() -> void:
 				var n := inv.cook_all()
 				_say('Cooked %d meat' % n)},
-			{"pos": cb.stove_world_pos(), "r": 1.7, "text": "Drink melted snow", "hold": 4.0, "hide": not cb.is_lit() or needs.water > 95.0, "act": func() -> void:
-				needs.drink(35.0)
-				_say('Drank melted snow (+35 water)')},
 			{"pos": cb.woodpile_world_pos(), "r": 1.9, "text": "Take firewood (%d left)" % cb.wood_pile, "act": func() -> void:
 				if cb.take_firewood():
 					inv.add("wood")
@@ -1721,6 +1722,7 @@ func _update_prompt() -> void:
 				inv.add("antiseptic", 1)
 				inv.add("antibiotics", 1)
 				_say("Found: hatchet, knife, rifle + 6 rounds, parka, sweater, toque, matches, beans, hammer, nails, planks, rags")})
+		items.append(_water_action(cb.prepared_water,cb.stove_world_pos(),cb.is_lit()))
 		items.append_array(_sleep_items(cb))
 		for it in items:
 			if it.get('hide', false):
@@ -1759,10 +1761,8 @@ func _update_prompt() -> void:
 				cands.append({"m": _lm, "d": cd - 0.02, "text": "Take cooked meat (%d)" % cfire.done_count(), "act": func() -> void: _take_cooked(cfire)})
 			elif cfire.cooking_count() > 0 and cd < 1.8:
 				cands.append({"m": _lm, "d": cd + 0.05, "text": "Meat cooking (%d min left)" % int(ceil(cfire.min_left() / 60.0)), "act": func() -> void: _say('Still cooking')})
-			if cfire.is_lit() and needs.water < 90.0 and cd < 1.8:
-				cands.append({"m": _lm, "d": cd + 0.01, "text": "Melt snow and drink", "hold": 4.0, "act": func() -> void:
-					needs.drink(35.0)
-					_say('Drank melted snow (+35 water)')})
+			var wa:=_water_action(cfire.prepared_water,cfire.global_position+Vector3.UP*.25,cfire.is_lit())
+			wa["m"]=_lm;wa["d"]=cd+.01;cands.append(wa)
 	for cn in get_tree().get_nodes_in_group("carcasses"):
 		var cnode := cn as Node3D
 		if cnode == null or cnode.is_queued_for_deletion():
@@ -2016,6 +2016,7 @@ func _split_log(wl: WoodLog) -> void:
 	_give_or_drop('stick', sk, wl.center())
 	inv.wear('axe', 0.01)
 	_say('Split log: %d firewood, %d sticks. Make planks in Gear > Craft.' % [fw, sk])
+	if wl.has_meta("authored_stop") and first_week!=null:first_week.consume_timber()
 	wl.queue_free()
 
 
@@ -2082,7 +2083,7 @@ func _log_list() -> Array:
 	var out: Array = []
 	for lg in get_tree().get_nodes_in_group('logs'):
 		var wl := lg as WoodLog
-		if wl != null and not wl.is_queued_for_deletion():
+		if wl != null and not wl.is_queued_for_deletion() and not wl.has_meta("authored_stop"):
 			out.append(wl.to_save())
 	return out
 
@@ -3276,10 +3277,10 @@ func save_game() -> bool:
 func _save_data() -> Dictionary:
 	var cabs: Array = []
 	for cb in cabins:
-		cabs.append({'stove': cb.stove_fuel_s, 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'dboards': cb.door_boards, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
+		cabs.append({'prepared_water':cb.prepared_water.to_dict(),'stove': cb.stove_fuel_s, 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'dboards': cb.door_boards, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
 	var fires: Array = []
 	for cf in campfires:
-		fires.append({'x': cf.global_position.x, 'y': cf.global_position.y, 'z': cf.global_position.z, 'fuel': cf.fuel_s, 'cook': cf.cooking})
+		fires.append({'x': cf.global_position.x, 'y': cf.global_position.y, 'z': cf.global_position.z, 'fuel': cf.fuel_s,'prepared_water':cf.prepared_water.to_dict(), 'cook': cf.cooking})
 	var d := {
 		'clock': {'hour': clock.hour, 'day': clock.day, 'total': clock.total_game_s},
 		'weather': weather.to_dict(),
@@ -3314,6 +3315,7 @@ func _save_data() -> Dictionary:
 		if not elevated_location.is_empty():
 			d['lookout_location'] = elevated_location
 	if opening != null: d['opening'] = opening.to_dict()
+	if first_week!=null:d["first_week"]=first_week.to_dict()
 	return d
 
 
@@ -3446,6 +3448,7 @@ func _apply_save(sv: Dictionary) -> void:
 	for i in range(mini(cabs.size(), cabins.size())):
 		var cb = cabins[i]
 		cb.stove_fuel_s = float(cabs[i]['stove'])
+		cb.prepared_water.restore(cabs[i].get('prepared_water',{}))
 		cb.wood_pile = int(cabs[i]['wood'])
 		cb.crate_looted = bool(cabs[i]['looted'])
 		cb.door_boards = int(cabs[i].get('dboards', 0))
@@ -3460,6 +3463,7 @@ func _apply_save(sv: Dictionary) -> void:
 		add_child(cf)
 		cf.global_position = Vector3(float(f['x']), float(f['y']), float(f['z']))
 		cf.fuel_s = float(f['fuel'])
+		cf.prepared_water.restore(f.get('prepared_water',{}))
 		cf.cooking = f.get('cook', [])
 		campfires.append(cf)
 
@@ -3503,3 +3507,11 @@ func _run_vmtest() -> void:
 	elif act == 'aim':
 		aim_override = true
 		player.aim_k = 1.0
+
+func _water_action(pot:PreparedWater,point:Vector3,lit:bool)->Dictionary:
+	var text:=pot.status() if pot.batch>0 else ("Collect boiled water • %d bottles"%pot.ready if pot.ready>0 else "Boil snow in field bottles • 20 min")
+	return {"pos":point,"r":1.9,"text":text,"hold":2.0 if pot.batch==0 and pot.ready==0 else 0.0,"act":func()->void:
+		if pot.ready>0:_say("Collected %d bottles; %d remain at heat source"%[pot.collect(inv),pot.ready])
+		elif pot.batch>0:_say(pot.status())
+		elif lit:_say(pot.begin(inv))
+		else:_say("Light the fire first")}
