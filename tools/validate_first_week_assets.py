@@ -9,6 +9,12 @@ ROOT = Path(__file__).resolve().parents[1]
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
+def source_matches(path, expected):
+    # Receipts preserve generated source hashes; Git may convert LF/CRLF.
+    lf = path.read_text(encoding="utf-8").encode("utf-8")
+    variants = (path.read_bytes(), lf, lf.replace(b"\n", b"\r\n"))
+    return any(hashlib.sha256(data).hexdigest() == expected for data in variants)
+
 def validate():
     packages = {}
     for package in ("first_week", "clinic", "infected", "maintenance", "wristwatch", "city_letter"):
@@ -34,11 +40,11 @@ def validate():
         # Two packages use descriptive generator names.
         if package == "infected": generator = ROOT / "tools/blender/gen_infected.py"
         if package == "wristwatch": generator = ROOT / "tools/blender/gen_wristwatch.py"
-        assert sha(generator) == manifest["provenance"]["generator_sha256"], str(generator)
+        assert source_matches(generator, manifest["provenance"]["generator_sha256"]), str(generator)
         packages[package] = {"assets": assets, "provenance": manifest["provenance"], "graphics_verified": len(manifest.get("graphics", {}))}
     folder = ROOT / "brave-and-cold/assets/audio/sfx"
     foley = json.loads((folder / "first_week_foley.json").read_text(encoding="utf-8"))
-    assert sha(ROOT / "tools/audio/gen_first_week_foley.py") == foley["generator_sha256"]
+    assert source_matches(ROOT / "tools/audio/gen_first_week_foley.py", foley["generator_sha256"])
     for name, entry in foley["clips"].items():
         path = folder / (name + ".wav")
         assert sha(path) == entry["sha256"], str(path)
