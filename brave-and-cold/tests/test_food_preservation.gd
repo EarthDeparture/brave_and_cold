@@ -59,8 +59,10 @@ func run() -> void:
 	fire.advance(900);check(fire.cooking[0].t==900 and fire.fuel_s==0,"campfire cooks only through its actual 300-second fuel remainder")
 	fire.advance(900);check(fire.cooking[0].t==900 and fire.cooking[0].age_s==5400,"unlit campfire still ages its unfinished fish")
 	fire.free()
-	inv=Inventory.new();inv.add("venison_raw");inv.age.venison_raw=15*3600.0;inv.cook_all()
-	check(is_equal_approx(float(inv.age.venison_cooked),36*3600),"legacy cabin cook shortcut cannot erase food freshness")
+	inv=Inventory.new();inv.add("venison_raw");inv.age.venison_raw=15*3600.0
+	var cooked:=CookBatch.new(1);cooked.begin(inv,true);cooked.advance(1200,1200);cooked.collect(inv)
+	check(is_equal_approx(float(inv.age.venison_cooked),36.8*3600),"timed raw-to-cooked preparation retains shelf fraction through actual burn")
+
 	var w:Node3D=await build();var op:LookoutOpening=w.opening
 	check(op.preservation.portions.is_empty() and op.drying_rack!=null,"new game presents an empty original drying rack without food gifts")
 	check(is_equal_approx(op.drying_rack.position.y-FireLookout.DECK_Y,.25),"rack bolts to timber wall below the window rather than floating on glass")

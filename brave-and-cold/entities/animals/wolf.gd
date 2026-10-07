@@ -85,6 +85,7 @@ func hit(dmg: float, from: Vector3) -> void:
 		remove_from_group("hostile")
 		add_to_group("carcasses")
 		set_meta("born", Time.get_ticks_msec())
+		set_meta("food_age_s",0.0)
 		Carcass.blood(get_parent(), global_position, 0.9)
 		speed_now = 0.0
 		var tw := create_tween()

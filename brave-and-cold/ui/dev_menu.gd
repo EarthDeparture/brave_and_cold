@@ -580,7 +580,6 @@ func _set_hour(h: float) -> void:
 
 func _set_speed(s: float) -> void:
 	clock.time_scale = s
-	Cabin.game_scale = s
 
 
 func _set_noclip(v: bool) -> void:
@@ -1520,16 +1519,12 @@ func _p6test() -> void:
 	ok2 = needs.calories <= k0 + 1.0 and inv.count("rotten_meat") > 0 and not msg.begins_with("Ate")
 	print("P6TEST rotten not edible=", ok2, " ", msg)
 	fails += 0 if ok2 else 1
-	# cooking resets age (cooked is a new item)
-	inv.counts.erase("venison_raw")
-	inv.counts.erase("venison_cooked")
-	inv.age.erase("venison_raw")
-	inv.add("venison_raw", 1)
-	inv.tick(20.0 * 3600.0)
-	inv.cook_all()
-	ok2 = inv.count("venison_cooked") == 1 and not inv.age.has("venison_raw") and inv.freshness("venison_cooked") > 0.95
-	print("P6TEST cook resets=", ok2)
-	fails += 0 if ok2 else 1
+	# Timed cooking carries the spent shelf-life fraction rather than restoring freshness.
+	inv.counts.erase("venison_raw");inv.counts.erase("venison_cooked");inv.age.erase("venison_raw")
+	inv.add("venison_raw",1);inv.tick(20*3600)
+	var stove_food:=CookBatch.new(1);stove_food.begin(inv,true);stove_food.advance(1200,1200);stove_food.collect(inv)
+	ok2=inv.count("venison_cooked")==1 and not inv.age.has("venison_raw") and is_equal_approx(inv.freshness("venison_cooked"),1-(20*3600.0+1200)/(30*3600.0))
+	print("P6TEST cooking retains age=",ok2);fails+=0 if ok2 else 1
 	# weight readout inputs sane
 	ok2 = inv.total_weight() > 0.0 and inv.total_weight() < Inventory.WEIGHT_HARD + 20.0
 	print("P6TEST weight=", inv.total_weight(), " ", ok2)

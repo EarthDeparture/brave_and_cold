@@ -38,6 +38,7 @@ var bottle_stock:Node3D
 var cooking: Dictionary = {}
 var preservation:=FoodPreservation.new()
 var drying_rack:Node3D
+var cook_display:CookDisplay
 var _stock: Node3D
 var _stock_label: Label3D
 var _stock_signature := ""
@@ -94,6 +95,8 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 	preservation.restore(saved.get("preservation",{}))
 	drying_rack=(load("res://assets/food_preservation/stove_drying_rack.glb") as PackedScene).instantiate()
 	tower.add_child(drying_rack);drying_rack.position=Vector3(-2.12,FireLookout.DECK_Y+.25,.35);drying_rack.rotation.y=PI/2
+	cook_display=CookDisplay.new();tower.add_child(cook_display);cook_display.build(1)
+	cook_display.position=stove_point(Vector3(-.162,.758,.17));cook_display.rotation.y=FireLookout.STOVE_YAW
 	# Wall mounted: no floor pad, stair or new walking collider.
 
 	if saved.is_empty():
@@ -173,6 +176,7 @@ func advance(game_s: float) -> void:
 	if state.walkie_wh>LookoutAssignment.WALKIE_CAP_WH*.20:_warned_walkie_low=false
 	update_presentation(); _radio_update()
 func update_presentation() -> void:
+	if cook_display!=null:cook_display.sync([cooking] if not cooking.is_empty() else [])
 	if drying_rack!=null:
 		for i in FoodPreservation.CAP:
 			var portion:=drying_rack.find_child("Portion%d"%i,true,false) as Node3D
@@ -459,7 +463,7 @@ func cook() -> void:
 		if Inventory.ITEMS[id].get("raw", false):
 			var age:=float(world.inv.age.get(id,0))
 			if world.inv.freshness(id)<=0:continue
-			if world.inv.remove(id):cooking=FoodPortion.create(id,Inventory.ITEMS[id].cooked,1200,age);return
+			if world.inv.remove(id):cooking=FoodPortion.create(id,Inventory.ITEMS[id].cooked,1200,age);update_presentation();return
 func take_cooked() -> void:
 	if cooking.is_empty() or float(cooking.remaining_s) > 0: return
 	if FoodPortion.collect(cooking,world.inv):cooking={};update_presentation()

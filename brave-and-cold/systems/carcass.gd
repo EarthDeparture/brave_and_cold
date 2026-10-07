@@ -45,6 +45,16 @@ static func step_info(species: String, step: String, has_knife: bool, has_axe: b
 	return {"id": id, "n": n, "time": t, "ok": false, "need": "knife"}
 
 
+static func tool_step(species:String,step:String,inv:Inventory,chosen:String="") -> Dictionary:
+	var knife:=inv.count("knife")>0 and inv.condition("knife")>=.01 and chosen in ["","knife"]
+	var axe:=inv.count("axe")>0 and inv.condition("axe")>=.02 and chosen in ["","axe"]
+	var info:=step_info(species,step,knife,axe)
+	info.tool="knife" if knife else "axe";info.wear=.01 if knife else .02;return info
+
+static func food_age(n:Node) -> float:return maxf(0,float(n.get_meta("food_age_s",0)))
+static func advance_food(n:Node,game_s:float) -> void:
+	n.set_meta("food_age_s",food_age(n)+maxf(0,game_s)*StorageChest.COLD_RATE)
+
 ## Deterministic loot for a zombie body (seed from position). Returns {id: n}.
 static func body_loot(seed_value: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()

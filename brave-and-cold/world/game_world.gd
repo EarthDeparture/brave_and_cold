@@ -202,7 +202,6 @@ func _ready() -> void:
 		var requested_rate: float = float(opts.speed)
 		if requested_rate > 0.0: clock.set_pace(requested_rate)
 		else: clock.time_scale = 0.0
-	Cabin.game_scale = clock.time_scale
 	opening_state.audio_clock_rate = clock.base_time_scale
 	opening_zombie_count = int(opts.get("zombies",250))
 	if opening_state.enabled and not loading and not opts.has("hour"): clock.hour = LookoutAssignment.START_HOUR
@@ -519,6 +518,8 @@ func _process(delta: float) -> void:
 		var call_at: float=opening.next_dispatch_wake(clock.total_game_s,clock.total_game_s+delta*clock.time_scale)
 		if is_finite(call_at): clock_delta=(call_at-clock.total_game_s)/clock.time_scale
 	var gs := clock.advance(clock_delta)
+	for cabin:Cabin in cabins:cabin.advance(gs)
+	for carcass:Node3D in get_tree().get_nodes_in_group("carcasses"):Carcass.advance_food(carcass,gs)
 	if opening != null: opening.advance(gs)
 	if first_week!=null:first_week.update(gs)
 	if collapse!=null:collapse.update(gs)
@@ -1722,9 +1723,6 @@ func _update_prompt() -> void:
 					inv.remove("wood")
 					cb.add_wood()
 					_say("Added firewood")},
-			{"pos": cb.stove_world_pos(), "r": 1.7, "text": "Cook meat", "hold": 3.0, "hide": not (cb.is_lit() and inv.has_raw()), "act": func() -> void:
-				var n := inv.cook_all()
-				_say('Cooked %d meat' % n)},
 			{"pos": cb.woodpile_world_pos(), "r": 1.9, "text": "Take firewood (%d left)" % cb.wood_pile, "act": func() -> void:
 				if cb.take_firewood():
 					inv.add("wood")
@@ -1753,6 +1751,7 @@ func _update_prompt() -> void:
 				inv.add("antiseptic", 1)
 				inv.add("antibiotics", 1)
 				_say("Found: hatchet, knife, rifle + 6 rounds, parka, sweater, toque, matches, beans, hammer, nails, planks, rags")})
+		items.append_array(_cabin_food_actions(cb))
 		items.append(_water_action(cb.prepared_water,cb.stove_world_pos(),cb.is_lit()))
 		items.append_array(_sleep_items(cb))
 		for it in items:
@@ -1805,21 +1804,9 @@ func _update_prompt() -> void:
 		var cdist := cnode.global_position.distance_to(player.position)
 		if not _aim_ok(cnode.global_position + Vector3(0.0, 0.3, 0.0), 2.6, 1.0):
 			continue
-		var sp := Carcass.species_of(cnode)
-		var done: Dictionary = cnode.get_meta("done", {})
-		var si := 0
-		for st in Carcass.open_steps(sp, done):
-			var info := Carcass.step_info(sp, st, inv.count('knife') > 0, inv.count('axe') > 0)
-			var step: String = st
-			var lab := "%s %s" % [Carcass.STEP_VERB[step], Carcass.SPECIES[sp]["label"]]
-			si += 1
-			if not bool(info["ok"]):
-				cands.append({"m": _lm, "d": cdist + si * 0.01, "text": "%s (needs a %s)" % [lab, info["need"]], "act": func() -> void: _say('You need a knife for that')})
-				continue
-			var yid: String = info["id"]
-			var yn: int = int(info["n"])
-			cands.append({"m": _lm, "d": cdist + si * 0.01, "text": "%s (+%d %s)" % [lab, yn, inv.name_of(yid)], "hold": float(info["time"]), "kcal": 30.0, "label": lab,
-				"act": func() -> void: _carcass_step(cnode, sp, step, yid, yn)})
+		for candidate:Dictionary in _carcass_actions(cnode):
+			candidate.m=_lm;candidate.d=cdist+float(candidate.get("dbias",0));cands.append(candidate)
+
 	for bn in get_tree().get_nodes_in_group("bodies"):
 		var bz := bn as Node3D
 		if bz == null or bz.is_queued_for_deletion() or bz.get_meta("searched", false):
@@ -2067,23 +2054,56 @@ func _give_or_drop(id: String, n: int, pos: Vector3) -> void:
 		_say('Pack full: %d %s left on the ground' % [dropped, inv.name_of(id)])
 
 
-func _carcass_step(cn: Node3D, sp: String, step: String, id: String, n: int) -> void:
-	if cn == null or cn.is_queued_for_deletion():
-		return
-	var done: Dictionary = cn.get_meta("done", {})
-	if done.get(step, false):
-		return
-	done[step] = true
-	cn.set_meta("done", done)
-	_give_or_drop(id, n, cn.global_position)
-	audio.play_at("slice", cn.global_position, 0.0, randf_range(0.9, 1.1), 6.0, 60.0)
-	if inv.count('knife') > 0:
-		inv.wear('knife', 0.01)
-	elif step == "meat":
-		inv.wear('axe', 0.02)
-	_say('%s: +%d %s' % [String(Carcass.STEP_VERB[step]).replace(" from", ""), n, inv.name_of(id)])
-	if Carcass.open_steps(sp, done).is_empty():
-		cn.queue_free()
+func _carcass_actions(cn:Node3D) -> Array:
+	var out:Array=[];var species:=Carcass.species_of(cn);var done:Dictionary=cn.get_meta("done",{})
+	var index:=0
+	for step:String in Carcass.open_steps(species,done):
+		var info:=Carcass.tool_step(species,step,inv);var label:="%s %s"%[Carcass.STEP_VERB[step],Carcass.SPECIES[species].label]
+		index+=1
+		if not info.ok:
+			out.append({"text":label+" (needs a usable tool)","dbias":index*.01,"act":func()->void:_say("Bring a knife with 1% condition, or a hatchet with 2% for meat only")});continue
+		var tool:String=info.tool;var id:String=info.id;var n:int=info.n
+		var stale:=step=="meat" and Carcass.food_age(cn)>=Inventory.shelf_s(id)
+		out.append({"text":label+" (+%d %s)"%[n,"spoiled portions" if stale else inv.name_of(id)],"hold":float(info.time),"label":label,"work":"reach","dbias":index*.01,"act":func()->void:_carcass_step(cn,species,step,id,n,tool)})
+	return out
+
+func _carcass_step(cn:Node3D,sp:String,step:String,id:String,n:int,tool:String="") -> void:
+	if cn==null or cn.is_queued_for_deletion() or not cn.is_in_group("carcasses") or Carcass.species_of(cn)!=sp:return
+	var done:Dictionary=cn.get_meta("done",{})
+	if done.get(step,false) or step not in Carcass.open_steps(sp,done):return
+	# Recheck the chosen tool, never silently change yield/tool after the hold began.
+	var info:=Carcass.tool_step(sp,step,inv,tool)
+	if not info.ok or info.id!=id or int(info.n)!=n:
+		_say("Butchery interrupted: the required usable tool is no longer available");return
+	var output:=id;var food_age:=0.0
+	if step=="meat":
+		food_age=Carcass.food_age(cn)
+		if food_age>=Inventory.shelf_s(id):output="rotten_meat";food_age=0
+	done[step]=true;cn.set_meta("done",done)
+	_give_or_drop_aged(output,n,cn.global_position,food_age)
+	inv.wear(String(info.tool),float(info.wear));needs.calories=maxf(0,needs.calories-30)
+	audio.play_at("slice",cn.global_position,0,1,6,60)
+	_say("%s: +%d %s"%[String(Carcass.STEP_VERB[step]).replace(" from",""),n,inv.name_of(output)])
+	if Carcass.open_steps(sp,done).is_empty():cn.queue_free()
+
+func _give_or_drop_aged(id:String,n:int,pos:Vector3,age:float) -> void:
+	var left:=n
+	while left>0 and inv.can_add(id):inv.add_aged(id,1,age);left-=1
+	if left>0:
+		ItemPickup.spawn(self,id,left,_ground(pos.x,pos.z),-1,age)
+		_say("Pack full: %d %s left on the ground"%[left,inv.name_of(id)])
+
+func _cabin_food_actions(cb:Cabin) -> Array:
+	var point:=cb.stove_world_pos();var out:Array=[]
+	if cb.cooking.free_slots()>0 and inv.has_raw():
+		out.append({"pos":point,"r":1.7,"text":"Load stove food (%d free slots)"%cb.cooking.free_slots(),"hold":2.0,"work":"reach","act":func()->void:
+			_say(cb.cooking.begin(inv,cb.is_lit()));cb.cook_display.sync(cb.cooking.portions)})
+	if not cb.cooking.portions.is_empty():
+		out.append({"pos":point,"r":1.7,"text":cb.cooking.status(),"dbias":.02,"act":func()->void:
+			var n:=cb.cooking.collect(inv)
+			_say("Collected %d stove portions; food left on the stove continues to age"%n if n>0 else "Food is still cooking, or your pack is full")
+			cb.cook_display.sync(cb.cooking.portions)})
+	return out
 
 
 func _search_body(bz: Node3D) -> void:
@@ -2110,7 +2130,7 @@ func _carcass_list() -> Array:
 		var sp := Carcass.species_of(c)
 		if sp == '':
 			continue
-		out.append({'sp': sp, 'x': c.global_position.x, 'z': c.global_position.z, 'done': c.get_meta('done', {})})
+		out.append({'sp': sp, 'x': c.global_position.x, 'z': c.global_position.z, 'done': c.get_meta('done', {}),'food_age_s':Carcass.food_age(c)})
 	return out
 
 
@@ -3213,7 +3233,6 @@ func _sleep_update(delta: float) -> void:
 				player.position = cb.call("bed_lie_pos")
 				player.pitch = -0.6
 				clock.time_scale = sleep_rate
-				Cabin.game_scale = sleep_rate
 				needs.rest_mult = 0.75
 		1:
 			_sleep_tick(delta, cb)
@@ -3281,7 +3300,6 @@ func _sleep_wake_reason() -> String:
 
 func _sleep_restore_clock() -> void:
 	clock.time_scale = float(_sl.get("scale0", clock.base_time_scale))
-	Cabin.game_scale = clock.time_scale
 	needs.rest_mult = 1.0
 
 
@@ -3318,7 +3336,7 @@ func save_game() -> bool:
 func _save_data() -> Dictionary:
 	var cabs: Array = []
 	for cb in cabins:
-		cabs.append({'prepared_water':cb.prepared_water.to_dict(),'stove': cb.stove_fuel_s, 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'dboards': cb.door_boards, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
+		cabs.append({'prepared_water':cb.prepared_water.to_dict(),'cooking':cb.cooking.to_dict(),'stove': cb.stove_fuel_s, 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'dboards': cb.door_boards, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
 	var fires: Array = []
 	for cf in campfires:
 		fires.append({'x': cf.global_position.x, 'y': cf.global_position.y, 'z': cf.global_position.z, 'fuel': cf.fuel_s,'prepared_water':cf.prepared_water.to_dict(), 'cook': cf.cooking})
@@ -3395,6 +3413,7 @@ func _restore_creatures(sv: Dictionary) -> void:
 		if cn != null:
 			cn.call('hit', 99999.0, cp)
 			cn.set_meta('done', e.get('done', {}))
+			cn.set_meta('food_age_s',maxf(0,float(e.get('food_age_s',0))))
 		ci += 1
 	if forest != null:
 		for info in forest.apply_felled(sv.get('felled', [])):
@@ -3444,7 +3463,6 @@ func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 		var requested_rate: float = float(launch_options.speed)
 		if requested_rate > 0.0: clock.set_pace(requested_rate)
 		else: clock.time_scale = 0.0
-	Cabin.game_scale = clock.time_scale
 	if opening_state != null: opening_state.audio_clock_rate = clock.base_time_scale
 	if opening_state != null: opening_state.align_calendar(clock.day,clock.hour,clock.total_game_s)
 	if sv.has('weather'):
@@ -3496,6 +3514,7 @@ func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 		var cb = cabins[i]
 		cb.stove_fuel_s = float(cabs[i]['stove'])
 		cb.prepared_water.restore(cabs[i].get('prepared_water',{}))
+		cb.cooking.restore(cabs[i].get('cooking',{}));cb.cook_display.sync(cb.cooking.portions)
 		cb.wood_pile = int(cabs[i]['wood'])
 		cb.crate_looted = bool(cabs[i]['looted'])
 		cb.door_boards = int(cabs[i].get('dboards', 0))

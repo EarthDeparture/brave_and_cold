@@ -295,21 +295,6 @@ func name_of(id: String) -> String:
 	return String(ITEMS[id]["name"])
 
 
-## Cook all raw food in the pack. Returns number of items cooked.
-func cook_all() -> int:
-	var n := 0
-	for id in counts.keys():
-		if ITEMS[id].get("raw", false):
-			var c: int = count(id)
-			var out: String = ITEMS[id]["cooked"]
-			var fraction:=1.0-freshness(id)
-			counts.erase(id)
-			age.erase(id)
-			add_aged(out,c,fraction*shelf_s(out))
-			n += c
-	return n
-
-
 func has_raw() -> bool:
 	for id in counts.keys():
 		if ITEMS.has(id) and ITEMS[id].get("raw", false):

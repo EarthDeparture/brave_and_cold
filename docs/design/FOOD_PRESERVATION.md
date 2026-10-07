@@ -51,3 +51,7 @@ The initial candidate straddled a window. Renderer review rejected that placemen
 2. Give hunting a sustainable but costly cadence: persist game-time carcass deterioration, measure animal availability along the route, and make carrying fresh meat meaningfully risky. Tune daily calorie/fuel/water budgets together before adding more recipes.
 3. Connect first-week food uncertainty to the story: changed delivery notes, abandoned meal equipment and finite town supplies should reinforce missed dispatch and public broadcasts without requiring the player to hear every clip. Prefer a distinct reason to enter town over more interchangeable repair deliveries.
 4. Only then prototype sheltered winter food production. Seed/water/soil containers, adequate light/heat, actual multi-day growth, finite harvests and winter failure need a complete design; outdoor snow crops cannot be a free survival solution.
+
+## Successor cooking batch
+
+The legacy-cabin instant cooking and untracked carcass food-age limitations have been addressed by [Hunting and stove cooking](HUNT_AND_COOKING.md). The original validation receipt above remains historical evidence for its own source snapshot.

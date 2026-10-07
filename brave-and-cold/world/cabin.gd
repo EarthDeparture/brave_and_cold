@@ -17,7 +17,6 @@ var light: OmniLight3D
 var _walls: Array[Rect2] = []  # local xz rects
 const STOVE_LOCAL := Vector3(-2.35, 0.0, -1.75)
 const WOOD_BURN_S := 7200.0  # GAME seconds per log (2 h)
-static var game_scale := 48.0
 var _snd: AudioStreamPlayer3D
 var door_open := false
 var tint := Color.WHITE   # per-cabin weathering variation (hamlet), multiplies the vertex colours
@@ -25,6 +24,8 @@ var door_hp := 100.0
 var door_broken := false
 var stove_fuel_s := 0.0
 var prepared_water:=PreparedWater.new()
+var cooking:=CookBatch.new(2)
+var cook_display:CookDisplay
 var wood_pile := 6
 var crate_looted := false
 var _door_pivot: Node3D
@@ -101,6 +102,8 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	]
 	_build_door()
 	_build_stove_fire()
+	cook_display=CookDisplay.new();add_child(cook_display);cook_display.build(2)
+	cook_display.position=STOVE_LOCAL+Vector3(0,FLOOR_LOCAL_Y+.852,.13)
 	_build_openings()
 	_build_dust()
 	return true
@@ -395,6 +398,12 @@ func heat_at(x: float, z: float) -> float:
 	return 120.0 + 430.0 * clampf(1.0 - d / 2.5, 0.0, 1.0)
 
 
+func advance(game_s:float) -> void:
+	var elapsed:=maxf(0,game_s);var burn:=minf(stove_fuel_s,elapsed)
+	prepared_water.advance(burn);cooking.advance(elapsed,burn)
+	stove_fuel_s=maxf(0,stove_fuel_s-elapsed)
+	if cook_display!=null:cook_display.sync(cooking.portions)
+
 func _process(delta: float) -> void:
 	if _fire_mat == null:
 		return
@@ -408,8 +417,6 @@ func _process(delta: float) -> void:
 		_was_lit = stove_fuel_s > 0.0
 		_apply_glow()
 	if stove_fuel_s > 0.0:
-		prepared_water.advance(minf(stove_fuel_s,delta*game_scale))
-		stove_fuel_s = maxf(0.0, stove_fuel_s - delta * game_scale)
 		var fl := 0.75 + 0.25 * sin(_t * 11.0) * sin(_t * 7.3) + 0.1 * sin(_t * 23.0)
 		_fire_mat.emission_energy_multiplier = 3.0 * fl
 		_fire_light.light_energy = 2.2 * fl
