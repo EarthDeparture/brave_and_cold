@@ -30,6 +30,7 @@ static var _scw_val = null
 static var _scw_any = null
 const AI_EVERY_NEAR := 2                              # 20-60 m: brain+move every 2nd frame
 const AI_EVERY_FAR := 6                               # > 60 m: every 6th frame
+const GROUND_GAIT_M:=20.0 # precise sole contact where encounter detail is visible
 
 var terrain: Terrain3D
 var snow: SnowField
@@ -600,7 +601,8 @@ func _animate(delta:float)->void:
 		elif _bo!=null or _bdoor:reach=.6+.25*sin(_state_t*6+i)
 		if _arms[i]!=null:_arms[i].rotation.x=reach-wave*amp*.3
 		if _elbows[i]!=null:_elbows[i].rotation.x=.15+amp*.1
-	var grounded:=travel>.03 and _gait_speed>=0 and not crawling and _vault_t<0 and _stagger<=0 and state not in [State.SLEEP,State.DEAD]
+	var close_detail:=player==null or global_position.distance_squared_to(player.global_position)<GROUND_GAIT_M*GROUND_GAIT_M
+	var grounded:=close_detail and travel>.03 and _gait_speed>=0 and not crawling and _vault_t<0 and _stagger<=0 and state not in [State.SLEEP,State.DEAD]
 	_model.rotation.z=sin(_state_t*12)*.10*clampf(_stagger/.5,0,1)
 	if grounded and _ankle_frames.size()==2:
 		_gait.solve(self,_phase,stride)

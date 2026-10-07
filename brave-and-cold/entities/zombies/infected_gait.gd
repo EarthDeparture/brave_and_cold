@@ -22,7 +22,9 @@ func solve(actor:Zombie,phase:float,stride:float)->void:
 	last_heading=heading;active=true
 	var model:Node3D=actor._model
 	var scale_y:=model.global_basis.get_scale().y
-	model.position.y=0
+	var initial_inverse:=model.global_transform.affine_inverse()
+	var initial_y:=model.position.y/model.scale.y
+	var model_frame_inverse:=model.global_basis.orthonormalized().inverse()
 	var targets:Array[Vector3]=[]
 	var body_offset:=0.0
 	for i in 2:
@@ -48,17 +50,18 @@ func solve(actor:Zombie,phase:float,stride:float)->void:
 		# Preserve an adult-length stride without stretching the leg. The hip
 		# follows the most restrictive foot, producing a small natural bob
 		# instead of shortening the stride into a rapid shuffle.
-		var local:=model.to_local(target)
+		var local:=initial_inverse*target
 		var horizontal:=Vector2(local.x-x,local.z).length()
 		var reach:=(THIGH.length()+CALF.length())*.985
 		var vertical:=sqrt(maxf(.01,reach*reach-horizontal*horizontal))
-		body_offset=minf(body_offset,(local.y+vertical-.92)*model.scale.y)
+		body_offset=minf(body_offset,(local.y+initial_y+vertical-.92)*model.scale.y)
 	model.position.y=maxf(body_offset,-.20*model.scale.y)
+	var final_inverse:=model.global_transform.affine_inverse()
 	for i in 2:
 		var x:=(-1.0 if i==0 else 1.0)*.10
 		var target:=targets[i]
 		var hip:=Vector3(x,.92,0)
-		var offset:=model.to_local(target)-hip
+		var offset:=final_inverse*target-hip
 		var l1:=THIGH.length();var l2:=CALF.length()
 		var distance:=clampf(offset.length(),absf(l1-l2)+.001,l1+l2-.001)
 		var direction:=offset.normalized()
@@ -74,7 +77,7 @@ func solve(actor:Zombie,phase:float,stride:float)->void:
 		actor._knees[i].rotation=lower.get_euler()
 		# Parent rotations are cancelled at the ankle, retaining the boot's
 		# original rest orientation and sole. This does not move the actor.
-		ankle_bases[i]=(upper*lower).inverse()*model.global_basis.orthonormalized().inverse()*floor_bases[i]
+		ankle_bases[i]=(upper*lower).inverse()*model_frame_inverse*floor_bases[i]
 
 func floor_basis(actor:Zombie,p:Vector3)->Basis:
 	var dx:=clampf((actor._corpse_floor(p+Vector3.RIGHT*.08)-actor._corpse_floor(p-Vector3.RIGHT*.08))/.16,-.4,.4)

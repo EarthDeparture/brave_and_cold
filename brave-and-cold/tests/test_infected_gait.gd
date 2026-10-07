@@ -3,7 +3,9 @@ var checks:=0
 var failures:=0
 class Walker extends Zombie:
 	var grade:=Vector2.ZERO
-	func _corpse_floor(p:Vector3)->float:return grade.dot(Vector2(p.x,p.z))
+	var ground_queries:=0
+	func _corpse_floor(p:Vector3)->float:
+		ground_queries+=1;return grade.dot(Vector2(p.x,p.z))
 func _initialize()->void:call_deferred("run")
 func check(ok:bool,label:String)->void:
 	checks+=1;print(("PASS " if ok else "FAIL ")+label)
@@ -84,4 +86,10 @@ func run()->void:
 	z.grade=Vector2.ZERO;z.activate(Vector3.ZERO,19);z.set_process(false);z.rotation.y=0;z._phase=0;z.speed_now=1;z._gait_speed=1;z._animate(.01)
 	var previous:=z._gait.anchors.duplicate();z.rotation.y=.18;z._animate(.01)
 	check(z._gait.anchors[0].distance_to(previous[0])>.005,"turning releases and reseats the stance instead of dragging a locked foot")
+	var observer:=Player.new();root.add_child(observer);observer.set_process(false);observer.set_physics_process(false);z.player=observer
+	observer.position.z=35;var queries_before:=z.ground_queries;z._animate(.01)
+	check(not z._gait.active and z._model.visible and z.ground_queries==queries_before,"distant actor retains visible animated detail without ground probes")
+	observer.position.z=5;z._animate(.01)
+	check(z._gait.active and z.ground_queries>queries_before,"close encounter restores precise sole contact")
+	z.player=null;observer.free()
 	z.free();print("INFECTED_GAIT_TEST checks=",checks," failures=",failures);quit(0 if failures==0 else 1)
