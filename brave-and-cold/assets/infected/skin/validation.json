@@ -1,0 +1,9 @@
+{
+  "actual_bytes": "passed",
+  "triangles": 13536,
+  "vertices": 9792,
+  "bones": 11,
+  "preview_clips": 7,
+  "native_sha256": "4cd3cabdc02db4385fed3422aee29680a3b33fee79976296a3a5eebe92de5ed6",
+  "runtime_deformation_check": "res://tests/test_infected_skin.gd"
+}

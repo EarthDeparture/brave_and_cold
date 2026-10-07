@@ -1,0 +1,30 @@
+{
+  "origin": "Original project-authored winter-worker geometry, now weighted to an 11-bone deforming skeleton",
+  "units": "metres; no gameplay collision",
+  "native_sha256": "4cd3cabdc02db4385fed3422aee29680a3b33fee79976296a3a5eebe92de5ed6",
+  "glb_sha256": "291fc31e5499f83730f64d8ef8c93867e2b33836e992cb3aeda39054b7931a87",
+  "generator_sha256": "3538084e3f90b823145f9bb3826bf5fd885c15b27f1269f5a13a04f3b4b77750",
+  "bones": [
+    "pelvis",
+    "spine",
+    "head",
+    "skin_zombie_leg_l",
+    "skin_zombie_knee_l",
+    "skin_zombie_arm_l",
+    "skin_zombie_elbow_l",
+    "skin_zombie_leg_r",
+    "skin_zombie_knee_r",
+    "skin_zombie_arm_r",
+    "skin_zombie_elbow_r"
+  ],
+  "clips": [
+    "idle",
+    "walk",
+    "notice",
+    "attack",
+    "stagger",
+    "barrier",
+    "death"
+  ],
+  "rig_contract": "Existing logical joint names retained as empty driver nodes; runtime state remains authoritative; no animation damage callbacks"
+}

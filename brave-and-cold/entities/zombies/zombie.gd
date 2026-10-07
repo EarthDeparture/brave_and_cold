@@ -9,7 +9,7 @@ signal attacked   # for GameAudio: grunt from this body
 signal damaged
 signal died
 
-const MODEL := "res://assets/infected/winter_infected.glb"
+const MODEL := "res://assets/infected/skin/winter_worker_skin.glb"
 const IDLE_SPEED := 0.8
 const INVESTIGATE_SPEED := 1.5
 const CHASE_SPEED := 2.4
@@ -51,6 +51,7 @@ var _state_t := 0.0
 var _cd := 0.0
 var _stagger := 0.0
 var _phase := 0.0
+var _gait_speed := -1.0
 var _arms: Array[Node3D] = []
 var _knees:Array[Node3D]=[]
 var _elbows:Array[Node3D]=[]
@@ -59,6 +60,8 @@ var _coat_meshes:Array[MeshInstance3D]=[]
 static var _coats:Array[StandardMaterial3D]=[]
 var _legs: Array[Node3D] = []
 var _model: Node3D
+var _skin: Skeleton3D
+var _skin_drivers: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _dead_t := 0.0
 var _id := 0
@@ -92,6 +95,11 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	bus.register(self)
 	_model = (load(MODEL) as PackedScene).instantiate()
 	add_child(_model)
+	for candidate:Node in _model.find_children("*","Skeleton3D",true,false):
+		_skin = candidate as Skeleton3D;break
+	var clips:=_model.find_child("AnimationPlayer",true,false) as AnimationPlayer
+	if clips!=null:clips.stop()
+	if _skin!=null:_skin.reset_bone_poses()
 	if _coats.is_empty():
 		for color:Color in [Color(.64,.77,.59),Color(.43,.55,.75)]:
 			var m:=StandardMaterial3D.new();m.albedo_color=color;m.albedo_texture=load("res://assets/infected/winter_infected_cloth.png");m.roughness=.93;_coats.append(m)
@@ -102,6 +110,11 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 		_arms.append(_model.find_child("zombie_arm_" + n, true, false))
 		_legs.append(_model.find_child("zombie_leg_" + n, true, false))
 		_knees.append(_model.find_child("zombie_knee_"+n,true,false));_elbows.append(_model.find_child("zombie_elbow_"+n,true,false))
+	if _skin != null:
+		for driver:Node3D in _arms+_legs+_knees+_elbows:
+			if driver != null:
+				var bone := _skin.find_bone("skin_"+String(driver.name))
+				if bone >= 0:_skin_drivers[bone]=driver
 	_base_scale = _rng.randf_range(0.94, 1.06)
 	_model.scale = Vector3.ONE * _base_scale
 	_phase = _rng.randf() * TAU
@@ -135,8 +148,10 @@ func activate(p: Vector3, seed_value: int, k: int = 0) -> void:
 	_hz = 1e9
 	_last_seen_t = 0.0
 	_attack_windup=-1;_apply_coat(seed_value)
+	_gait_speed=-1
 	for joint:Node3D in _arms+_legs+_knees+_elbows:
 		if joint!=null:joint.rotation=Vector3.ZERO
+	if _skin != null:_skin.reset_bone_poses()
 	_model.rotation = Vector3.ZERO
 	_model.position = Vector3.ZERO
 	kind = k
@@ -494,6 +509,7 @@ func _face(p: Vector3, delta: float, rate: float) -> void:
 
 func _move(want: float, delta: float) -> void:
 	var pos := global_position
+	var start:=Vector2(pos.x,pos.z)
 	var mx := pos.x - _hx
 	var mz := pos.z - _hz
 	if mx * mx + mz * mz > 0.16:            # height + snow tier only re-sampled after 0.4 m of travel
@@ -532,24 +548,45 @@ func _move(want: float, delta: float) -> void:
 	if not is_nan(h):
 		pos.y = lerpf(pos.y, h, minf(1.0, delta * 14.0))
 	global_position = pos
+	_gait_speed=start.distance_to(Vector2(pos.x,pos.z))/maxf(delta,.0001)
 
 
 func _apply_coat(id:int)->void:
 	if _coats.is_empty():return
 	for mesh:MeshInstance3D in _coat_meshes:mesh.material_override=_coats[posmod(id,2)]
 func _animate(delta:float)->void:
-	_phase+=delta*speed_now*TAU/.92
-	var amp:=clampf(speed_now/CHASE_SPEED,0,1)*.48
+	var travel:=speed_now if _gait_speed<0 else minf(_gait_speed,speed_now)
+	_phase+=delta*travel*TAU/1.05
+	var amp:=clampf(travel/CHASE_SPEED,0,1)*.48
 	for i in mini(2,_legs.size()):
 		var wave:=sin(_phase+i*PI)
 		if _legs[i]!=null:_legs[i].rotation.x=wave*amp
 		if _knees[i]!=null:_knees[i].rotation.x=-maxf(0,-wave)*amp*.9
 		var reach:= .60 if state==State.CHASE else .08
 		if _attack_windup>=0:reach=.90+sin((.35-_attack_windup)/.35*PI)*.35
+		elif state==State.CHASE and _cd>COOLDOWN-.75:reach=lerpf(.60,.90,smoothstep(COOLDOWN-.75,COOLDOWN-.35,_cd))
 		elif _bo!=null or _bdoor:reach=.6+.25*sin(_state_t*6+i)
 		if _arms[i]!=null:_arms[i].rotation.x=reach-wave*amp*.3
 		if _elbows[i]!=null:_elbows[i].rotation.x=.15+amp*.1
 	_model.rotation.z=sin(_phase*.5)*.035+sin(_state_t*12)*.10*clampf(_stagger/.5,0,1)
+	_deform_skin()
+
+func _deform_skin() -> void:
+	if _skin == null:return
+	# Existing logical joints drive skin in the exported rest frame. Damage and
+	# movement remain authoritative gameplay outcomes, independent of animation.
+	for bone:int in _skin_drivers:
+		var driver:Node3D=_skin_drivers[bone]
+		var frame:=_skin.get_bone_global_rest(bone).basis.orthonormalized()
+		var local:=_skin.get_bone_rest(bone).basis*frame.inverse()*Basis.from_euler(driver.rotation)*frame
+		_skin.set_bone_pose_rotation(bone,local.get_rotation_quaternion())
+	var spine:=_skin.find_bone("spine")
+	if spine>=0:
+		var anticipation:=sin(clampf((.35-_attack_windup)/.35,0,1)*PI)*.10 if _attack_windup>=0 else 0.0
+		_skin.set_bone_pose_rotation(spine,_skin.get_bone_rest(spine).basis.get_rotation_quaternion()*Quaternion(Vector3.RIGHT,anticipation))
+	var head:=_skin.find_bone("head")
+	if head>=0:
+		_skin.set_bone_pose_rotation(head,_skin.get_bone_rest(head).basis.get_rotation_quaternion()*Quaternion(Vector3.UP,sin(_state_t*1.2)*(.09 if state==State.INVESTIGATE else .015)))
 
 
 func is_dead() -> bool:
@@ -574,6 +611,10 @@ func _make_crawler() -> void:
 			lg.visible = false
 	_model.position.y = -0.55
 	_model.rotation.x = 0.35
+	if _skin != null:
+		for side:String in ["l","r"]:
+			var bone:=_skin.find_bone("skin_zombie_leg_"+side)
+			if bone>=0:_skin.set_bone_pose_scale(bone,Vector3.ONE*.001)
 
 
 ## 1.0 above -24 C; stiffening to 0.5 at -32 C; idle zombies stand frozen below -32 C.
