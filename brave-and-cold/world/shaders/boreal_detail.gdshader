@@ -1,6 +1,7 @@
 shader_type spatial;
-render_mode cull_disabled;
+render_mode cull_disabled, alpha_to_coverage;
 uniform sampler2D bough_albedo : source_color, filter_linear_mipmap_anisotropic;
+uniform bool crown_spray_atlas=false;
 uniform sampler2D diversity_albedo : source_color, filter_linear_mipmap_anisotropic;
 uniform sampler2D diversity_far_albedo : source_color, filter_linear_mipmap_anisotropic;
 uniform sampler2D diversity_bark : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
@@ -26,7 +27,7 @@ void fragment(){
         vec4 bough;
         if(surface_kind>.70){bough=texture(diversity_far_albedo,UV);}
         else if(surface_kind>.55){bough=texture(diversity_albedo,UV);}
-        else {bough=texture(bough_albedo,UV);}
+        else {vec2 spray_uv=UV;if(crown_spray_atlas){spray_uv.x=UV.x*.5+step(.51,surface_kind)*.5;}bough=texture(bough_albedo,spray_uv);}
         ALBEDO=bough.rgb;
         ALPHA=bough.a;
     }else if(surface_kind>=.8){
@@ -40,6 +41,8 @@ void fragment(){
         NORMAL_MAP=texture(diversity_bark_normal,bark_uv).rgb;
     }
     ALPHA_SCISSOR_THRESHOLD=.35;
+    ALPHA_ANTIALIASING_EDGE=.30;
+    ALPHA_TEXTURE_COORDINATE=UV;
     NORMAL_MAP_DEPTH=.6;
     ROUGHNESS=.93;
     SPECULAR=.13;

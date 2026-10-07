@@ -1,9 +1,10 @@
 class_name ForestScatter
 extends Node3D
 ## Scatters conifers from the real lidar canopy-height mask (canopy.png: 8-bit, metres/40).
-## Chunked MultiMeshes (CHUNK m) with visibility ranges so distant chunks are culled.
+## Chunked MultiMeshes with visibility ranges so distant crowns are culled.
 
 const CHUNK := 128
+var _chunk_m := CHUNK
 const SPACING := 5.0
 const MIN_CANOPY_M := 6.0
 const VIS_END := 700.0
@@ -14,6 +15,7 @@ const TREE_UNIT_M := 1.0  # source models are 1.0 high; scale = real canopy heig
 
 var detail_enabled := false
 var diversity_enabled := true  # Presentation only; legacy profile retains its original three trees.
+var crown_quality_enabled := true # Visual resources only; scatter/save identities are unchanged.
 var weather: Weather
 var terrain: Terrain3D
 var map_dir := "res://data/maps/valley_b"
@@ -94,8 +96,8 @@ func fell(x: float, z: float) -> Dictionary:
 			break
 	if r < 0.0:
 		return {}
-	var kx := int(floor((x + _half) / CHUNK))
-	var kz := int(floor((z + _half) / CHUNK))
+	var kx := int(floor((x + _half) / _chunk_m))
+	var kz := int(floor((z + _half) / _chunk_m))
 	for vi in range(VARIANTS.size()):
 		var pair = _mms.get(Vector3i(kx, kz, vi))
 		if pair == null:
@@ -195,6 +197,9 @@ func resolve_trunks(x: float, z: float, r: float) -> Vector2:
 
 func build(t: Terrain3D, seed_value: int = 1337) -> void:
 	terrain = t
+	# Smaller visual groups keep the denser near crowns local to the camera.
+	# Roots and species use the same RNG; trunk collision has its own grid.
+	_chunk_m = 64 if detail_enabled and crown_quality_enabled else CHUNK
 	var meta = JSON.parse_string(FileAccess.get_file_as_string(map_dir + "/meta.json"))
 	var size_m: int = int(meta["size_m"])
 	var half := size_m / 2
@@ -212,18 +217,28 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 	for vi in range(variant_count):
 		var v: String = VARIANTS[vi]
 		var bank := "res://assets/environment_detail/tree_diversity" if vi >= BASE_VARIANT_COUNT else ("res://assets/environment_detail/trees" if detail_enabled else "res://assets/models/trees")
+		if detail_enabled and crown_quality_enabled and vi < 6:
+			bank = "res://assets/environment_detail/forest_quality"
 		meshes.append(_load_mesh(bank + "/%s.glb" % v))
 		far_meshes.append(_load_mesh(bank + "/%s_far.glb" % v))
 	var mat: Material
 	if detail_enabled:
-		near_end = 140.0
+		# The denser authored crowns are needed at walking distance. Use their
+		# matching, snow-loaded far silhouettes sooner than the legacy bank.
+		near_end = 100.0 if crown_quality_enabled else 140.0
 		var surface := ShaderMaterial.new()
 		surface.shader = preload("res://world/shaders/boreal_detail.gdshader")
 		surface.set_shader_parameter("bough_albedo", preload("res://assets/environment_detail/textures/bough_albedo.png"))
+		surface.set_shader_parameter("crown_spray_atlas",crown_quality_enabled)
+		if crown_quality_enabled:
+			surface.set_shader_parameter("bough_albedo", preload("res://assets/environment_detail/forest_quality/crown_sprays.png"))
 		surface.set_shader_parameter("diversity_albedo", preload("res://assets/environment_detail/tree_diversity/winter_twigs.png"))
 		surface.set_shader_parameter("diversity_far_albedo", preload("res://assets/environment_detail/tree_diversity/winter_boughs_far.png"))
 		surface.set_shader_parameter("diversity_bark", preload("res://assets/environment_detail/tree_diversity/winter_bark.png"))
 		surface.set_shader_parameter("diversity_bark_normal", preload("res://assets/environment_detail/tree_diversity/winter_bark_normal.png"))
+		if crown_quality_enabled:
+			surface.set_shader_parameter("diversity_bark", preload("res://assets/environment_detail/forest_quality/winter_bark.png"))
+			surface.set_shader_parameter("diversity_bark_normal", preload("res://assets/environment_detail/forest_quality/winter_bark_normal.png"))
 		mat = surface
 	else:
 		var surface := StandardMaterial3D.new()
@@ -270,7 +285,7 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 			var height_m := clampf(c_m * rng.randf_range(0.9, 1.1), 5.0, 26.0)
 			var girth := height_m * rng.randf_range(0.9, 1.3)
 			var b := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(girth, height_m, girth))
-			var key := Vector2i(int(floor((wx + half) / CHUNK)), int(floor((wz + half) / CHUNK)))
+			var key := Vector2i(int(floor((wx + half) / _chunk_m)), int(floor((wz + half) / _chunk_m)))
 			# Consume precisely the old random roll. Adding a new RNG call here
 			# shifts every later root and breaks saved felled-tree coordinates.
 			var roll := rng.randi()

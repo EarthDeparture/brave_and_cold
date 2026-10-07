@@ -106,3 +106,9 @@ tools/blender/watch_build.log
 
 /tools/blender/generated/route_detail/*.log
 /tools/blender/generated/route_detail/*.blend[0-9]
+
+# Opening quality authoring: retain native sources; exclude local iteration logs/backups.
+/tools/blender/generated/forest-quality-build.log
+/tools/blender/generated/forest_quality/*.blend[0-9]
+/tools/blender/generated/infected_skin/*.blend[0-9]
+/tools/blender/generated/opening_props/*.blend[0-9]

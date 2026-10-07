@@ -1,6 +1,7 @@
 extends SceneTree
 ## Whole-map identities, collision, felling, save replay and imported LODs.
 var failures := 0
+var quality_compare:=false
 
 func _initialize() -> void: call_deferred("run")
 func check(ok: bool, message: String) -> void:
@@ -8,7 +9,8 @@ func check(ok: bool, message: String) -> void:
 	if not ok: failures += 1
 
 func forest(t: Terrain3D, diverse: bool) -> ForestScatter:
-	var f := ForestScatter.new(); f.detail_enabled = true; f.diversity_enabled = diverse
+	var f := ForestScatter.new(); f.detail_enabled = true; f.diversity_enabled = diverse or quality_compare
+	f.crown_quality_enabled=diverse
 	root.add_child(f); f.set_process(false); f.hide(); f.build(t)
 	return f
 
@@ -25,6 +27,7 @@ func transforms(f: ForestScatter) -> Dictionary:
 
 var check_lod := true
 func run() -> void:
+	quality_compare=OS.get_cmdline_user_args().has("quality_compare=1")
 	create_timer(120).timeout.connect(func() -> void: print("FAIL tree diagnostic timeout"); quit(2))
 	var camera := Camera3D.new(); root.add_child(camera); camera.make_current()
 	camera.position = Vector3(0, 80, 0)
@@ -44,6 +47,10 @@ func run() -> void:
 	for key: String in a:
 		if not b.has(key) or a[key].xf != b[key].xf: exact = false; break
 	check(exact, "all saved-coordinate identities, height, girth and yaw transforms survive diversification")
+	if quality_compare:
+		var variants_same:=true
+		for key:String in a:variants_same=variants_same and a[key].variant==b[key].variant
+		check(variants_same,"quality resources preserve every existing species identity")
 	check(check_lod, "near and far instances have identical placement transforms")
 	var counts := {}; var specimens := {}
 	for key: String in b:

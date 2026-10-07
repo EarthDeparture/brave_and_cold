@@ -17,6 +17,7 @@ uniform float overcast = 0.0;
 uniform float daylight = 1.0;
 uniform float twilight = 0.0;
 uniform float moon_strength = 0.0;
+uniform bool cloud_quality = true;
 
 float hash21(vec2 p) {
 	// Combine axes independently: x^y alone repeats along lattice diagonals.
@@ -74,6 +75,22 @@ vec4 clouds(vec3 d) {
 	float high = smoothstep(0.55,0.76,fbm(p*0.44+vec2(32.0,-19.0)+cloud_offset*0.24));
 	col = mix(col,cloud_light,high*0.18);
 	density = max(density,high*0.24*(1.0-overcast));
+	if (cloud_quality) {
+		// Broad density transition and directional thickness give connected
+		// cloud masses shaded undersides without additive white edge clipping.
+		float thickness = smoothstep(threshold-0.035,threshold+0.16,n);
+		float shaded = fbm(p+light_vector*0.65);
+		float light_access = clamp(0.54-thickness*0.27+(n-toward_light)*1.6+(n-shaded)*0.65,0.08,0.84);
+		light_access *= 1.0-overcast*0.28;
+		col = mix(cloud_shadow,cloud_light,light_access);
+		float silver = (1.0-thickness)*forward*daylight*(1.0-overcast)*0.20;
+		col = mix(col,cloud_light,silver);
+		col = mix(col,cloud_light,high*0.10);
+		density = smoothstep(threshold-0.045,threshold+0.065,n);
+		float storm_deck = smoothstep(0.72,1.0,overcast);
+		density = mix(density,max(density,0.82+shape*0.12),storm_deck);
+		density = max(density,high*0.20*(1.0-overcast));
+	}
 	float horizon_fade = smoothstep(-0.025,0.10,d.y);
 	col = mix(atmosphere(d),col,horizon_fade);
 	return vec4(col,density*horizon_fade);
