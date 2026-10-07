@@ -44,6 +44,7 @@ var work_duration := 0.0
 var work_period := 1.0
 var _work_tail := -1.0
 var _work_offset := 0.0
+var _hammer_entry:=Transform3D.IDENTITY
 var _rifle: WeaponPresentation
 var _bolt: Node3D
 var weapon_id := "timber_bolt_carbine"
@@ -495,6 +496,10 @@ func _pose_fists(base: Transform3D) -> void:
 
 ## Action-owned presentation: no timers or gameplay resource mutations here.
 func begin_work(kind: String, duration: float, repeating := false) -> void:
+	# Recover the tool frame from the current wrist; keep the fitted socket
+	# invariant while easing into a repeated service stroke.
+	if kind=="hammer" and _right!=null:
+		_hammer_entry=_right.transform*Transform3D(Basis(Vector3.DOWN,Vector3.FORWARD,Vector3.RIGHT),AXE_WRIST).affine_inverse()
 	cancel_weapon_clip()
 	end_work(false)
 	if kind not in ["split", "chop", "hammer", "reach","treat","drink"]: return
@@ -518,6 +523,12 @@ func end_work(completed: bool) -> void:
 func work_impacts(elapsed: float) -> int:
 	if work_kind not in ["split","hammer"]: return 0
 	return maxi(0,int(floor(elapsed/work_period-.35/SWING_LEN+.00001))+1)
+func _hammer_curve(phase:float)->Vector2:
+	var impact:=.35/SWING_LEN
+	if phase<.25:return Vector2(15,4)*_sstep(phase/.25)
+	if phase<impact:return Vector2(15,4).lerp(Vector2(-9,-2),_sstep((phase-.25)/(impact-.25)))
+	if phase<.50:return Vector2(-9,-2)
+	return Vector2(-9,-2)*(1-_sstep((phase-.50)/.50))
 func _pose_work(base: Transform3D) -> void:
 	_left.visible = false; _sl_l.visible = false
 	if work_kind in ["treat","drink"]:
@@ -531,11 +542,13 @@ func _pose_work(base: Transform3D) -> void:
 		return
 	var phase := fposmod(work_elapsed+_work_offset,work_period)/work_period
 	var a := _swing_curve(phase*SWING_LEN)
-	if work_kind == "hammer": a *= .58
+	if work_kind == "hammer": a = _hammer_curve(phase)
 	var rest := Basis(Vector3.BACK,deg_to_rad(10))*Basis(Vector3.RIGHT,deg_to_rad(-30+a.x*.9))
 	var shoulder := Vector3(.20,-.30,.12)
 	var rot := Basis(Vector3.RIGHT,deg_to_rad(a.x))*Basis(Vector3.UP,deg_to_rad(a.y))*Basis(Vector3.BACK,deg_to_rad(-a.y*.8))
 	var w := base*_about(shoulder,rot)*Transform3D(rest,Vector3(.24,-.13,-.40))
+	if work_kind=="hammer":
+		w=_hammer_entry.interpolate_with(w,_sstep(work_elapsed/minf(.14,work_duration*.15)))
 	var tool := _hammer if work_kind == "hammer" else _axe
 	tool.transform = w.scaled_local(Vector3.ONE*1.2)
 	_right.transform = w*Transform3D(Basis(Vector3.DOWN,Vector3.FORWARD,Vector3.RIGHT),AXE_WRIST)

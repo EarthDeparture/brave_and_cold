@@ -11,12 +11,17 @@ func run()->void:
 	var p:=Player.new();root.add_child(p);p.set_process(false);p.set_physics_process(false)
 	p.cam=Camera3D.new();p.add_child(p.cam);p.cam.current=true;p.cam.near=.015;p.cam.fov=70
 	var vm:=Viewmodel.new();vm.player=p;vm.detail_enabled=true;p.cam.add_child(vm);vm.set_process(false);vm.mode="fists";vm._cur="fists";vm._equip=1
-	var out:="res://shots/opening-quality/interactions/";DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
+	var out:="res://shots/opening-quality/interactions/"
+	for arg:String in OS.get_cmdline_user_args():
+		if arg.begins_with("capture_out=res://shots/"):out=arg.trim_prefix("capture_out=").trim_suffix("/")+"/"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
 	for gloves:bool in [false,true]:
 		vm.glove_item="hide_mitts" if gloves else ""
 		for action:String in ["drink","treat","reach","hammer"]:
 			vm.begin_work(action,2)
-			for t:float in [.25,.50,.75]:
+			var phases:Array[float]=[.25,.50,.75]
+			if action=="hammer":phases.append(vm.work_period*.35/vm.SWING_LEN/2)
+			for t:float in phases:
 				vm.update_work(t*2);vm._process(0)
 				for i in 4:await process_frame
 				await RenderingServer.frame_post_draw;root.get_texture().get_image().save_png(out+action+("_gloved" if gloves else "_bare")+"_%02d.png"%int(t*100))

@@ -139,6 +139,23 @@ func run() -> void:
 		for i in 21:vm.update_work(i*.1);vm._process(0);finite=finite and vm._right.transform.is_finite() and cuff_ok()
 		check(kind+" retains new anatomy and attached cuff",finite);vm.end_work(false)
 	for gloved:bool in [false,true]:
+		pose("fists");vm.glove_item="hide_mitts" if gloved else "";vm._process(0)
+		var entry:=vm._right.transform
+		vm.begin_work("hammer",2);vm.update_work(0);vm._process(0)
+		check("Hammer begins at the existing wrist pose "+str(gloved),vm._right.transform.is_equal_approx(entry))
+		var last:=vm._right.position;var wrist_jump:=0.0;var socket_error:=0.0
+		for frame in 201:
+			vm.update_work(frame*.01);vm._process(0)
+			wrist_jump=maxf(wrist_jump,last.distance_to(vm._right.position));last=vm._right.position
+			var tool_frame:=Transform3D(vm._hammer.basis/1.2,vm._hammer.position)
+			var expected:=tool_frame*Transform3D(Basis(Vector3.DOWN,Vector3.FORWARD,Vector3.RIGHT),vm.AXE_WRIST)
+			socket_error=maxf(socket_error,expected.origin.distance_to(vm._right.position))
+		check("Hammer stroke is continuous and retains its fitted socket "+str(gloved),wrist_jump<.055 and socket_error<.00001 and cuff_ok())
+		var final_impacts:=vm.work_impacts(2)
+		check("Hammer preserves authoritative final impact and cancellation "+str(gloved),final_impacts==3 and vm.work_impacts(1.9999)==2)
+		vm.end_work(false);vm._process(0)
+		check("Cancelled hammer stops cues and hides tool "+str(gloved),vm.work_impacts(3)==0 and not vm._hammer.visible)
+	for gloved:bool in [false,true]:
 		vm.glove_item="hide_mitts" if gloved else "";vm.begin_work("drink",2);vm.update_work(1);vm._process(0)
 		var inverse:=vm._bottle.transform.affine_inverse();var overlap:=0.0;var contacts:=0
 		for point:Vector3 in skin_vertices(vm._right,gloved):
