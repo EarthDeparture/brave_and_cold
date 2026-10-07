@@ -1,6 +1,6 @@
 # Local power, useful fieldwork and later food production
 
-2026-10-06, updated 2026-10-07. Solar baseline `f951ed3`; rollback tag `checkpoint/pre-solar-recovery-2026-10-06`; initial branch `codex/solar-recovery`. Power recovery and the first compound solar array are implemented. The optional electrical stock outing and winter regulator refit are now implemented on `codex/electrical-fieldwork`, with baseline `4292c60` and rollback checkpoint `checkpoint/pre-electrical-fieldwork-2026-10-07`. See [Electrical fieldwork](ELECTRICAL_FIELDWORK.md) for the delivered behavior. Farming and further food progression remain planned. Existing terrain, roads and structure placement are preserved.
+2026-10-06, updated 2026-10-07. Solar baseline `f951ed3`; rollback tag `checkpoint/pre-solar-recovery-2026-10-06`; initial branch `codex/solar-recovery`. Power recovery and the first compound solar array are implemented. The optional electrical stock outing and winter regulator refit are now implemented on `codex/electrical-fieldwork`, with baseline `4292c60` and rollback checkpoint `checkpoint/pre-electrical-fieldwork-2026-10-07`. See [Electrical fieldwork](ELECTRICAL_FIELDWORK.md) for the delivered behavior. Stove food preservation is now implemented; farming and later food progression remain planned. Existing terrain, roads and structure placement are preserved.
 
 ## The immediate defect and its resolution
 
@@ -72,3 +72,8 @@ Farming acceptance: one full growing/harvest/replant cycle; freeze/drought and r
 ## Release and reversion
 
 Keep this repair/solar introduction in a separate local commit, with the pre-change checkpoint above. Preserve unrelated Claude/user work. Revert the commit rather than hard-resetting the shared checkout. No remote push is implied. Validation receipts distinguish baseline reproduction, logic checks, native/static asset integrity, actual rendered views and outstanding human pacing/combat/performance acceptance.
+
+
+## Food preservation delivered, 2026-10-07
+
+See [Food preservation](FOOD_PRESERVATION.md) for the original four-portion stove drying rack, cooked-to-dried energy conservation, retained freshness, actual fuel progress, saved food and corrected ground/pantry aging. The next priorities are unified legacy cooking and game-time hunting/carcass validation before sheltered farming.

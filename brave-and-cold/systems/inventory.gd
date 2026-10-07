@@ -3,6 +3,13 @@ extends RefCounted
 ## Minimal inventory: stackable items + one body clothing slot that drives BodyTemperature insulation.
 
 const ITEMS := {
+	"venison_dried": {"shelf_h":240.0,"name":"Dried Venison","kind":"food","stack":4,"kcal":900.0,"weight":0.3,"desc":"Stove-dried strips. Same energy as the cooked portion, half its weight. Ten-day shelf life when fresh; existing spoilage is retained."},
+	"wolf_meat_dried": {"shelf_h":240.0,"name":"Dried Wolf Meat","kind":"food","stack":4,"kcal":650.0,"weight":0.25,"desc":"Stove-dried strips. Same energy as the cooked portion, half its weight. Ten-day shelf life when fresh; existing spoilage is retained."},
+	"bear_meat_dried": {"shelf_h":240.0,"name":"Dried Bear Meat","kind":"food","stack":4,"kcal":800.0,"weight":0.325,"desc":"Stove-dried strips. Same energy as the cooked portion, half its weight. Ten-day shelf life when fresh; existing spoilage is retained."},
+	"trout_dried": {"shelf_h":240.0,"name":"Dried Trout","kind":"food","stack":4,"kcal":600.0,"weight":0.225,"desc":"Stove-dried strips. Same energy as the cooked portion, half its weight. Ten-day shelf life when fresh; existing spoilage is retained."},
+	"whitefish_dried": {"shelf_h":240.0,"name":"Dried Whitefish","kind":"food","stack":4,"kcal":520.0,"weight":0.19,"desc":"Stove-dried strips. Same energy as the cooked portion, half its weight. Ten-day shelf life when fresh; existing spoilage is retained."},
+	"pike_dried": {"shelf_h":240.0,"name":"Dried Pike","kind":"food","stack":4,"kcal":1000.0,"weight":0.6,"desc":"Stove-dried strips. Same energy as the cooked portion, half its weight. Ten-day shelf life when fresh; existing spoilage is retained."},
+
 	"dc_fuse":{"name":"Matched DC Fuse","kind":"misc","stack":4,"desc":"One correctly rated spare for the compound solar circuit. Fit only to a diagnosed open fuse with your service kit."},
 	"sealed_connector":{"name":"Sealed Connector Pair","kind":"misc","stack":2,"desc":"Matched weather-sealed plugs for the optional winter controller refit. Issued with the crew-cache fuse."},
 	"dc_cable":{"name":"Recovered DC Cable","kind":"misc","stack":1,"desc":"Tested lead recovered once from the isolated crew spur. Repairs a damaged solar cable, or fits the winter controller."},
@@ -146,7 +153,7 @@ static func stack_max(id: String) -> int:
 
 static func weight_of(id: String) -> float:
 	if id in ["dc_fuse","sealed_connector","dc_cable","winter_controller"]:return {"dc_fuse":.025,"sealed_connector":.12,"dc_cable":1.1,"winter_controller":.65}[id]
-	return float(WEIGHTS.get(id, 0.5))
+	return float(ITEMS.get(id,{}).get("weight",WEIGHTS.get(id, 0.5)))
 
 
 ## Total carried weight in kg (backpack + worn + equipment slots).
@@ -249,7 +256,14 @@ func count(id: String) -> int:
 	return int(counts.get(id, 0))
 
 
+func add_aged(id:String,n:int,seconds:float) -> void:
+	if n<=0:return
+	var had:=count(id);var prior:=float(age.get(id,0))
+	add(id,n)
+	if shelf_s(id)>0:age[id]=(prior*had+maxf(0,seconds)*n)/float(had+n)
+
 func add(id: String, n: int = 1) -> void:
+	if n<=0:return
 	if shelf_s(id) > 0.0:
 		var old := count(id)
 		age[id] = float(age.get(id, 0.0)) * float(old) / float(old + n)   # new items are fresh: stack age averages down
@@ -288,9 +302,10 @@ func cook_all() -> int:
 		if ITEMS[id].get("raw", false):
 			var c: int = count(id)
 			var out: String = ITEMS[id]["cooked"]
+			var fraction:=1.0-freshness(id)
 			counts.erase(id)
 			age.erase(id)
-			add(out, c)
+			add_aged(out,c,fraction*shelf_s(out))
 			n += c
 	return n
 

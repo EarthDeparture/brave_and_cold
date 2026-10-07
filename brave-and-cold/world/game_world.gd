@@ -525,6 +525,7 @@ func _process(delta: float) -> void:
 	if inv != null:
 		for sn in inv.tick(gs):
 			_say("%s spoiled" % sn)
+	for food:ItemPickup in get_tree().get_nodes_in_group("perishable_pickups"):food.tick(gs)
 	weather.advance(delta, gs)
 	wind = weather.wind
 	road.update_weather(weather.precip)
@@ -1278,6 +1279,7 @@ func drop_item(id: String, n: int) -> void:
 		rifle_up = false
 	var nm := inv.name_of(id)
 	var cd := inv.condition(id)
+	var food_age:=float(inv.age.get(id,0))
 	if not inv.remove(id, n):
 		return
 	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
@@ -1285,7 +1287,7 @@ func drop_item(id: String, n: int) -> void:
 	var h: float = player.ground_at(p.x, p.z)
 	if is_nan(h):
 		h = player.position.y - player.eye_h
-	ItemPickup.spawn(self, id, n, Vector3(p.x, h, p.z), cd if cd < 0.999 else -1.0)
+	ItemPickup.spawn(self, id, n, Vector3(p.x, h, p.z), cd if cd < 0.999 else -1.0,food_age)
 	_say('Dropped %s%s' % [nm, ' x%d' % n if n > 1 else ''])
 
 
@@ -1298,7 +1300,7 @@ func take_pickup(node: Node) -> void:
 		return
 	var had := inv.count(p.id)
 	var cur_c := inv.condition(p.id)
-	inv.add(p.id, p.n)
+	inv.add_aged(p.id,p.n,p.age_s)
 	if p.cond >= 0.0 or cur_c < 0.999:
 		inv.cond[p.id] = (cur_c * float(had) + (p.cond if p.cond >= 0.0 else 1.0) * float(p.n)) / float(had + p.n)
 	_say('Picked up %s%s' % [inv.name_of(p.id), ' x%d' % p.n if p.n > 1 else ''])
@@ -3007,19 +3009,22 @@ func _cook_start(cf: Campfire) -> int:
 		if not Inventory.ITEMS.has(id) or not Inventory.ITEMS[id].get('raw', false):
 			continue
 		while inv.count(id) > 0 and cf.free_slots() > 0:
+			var age:=float(inv.age.get(id,0))
+			if inv.freshness(id)<=0:break
 			inv.remove(id)
-			cf.start_cook(String(Inventory.ITEMS[id]['cooked']))
+			cf.start_cook(String(Inventory.ITEMS[id]['cooked']),id,age)
 			n += 1
 	return n
 
 
 func _take_cooked(cf: Campfire) -> void:
-	var got: Dictionary = cf.take_done()
-	var parts: Array = []
-	for id in got.keys():
-		_give_or_drop(String(id), int(got[id]), cf.global_position)
-		parts.append('%d %s' % [int(got[id]), inv.name_of(String(id))])
-	_say('Took ' + ', '.join(parts))
+	var keep:Array=[];var taken:=0
+	for c:Dictionary in cf.cooking:
+		var p:Dictionary=c.duplicate(true);p.remaining_s=float(c.t)
+		if FoodPortion.collect(p,inv):taken+=1
+		else:keep.append(c)
+	cf.cooking=keep
+	_say('Collected %d fire portions. Uncollected food stays by the fire.'%taken)
 
 
 func _near_fire() -> bool:
@@ -3361,7 +3366,7 @@ func _pickup_list() -> Array:
 	for pk in get_tree().get_nodes_in_group('pickups'):
 		var ip := pk as ItemPickup
 		if ip != null and not ip.is_queued_for_deletion():
-			out.append({'id': ip.id, 'n': ip.n, 'x': ip.global_position.x, 'y': ip.global_position.y, 'z': ip.global_position.z, 'c': ip.cond})
+			out.append({'id': ip.id, 'n': ip.n, 'x': ip.global_position.x, 'y': ip.global_position.y, 'z': ip.global_position.z, 'c': ip.cond,'age_s':ip.age_s})
 	return out
 
 
@@ -3402,7 +3407,7 @@ func _restore_creatures(sv: Dictionary) -> void:
 		if Inventory.ITEMS.has(String(e['id'])):
 			var pickup_pos := _ground(float(e['x']), float(e['z']))
 			if e.has('y'): pickup_pos.y = float(e['y'])
-			ItemPickup.spawn(self, String(e['id']), int(e['n']), pickup_pos, float(e.get('c', -1.0)))
+			ItemPickup.spawn(self, String(e['id']), int(e['n']), pickup_pos, float(e.get('c', -1.0)),float(e.get('age_s',0)))
 	var i := 0
 	for e in sv.get('wolves', []):
 		var w := _add_wolf(_ground(float(e['x']), float(e['z'])), i)

@@ -142,10 +142,11 @@ func free_slots() -> int:
 	return SLOTS - cooking.size()
 
 
-func start_cook(cooked_id: String) -> bool:
+func start_cook(cooked_id: String,input_id:String="",age:float=0) -> bool:
 	if free_slots() <= 0:
 		return false
-	cooking.append({"id": cooked_id, "t": COOK_S})
+	var p:=FoodPortion.create(input_id if input_id!="" else cooked_id,cooked_id,COOK_S,age)
+	p.t=COOK_S;cooking.append(p)
 	return true
 
 
@@ -169,27 +170,13 @@ func min_left() -> float:
 	return m
 
 
-## Remove finished pieces. Returns {item id: count}.
-func take_done() -> Dictionary:
-	var out := {}
-	var keep: Array = []
-	for c in cooking:
-		if float(c["t"]) <= 0.0:
-			out[String(c["id"])] = int(out.get(String(c["id"]), 0)) + 1
-		else:
-			keep.append(c)
-	cooking = keep
-	return out
-
-
 func advance(game_s: float) -> void:
-	if fuel_s > 0.0:
-		prepared_water.advance(minf(fuel_s,game_s))
-		for c in cooking:
-			c["t"] = maxf(0.0, float(c["t"]) - game_s)
-		fuel_s = maxf(0.0, fuel_s - game_s)
-		if fuel_s == 0.0:
-			_set_visual(false)
+	var elapsed:=maxf(0,game_s);var burn:=minf(fuel_s,elapsed)
+	prepared_water.advance(burn)
+	for c:Dictionary in cooking:
+		c.remaining_s=float(c.t);FoodPortion.advance(c,elapsed,burn);c.t=c.remaining_s
+	fuel_s=maxf(0,fuel_s-elapsed)
+	if fuel_s==0 and _flames!=null:_set_visual(false)
 
 
 func _set_visual(on: bool) -> void:

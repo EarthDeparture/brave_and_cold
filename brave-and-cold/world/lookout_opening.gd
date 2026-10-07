@@ -36,6 +36,8 @@ var city_letter:Node3D
 var repair_stock:Node3D
 var bottle_stock:Node3D
 var cooking: Dictionary = {}
+var preservation:=FoodPreservation.new()
+var drying_rack:Node3D
 var _stock: Node3D
 var _stock_label: Label3D
 var _stock_signature := ""
@@ -77,6 +79,7 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 	var mat := StandardMaterial3D.new(); mat.emission_enabled = true; _indicator.material_override = mat
 	home_model = _asset(tower, "lookout_home_detail"); home_model.position.y = FireLookout.DECK_Y
 	pantry = StorageChest.new(); pantry.visual_enabled = false; tower.add_child(pantry)
+	pantry.spoilage_rate=1.0 # an indoor provisions shelf is not a snow-cooled outdoor chest
 	pantry.position = Vector3(1.90, FireLookout.DECK_Y + .40, 1.62)
 	if saved.is_empty():
 		pantry.put("beans", 4, 1, 0); pantry.put("jerky", 2, 1, 0); pantry.put("matches", 4, 1, 0); pantry.put("bandage", 2, 1, 0); pantry.put("wood",STARTING_WOOD,1,0)
@@ -88,6 +91,11 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 			var loose:=maxi(int(saved.get("wood_left",0)),0)
 			if loose>0:pantry.put("wood",loose,1,0)
 	water.restore(saved.get("prepared_water",{}))
+	preservation.restore(saved.get("preservation",{}))
+	drying_rack=(load("res://assets/food_preservation/stove_drying_rack.glb") as PackedScene).instantiate()
+	tower.add_child(drying_rack);drying_rack.position=Vector3(-2.12,FireLookout.DECK_Y+.25,.35);drying_rack.rotation.y=PI/2
+	# Wall mounted: no floor pad, stair or new walking collider.
+
 	if saved.is_empty():
 		for pair:Array in [["clean_water",2],["empty_bottle",2],["whetstone",1],["sewing_kit",1],["rag",4],["cordage",2]]:pantry.put(pair[0],pair[1],1,0)
 	city_letter=(load("res://assets/city_letter/city_letter.glb") as PackedScene).instantiate();tower.add_child(city_letter);city_letter.position=Vector3(.55,FireLookout.DECK_Y+.907,-1.28);city_letter.rotation.y=-.15
@@ -134,6 +142,13 @@ func _asset(parent: Node3D, id: String) -> Node3D:
 	node.name = id; parent.add_child(node)
 	for mesh: MeshInstance3D in node.find_children("*", "MeshInstance3D", true, false): mesh.visibility_range_end = 180 if id == "relay_station" else 75
 	return node
+func _process(delta:float) -> void:
+	if drying_rack==null:return
+	var door:=drying_rack.find_child("RackDoor",true,false) as Node3D
+	if door==null:return
+	var label:=String(world._act.get("text",""))
+	var handling:=label.begins_with("Load cooked meat") or label.begins_with("Collect rack food")
+	door.rotation.y=move_toward(door.rotation.y,-1.55 if handling else 0,delta*3.8)
 func starting_gear(baseline_pace := false) -> void:
 	# The departing crew left a working fire. Stored logs remain finite and unchanged.
 	fuel_s = (2.0 if baseline_pace else 8.0) * 3600.0
@@ -148,7 +163,8 @@ func advance(game_s: float) -> void:
 	state.advance_to(world.clock.total_game_s,world.weather.overcast,world.weather.precip)
 	var burn := minf(game_s, fuel_s); fuel_s = maxf(0, fuel_s - game_s)
 	water.advance(burn)
-	if not cooking.is_empty(): cooking["remaining_s"] = maxf(0, float(cooking.remaining_s) - burn)
+	if not cooking.is_empty():FoodPortion.advance(cooking,game_s,burn)
+	preservation.advance(game_s,burn)
 	pantry.tick(game_s)
 	if _last_grid and not state.grid_alive(): world._say("The mains have gone silent. " + ("Local backup is supplying the site." if state.backup_on else "Enable local backup at the desk panel."))
 	_last_grid = state.grid_alive()
@@ -157,6 +173,10 @@ func advance(game_s: float) -> void:
 	if state.walkie_wh>LookoutAssignment.WALKIE_CAP_WH*.20:_warned_walkie_low=false
 	update_presentation(); _radio_update()
 func update_presentation() -> void:
+	if drying_rack!=null:
+		for i in FoodPreservation.CAP:
+			var portion:=drying_rack.find_child("Portion%d"%i,true,false) as Node3D
+			if portion!=null:portion.visible=i<preservation.portions.size() and preservation.portions[i].id!="rotten_meat"
 	if solar_site!=null:solar_site.update_presentation()
 	if electrical!=null:electrical.update_presentation()
 	if _power_label!=null:
@@ -314,7 +334,10 @@ func actions() -> Array:
 	if fuel_s>0:
 		if cooking.is_empty() and world.inv.has_raw(): out.append(_action(stove, "Cook one portion on stove", cook, 2, .02))
 	if not cooking.is_empty():
-		out.append(_action(stove, "Take cooked food" if float(cooking.remaining_s) <= 0 else "Cooking • %d min left" % int(ceil(float(cooking.remaining_s)/60)), take_cooked, 0, .03))
+		out.append(_action(stove, ("Remove spoiled food" if cooking.id=="rotten_meat" else "Take cooked food") if float(cooking.remaining_s) <= 0 else "Cooking • %d min left" % int(ceil(float(cooking.remaining_s)/60)), take_cooked, 0, .03))
+	var dry_point:=home_point(Vector3(-1.94,.65,.35))
+	out.append(_action(dry_point,preservation.status(),take_dried if preservation.ready_count()>0 else dry_food,4 if preservation.portions.is_empty() else (1 if preservation.ready_count()>0 else 0),.02))
+	out.append(_action(dry_point,"Read food preparation notes",read_food_notes,0,.04))
 	var rack:=home_point(Vector3(1.87,.18,1.55))
 	out.append(_action(rack, "Take firewood (%d left)" % wood_left, take_wood, 1, .03))
 	if wood_left<VISIBLE_WOOD_CAP and world.inv.count("wood")>0:
@@ -433,11 +456,23 @@ func boil() -> void:
 func cook() -> void:
 	if not cooking.is_empty() or fuel_s <= 0: return
 	for id: String in world.inv.counts:
-		if Inventory.ITEMS[id].get("raw", false) and world.inv.remove(id):
-			cooking = {"id": Inventory.ITEMS[id].cooked, "remaining_s": 1200.0}; return
+		if Inventory.ITEMS[id].get("raw", false):
+			var age:=float(world.inv.age.get(id,0))
+			if world.inv.freshness(id)<=0:continue
+			if world.inv.remove(id):cooking=FoodPortion.create(id,Inventory.ITEMS[id].cooked,1200,age);return
 func take_cooked() -> void:
 	if cooking.is_empty() or float(cooking.remaining_s) > 0: return
-	if world.inv.can_add(String(cooking.id)): world.inv.add(String(cooking.id)); cooking = {}
+	if FoodPortion.collect(cooking,world.inv):cooking={};update_presentation()
+	else:world._say("Pack full. Food remains on the stove and continues to age.")
+func dry_food() -> void:
+	if not preservation.portions.is_empty():world._say(preservation.status());return
+	if fuel_s<=0:world._say("Light the stove before starting the drying rack");return
+	world._say(preservation.begin(world.inv));update_presentation()
+func take_dried() -> void:
+	var n:=preservation.collect(world.inv)
+	world._say("Collected %d rack portions"%n if n>0 else "Pack full. Rack food remains in place and continues to age.");update_presentation()
+func read_food_notes() -> void:
+	world.reading.open("Lookout - Food preparation","Cook raw meat or fish on the stove first. One portion needs 20 game minutes of actual burn.\n\nSlice up to four cooked portions with a hunting knife (at least 4% condition); this uses 1% knife condition per portion. The rack needs two game hours of stove burn. Unlit work pauses, but food still spoils. You can leave it running while working outside.\n\nDrying keeps the cooked portion's calories and halves its weight. A fresh dried portion lasts ten game days at normal storage rate. Older food retains the same fraction of shelf life already spent: drying cannot make spoiled food fresh.\n\nCollect finished food promptly. A full pack leaves it on the rack. Keep a meal and drinking water for the next outing; do not spend your final stove fuel just to preserve surplus.",world.player,world.hud)
 func heat_at(eye: Vector3) -> float:
 	if fuel_s <= 0 or not world.fire_lookout.contains_room(eye): return 0
 	var distance: float = eye.distance_to(home_point(Vector3(-1.65,.55,1.20)))
@@ -449,7 +484,7 @@ func is_refuge(point: Vector3) -> bool:
 		if actor is Node3D and not bool(actor.call("is_dead")) and boundary.contains_ground(actor.global_position): return false
 	return true
 func to_dict() -> Dictionary:
-	return {"state":state.to_dict(),"home":{"schema":2,"electrical":electrical.to_dict() if electrical!=null else {},"prepared_water":water.to_dict(),"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open}}
+	return {"state":state.to_dict(),"home":{"schema":2,"electrical":electrical.to_dict() if electrical!=null else {},"prepared_water":water.to_dict(),"preservation":preservation.to_dict(),"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open}}
 func _relay_foundations() -> void:
 	var st := SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for foot: Vector2 in [Vector2(-1.04,-1.1),Vector2(1.04,-1.1),Vector2(0,-2.15),Vector2(-.45,0),Vector2(.45,0),Vector2(-.92,-.35)]:

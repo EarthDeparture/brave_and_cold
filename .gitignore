@@ -95,3 +95,7 @@ tools/blender/watch_build.log
 
 # Editable electrical stock sources retained; Blender's numbered backups are local iterations.
 /tools/blender/generated/electrical_fieldwork/*.blend[0-9]
+
+# Original food rack sources retained; local authoring/import logs and backups excluded.
+/tools/blender/generated/food_preservation/*.blend[0-9]
+/tools/blender/generated/food_preservation/*.log

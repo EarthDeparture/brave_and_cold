@@ -16,6 +16,7 @@ const D := 0.55
 const H := 0.5
 
 var visual_enabled := true
+var spoilage_rate:=COLD_RATE # outdoor default; heated lookout pantry overrides this
 var contents: Dictionary = {}   # id -> n
 var cond: Dictionary = {}       # id -> condition 0..1 (only when worn)
 var age: Dictionary = {}        # id -> age seconds (perishables)
@@ -175,7 +176,7 @@ func tick(game_s: float) -> void:
 		var s := Inventory.shelf_s(String(id))
 		if s <= 0.0:
 			continue
-		age[id] = float(age.get(id, 0.0)) + game_s * COLD_RATE
+		age[id] = float(age.get(id, 0.0)) + maxf(0,game_s) * spoilage_rate
 		if float(age[id]) >= s:
 			spoiled.append(String(id))
 	for id in spoiled:

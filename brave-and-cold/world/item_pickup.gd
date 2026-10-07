@@ -4,14 +4,16 @@ extends Node3D
 
 var id := ""
 var n := 1
+var age_s:=0.0
 var cond := -1.0   # worn tools keep their condition on the ground (-1 = pristine); dropping must not repair them
 
 
-static func spawn(parent: Node, item_id: String, count: int, pos: Vector3, condition := -1.0) -> ItemPickup:
+static func spawn(parent: Node, item_id: String, count: int, pos: Vector3, condition := -1.0,food_age := 0.0) -> ItemPickup:
 	var p := ItemPickup.new()
 	p.id = item_id
 	p.n = count
 	p.cond = condition
+	p.age_s=maxf(0,food_age)
 	parent.add_child(p)
 	p.global_position = pos
 	return p
@@ -19,6 +21,22 @@ static func spawn(parent: Node, item_id: String, count: int, pos: Vector3, condi
 
 func _ready() -> void:
 	add_to_group("pickups")
+	if Inventory.shelf_s(id)>0:add_to_group("perishable_pickups")
+	_build_visual()
+
+func tick(game_s:float) -> void:
+	var shelf:=Inventory.shelf_s(id)
+	if shelf<=0:return
+	age_s+=maxf(0,game_s)
+	if age_s>=shelf:
+		id="rotten_meat";age_s=0;remove_from_group("perishable_pickups")
+		for child:Node in get_children():child.queue_free()
+		_build_visual()
+
+func _build_visual() -> void:
+	if id.ends_with("_dried"):
+		var portion:Node3D=(load("res://assets/food_preservation/dried_portion.glb") as PackedScene).instantiate()
+		add_child(portion);portion.rotation.x=PI/2;portion.position=Vector3(0,.022,0);return
 	if id in ["dc_fuse","sealed_connector","dc_cable","winter_controller"]:
 		var asset:String={"dc_fuse":"dc_fuse","sealed_connector":"sealed_connector","dc_cable":"dc_cable","winter_controller":"winter_controller"}[id]
 		add_child((load("res://assets/electrical_fieldwork/"+asset+".glb") as PackedScene).instantiate());return

@@ -1,0 +1,174 @@
+{
+  "date": "2026-10-07",
+  "baseline": "9f3dff6",
+  "branch": "codex/food-preservation",
+  "rollback_tag": "checkpoint/pre-food-preservation-2026-10-07",
+  "gameplay_assertions": 626,
+  "diagnostics": {
+    "food_preservation": {
+      "pass_assertions": 69,
+      "log": "brave-and-cold/shots/food-preservation-2026-10-07/test_food_preservation.log",
+      "sha256": "bf38ba0fa6a14939a11e9db11fd28a269d0cec96f0c7244c26c262d8391b2639",
+      "native_exit_code": 0
+    },
+    "electrical_fieldwork": {
+      "pass_assertions": 49,
+      "log": "brave-and-cold/shots/food-preservation-2026-10-07/test_electrical_fieldwork.log",
+      "sha256": "42cbf1139ba084ccdd2232d4a8239252ac428906cc37697db03fa48fede6c3dd",
+      "native_exit_code": 0
+    },
+    "solar_recovery": {
+      "pass_assertions": 29,
+      "log": "brave-and-cold/shots/food-preservation-2026-10-07/test_solar_recovery.log",
+      "sha256": "d97bed3c408165de64351dc04942d7baafcd3675d7cb39690eac38a992c28169",
+      "native_exit_code": 0
+    },
+    "lookout_assignment": {
+      "pass_assertions": 27,
+      "log": "brave-and-cold/shots/food-preservation-2026-10-07/test_lookout_assignment.log",
+      "sha256": "3030bb3e694a18790ce447f2e30bb0976e40f4f3fa0a5e5d23dae441ef1fc693",
+      "native_exit_code": 0
+    },
+    "lookout_opening": {
+      "pass_assertions": 53,
+      "log": "brave-and-cold/shots/food-preservation-2026-10-07/test_lookout_opening.log",
+      "sha256": "7e66cd8586eb996f542292d352006d32ebcb03f64a866ad788a2b83a476ce262",
+      "native_exit_code": 0
+    },
+    "watch_walkie_door": {
+      "pass_assertions": 46,
+      "log": "brave-and-cold/shots/food-preservation-2026-10-07/test_watch_walkie_door.log",
+      "sha256": "9bc4202640557a9b93bbdd31f83cea23ee194b7c714b5be12d321ee3a354ea00",
+      "native_exit_code": 0
+    },
+    "radio_bulletins": {
+      "pass_assertions": 141,
+      "log": "brave-and-cold/shots/food-preservation-2026-10-07/test_radio_bulletins.log",
+      "sha256": "017618da17821b82a68c8652a62224b9e2e15a9a352d7a560f406036ea0de7f1",
+      "native_exit_code": 0
+    },
+    "first_week_core": {
+      "pass_assertions": 33,
+      "log": "brave-and-cold/shots/food-preservation-2026-10-07/test_first_week_core.log",
+      "sha256": "09bae0b403d573fe064a729730fc04e4c37626652580b4c7d54fe8250a993c83",
+      "native_exit_code": 0
+    },
+    "first_week_story": {
+      "pass_assertions": 38,
+      "log": "brave-and-cold/shots/food-preservation-2026-10-07/test_first_week_story.log",
+      "sha256": "5f280c192f3d2c8afe65c5b4a6f662c7c883277d4b5827f27f1f1d18cb81ac5b",
+      "native_exit_code": 0
+    },
+    "opening_pacing": {
+      "pass_assertions": 50,
+      "log": "brave-and-cold/shots/food-preservation-2026-10-07/test_opening_pacing.log",
+      "sha256": "e6b3906d443c88c8591245ab332dbb3b9b92b8208bd0597fd2399611ccd11bc0",
+      "native_exit_code": 0
+    },
+    "lookout_stair_turns": {
+      "pass_assertions": 91,
+      "log": "brave-and-cold/shots/food-preservation-2026-10-07/test_lookout_stair_turns.log",
+      "sha256": "8ca2b7049d8f0a8ade3691291274fbba9d7ba9fd7afb05fcd8837dbadf1b11fa",
+      "native_exit_code": 0
+    }
+  },
+  "rollback_copy_tests": {
+    "passed": 3,
+    "log_sha256": "231723deef2a0b09547cb0e8428e065e8993964532323ce7413de74478073b6b"
+  },
+  "assets": {
+    "stove_drying_rack": {
+      "triangles": 6414,
+      "materials": 5,
+      "dimensions_m": [
+        0.5580000281333923,
+        0.8555000126361847,
+        0.3399999886751175
+      ],
+      "source_export_graphics_verified": true
+    },
+    "dried_portion": {
+      "triangles": 528,
+      "materials": 1,
+      "dimensions_m": [
+        0.12754426151514053,
+        0.20999999344348907,
+        0.02729955967515707
+      ],
+      "source_export_graphics_verified": true
+    }
+  },
+  "manifest_sha256": "8ea0c74f8ebe6c4736550f4a29d9be95d23bd5d87c06d31e361785ec3a4b466f",
+  "source_sha256_lf": {
+    "brave-and-cold/systems/food_portion.gd": "8c63cfc88ba453856346d845ef568e7c046f84655c3962e5422dd71273debbac",
+    "brave-and-cold/systems/food_preservation.gd": "b1a1e7c9ee0287dee94379196dc3832b350249489c1c608c6e17686abc1f6474",
+    "brave-and-cold/systems/inventory.gd": "9125dd3a7324c98b1e48aa1daade864e3c67b04afbba5f2639b2754e9c6d699c",
+    "brave-and-cold/world/campfire.gd": "cc61199ba2f9a40d1522ca867bdae1a0c603ed47305675502c2583eb4ff718b7",
+    "brave-and-cold/world/game_world.gd": "057f11f1627920b92acf4a7c8de1848728fab58435f02e5fc4d0bdbd7bebe607",
+    "brave-and-cold/world/item_pickup.gd": "b02a668003c1b91f4c1117b10b322089ec4571f508105448157aeb93a67d5ac0",
+    "brave-and-cold/world/lookout_opening.gd": "d44e4be9480703984168eeb6fef339ad9086e0a16594bbbeb5f4dff8667715c7",
+    "brave-and-cold/world/storage_chest.gd": "cd36eb0a34b968570e8c7156ab92903c9221d66c748b98ce1abc214204edc807",
+    "brave-and-cold/tests/test_food_preservation.gd": "a41132584fb3da56a4a73c662220624d820e68e40dceee031e7364e430e5b31c",
+    "brave-and-cold/tests/visual/capture_food_preservation.gd": "1f9c40bb0d93a0ade9070d6b21ade5c86e0073c3c4a42501eadb62793ef071e4",
+    "tools/blender/gen_food_preservation.py": "9ac6768155b0a1edab22365b72f193c3c8973a78b0dd20fd9d6efbc81efb7c3b",
+    "tools/blender/gen_food_graphics.py": "f7d4189d31913b91b284c23921808213727925998b78dc63917678f27d8c093f",
+    "tools/validate_food_assets.py": "930d616134eff4fd9b077a06c08795b74797edf504198782e3b6d395e3c0afa9",
+    "tools/export_food_rollback.py": "08e91f01e70f2564f1911e70d4bddda9def5f2da470383dfdb25fc0ed4de8980",
+    "tools/test_export_food_rollback.py": "cfaf0cd8eed405acdec487b79b1a2eb5154820c08971ed531fd2e37636e22aad"
+  },
+  "render": {
+    "renderer": "Vulkan Forward+",
+    "gpu": "NVIDIA GeForce GTX 1080 Ti",
+    "viewport": [
+      1600,
+      900
+    ],
+    "capture_log_sha256": "e204245dcb4494b72ea6b0889d7732306854ec827390437d76cca5363e1203e1",
+    "images": {
+      "rack-empty": {
+        "path": "brave-and-cold/shots/food-preservation-2026-10-07/rack-empty.png",
+        "sha256": "b3327cb99afcdd829a4a0af33b37d45513687dcbe358884f00b2ca4e69a6764c",
+        "agent_visual_review": "accepted"
+      },
+      "rack-loaded": {
+        "path": "brave-and-cold/shots/food-preservation-2026-10-07/rack-loaded.png",
+        "sha256": "68888e335e1cacf105f4205ee74cd658f5495070aa37bf7589ada41e96ade7c8",
+        "agent_visual_review": "accepted"
+      },
+      "rack-door-open": {
+        "path": "brave-and-cold/shots/food-preservation-2026-10-07/rack-door-open.png",
+        "sha256": "b338b83eac549c1a0c686f6ee1ed0232f3a363e77e156846acb60a7db48acf7d",
+        "agent_visual_review": "accepted"
+      },
+      "rack-night-fire": {
+        "path": "brave-and-cold/shots/food-preservation-2026-10-07/rack-night-fire.png",
+        "sha256": "e37034c1386f48db1be97867bcd0d27624c84138b8f4ac2c97f63372ba30d61e",
+        "agent_visual_review": "accepted"
+      },
+      "rack-blizzard-light": {
+        "path": "brave-and-cold/shots/food-preservation-2026-10-07/rack-blizzard-light.png",
+        "sha256": "6a877ae13805bb6e4d47f3a94e7023b7ed538c021c1460d097df6d9b969a5c0d",
+        "agent_visual_review": "accepted"
+      },
+      "food-notes": {
+        "path": "brave-and-cold/shots/food-preservation-2026-10-07/food-notes.png",
+        "sha256": "8035bc570dbe0a30876b5db25beb9069abf642a7dfc8757317b9d57a7096d405",
+        "agent_visual_review": "accepted"
+      },
+      "rack-collected": {
+        "path": "brave-and-cold/shots/food-preservation-2026-10-07/rack-collected.png",
+        "sha256": "9540e6b003f66ac5722f896a1b8a44bb7afa978f66abcef75965bc831ae08bfd",
+        "agent_visual_review": "accepted"
+      },
+      "dried-food-pickup": {
+        "path": "brave-and-cold/shots/food-preservation-2026-10-07/dried-food-pickup.png",
+        "sha256": "ce644728063c6bca167e194a5119446cd407394843d38301dd639041d09720d9",
+        "agent_visual_review": "accepted"
+      }
+    },
+    "scope": "Frozen player-camera views; sky/light storm response, not moving snowfall; no human playtest or performance claim"
+  },
+  "initial_candidate_rejected": "rack brackets overlapped window; final rack mounted below sill",
+  "preexisting_diagnostics": "Restricted user log/editor paths, certificate store output, Terrain3D editor DoubleSlider nil/int error and shutdown RID/ObjectDB warnings remain; no runtime script/parse errors in selected tests",
+  "save_safety": "Synthetic in-memory snapshots and temporary rollback fixtures only; user saves untouched"
+}
