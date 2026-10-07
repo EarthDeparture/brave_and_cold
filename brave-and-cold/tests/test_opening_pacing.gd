@@ -40,7 +40,10 @@ func run() -> void:
 		check(text.contains(expected_tasks[stage]) and text.contains("bearing") and text.contains("water above 45%,") and not text.contains("%s"), "service log stage %d has real directions, task and percentages" % stage)
 		w.reading.close()
 	op.state.repair_stage = 1; op.state.parts_claimed = true; op.read_log()
-	check(w.reading._body.text.contains("Return to the ground cabinet and install"), "collected relay changes current guidance")
+	check(w.reading._body.text.contains("Retrieve the relay"), "a claimed relay outside the pack gives retrieval guidance")
+	w.reading.close();w.inv.add("power_relay");op.read_log()
+	check(w.reading._body.text.contains("Return to the ground cabinet and install"), "actually carried relay changes current guidance")
+	w.inv.remove("power_relay")
 	w.reading.close()
 	for entry: Dictionary in op.state.broadcasts:
 		var duration: float = float(op.state.audio_clips[String(entry.audio).get_file()].seconds)

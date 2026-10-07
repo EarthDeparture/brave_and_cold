@@ -22,6 +22,21 @@ func run()->void:
  check(c.global_position.distance_to(w.stores[0].global_position)<100,"clinic is a connected town destination")
  check(w.player.cabins.has(c) and w._building_list().has(c),"clinic participates in walking, sight and projectile collision")
  check(c.stock.size()==3 and c.stock[0].count("bandage")==5,"three rooms have actual finite supply inventories")
+ var visible_ramps:=0
+ for child:Node in c.get_children():
+  if not child is MeshInstance3D:continue
+  visible_ramps+=1;var ramp:Array=c.ramps[visible_ramps-1]
+  var vertices:PackedVector3Array=child.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+  var normals:PackedVector3Array=child.mesh.surface_get_arrays(0)[Mesh.ARRAY_NORMAL]
+  var aligned:=true
+  for i in 6:
+   var pt:Vector3=child.global_transform*vertices[i];var height:float=c.floor_at(pt.x,pt.z,0)
+   # The exact side boundary is excluded by the controller's strict width test.
+   var mid:Vector3=pt.lerp((ramp[0] as Vector3).lerp(ramp[1],.5),.01)
+   height=c.floor_at(mid.x,mid.z,0)
+   aligned=aligned and absf(mid.y-height)<.002 and (child.global_basis*normals[i]).y>.8
+  check(aligned,"visible ramp top coincides with the walking surface and faces upward")
+ check(visible_ramps==2,"both clinic exits have correctly transformed visible ramps")
  var scene_count:int=w.forest.felled.size();check(scene_count==0,"construction clearing does not impersonate player-felled trees")
  for side:Array in [[0,1],[-2.5,-1]]:
   var prior:=NAN
@@ -34,6 +49,10 @@ func run()->void:
   var pt:=c.to_global(lp);check(c.resolve(pt.x,pt.z,.25).distance_to(Vector2(pt.x,pt.z))<.001,"exit and partition circulation remain unobstructed")
  var n:=c.stock[0].count("bandage");w.chest_take(c.stock[0],"bandage",2);check(c.stock[0].count("bandage")==n-2,"medical supplies are withdrawn exactly once")
  w.opening_zombie_count=40;check(w.pop.count_alive()==0,"normal assignment begins without infected")
+ var identity:int=w.pop._next_id;var reserve_goal:int=w.pop.reserve_target
+ for step in reserve_goal+1:w.pop._prepare_reserve()
+ check(w.pop.pool.size()==reserve_goal and w.pop.count_alive()==0 and w.pop._next_id==identity,"real-model preparation leaves fresh opening population and identity unchanged")
+ check(w.zombies.is_empty() and w.pop.all_alive().is_empty(),"actual prepared actors stay outside world population and save records")
  w.opening_state.last_s=28*3600;w.collapse.update(0);check(w.pop.count_alive()==2 and w.collapse.stage==1,"first cohort is sparse instead of full map population")
  w.collapse.update(0);check(w.pop.count_alive()==2,"repeated updates do not refill issued cohort")
  for entry:Dictionary in w.pop.all_alive():check(Vector2(entry.x,entry.z).distance_to(Vector2(w.player.position.x,w.player.position.z))>=120,"arrival is outside player observation distance")
@@ -44,6 +63,7 @@ func run()->void:
  check(c.position==loc and c.stock[0].count("bandage")==n-2,"clinic identity and withdrawals survive a full fresh-world reload")
  var count:int=w.pop.count_alive();w.collapse.update(0);check(w.collapse.stage==4 and w.pop.count_alive()==count,"restored issued cohorts cannot respawn kills")
  check(c.rear_open,"rear exit state survives reload")
+ check(c._dressing_units[2].visible and not c._dressing_units[3].visible,"real-world reload restores individual finite dressing visibility")
  var pos:Vector3=w._ground(c.global_position.x+10,c.global_position.z+8);var z:Zombie=w._add_zombie(pos,71);z.set_process(false)
  check(z._knees.size()==2 and z._knees[0]!=null and z._elbows[0]!=null,"new infected has editable nested knee and elbow joints")
  z._animate(.1);z._attack_windup=.2;z.activate(pos,72);check(z._attack_windup<0 and z._arms[0].rotation==Vector3.ZERO,"pool activation clears old attack and articulation state")
@@ -51,4 +71,9 @@ func run()->void:
  z._process(.1);check(w.player.health==hp and z._attack_windup>0,"attack begins with visible preparation rather than immediate damage")
  z._process(.3);check(w.player.health==hp-Zombie.DAMAGE and z.grabs==1,"damage lands once at the end of the attack wind-up")
  z._cd=0;z._process(.1);hp=w.player.health;w.player.position=pos+Vector3(0,1.6,-4);z._process(.3);check(w.player.health==hp,"moving beyond reach during the wind-up avoids the hit")
+ var timings:Array[int]=[];z._die()
+ for i in 20:
+  var before:=Time.get_ticks_usec();z._death_pose(float(i)/19);timings.append(Time.get_ticks_usec()-before)
+ timings.sort();print("REAL_WORLD_COLLAPSE_COST median_us=",timings[10]," max_us=",timings[-1])
+ check(z.is_dead() and z._model.position.is_finite(),"corpse settlement works against actual terrain and building floors")
  print("FIRST_WEEK_COLLAPSE_TEST checks=%d failures=%d"%[checks,failures]);quit(1 if failures else 0)

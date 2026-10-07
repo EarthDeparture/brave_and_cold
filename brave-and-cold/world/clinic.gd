@@ -67,8 +67,26 @@ func setup(terrain:Terrain3D,x:float,z:float,yaw_deg:float)->bool:
 	openings.append(Opening.make(self,"window",1.4,.8,Vector3(5,1.8,0),90))
 	for pair:Array in [[0,1],[ -2.5,-1]]:
 		var side:float=pair[1];var near:=to_global(Vector3(pair[0],.3,side*4.8));var end:=to_global(Vector3(pair[0],0,side*6.8));end.y=terrain.data.get_height(end)+.02;ramps.append([near,end])
-		var mesh:=ArrayMesh.new();var ar:=[];ar.resize(Mesh.ARRAY_MAX);var width:=basis.x*.8;ar[Mesh.ARRAY_VERTEX]=PackedVector3Array([near-width,near+width,end+width,near-width,end+width,end-width]);ar[Mesh.ARRAY_NORMAL]=PackedVector3Array([Vector3.UP,Vector3.UP,Vector3.UP,Vector3.UP,Vector3.UP,Vector3.UP]);mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,ar);var mi:=MeshInstance3D.new();mi.mesh=mesh;add_child(mi);mi.top_level=true;mi.material_override=Opening.wood_material()
+		_build_ramp_visual(near,end)
 	_bind_stock_visuals();update_loot_visuals();return true
+
+func _build_ramp_visual(near:Vector3,end:Vector3)->void:
+	# Walking endpoints are in world space. Store mesh vertices in this clinic's
+	# local frame; inheriting the building transform must not apply it twice.
+	var width:=global_basis.x*.8
+	if (end-near).cross(width).y<0:width=-width
+	var top:Array[Vector3]=[to_local(near-width),to_local(near+width),to_local(end+width),to_local(end-width)]
+	var points:Array[Vector3]=top.duplicate()
+	for v:Vector3 in top:points.append(v-Vector3.UP*.07)
+	var st:=SurfaceTool.new();st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for face:Array in [[0,1,2,3],[7,6,5,4],[0,4,5,1],[1,5,6,2],[2,6,7,3],[3,7,4,0]]:
+		var normal:Vector3=-(points[face[1]]-points[face[0]]).cross(points[face[2]]-points[face[0]]).normalized()
+		var length:float=points[face[3]].distance_to(points[face[0]])
+		var span:float=points[face[1]].distance_to(points[face[0]])
+		var uv:Array[Vector2]=[Vector2.ZERO,Vector2(0,span*4),Vector2(length,span*4),Vector2(length,0)]
+		for i in [0,1,2,0,2,3]:st.set_normal(normal);st.set_uv(uv[i]);st.add_vertex(points[face[i]])
+	var mi:=MeshInstance3D.new();mi.name="ClinicAccessRamp"+str(ramps.size());mi.mesh=st.commit();add_child(mi)
+	mi.material_override=Opening.wood_material();mi.visibility_range_end=160
 
 func _bind_stock_visuals()->void:
 	_stock_groups.clear();_dressing_units.clear();_antiseptic_units.clear()
