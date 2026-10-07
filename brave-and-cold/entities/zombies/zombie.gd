@@ -67,6 +67,15 @@ var _spine_bone:=-1
 var _head_bone:=-1
 var _spine_rest:=Quaternion.IDENTITY
 var _head_rest:=Quaternion.IDENTITY
+static var _contact_templates:Array=[]
+const COLLAPSE_S:=.85
+var _death_progress:=0.0
+var _death_start_rotation:=Vector3.ZERO
+var _death_start_joints:Array[Vector3]=[]
+var _death_ground_pitch:=0.0
+var _death_ground_roll:=0.0
+var _death_floor_cache:Dictionary={}
+var _wake_tween:Tween
 var _rng := RandomNumberGenerator.new()
 var _dead_t := 0.0
 var _id := 0
@@ -123,6 +132,7 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	_base_scale = _rng.randf_range(0.94, 1.06)
 	_model.scale = Vector3.ONE * _base_scale
 	_phase = _rng.randf() * TAU
+	_bind_skin_drivers();_prepare_contact_samples()
 	add_to_group("hostile")
 	_pick_wander()
 
@@ -135,6 +145,8 @@ func activate(p: Vector3, seed_value: int, k: int = 0) -> void:
 	_rng.seed = seed_value
 	_id = seed_value
 	hp = 100.0
+	if _wake_tween!=null and _wake_tween.is_valid():_wake_tween.kill()
+	_dead_t=0;_death_progress=0;_death_start_joints.clear();_death_floor_cache.clear();remove_from_group("bodies")
 	state = State.IDLE
 	speed_now = 0.0
 	grabs = 0
@@ -320,6 +332,7 @@ func hit(dmg: float, from: Vector3) -> void:
 
 
 func _die() -> void:
+	if state==State.DEAD:return
 	state = State.DEAD
 	died.emit()
 	_release()
@@ -327,9 +340,14 @@ func _die() -> void:
 	remove_from_group("hostile")
 	add_to_group("bodies")
 	speed_now = 0.0
-	var tw := create_tween()
-	tw.tween_property(_model, "rotation:x", -PI / 2.0, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tw.parallel().tween_property(_model, "position:y", 0.12, 0.7)
+	_attack_windup=-1;_dead_t=0;_death_progress=0;_death_floor_cache.clear()
+	if _wake_tween!=null and _wake_tween.is_valid():_wake_tween.kill()
+	_death_start_rotation=_model.rotation;_death_start_joints.clear()
+	var front:=global_position-global_basis.z*1.3
+	var back:=global_position+global_basis.z*.3
+	_death_ground_pitch=clampf(atan2(_corpse_floor(front)-_corpse_floor(back),1.6),-.42,.42)
+	_death_ground_roll=clampf(atan2(_corpse_floor(global_position+global_basis.x*.4)-_corpse_floor(global_position-global_basis.x*.4),.8),-.35,.35)
+	for joint:Node3D in _arms+_legs+_knees+_elbows:_death_start_joints.append(joint.rotation if joint!=null else Vector3.ZERO)
 
 
 func _process(delta: float) -> void:
@@ -337,6 +355,8 @@ func _process(delta: float) -> void:
 		return
 	if state == State.DEAD:
 		_dead_t += delta
+		if _death_progress<1:
+			_death_progress=minf(1,_death_progress+delta/COLLAPSE_S);_death_pose(_death_progress)
 		if _dead_t > CORPSE_LIFE_S:
 			queue_free()
 		return
@@ -499,6 +519,7 @@ func _do_vault(delta: float) -> void:
 	for ar in _arms:
 		if ar != null:
 			ar.rotation.x = -1.2
+	_deform_skin()
 	if t >= 1.0:
 		_model.rotation.x = 0.0
 		_vault_t = -1.0
@@ -592,6 +613,7 @@ func _deform_skin() -> void:
 		_skin.set_bone_pose_rotation(_head_bone,_head_rest*Quaternion(Vector3.UP,sin(_state_t*1.2)*(.09 if state==State.INVESTIGATE else .015)))
 
 func _bind_skin_drivers()->void:
+	if _skin==null:return
 	_skin_frames.clear()
 	for bone:int in _skin_drivers:
 		var frame:=_skin.get_bone_global_rest(bone).basis.orthonormalized()
@@ -599,6 +621,93 @@ func _bind_skin_drivers()->void:
 	_spine_bone=_skin.find_bone("spine");_head_bone=_skin.find_bone("head")
 	if _spine_bone>=0:_spine_rest=_skin.get_bone_rest(_spine_bone).basis.get_rotation_quaternion()
 	if _head_bone>=0:_head_rest=_skin.get_bone_rest(_head_bone).basis.get_rotation_quaternion()
+
+## Original joint acting; gameplay death has already happened before this runs.
+func _death_pose(t:float)->void:
+	var fold:=smoothstep(0.0,.55,t)
+	var fall:=smoothstep(.12,1.0,t)
+	var side:float=-1.0 if posmod(_id,2)==0 else 1.0
+	var buckle:=sin(t*PI)*.32
+	var target:Array[Vector3]=[Vector3(.02,.02,-.45),Vector3(.02,-.02,.30),Vector3.ZERO,Vector3.ZERO,Vector3(-.04-buckle,0,0),Vector3(-.01-buckle*.6,0,0),Vector3(0,0,-.20),Vector3(0,0,.35)]
+	var joints:Array=_arms+_legs+_knees+_elbows
+	for i in joints.size():
+		if joints[i]!=null:joints[i].rotation=_death_start_joints[i].lerp(target[i],fold)
+	_deform_skin()
+	if _skin!=null:
+		if _spine_bone>=0:_skin.set_bone_pose_rotation(_spine_bone,_spine_rest*Quaternion(Vector3.RIGHT,-.16*fold*(1-smoothstep(.65,1.0,t))))
+		if _head_bone>=0:_skin.set_bone_pose_rotation(_head_bone,_head_rest*Quaternion(Vector3.UP,side*.24*fold))
+	_model.rotation=_death_start_rotation.lerp(Vector3(-PI/2+_death_ground_pitch,0,side*.025+_death_ground_roll),fall)
+	_settle_corpse()
+
+## Cache extremal vertices per weighted body region once for the shared model.
+## These are visual support probes, not new collision shapes or rigid bodies.
+func _prepare_contact_samples()->void:
+	if _skin==null or not _contact_templates.is_empty():return
+	for mi:MeshInstance3D in _model.find_children("*","MeshInstance3D",true,false):
+		if mi.skin==null:continue
+		var bone_ids:=PackedInt32Array();var binds:Array[Transform3D]=[]
+		for i in mi.skin.get_bind_count():
+			var bone:=_skin.find_bone(mi.skin.get_bind_name(i))
+			if bone<0:bone=mi.skin.get_bind_bone(i)
+			bone_ids.append(bone);binds.append(mi.skin.get_bind_pose(i))
+		for surface in mi.mesh.get_surface_count():
+			var ar:=mi.mesh.surface_get_arrays(surface);var vertices:PackedVector3Array=ar[Mesh.ARRAY_VERTEX]
+			var slots:PackedInt32Array=ar[Mesh.ARRAY_BONES];var weights:PackedFloat32Array=ar[Mesh.ARRAY_WEIGHTS]
+			var stride:=int(weights.size()/vertices.size());var extremes:Dictionary={}
+			for i in vertices.size():
+				var main:=0
+				for j in stride:
+					if weights[i*stride+j]>weights[i*stride+main]:main=j
+				var region:=slots[i*stride+main]
+				for axis in 3:
+					for direction:int in [-1,1]:
+						var key:=region*6+axis*2+(1 if direction>0 else 0)
+						if not extremes.has(key) or vertices[i][axis]*direction>vertices[extremes[key]][axis]*direction:extremes[key]=i
+			var points:Array=[];var used:Dictionary={}
+			for i:int in extremes.values():
+				if used.has(i):continue
+				used[i]=true;points.append([vertices[i],slots.slice(i*stride,(i+1)*stride),weights.slice(i*stride,(i+1)*stride)])
+			_contact_templates.append({"bone_ids":bone_ids,"binds":binds,"points":points})
+
+func _corpse_floor(p:Vector3)->float:
+	if terrain==null or terrain.data==null:return global_position.y
+	var h:float=terrain.data.get_height(Vector3(p.x,0,p.z))
+	if is_nan(h):return global_position.y
+	h=RoadNet.lift(IceField.lift(h,p.x,p.z),p.x,p.z,global_position.y)
+	for cb in cabins:
+		if absf(cb.position.x-p.x)<9 and absf(cb.position.z-p.z)<9:
+			var floor_h:float=cb.floor_at(p.x,p.z,h)
+			if not is_nan(floor_h):return floor_h
+	return h
+
+func _settle_corpse()->void:
+	if _skin==null:return
+	_prepare_contact_samples()
+	_model.position.y=0
+	var offset:=-INF
+	for group:Dictionary in _contact_templates:
+		var matrices:Array[Transform3D]=[]
+		for i in group.bone_ids.size():matrices.append(_skin.get_bone_global_pose(group.bone_ids[i])*group.binds[i])
+		for point:Array in group.points:
+			var local:=Vector3.ZERO
+			for j in point[1].size():local+=(matrices[point[1][j]]*point[0])*point[2][j]
+			var p:Vector3=_skin.global_transform*local
+			offset=maxf(offset,_support_floor(p)+.04-p.y)
+	if is_finite(offset):_model.position.y=offset/maxf(.001,global_basis.get_scale().y)
+
+## Static local ground at 10 cm spacing; share the four samples across probes.
+## Discontinuous floor edges take the higher support instead of interpolating
+## down through a threshold. This cache only affects the falling visual skin.
+func _support_floor(p:Vector3)->float:
+	var q:=Vector2(p.x,p.z)*10
+	var cell:=Vector2i(floori(q.x),floori(q.y));var frac:=q-Vector2(cell)
+	var heights:Array[float]=[]
+	for corner:Vector2i in [Vector2i.ZERO,Vector2i(1,0),Vector2i(0,1),Vector2i.ONE]:
+		var key:=cell+corner
+		if not _death_floor_cache.has(key):_death_floor_cache[key]=_corpse_floor(Vector3(key.x*.1,p.y,key.y*.1))
+		heights.append(_death_floor_cache[key])
+	if heights.max()-heights.min()>.065:return heights.max()
+	return lerpf(lerpf(heights[0],heights[1],frac.x),lerpf(heights[2],heights[3],frac.x),frac.y)
 
 
 func is_dead() -> bool:
@@ -611,9 +720,9 @@ func _wake() -> void:
 	state = State.INVESTIGATE
 	_state_t = 0.0
 	_stagger = 1.2
-	var tw := create_tween()
-	tw.tween_property(_model, "rotation:x", 0.0, 1.0).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(_model, "position:y", 0.0, 1.0)
+	_wake_tween=create_tween()
+	_wake_tween.tween_property(_model, "rotation:x", 0.0, 1.0).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_wake_tween.parallel().tween_property(_model, "position:y", 0.0, 1.0)
 
 
 func _make_crawler() -> void:
