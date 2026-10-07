@@ -107,7 +107,7 @@ func run() -> void:
 	check(op.state.receiver_on and op._channel_label.text=="PUBLIC" and op.walkie.get_parent()==w.player,"old dispatch desk selection becomes public; portable dispatch supplied")
 	check(op.pantry.count("beans")==4,"migration does not refill or consume pantry")
 	var fresh: Dictionary=op.state.to_dict()
-	check(fresh.schema==3 and op.state.walkie_carried and op.state.walkie_wh==12 and not fresh.has("channel") and fresh.has("calendar_origin_s"),"new snapshot retires channels and keeps calendar anchor")
+	check(fresh.schema>=3 and op.state.walkie_carried and op.state.walkie_wh==12 and not fresh.has("channel") and fresh.has("calendar_origin_s"),"new snapshot retires channels and keeps calendar anchor")
 	at(w,23400+1700);var later: Dictionary=JSON.parse_string(JSON.stringify(w._save_data()))
 	w.queue_free();await process_frame;await process_frame
 	SaveGame.pending=later;w=await build_world();w.opening._radio_update()

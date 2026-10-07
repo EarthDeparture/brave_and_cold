@@ -45,6 +45,8 @@ var _receiver_power: MeshInstance3D
 var _receiver_channel: MeshInstance3D
 var _channel_label: Label3D
 var _indicator: MeshInstance3D
+var solar_site: LookoutSolar
+var _power_label: Label3D
 const RELAY_LOCAL := Vector3(-9, 0, -6)
 const CASE_LOCAL := Vector3(1.60, 1.42, 1.02)
 
@@ -54,6 +56,7 @@ func home_point(p: Vector3) -> Vector3:
 	return world.fire_lookout.to_global(p + Vector3.UP * FireLookout.DECK_Y)
 func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> void:
 	world = w; state = assignment
+	state.solar_overcast=world.weather.overcast
 	_audio_captions=state.audio_clips
 	var tower: FireLookout = world.fire_lookout
 	boundary = RefugeBoundary.new(); tower.add_child(boundary); boundary.build(world.terrain)
@@ -66,6 +69,8 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 	boundary.obstacle_rects.append(Rect2(-10.15,-6.65,1.8,1.12))
 	boundary.obstacle_posts.assign([Vector2(-10.04,-7.10),Vector2(-7.96,-7.10),Vector2(-9,-8.15)])
 	_relay_foundations()
+	solar_site=LookoutSolar.new();solar_site.build(world,boundary)
+	_power_label=Label3D.new();_power_label.position=Vector3(0,FireLookout.DECK_Y+.91,-2.065);_power_label.font_size=28;_power_label.pixel_size=.001;_power_label.outline_size=0;_power_label.shaded=true;tower.add_child(_power_label)
 	_indicator = MeshInstance3D.new(); var bulb := SphereMesh.new(); bulb.radius = .035; bulb.height = .07
 	_indicator.mesh = bulb; _indicator.position = Vector3(.43, 1.45, .48); relay.add_child(_indicator)
 	var mat := StandardMaterial3D.new(); mat.emission_enabled = true; _indicator.material_override = mat
@@ -139,7 +144,7 @@ func starting_gear(baseline_pace := false) -> void:
 	world._say("Your charged walkie is on the desk. Take it to hear dispatch and public news outside.")
 	update_presentation()
 func advance(game_s: float) -> void:
-	state.advance_to(world.clock.total_game_s)
+	state.advance_to(world.clock.total_game_s,world.weather.overcast,world.weather.precip)
 	var burn := minf(game_s, fuel_s); fuel_s = maxf(0, fuel_s - game_s)
 	water.advance(burn)
 	if not cooking.is_empty(): cooking["remaining_s"] = maxf(0, float(cooking.remaining_s) - burn)
@@ -151,6 +156,10 @@ func advance(game_s: float) -> void:
 	if state.walkie_wh>LookoutAssignment.WALKIE_CAP_WH*.20:_warned_walkie_low=false
 	update_presentation(); _radio_update()
 func update_presentation() -> void:
+	if solar_site!=null:solar_site.update_presentation()
+	if _power_label!=null:
+		_power_label.text="%.0f%% • %s"%[state.battery_wh/LookoutAssignment.BATTERY_CAP_WH*100,power_status()]
+		_power_label.modulate=Color(.60,.84,.61) if state.powered() else Color(.91,.73,.40)
 	if kettle_steam!=null:kettle_steam.emitting=water.batch>0 and fuel_s>0
 	_update_receiver_indicators()
 	if dock_handset!=null:
@@ -289,6 +298,7 @@ func actions() -> Array:
 	out.append(_action(radio, "Turn receiver off" if state.receiver_on else "Turn receiver on", toggle_receiver))
 	var panel := home_point(Vector3(0,1.15,-2.08))
 	out.append(_action(panel, "Backup: %s • %.0f%% charge" % ["ON" if state.backup_on else "OFF", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100], toggle_backup))
+	out.append(_action(panel+Vector3(0,-.12,0),"Read power status • "+power_status(),read_power_status,0,.04))
 	if state.repair_stage == 3:
 		out.append(_action(panel, "Automatic transfer: %s" % ("ARMED" if state.auto_transfer_on else "DISABLED"), toggle_auto_transfer, 0, .02))
 	out.append(_action(panel, "Switch desk lamp off" if state.lamp_on else "Switch desk lamp on", toggle_lamp, 0, .01))
@@ -320,6 +330,7 @@ func actions() -> Array:
 	if case_model != null and not state.parts_claimed:
 		out.append(_action(case_model.global_position + Vector3.UP * .15, "Collect reserved transfer relay", claim_parts, 3))
 	if world.first_week!=null:out.append_array(world.first_week.actions())
+	if solar_site!=null:out.append_array(solar_site.actions())
 	if not world.player.is_sheltered() and world._view_dir().y<-.2:
 		var gather:Vector3=world.player.position+world._view_dir()*1.4
 		out.append(_action(world._ground(gather.x,gather.z)+Vector3.UP*.04,"Gather clean snow portion",gather_snow,3,.15))
@@ -336,16 +347,32 @@ func read_log() -> void:
 		var d: Vector3 = world.stores[0].global_position - world.fire_lookout.global_position
 		var bearing := fposmod(rad_to_deg(atan2(d.x,-d.z)),360)
 		directions = "North Ridge Supply is approximately %.0f m away on bearing %.0f° (straight-line). Follow the logging track down to the road; collect the reserved relay case at the store counter." % [Vector2(d.x,d.z).length(),bearing]
-	var task: String = ["Inspect the ground transfer cabinet with your insulated service kit.","Collect the reserved transfer relay, return and install it in the cabinet.","Verify the cabinet transfer under local power.","Relay signed off. Local service restored."][state.repair_stage]
+	var task: String = ["Inspect the ground transfer cabinet with your insulated service kit.","Collect the reserved transfer relay, return and install it in the cabinet.","Verify the cabinet transfer circuit with your service tester, even if the home battery is empty.","Relay signed off. Local service restored."][state.repair_stage]
 	if state.repair_stage==1 and state.parts_claimed:task="Return to the ground cabinet and install the replacement relay."
-	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nTake the walkie from its desk cradle before travelling. Field dispatch and public news are monitored together. Its battery powers both signals away from home, independently of the desk receiver. A full charge lasts about one day. Dock it on this desk to recharge in roughly three hours from local mains or backup power. Amber indicates charging and green indicates full charge. The desk receiver remains public radio only. Bulletins begin at 06:00, 12:00, 17:00 and 00:00; noon recaps the morning. Green indicates receiver power and blue identifies public radio. Public reports are live, not queued: missed bulletins do not return. Dispatch keeps clear of every public slot. A dispatch call wakes you if your powered walkie is carried or within earshot on the desk; public broadcasts do not. Hold T to look at your wristwatch, or check time and walkie charge in Gear (Tab). Midnight closes the day just lived. The desk receiver and lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer while the repeater is enabled. Manual backup is available at the desk panel; this supplies the lookout, not the town grid.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. The rack starts with six logs. Each fuels this stove for two hours; collect fallen timber along the logging road, split it with your axe, and restock the rack before dark. Wood deposited in lookout provisions refills the same visible rack. Bring snow portions and empty bottles to the kettle. A batch prepares up to 2 L in 20 game minutes while the stove burns; collect it into your pack, drink in Gear or store it for tomorrow. Follow the timber markers for dry wood, a finite crew cache and the labelled crew-spur disconnect. Stoke the stove and prepare the sleeping berth before the weather closes in.\n\nFirst aid\nIn Gear (Tab), select your bandage and choose Apply bandage, or double-click it. One wrap stops bleeding; it does not restore lost blood immediately or cure infection. Recovery needs food above 900 kcal, water above 45%%, and no fever or hypothermia. Resting warm restores blood faster. Gather cloth and supplies during the first town visit. Outbreak transmission is a separate risk from ordinary wound infection; antibiotics cannot remove it.\n\nRest and maintenance\nFatigue accumulates over game hours. Warm, fed, hydrated sleep restores it; it lowers sustained stamina gradually. Wet clothes reduce sleep quality. At this desk, choose Maintain in Gear for a worn item. A whetstone and rag hone an axe or knife. A sewing kit, two rags and cordage mend clothing. A service kit, stick and two nails repair a hammer. Movement or damage interrupts work before its materials are spent." % [task,directions]
+	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nTake the walkie from its desk cradle before travelling. Field dispatch and public news are monitored together. Its battery powers both signals away from home, independently of the desk receiver. A full charge lasts about one day. Dock it on this desk to recharge in roughly three hours from local mains or backup power. Amber indicates charging and green indicates full charge. The desk receiver remains public radio only. Bulletins begin at 06:00, 12:00, 17:00 and 00:00; noon recaps the morning. Green indicates receiver power and blue identifies public radio. Public reports are live, not queued: missed bulletins do not return. Dispatch keeps clear of every public slot. A dispatch call wakes you if your powered walkie is carried or within earshot on the desk; public broadcasts do not. Hold T to look at your wristwatch, or check time and walkie charge in Gear (Tab). Midnight closes the day just lived. The desk receiver and lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer while the repeater is enabled. Manual backup is available at the desk panel; this supplies the lookout, not the town grid. Commissioning also connects the compound solar charger. Your service tester can commission an empty home reserve. Solar charges during daylight even with the backup output switch off; clouds and panel snow reduce input. Brush the panels when covered. After total depletion, the home outputs wait for 12 Wh before restarting. Read the desk power status or inspect the array for current input and load.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. The rack starts with six logs. Each fuels this stove for two hours; collect fallen timber along the logging road, split it with your axe, and restock the rack before dark. Wood deposited in lookout provisions refills the same visible rack. Bring snow portions and empty bottles to the kettle. A batch prepares up to 2 L in 20 game minutes while the stove burns; collect it into your pack, drink in Gear or store it for tomorrow. Follow the timber markers for dry wood, a finite crew cache and the labelled crew-spur disconnect. Stoke the stove and prepare the sleeping berth before the weather closes in.\n\nFirst aid\nIn Gear (Tab), select your bandage and choose Apply bandage, or double-click it. One wrap stops bleeding; it does not restore lost blood immediately or cure infection. Recovery needs food above 900 kcal, water above 45%%, and no fever or hypothermia. Resting warm restores blood faster. Gather cloth and supplies during the first town visit. Outbreak transmission is a separate risk from ordinary wound infection; antibiotics cannot remove it.\n\nRest and maintenance\nFatigue accumulates over game hours. Warm, fed, hydrated sleep restores it; it lowers sustained stamina gradually. Wet clothes reduce sleep quality. At this desk, choose Maintain in Gear for a worn item. A whetstone and rag hone an axe or knife. A sewing kit, two rags and cordage mend clothing. A service kit, stick and two nails repair a hammer. Movement or damage interrupts work before its materials are spent." % [task,directions]
 	world.reading.open("North Ridge • Service log",text,world.player,world.hud)
 func toggle_receiver() -> void:
 	world.audio.play_at("switch_click",speaker.global_position,-12,1,2,9)
 	state.receiver_on = not state.receiver_on; _update_receiver_indicators(); _radio_update()
 func toggle_backup() -> void:
 	state.backup_on = not state.backup_on; update_presentation(); _radio_update()
-	world._say("Local backup %s. Charge %.0f%%. Lamp 7 W, receiver 3 W, commissioned relay 12 W, walkie charger up to 6 W, unused crew spur 6 W until isolated." % ["enabled" if state.backup_on else "disabled", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100])
+	world._say("Local backup %s • %.0f%% • %s. The output switch does not disconnect solar charging." % ["enabled" if state.backup_on else "disabled", state.battery_wh / LookoutAssignment.BATTERY_CAP_WH * 100,power_status()])
+func power_status() -> String:
+	if state.grid_alive():return "MAINS • FULL" if state.battery_wh>=LookoutAssignment.BATTERY_CAP_WH-.01 else "MAINS CHARGING"
+	if state.repair_stage!=3:return "RELAY INCOMPLETE"
+	if not state.solar.controller_ok:return "CHARGER FAULT"
+	if state.solar_watts()<=.01:
+		if state.solar.snow_cover>=.95:return "PANELS SNOWED OVER"
+		return "ON RESERVE • NIGHT" if state.powered() else "WAITING FOR DAYLIGHT"
+	if state.recovery_lock:return "RECOVERING"
+	if state.battery_wh>=LookoutAssignment.BATTERY_CAP_WH-.01:return "RESERVE FULL"
+	var charger_w:=0.0
+	if state.powered() and not state.walkie_carried:charger_w=LookoutAssignment.WALKIE_CHARGER_W if state.walkie_wh<LookoutAssignment.WALKIE_CAP_WH-.01 else LookoutAssignment.WALKIE_MONITOR_W/LookoutAssignment.WALKIE_CHARGER_EFFICIENCY
+	return "SOLAR CHARGING" if state.solar_watts()>(state.house_load_w()+charger_w if state.powered() else 0.0) else "RESERVE DRAINING"
+func read_power_status() -> void:
+	var commissioning:="Ground circuit commissioned. The compound solar charger is connected." if state.repair_stage==3 else "Complete the ground cabinet inspection, replacement and commissioning to connect the compound solar charger."
+	var text:="%s\n\nHome reserve: %.1f / %.0f Wh.\nSolar input now: %.1f W. Panel snow cover: %.0f%%.\nSelected home loads: %.1f W, plus up to 6 W for a docked walkie.\n\n%s Your insulated service tester works with an empty home battery. It does not refill it. The backup switch controls the home output; charging continues with that switch off.\n\nAfter a flat battery, outputs wait for a 12 Wh reserve, then resume if backup is enabled. Daylight supplies energy; night does not. Clouds and panel snow reduce it. Brush the array when needed. Turn off the repeater (12 W) and lamp (7 W), and isolate the unused crew spur (6 W) to preserve charge. Solar does not restore the town grid or distant broadcasts."%[power_status(),state.battery_wh,LookoutAssignment.BATTERY_CAP_WH,state.solar_watts(),state.solar.snow_cover*100,state.house_load_w(),commissioning]
+	world.reading.open("Kestrel 07 • local power",text,world.player,world.hud)
 func toggle_auto_transfer() -> void: state.auto_transfer_on = not state.auto_transfer_on
 func toggle_relay() -> void:
 	state.relay_enabled = not state.relay_enabled; update_presentation(); _radio_update()
@@ -367,8 +394,10 @@ func install_relay() -> void:
 		world._say("Need your service kit and the replacement relay"); return
 	if world.inv.remove("power_relay") and state.install(): world._say("Replacement seated. Verify the transfer before signing off.")
 func verify_relay() -> void:
-	if state.verify(): world._say("Transfer verified. Local site equipment restored and automatic backup armed. You can disable the repeater to conserve 12 W. Distant grid failures cannot be repaired here.")
-	elif state.repair_stage == 2: world._say("No local power. Enable backup at the desk panel, then verify.")
+	if world.inv.count("service_kit")<1:world._say("Bring your insulated service tester to commission the circuit.");return
+	if state.verify():
+		update_presentation();_radio_update()
+		world._say("Circuit commissioned; solar charger connected and backup armed. An empty reserve recovers in daylight. Switch off unneeded loads while it charges. The town grid remains separate.")
 func stoke() -> void:
 	if fuel_s + 2 * 3600 > 16 * 3600: world._say("Stove too full for another log; let the current fuel burn down"); return
 	if world.inv.count("wood") < 1: world._say("Need firewood"); return

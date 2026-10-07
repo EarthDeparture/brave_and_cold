@@ -1,0 +1,43 @@
+{
+  "relay_solar_array": {
+    "triangles": 6306,
+    "bytes": 491760,
+    "sha256": "ad93737c1801bbe0c98c90fac96bc8692aa7597d65269e23a52e344b93103638",
+    "source": "tools/blender/generated/lookout_solar/relay_solar_array.blend",
+    "source_sha256": "77eac2df0ced8238ba6c637869ea8788dbd561bc7b9d396722bffba7adfbd411",
+    "mesh_nodes": 8,
+    "measured_bounds_min_xyz": [
+      -1.2100000381469727,
+      0.1525000035762787,
+      -0.5099999904632568
+    ],
+    "measured_bounds_max_xyz": [
+      1.2200000286102295,
+      2.1143786907196045,
+      0.5879999995231628
+    ],
+    "measured_dimensions_m": [
+      2.430000066757202,
+      1.9618786871433258,
+      1.0979999899864197
+    ],
+    "rated_w": 120,
+    "snow_nodes": [
+      "SnowLeft",
+      "SnowRight"
+    ],
+    "collisions": "Runtime physical-rack rectangle plus surveyed foot extensions; no ground slab."
+  },
+  "provenance": {
+    "license": "Original project-authored geometry and generated printwork",
+    "seed": 7106,
+    "units": "metres",
+    "blender": "5.2.2 LTS",
+    "generator_sha256": "e8ab10c8d71997c97c86f42618575ea480c62148e56da61e8292e2ba7e453753",
+    "graphics_generator_sha256": "f267f9fb5a2c69a780f34d68e0c21b0b42b0797828203d4a775285d02da00cc0"
+  },
+  "graphics": {
+    "pv_cells.png": "26048e668f9ca46881db7eb38588cc58c932f5121d21a96c1bd7bbb4edc161c3",
+    "charger_plate.png": "e45e192bd84327d4978eb0e67403e1b7797cec4a87dbdd6051bbf1eef88a33fc"
+  }
+}

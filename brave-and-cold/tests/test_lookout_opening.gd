@@ -95,6 +95,7 @@ func run() -> void:
 	# Scheduled world population must seed once even after long time skips.
 	w.clock.total_game_s=29*3600;op.advance(0);w.collapse.update(0)
 	check(w.collapse.stage==1,"disruption issues only the first persistent population cohort")
+	s.solar.enabled=false # This assertion intentionally has no generating source.
 	s.backup_on=true;s.receiver_on=true;s.last_s=s.grid_fail_s;s.battery_wh=22
 	w.clock.total_game_s=s.grid_fail_s+3600;op.advance(3600)
 	check(s.battery_wh==0 and not s.powered(),"blackout and backup exhaustion affect live world")
