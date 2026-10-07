@@ -9,6 +9,11 @@ var _detail_rng := RandomNumberGenerator.new()
 var _detail_timer := 24.0
 const WOOD_STEP := preload("res://assets/environment_detail/audio/step_wood.wav")
 const ICE_STEP := preload("res://assets/environment_detail/audio/step_ice.wav")
+const SURFACE_STEPS := {
+	"wood":[preload("res://assets/environment_detail/audio/surface_foley/step_wood_0.wav"),preload("res://assets/environment_detail/audio/surface_foley/step_wood_1.wav"),preload("res://assets/environment_detail/audio/surface_foley/step_wood_2.wav"),preload("res://assets/environment_detail/audio/surface_foley/step_wood_3.wav")],
+	"ice":[preload("res://assets/environment_detail/audio/surface_foley/step_ice_0.wav"),preload("res://assets/environment_detail/audio/surface_foley/step_ice_1.wav"),preload("res://assets/environment_detail/audio/surface_foley/step_ice_2.wav")]
+}
+var _last_surface_step:Dictionary={}
 const WOOD_CREAK := preload("res://assets/environment_detail/audio/timber_creak.wav")
 const WINDOW_RATTLE := preload("res://assets/environment_detail/audio/window_rattle.wav")
 var player: Player
@@ -102,22 +107,30 @@ func _on_step(tier: int, radius: float) -> void:
 	p.stream = Sfx.get_stream("step%d%d" % [set_id, _step_n % 3])
 	if detail_enabled:
 		if player._on_spatial_surface():
-			p.stream = WOOD_STEP
+			p.stream = _surface_step("wood")
 		else:
 			var on_floor := false
 			for cabin in player.cabins:
 				if cabin.contains_xz(player.position.x, player.position.z):
 					on_floor = true; break
-			if on_floor: p.stream = WOOD_STEP
+			if on_floor: p.stream = _surface_step("wood")
 			elif player.ice != null:
 				var height: float = player.ice.ice_at(player.position.x,player.position.z)
 				if not is_nan(height) and absf(player.position.y-player.eye_h-height)<.7:
-					p.stream = ICE_STEP
+					p.stream = _surface_step("ice")
 	p.volume_db = lerpf(-36.0, -17.0, clampf((radius - 3.0) / 15.0, 0.0, 1.0))
 	p.pitch_scale = _rng.randf_range(0.9, 1.1)
 	p.finished.connect(p.queue_free)
 	add_child(p)
 	p.play()
+
+func _surface_step(material:String)->AudioStream:
+	var streams:Array=SURFACE_STEPS[material]
+	var last:=int(_last_surface_step.get(material,-1))
+	var pick:=_detail_rng.randi_range(0,streams.size()-2) if last>=0 else _detail_rng.randi_range(0,streams.size()-1)
+	if last>=0 and pick>=last:pick+=1
+	_last_surface_step[material]=pick
+	return streams[pick]
 
 
 func gunshot() -> void:

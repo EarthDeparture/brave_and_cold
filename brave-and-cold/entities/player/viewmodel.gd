@@ -73,9 +73,9 @@ var _was_dead := false
 
 func _ready() -> void:
 	_roll=(load("res://assets/maintenance/dressing_roll.glb") as PackedScene).instantiate();add_child(_roll);_roll.visible=false
-	_bottle=(load("res://assets/first_week/water_bottle.glb") as PackedScene).instantiate();add_child(_bottle);_bottle.visible=false
+	_bottle=(load("res://assets/opening_props/field_flask.glb") as PackedScene).instantiate();add_child(_bottle);_bottle.visible=false
 	# Uncapped field flask during the sip; inventory retains its reusable container.
-	for part:String in ["Surface_steel","Surface_rubber"]:
+	for part:String in ["FlaskCap"]:
 		var n:=_bottle.find_child(part,true,false) as Node3D
 		if n!=null:n.visible=false
 	watch=(load("res://assets/wristwatch/field_watch.glb") as PackedScene).instantiate()
@@ -553,8 +553,10 @@ func _pose_consumable(base:Transform3D)->void:
 		# Tilt the wrist and flask together; the flask must not rotate through
 		# fingers whose grip stays fixed during a sip.
 		_right.transform.basis*=Basis(Vector3.RIGHT,-.15-.65*lift)
-		_right.pose("BottleGrip")
-		_bottle.visible=true;_bottle.transform=_right.transform*Transform3D(Basis(Vector3.BACK,PI*.5),Vector3(.12,-.062,-.095))
+		# Loosen the fingers around the actual 84mm flask body, including gloves.
+		# The 2mm socket adjustment and release were fitted to deformed vertices.
+		_right.pose("BottleGrip","",0,.24)
+		_bottle.visible=true;_bottle.transform=_right.transform*Transform3D(Basis(Vector3.BACK,PI*.5),Vector3(.12,-.064,-.095))
 	else:
 		_left.visible=true;_sl_l.visible=true
 		_left.transform=_free_hand(-1,Vector3(-.12,-.26,-.44),Vector3(-.46,-.57,.22),35,base);_left.pose("Open","Support",.35)

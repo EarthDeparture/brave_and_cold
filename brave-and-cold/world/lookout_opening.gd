@@ -364,7 +364,7 @@ func actions() -> Array:
 	var cabinet := relay.to_global(Vector3(0,1.10,.52))
 	match state.repair_stage:
 		0: out.append(_action(cabinet, "Inspect transfer cabinet", inspect_relay, 6))
-		1: out.append(_action(cabinet, "Install replacement transfer relay" if world.inv.count("power_relay") > 0 else "Replacement reserved at North Ridge Supply", install_relay, 6))
+		1: out.append(_action(cabinet, "Install replacement transfer relay" if world.inv.count("power_relay") > 0 else ("Retrieve your collected relay from storage or its dropped pickup" if state.parts_claimed else "Replacement reserved at North Ridge Supply"), install_relay, 6))
 		2: out.append(_action(cabinet, "Verify backup transfer", verify_relay, 4))
 		3:
 			out.append(_action(cabinet, "Disable repeater • save 12 W" if state.relay_enabled else "Enable repeater • 12 W", toggle_relay))
@@ -391,9 +391,25 @@ func read_log() -> void:
 		var bearing := fposmod(rad_to_deg(atan2(d.x,-d.z)),360)
 		directions = "North Ridge Supply is approximately %.0f m away on bearing %.0f° (straight-line). Follow the logging track down to the road; collect the reserved relay case at the store counter." % [Vector2(d.x,d.z).length(),bearing]
 	var task: String = ["Inspect the ground transfer cabinet with your insulated service kit.","Collect the reserved transfer relay, return and install it in the cabinet.","Verify the cabinet transfer circuit with your service tester, even if the home battery is empty.","Relay signed off. Local service restored."][state.repair_stage]
-	if state.repair_stage==1 and state.parts_claimed:task="Return to the ground cabinet and install the replacement relay."
+	if state.repair_stage==1 and state.parts_claimed:task="Return to the ground cabinet and install the replacement relay." if world.inv.count("power_relay")>0 else "Retrieve your collected relay from storage or its dropped pickup before returning to the ground cabinet."
 	var text := "KESTREL RELAY 07 — FIELD ASSIGNMENT\n\nCurrent work\n%s\n\nDepot and access\n%s\n\nCommunications\nTake the walkie from its desk cradle before travelling. Field dispatch and public news are monitored together. Its battery powers both signals away from home, independently of the desk receiver. A full charge lasts about one day. Dock it on this desk to recharge in roughly three hours from local mains or backup power. Amber indicates charging and green indicates full charge. The desk receiver remains public radio only. Bulletins begin at 06:00, 12:00, 17:00 and 00:00; noon recaps the morning. Green indicates receiver power and blue identifies public radio. Public reports are live, not queued: missed bulletins do not return. Dispatch keeps clear of every public slot. A dispatch call wakes you if your powered walkie is carried or within earshot on the desk; public broadcasts do not. Hold T to look at your wristwatch, or check time and walkie charge in Gear (Tab). Midnight closes the day just lived. The desk receiver and lamp can be switched off separately.\n\nLocal power\nInspect, replace and verify the transfer relay. Commissioning arms automatic battery transfer while the repeater is enabled. Manual backup is available at the desk panel; this supplies the lookout, not the town grid. Commissioning also connects the compound solar charger. Your service tester can commission an empty home reserve. Solar charges during daylight even with the backup output switch off; clouds and panel snow reduce input. Brush the panels when covered. After total depletion, the home outputs wait for 12 Wh before restarting. Read the desk power status or inspect the array for current input and load.\n\nOvernight stock\nDeliveries are expected, but the provisions here are finite. The rack starts with six logs. Each fuels this stove for two hours; collect fallen timber along the logging road, split it with your axe, and restock the rack before dark. Wood deposited in lookout provisions refills the same visible rack. Bring snow portions and empty bottles to the kettle. A batch prepares up to 2 L in 20 game minutes while the stove burns; collect it into your pack, drink in Gear or store it for tomorrow. Follow the timber markers for dry wood, a finite crew cache and the labelled crew-spur disconnect. Stoke the stove and prepare the sleeping berth before the weather closes in.\n\nFirst aid\nIn Gear (Tab), select your bandage and choose Apply bandage, or double-click it. One wrap stops bleeding; it does not restore lost blood immediately or cure infection. Recovery needs food above 900 kcal, water above 45%%, and no fever or hypothermia. Resting warm restores blood faster. Gather cloth and supplies during the first town visit. Outbreak transmission is a separate risk from ordinary wound infection; antibiotics cannot remove it.\n\nRest and maintenance\nFatigue accumulates over game hours. Warm, fed, hydrated sleep restores it; it lowers sustained stamina gradually. Wet clothes reduce sleep quality. At this desk, choose Maintain in Gear for a worn item. A whetstone and rag hone an axe or knife. A sewing kit, two rags and cordage mend clothing. A service kit, stick and two nails repair a hammer. Movement or damage interrupts work before its materials are spent." % [task,directions]
-	world.reading.open("North Ridge • Service log",text,world.player,world.hud)
+	world.reading.open("North Ridge • Service log",field_plan_text()+"\n\nREFERENCE NOTES\n\n"+text,world.player,world.hud)
+
+func field_plan_text() -> String:
+	var work:="Inspect the transfer cabinet beside the compound. Bring the service kit."
+	match state.repair_stage:
+		1:
+			if world.inv.count("power_relay")>0:work="Return and fit the relay already in your pack."
+			elif state.parts_claimed:work="Retrieve the relay you collected from its storage or dropped pickup, then return to the ground cabinet."
+			else:work="Take the logging track to North Ridge Supply for the reserved relay."
+		2:work="Verify the ground transfer circuit before signing off."
+		3:work="Relay signed off. Choose your next outing from your actual food, water and fuel reserves."
+	var heat:="Stove out — replenish and light it before preparing water or food." if fuel_s<=0 else "Stove: %.1f game hours remaining; %d logs on the rack."%[fuel_s/3600,wood_left]
+	var bottles:int=pantry.count("clean_water")+world.inv.count("clean_water")+water.ready
+	var result:="FIELD PLAN — %s\n\n%s\n\nBefore leaving\n%s\nPrepared drinking water: %.1f L in home stock, pack and kettle.\nWalkie: %s, %.0f%% charge.\n\n"%[world.clock.time_string(),work,heat,bottles*.5,"carried" if state.walkie_carried else "on its desk cradle",state.walkie_percent()]
+	result+="Bring enough heat, water and food for the return, and leave room for supplies. The timber stop provides wood; the crew cache is finite. Animals range off the logging track. Cook raw portions, then use the drying rack for longer storage. Processing continues while you work nearby.\n\n"
+	result+="Public bulletins: 06:00 / 12:00 / 17:00 / 00:00. Listening is optional. The store counter and clinic notices provide local evidence when reports are missed."
+	return result
 func toggle_receiver() -> void:
 	world.audio.play_at("switch_click",speaker.global_position,-12,1,2,9)
 	state.receiver_on = not state.receiver_on; _update_receiver_indicators(); _radio_update()
@@ -558,7 +574,7 @@ func _update_stock() -> void:
 	_stock_signature = signature
 	for n:Node in bottle_stock.get_children():bottle_stock.remove_child(n);n.queue_free()
 	for i in mini(pantry.count("clean_water"),4):
-		var n:Node3D=(load("res://assets/first_week/water_bottle.glb") as PackedScene).instantiate();bottle_stock.add_child(n);n.position=Vector3((i-1.5)*.085,0,0)
+		var n:Node3D=(load("res://assets/opening_props/field_flask.glb") as PackedScene).instantiate();bottle_stock.add_child(n);n.position=Vector3((i-1.5)*.085,0,0)
 	for node: Node in _stock.get_children():
 		_stock.remove_child(node); node.queue_free()
 	var wood_poses: Array[Transform3D] = []

@@ -51,6 +51,7 @@ func run() -> void:
 	p.cam = Camera3D.new(); p.add_child(p.cam); p.cam.fov = 70
 	vm = Viewmodel.new(); vm.detail_enabled = true; vm.player = p; p.cam.add_child(vm); vm.set_process(false)
 	check("Both hands use new 17-bone anatomy",vm._right.skeleton.get_bone_count()==17 and vm._left.skeleton.get_bone_count()==17)
+	check("Drink flask hides only its removable cap",not (vm._bottle.find_child("FlaskCap",true,false) as Node3D).visible and (vm._bottle.find_child("Surface_steel",true,false) as Node3D).visible)
 	for h in [vm._right,vm._left]:
 		check("Skin, gloves and nails retain shared skeleton binds",h.bare.skin!=null and h.glove.skin!=null and h.nails.skin!=null)
 		check("Fourteen volume correctives on bare skin and gloves",h.bare.mesh.get_blend_shape_count()==14 and h.glove.mesh.get_blend_shape_count()==14)
@@ -137,6 +138,18 @@ func run() -> void:
 		vm.begin_work(kind,2);var finite:=true
 		for i in 21:vm.update_work(i*.1);vm._process(0);finite=finite and vm._right.transform.is_finite() and cuff_ok()
 		check(kind+" retains new anatomy and attached cuff",finite);vm.end_work(false)
+	for gloved:bool in [false,true]:
+		vm.glove_item="hide_mitts" if gloved else "";vm.begin_work("drink",2);vm.update_work(1);vm._process(0)
+		var inverse:=vm._bottle.transform.affine_inverse();var overlap:=0.0;var contacts:=0
+		for point:Vector3 in skin_vertices(vm._right,gloved):
+			var local:Vector3=inverse*(vm._right.transform*point)
+			if local.y<.03 or local.y>.175:continue
+			var distance:=Vector2(local.x,local.z).length()-.042
+			overlap=maxf(overlap,-distance)
+			if absf(distance)<.004:contacts+=1
+		print("FLASK_CONTACT gloves=",gloved," overlap_m=",overlap," contact_vertices=",contacts)
+		check("Drink grip touches flask without deep overlap "+str(gloved),contacts>100 and overlap<.0035)
+		vm.end_work(false)
 	pose("axe");vm.glove_item="hide_mitts";vm._process(0)
 	check("Mitts select new leather shells and hide nails",vm._right.glove.visible and not vm._right.bare.visible and not vm._right.nails.visible)
 	vm.glove_item="";vm._process(0)

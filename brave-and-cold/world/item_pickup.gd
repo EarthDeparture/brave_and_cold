@@ -41,7 +41,7 @@ func _build_visual() -> void:
 		var asset:String={"dc_fuse":"dc_fuse","sealed_connector":"sealed_connector","dc_cable":"dc_cable","winter_controller":"winter_controller"}[id]
 		add_child((load("res://assets/electrical_fieldwork/"+asset+".glb") as PackedScene).instantiate());return
 	if id in ["clean_water","empty_bottle"]:
-		var bottle:Node3D=(load("res://assets/first_week/water_bottle.glb") as PackedScene).instantiate();add_child(bottle)
+		var bottle:Node3D=(load("res://assets/opening_props/field_flask.glb") as PackedScene).instantiate();add_child(bottle)
 		return
 	if id in ["whetstone","sewing_kit","bandage"]:
 		var asset:String="dressing_roll" if id=="bandage" else id

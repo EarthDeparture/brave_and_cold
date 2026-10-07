@@ -1,0 +1,21 @@
+{
+  "field_flask": {
+    "triangles": 2398,
+    "bytes": 471692,
+    "sha256": "b847ba3293df37631eb27e6622e77d970a7dbc2d596e38cea44472a750cc844b",
+    "source": "tools/blender/generated/opening_props/field_flask.blend",
+    "source_sha256": "34eddc9e0e18d3a1dbd59a5411a46605a5bb325bab4c1e168c33de9a2bb3695e",
+    "mesh_nodes": 6
+  },
+  "provenance": {
+    "origin": "Original metric Blender model; existing original project enamel and water-label graphics",
+    "grip_envelope_m": [
+      0.084,
+      0.264,
+      0.084
+    ],
+    "cap_node": "FlaskCap; hide only this node for drinking",
+    "generator_sha256": "a85be9346c370f5264e1efd02e8ba4323bf0a04ce627d8bcf4ea4fba0af22daa",
+    "enamel_sha256": "9efb54c2d7f167bcfce35b840d72622dd3f460dcd9d3e6ffced7b1a2fb11c7d9"
+  }
+}
