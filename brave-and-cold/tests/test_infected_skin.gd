@@ -82,10 +82,11 @@ func run()->void:
 		if not ok:print("RESET_BONE ",sk.get_bone_name(i)," scale=",sk.get_bone_pose_scale(i)," angle=",sk.get_bone_pose_rotation(i).angle_to(sk.get_bone_rest(i).basis.get_rotation_quaternion()))
 	check(clean,"pool activation resets skin deformation and crawler scale")
 	var deaths:=[0];z.died.connect(func()->void:deaths[0]+=1)
-	for variant:String in ["standing","attack","heavy","crawler","sleeper"]:
+	for variant:String in ["standing","attack","walking","heavy","crawler","sleeper"]:
 		z.activate(Vector3.ZERO,78,Zombie.Kind.HEAVY if variant=="heavy" else (Zombie.Kind.SLEEPER if variant=="sleeper" else 0))
 		z.set_process(false)
 		if variant=="attack":z.state=Zombie.State.CHASE;z.speed_now=1.4;z._attack_windup=.1;z._animate(.1)
+		if variant=="walking":z.state=Zombie.State.CHASE;z.speed_now=1.4;z._gait_speed=1.4;z._animate(.2)
 		if variant=="crawler":z._make_crawler()
 		var deaths_before:int=deaths[0];z.hit(999,Vector3.ZERO);z.hit(999,Vector3.ZERO);z._die()
 		check(z.is_dead() and deaths[0]==deaths_before+1 and z._attack_windup<0 and not z.is_in_group("hostile"),"death remains immediate and single-shot: "+variant)

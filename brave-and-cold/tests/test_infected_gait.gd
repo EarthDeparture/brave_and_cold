@@ -34,6 +34,7 @@ func run()->void:
 		sole_points.append([vertices[v],bone,rubber.skin.get_bind_pose(bind),0 if vertices[v].x<0 else 1])
 	check(sole_points.size()>20,"actual imported boot soles supply contact vertices")
 	check(z._skin.get_bone_count()==13 and z._ankle_frames.size()==2,"13-bone export retains both independent ankles")
+	var cadence_ok:=true
 	for fps:int in [30,60,120]:
 		for speed:float in [.8,2.4]:
 			for grade:Vector2 in [Vector2.ZERO,Vector2(.08,.12),Vector2(-.10,-.14)]:
@@ -56,6 +57,9 @@ func run()->void:
 				print("GAIT_METRICS fps=",fps," speed=",speed," grade=",grade," ankle_anchor_error_m=",error," sole_plane_error_m=",sole_error," sole_normal_dot=",upright)
 				check(finite and stance_frames>fps and error<.006,"world-space stance holds under measured travel: %d / %.1f / %s"%[fps,speed,grade])
 				check(sole_error<.003 and upright>.999,"visible boot soles follow ground plane: %d / %.1f / %s"%[fps,speed,grade])
+				var cycles_per_second:=z._phase/TAU/3
+				cadence_ok=cadence_ok and (cycles_per_second>.6 and cycles_per_second<1.0 if speed<1 else cycles_per_second>1.5 and cycles_per_second<2.0)
+	check(cadence_ok,"walking/chase cadence retains adult-length strides across all frame rates")
 	z.grade=Vector2.ZERO;z.activate(Vector3.ZERO,15);z.set_process(false);z.speed_now=1;z._gait_speed=1;z._animate(.05)
 	z._gait_speed=0;z._animate(.05)
 	check(not z._gait.active and z._model.position.y==0,"blocked movement releases contacts and visual crouch")

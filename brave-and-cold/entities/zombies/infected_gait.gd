@@ -22,6 +22,9 @@ func solve(actor:Zombie,phase:float,stride:float)->void:
 	last_heading=heading;active=true
 	var model:Node3D=actor._model
 	var scale_y:=model.global_basis.get_scale().y
+	model.position.y=0
+	var targets:Array[Vector3]=[]
+	var body_offset:=0.0
 	for i in 2:
 		if planted[i] and absf(wrapf(heading-plant_heading[i],-PI,PI))>.12:planted[i]=false
 		var u:=fposmod(phase/TAU+i*.5,1)
@@ -41,6 +44,19 @@ func solve(actor:Zombie,phase:float,stride:float)->void:
 			target.y=actor._corpse_floor(target)+(ANKLE_HEIGHT+.065*sin(PI*swing))*scale_y
 			floor_bases[i]=model.global_basis.orthonormalized()
 		planted[i]=stance
+		targets.append(target)
+		# Preserve an adult-length stride without stretching the leg. The hip
+		# follows the most restrictive foot, producing a small natural bob
+		# instead of shortening the stride into a rapid shuffle.
+		var local:=model.to_local(target)
+		var horizontal:=Vector2(local.x-x,local.z).length()
+		var reach:=(THIGH.length()+CALF.length())*.985
+		var vertical:=sqrt(maxf(.01,reach*reach-horizontal*horizontal))
+		body_offset=minf(body_offset,(local.y+vertical-.92)*model.scale.y)
+	model.position.y=maxf(body_offset,-.20*model.scale.y)
+	for i in 2:
+		var x:=(-1.0 if i==0 else 1.0)*.10
+		var target:=targets[i]
 		var hip:=Vector3(x,.92,0)
 		var offset:=model.to_local(target)-hip
 		var l1:=THIGH.length();var l2:=CALF.length()

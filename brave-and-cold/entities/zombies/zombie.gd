@@ -587,7 +587,7 @@ func _apply_coat(id:int)->void:
 	for mesh:MeshInstance3D in _coat_meshes:mesh.material_override=_coats[posmod(id,2)]
 func _animate(delta:float)->void:
 	var travel:=speed_now if _gait_speed<0 else minf(_gait_speed,speed_now)
-	var stride:=lerpf(.25,.44,clampf(travel/CHASE_SPEED,0,1))
+	var stride:=lerpf(.85,1.30,clampf(travel/CHASE_SPEED,0,1))
 	_phase+=delta*travel*TAU/(stride*maxf(.1,_model.scale.y))
 	var amp:=clampf(travel/CHASE_SPEED,0,1)*.48
 	for i in mini(2,_legs.size()):
@@ -603,7 +603,6 @@ func _animate(delta:float)->void:
 	var grounded:=travel>.03 and _gait_speed>=0 and not crawling and _vault_t<0 and _stagger<=0 and state not in [State.SLEEP,State.DEAD]
 	_model.rotation.z=sin(_state_t*12)*.10*clampf(_stagger/.5,0,1)
 	if grounded and _ankle_frames.size()==2:
-		_model.position.y=-.055*_model.scale.y
 		_gait.solve(self,_phase,stride)
 	else:
 		_gait.reset()
