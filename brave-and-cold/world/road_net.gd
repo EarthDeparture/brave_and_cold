@@ -37,6 +37,7 @@ var grading_enabled := true
 var walk_surface := WalkSurface.new()
 var profile: Array[float] = []
 var sign_records: Array[Dictionary] = []
+var snow_cover:=0.0
 var _road_material: ShaderMaterial
 var _sign_scenes: Dictionary = {}
 var _water: Image
@@ -563,9 +564,12 @@ func _add_sign(kind: String, pos: Vector3, yaw: float, wood: Material, steel: Ma
 	s.add_child(lb)
 
 
-func update_weather(precipitation: float) -> void:
-	if _road_material != null:
-		_road_material.set_shader_parameter("fresh_snow", clampf(precipitation, 0.0, 1.0))
+func update_weather(precipitation: float,game_s:float=0.0) -> void:
+	var target:=clampf(precipitation,0,1)
+	if game_s>0:
+		var hours:=2.0 if target>snow_cover else 8.0
+		snow_cover=lerpf(snow_cover,target,1.0-exp(-game_s/(hours*3600.0)))
+	if _road_material != null:_road_material.set_shader_parameter("fresh_snow", snow_cover)
 
 
 func _contextual_sign(index: int, slot: int, side: float) -> String:
@@ -701,4 +705,5 @@ static func lift(height:float,x:float,z:float,foot_y:float=NAN) -> float:
 static func resolve_actor(candidate:Vector3,previous:Vector3,radius:float) -> Vector2:
 	var q := current.resolve_at(candidate,previous,radius) if is_instance_valid(current) else Vector2(candidate.x,candidate.z)
 	q=RefugeBoundary.resolve_actor(Vector3(q.x,candidate.y,q.y),previous,radius)
+	q=RouteDressing.resolve_actor(Vector3(q.x,candidate.y,q.y),previous,radius)
 	return FireLookout.resolve_doors(Vector3(q.x,candidate.y,q.y),previous,radius)

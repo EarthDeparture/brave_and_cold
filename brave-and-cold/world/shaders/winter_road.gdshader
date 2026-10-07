@@ -15,18 +15,20 @@ void fragment(){
  vec4 broad=texture(spatial_fields,metre*vec2(.12,.021));
  vec4 breakup=texture(spatial_fields,metre*vec2(.27,.15)+vec2(.21,.37));
  float lateral=abs(metre.x);
- float wander=(broad.g-.5)*.12;
+ float side=step(0.0,metre.x);
+ vec4 lane=texture(spatial_fields,vec2(side*.43+.17,metre.y*.015));
+ float wander=(lane.g-.5)*.24;
  // Two wheel paths per lane, softened by irregular snow and road grit.
  float wheel=min(abs(lateral-(.70+wander)),abs(lateral-(2.00+wander)));
- float wear=1.0-smoothstep(.08,.38+(breakup.r-.5)*.15,wheel);
+ float wear=1.0-smoothstep(.08,.34+(breakup.r-.5)*.22,wheel);
  float shoulder=smoothstep(2.45+(broad.r-.5)*.22,3.25,lateral);
  float deposit=smoothstep(.32,.76,breakup.r*.6+broad.g*.4);
- float cover=clamp(.63+deposit*.25-wear*.28*(.35+.65*breakup.g)+fresh_snow*.10,0.0,1.0);
+ float cover=clamp(.63+deposit*.25-wear*.39*(.15+.85*smoothstep(.20,.72,breakup.g))+fresh_snow*.19,0.0,1.0);
  cover=mix(cover,1.0,shoulder);
  vec4 grit=texture(aggregate_albedo,metre/2.4);
- vec4 snow=texture(powder_albedo,metre/3.6);
+ vec4 snow=texture(powder_albedo,ground_xz*.12);
  vec4 grit_n=texture(aggregate_normal,metre/2.4);
- vec4 snow_n=texture(powder_normal,metre/3.6);
+ vec4 snow_n=texture(powder_normal,ground_xz*.12);
  vec3 asphalt=grit.rgb*(1.18+broad.b*.16);
  // Dirty compacted snow is confined to traffic lanes, clean powder on banks.
  vec3 compacted=snow.rgb*mix(vec3(.66,.69,.71),vec3(.93,.95,.98),shoulder);
@@ -40,15 +42,16 @@ void fragment(){
  colour*=1.0-ribs*wear*resolved*.035;
  ALBEDO=colour;
  // Match the adjacent terrain powder without visible dithering or transparency.
- float side_edge=1.0-smoothstep(3.70+(broad.b-.5)*.12,4.45,lateral);
+ float side_edge=1.0-smoothstep(3.45+(broad.b-.5)*.35,4.9,lateral);
  float end_edge=smoothstep(0.0,8.0,metre.y)*smoothstep(0.0,8.0,route_length-metre.y);
  float road_weight=side_edge*end_edge;
  vec3 edge_powder=texture(powder_albedo,ground_xz*.12).rgb;
- ALBEDO=mix(edge_powder,colour,road_weight);
+ ALBEDO=colour;
+ ALPHA=road_weight;
  float polished=wear*(1.0-cover)*smoothstep(.35,.65,broad.g);
  ROUGHNESS=mix(.87,.53,polished);
  SPECULAR=mix(.17,.30,polished);
  NORMAL_MAP=mix(grit_n.rgb,snow_n.rgb,cover);
- NORMAL_MAP_DEPTH=mix(.32,.16,cover);
+ NORMAL_MAP_DEPTH=mix(.32,.65,cover);
  if(!FRONT_FACING) NORMAL=-NORMAL;
 }

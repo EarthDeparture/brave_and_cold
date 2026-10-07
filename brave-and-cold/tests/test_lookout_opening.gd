@@ -66,10 +66,10 @@ func run() -> void:
 	var ground_y:=previous.y
 	var actor_blocked:=RoadNet.resolve_actor(candidate,previous,.3)
 	check(actor_blocked.distance_to(Vector2(candidate.x,candidate.z))>.3,"creatures share gate collision")
-	boundary.toggle_gate();var open:=boundary.resolve_at(candidate,previous,.3)
+	boundary.toggle_gate();boundary.advance_gate(RefugeBoundary.GATE_SWING_S);var open:=boundary.resolve_at(candidate,previous,.3)
 	check(open.distance_to(Vector2(candidate.x,candidate.z))<.001,"open aperture passes without steering jitter")
 	check(not op.is_refuge(candidate),"open compound does not claim safe ground")
-	boundary.toggle_gate()
+	boundary.toggle_gate();boundary.advance_gate(RefugeBoundary.GATE_SWING_S)
 	var point:=boundary.to_global(boundary.ground_local(0,0))
 	check(not boundary.contains_ground(RefugeBoundary.safe_spawn(point)),"population materialization cannot occur inside closed refuge")
 	var remote:=Vector3(-500,90,500);check(RefugeBoundary.resolve_actor(remote,remote+Vector3(.01,0,0),.3)==Vector2(remote.x,remote.z),"remote movement stays bit-exact")

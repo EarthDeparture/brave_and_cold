@@ -65,6 +65,16 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 	var tower: FireLookout = world.fire_lookout
 	boundary = RefugeBoundary.new(); tower.add_child(boundary); boundary.build(world.terrain)
 	boundary.gate_open = bool(saved.get("gate_open", false)); boundary.sync_gate()
+	if saved.has("gate_state"):boundary.restore_gate(saved.gate_state)
+	boundary.actor_provider=func()->Array:
+		var actors:Array=[{"pos":world.player.global_position,"radius":.35}]
+		for group:String in ["hostile","prey"]:
+			for actor:Node3D in get_tree().get_nodes_in_group(group):
+				if actor.has_method("is_dead") and actor.call("is_dead"):continue
+				if actor.global_position.distance_squared_to(boundary.gate_point())<36:
+					actors.append({"pos":actor.global_position,"radius":.50})
+		return actors
+	boundary.gate_sound.connect(func(id:String,at:Vector3)->void:world.audio.play_at(id,at,-10,1,3,22))
 	world.player.spatial_structures.append(boundary)
 	relay = Node3D.new(); tower.add_child(relay)
 	relay.position = boundary.ground_local(RELAY_LOCAL.x, RELAY_LOCAL.z)
@@ -347,7 +357,10 @@ func actions() -> Array:
 	if wood_left<VISIBLE_WOOD_CAP and world.inv.count("wood")>0:
 		out.append(_action(rack,"Stack firewood (%d)"%mini(VISIBLE_WOOD_CAP-wood_left,world.inv.count("wood")),stack_wood,1,.05))
 	out.append_array(world._sleep_items(world.fire_lookout))
-	out.append(_action(boundary.gate_point(), "Close compound gate" if boundary.gate_open else "Open compound gate", boundary.toggle_gate))
+	var gate_label:="Close compound gate" if boundary.gate_open else "Open compound gate"
+	if boundary.gate_blocked:gate_label+=" • clear the swing area"
+	elif boundary.gate_moving:gate_label+=" • opening" if boundary.gate_open else " • closing"
+	out.append(_action(boundary.gate_point(),gate_label,boundary.toggle_gate))
 	var cabinet := relay.to_global(Vector3(0,1.10,.52))
 	match state.repair_stage:
 		0: out.append(_action(cabinet, "Inspect transfer cabinet", inspect_relay, 6))
@@ -483,12 +496,12 @@ func heat_at(eye: Vector3) -> float:
 	return (145.0 + 340.0 * pow(maxf(0,1-distance/3),2)) * minf(1,fuel_s/300)
 func is_refuge(point: Vector3) -> bool:
 	if world.fire_lookout.contains_room(point): return true
-	if boundary.gate_open or not boundary.contains_ground(point): return false
+	if not boundary.is_latched() or not boundary.contains_ground(point): return false
 	for actor: Node in get_tree().get_nodes_in_group("hostile"):
 		if actor is Node3D and not bool(actor.call("is_dead")) and boundary.contains_ground(actor.global_position): return false
 	return true
 func to_dict() -> Dictionary:
-	return {"state":state.to_dict(),"home":{"schema":2,"electrical":electrical.to_dict() if electrical!=null else {},"prepared_water":water.to_dict(),"preservation":preservation.to_dict(),"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open}}
+	return {"state":state.to_dict(),"home":{"schema":2,"electrical":electrical.to_dict() if electrical!=null else {},"prepared_water":water.to_dict(),"preservation":preservation.to_dict(),"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open,"gate_state":boundary.gate_state()}}
 func _relay_foundations() -> void:
 	var st := SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for foot: Vector2 in [Vector2(-1.04,-1.1),Vector2(1.04,-1.1),Vector2(0,-2.15),Vector2(-.45,0),Vector2(.45,0),Vector2(-.92,-.35)]:

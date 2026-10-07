@@ -33,6 +33,7 @@ var footprints: Footprints
 var cabins: Array[Cabin] = []
 var fire_lookout: FireLookout # Standalone additive mountain structure; never a ground cabin collider.
 var opening: LookoutOpening
+var route_dressing:RouteDressing
 var first_week:FirstWeekRoute
 var collapse:FirstWeekCollapse
 var clinic_plan:Dictionary={}
@@ -356,6 +357,8 @@ func _ready() -> void:
 		opening = LookoutOpening.new(); add_child(opening)
 		opening.build(self,opening_state,sv.get("opening",{}).get("home",{}))
 		first_week=FirstWeekRoute.new();add_child(first_week);first_week.build(self,sv.get("first_week",{}))
+		if route_detail_enabled:
+			route_dressing=RouteDressing.new();add_child(route_dressing);route_dressing.build(self);player.spatial_structures.append(route_dressing)
 		opening.electrical=ElectricalFieldwork.new();opening.add_child(opening.electrical)
 		opening.electrical.build(self,sv.get("opening",{}).get("home",{}).get("electrical",{}))
 		opening_state.field_load_w=0 if first_week.feeder_isolated else 6
@@ -529,7 +532,9 @@ func _process(delta: float) -> void:
 	for food:ItemPickup in get_tree().get_nodes_in_group("perishable_pickups"):food.tick(gs)
 	weather.advance(delta, gs)
 	wind = weather.wind
-	road.update_weather(weather.precip)
+	road.update_weather(weather.precip,gs)
+	if fire_lookout!=null and fire_lookout.access_material!=null:fire_lookout.access_material.set_shader_parameter("fresh_snow",road.snow_cover)
+	if trailnet.path_material!=null:trailnet.path_material.set_shader_parameter("fresh_snow",road.snow_cover)
 	clock.weather_offset_c = weather.temp_off
 	sky_rig.apply_hour(clock.hour)
 	if sky_rig is AtmosphereRig:
@@ -3343,6 +3348,7 @@ func _save_data() -> Dictionary:
 	var d := {
 		'clock': clock.to_dict(),
 		'weather': weather.to_dict(),
+		'route_snow_cover':road.snow_cover,
 		'atmosphere': (sky_rig as AtmosphereRig).to_dict() if sky_rig is AtmosphereRig else {},
 		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
 		'body': {'core': body.core, 'wet': body.wetness},
@@ -3457,6 +3463,7 @@ func _ground(x: float, z: float) -> Vector3:
 
 
 func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
+	road.snow_cover=clampf(float(sv.get("route_snow_cover",0)),0,1)
 	var c: Dictionary = sv['clock']
 	clock.restore(c)
 	if launch_options.has("speed"):

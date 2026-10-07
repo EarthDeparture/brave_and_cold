@@ -297,14 +297,23 @@ func approach_point(distance_m: float = 17.0) -> Vector3:
 
 ## A new snow-covered service track, draped on existing terrain after forest
 ## scatter. It never changes terrain, RoadNet, TrailNet or tree exclusions.
+var access_material:ShaderMaterial
 func build_access_path(terrain: Terrain3D) -> void:
 	var path_data: Dictionary = site.get('path', {})
-	var points: Array = path_data.get('points_world_xyz', path_data.get('points', []))
+	var points: Array = path_data.get('points_world_xyz', path_data.get('points', [])).duplicate()
+	# The survey's final sample overshoots the compound and doubles back 0.85m.
+	# Trim that redundant endpoint only in the ribbon to prevent folded faces.
+	if points.size()>2:
+		var a:Array=points[-3];var b:Array=points[-2];var c:Array=points[-1]
+		if Vector2(b[0]-a[0],b[2]-a[2]).dot(Vector2(c[0]-b[0],c[2]-b[2]))<0 and Vector2(c[0]-b[0],c[2]-b[2]).length()<1.0:points.remove_at(points.size()-2)
 	if points.size() < 2:
 		return
 	var half_width := float(path_data.get('width_m', 2.4)) * 0.5
-	var profile: Array[float] = [-half_width, -half_width * 0.62, -half_width * 0.36, half_width * 0.36, half_width * 0.62, half_width]
-	var colors: Array[Color] = [Color(0.73, 0.79, 0.88), Color(0.45, 0.50, 0.57), Color(0.66, 0.70, 0.77), Color(0.66, 0.70, 0.77), Color(0.45, 0.50, 0.57), Color(0.73, 0.79, 0.88)]
+	var profile: Array[float] = [-half_width, -half_width*.85, -half_width*.62, -half_width*.34, 0.0, half_width*.34, half_width*.62, half_width*.85, half_width]
+	var distances:Array[float]=[0.0]
+	for i in range(1,points.size()):
+		var a:Array=points[i-1];var b:Array=points[i]
+		distances.append(distances[-1]+Vector2(b[0]-a[0],b[2]-a[2]).length())
 	var vertices: Array[PackedVector3Array] = []
 	for i in range(points.size()):
 		var row: Array = points[i]
@@ -319,7 +328,8 @@ func build_access_path(terrain: Terrain3D) -> void:
 			var y: float = terrain.data.get_height(Vector3(xz.x, 0.0, xz.y))
 			if is_nan(y):
 				y = float(row[1])
-			cross.append(to_local(Vector3(xz.x, y + 0.075, xz.y)))
+			var lift:=lerpf(.075,.005,smoothstep(.55,1.0,absf(offset)/half_width))
+			cross.append(to_local(Vector3(xz.x, y + lift, xz.y)))
 		vertices.append(cross)
 	access_ribbon=WalkRibbon3D.new()
 	access_ribbon.name="LookoutAccessSurface"
@@ -335,17 +345,14 @@ func build_access_path(terrain: Terrain3D) -> void:
 	for i in range(vertices.size() - 1):
 		for j in range(profile.size() - 1):
 			for pair: Vector2i in [Vector2i(i, j), Vector2i(i + 1, j), Vector2i(i, j + 1), Vector2i(i, j + 1), Vector2i(i + 1, j), Vector2i(i + 1, j + 1)]:
-				st.set_color(colors[pair.y])
+				st.set_uv(Vector2(profile[pair.y],distances[pair.x]))
 				st.add_vertex(vertices[pair.x][pair.y])
-	st.generate_normals()
+	st.index();st.generate_normals();st.generate_tangents()
 	var mesh := MeshInstance3D.new()
 	mesh.name = 'LookoutAccessTrack'
 	mesh.mesh = st.commit()
-	var material := StandardMaterial3D.new()
-	material.vertex_color_use_as_albedo = true
-	material.roughness = 1.0
-	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mesh.material_override = material
+	access_material=WinterPathMaterial.create(half_width,distances[-1])
+	mesh.material_override=access_material
 	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mesh)
 

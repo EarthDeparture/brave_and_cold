@@ -1,0 +1,105 @@
+{
+  "compound_gate": {
+    "triangles": 2158,
+    "bytes": 121600,
+    "sha256": "ff2715d30d56782b0bcbdd6714b86d148bc5271f4a3fceab9de8de853be97506",
+    "source": "tools/blender/generated/route_detail/compound_gate.blend",
+    "source_sha256": "78cc97d649d458035ee98436ca188f416ff3d27b3269fc8b8e76ef7dbcae4223",
+    "mesh_nodes": 4,
+    "bounds_min_xyz": [
+      -0.024000000208616257,
+      0.1210000067949295,
+      -0.04700000211596489
+    ],
+    "bounds_max_xyz": [
+      3.005999803543091,
+      1.7599999904632568,
+      0.0949999988079071
+    ],
+    "dimensions_m": [
+      3.029999803751707,
+      1.6389999836683273,
+      0.142000000923872
+    ]
+  },
+  "service_marker": {
+    "triangles": 754,
+    "bytes": 389900,
+    "sha256": "b4db6c03aa6e06341dd1c2c7412070aa32474151fb704af42511a16263af0022",
+    "source": "tools/blender/generated/route_detail/service_marker.blend",
+    "source_sha256": "66369752db625c8cf70b422bd3ef8b588feb30fe3c854ce56a62cf18e5e87eb7",
+    "mesh_nodes": 5,
+    "bounds_min_xyz": [
+      -0.125,
+      0.0,
+      -0.07999999821186066
+    ],
+    "bounds_max_xyz": [
+      0.125,
+      1.534000039100647,
+      0.10999999940395355
+    ],
+    "dimensions_m": [
+      0.25,
+      1.534000039100647,
+      0.1899999976158142
+    ]
+  },
+  "drain_headwall": {
+    "triangles": 996,
+    "bytes": 883172,
+    "sha256": "7107a19f1ddd6753728b675a278e69941fed119c5ca688b417db42c5995cee8f",
+    "source": "tools/blender/generated/route_detail/drain_headwall.blend",
+    "source_sha256": "c92dcb70756f736ee7dcaa5042787867e223a6276361a76efe13e0c00342f9e0",
+    "mesh_nodes": 4,
+    "bounds_min_xyz": [
+      -0.5600000023841858,
+      0.0,
+      -0.18400003015995026
+    ],
+    "bounds_max_xyz": [
+      0.5600000023841858,
+      0.6309999823570251,
+      0.17499999701976776
+    ],
+    "dimensions_m": [
+      1.1200000047683716,
+      0.6309999823570251,
+      0.359000027179718
+    ]
+  },
+  "shoulder_debris": {
+    "triangles": 184,
+    "bytes": 1745360,
+    "sha256": "64bd8423e90343e46bdcffe8dc03f63437f7dcc3b665006c7d2bd48b4bff688a",
+    "source": "tools/blender/generated/route_detail/shoulder_debris.blend",
+    "source_sha256": "e7153a7789d50233e67eb0755ef0d78f1a87ecdf919e43bfe30948d341ff4793",
+    "mesh_nodes": 2,
+    "bounds_min_xyz": [
+      -0.35507261753082275,
+      0.0030000004917383194,
+      -0.226186141371727
+    ],
+    "bounds_max_xyz": [
+      0.28708186745643616,
+      0.05300000309944153,
+      0.1961861401796341
+    ],
+    "dimensions_m": [
+      0.6421544849872589,
+      0.05000000260770321,
+      0.4223722815513611
+    ]
+  },
+  "provenance": {
+    "source": "Original project-authored metre-scale Blender geometry",
+    "license": "Original project assets; no external models",
+    "units": "metres",
+    "blender": "5.2.2 LTS"
+  },
+  "generators": {
+    "gen_route_detail.py": "52e46da39cf670bc41b630675e3a48d948472e9895408c7f9b6a1d2387635127",
+    "gen_route_graphics.py": "96cffac2b5554975992438d980a6f114eb739895f39c826586de028a96e19d4c",
+    "gen_first_week.py": "07e256fd2c532f62a0bb62a2b8db530f62e7a7668873473ac3dcf48ba2590667"
+  }
+}

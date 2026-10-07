@@ -103,3 +103,6 @@ tools/blender/watch_build.log
 # Cooking asset local build logs and numbered authoring backups.
 /tools/blender/generated/cooking/*.log
 /tools/blender/generated/cooking/*.blend[0-9]
+
+/tools/blender/generated/route_detail/*.log
+/tools/blender/generated/route_detail/*.blend[0-9]

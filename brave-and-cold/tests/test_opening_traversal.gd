@@ -31,23 +31,26 @@ func run()->void:
 		var row:Array=rows[i];walk(p,Vector3(row[0],0,row[2]))
 	var closed_distance:=walk(p,blocked_target)
 	check(closed_distance>.35,"actual player stops at closed gate on logging approach")
-	boundary.toggle_gate()
-	reset(p,start);var remaining:=0.0
+	reset(p,start) # Move clear of the outward swing after testing the closed leaf.
+	boundary.toggle_gate();boundary.advance_gate(RefugeBoundary.GATE_SWING_S)
+	var remaining:=0.0
 	for i in range(rows.size()-11,rows.size()):
 		var row:Array=rows[i];remaining=maxf(remaining,walk(p,Vector3(row[0],0,row[2])))
 	check(remaining<.30,"actual player follows preserved logging track through open gate to stair base")
 	# Unobstructed yard headings must not acquire lateral correction from distant fence segments.
+	# The former (-8,2) sample is now occupied by the existing solar rack.
 	var changed:=0;var cases:=0
-	for local:Vector2 in [Vector2(-5,0),Vector2(-5,4),Vector2(0,-5),Vector2(-8,2)]:
+	for local:Vector2 in [Vector2(-5,0),Vector2(-5,4),Vector2(0,-5),Vector2(-8,4)]:
 		for direction in 16:
 			var from:=boundary.to_global(boundary.ground_local(local.x,local.y))
 			var d:=Vector3(cos(direction*TAU/16),0,sin(direction*TAU/16));var candidate:=from+d*.04
 			var q:=boundary.resolve_at(candidate,from,.30)
-			if q!=Vector2(candidate.x,candidate.z):changed+=1
+			if q!=Vector2(candidate.x,candidate.z):
+				changed+=1;print("YARD_DIAG local=",local," direction=",direction," error=",q.distance_to(Vector2(candidate.x,candidate.z)))
 			cases+=1
 	check(changed==0,"64 free yard headings retain exact candidate movement")
 	# Every perimeter segment blocks crossings, including both actors and gate joins.
-	boundary.toggle_gate();var blocked:=0
+	boundary.toggle_gate();boundary.advance_gate(RefugeBoundary.GATE_SWING_S);var blocked:=0
 	for wall:Array in boundary.segments:
 		var a:Vector2=wall[0];var b:Vector2=wall[1];var mid:Vector2=(a+b)*.5;var normal:=Vector2(-(b-a).normalized().y,(b-a).normalized().x)
 		for side in [-1,1]:

@@ -1,0 +1,12 @@
+{
+  "source": "Original project-authored local raster/PBR art",
+  "seed": 71007,
+  "font": "System Bahnschrift rasterized; font not redistributed",
+  "files": {
+    "brave-and-cold/assets/route_detail/textures/concrete_alb.png": "f3a98da9630381e68bced99f353a9a481e5cc32e283e369fec57b8ff59245743",
+    "brave-and-cold/assets/route_detail/textures/gravel_alb.png": "d65df334bf0dbd246e2d7fc070eeb730cb788cd00084e2f5cd7333dcaca27d26",
+    "brave-and-cold/assets/route_detail/textures/gravel_nrm.png": "3a48bea306a97c3bcbe0198c90f69448d39d5eee8ba7e9ca1ae440d1b9751ead",
+    "tools/blender/generated/route_detail/field_gate.png": "1d8cc51e5a2e6022d9325af2926c4255ebdc32ec68988b1832e61919953f122b",
+    "tools/blender/generated/route_detail/field_marker.png": "6ca5b52824f48c17e8f8a9ae806bf9f850acf4afde1ab51c189ad84f3261bada"
+  }
+}

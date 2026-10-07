@@ -21,6 +21,7 @@ func mark(id: String) -> void:
 	samples.append({"segment":id,"completed_so_far":failed.is_empty(),"real_s":elapsed,"calendar":w.clock.time_string(),"game_s":w.clock.total_game_s,"distance_m":distance,"calories":w.needs.calories,"water":w.needs.water,"fatigue":w.needs.fatigue,"core_c":w.body.core,"hp":w.player.health,"stove_game_hours":w.opening.fuel_s/3600,"wood_pack":w.inv.count("wood"),"food_pack":w.inv.count("beans"),"walkie_percent":w.opening.state.walkie_percent(),"position":[w.player.position.x,w.player.position.y,w.player.position.z]})
 func tick() -> void:
 	var before: Vector3 = w.player.position
+	w.opening.boundary.advance_gate(DT)
 	w.player._move(DT)
 	w._process(DT)
 	elapsed += DT; ticks += 1
@@ -64,6 +65,7 @@ func chain(route: Array[Vector3]) -> bool:
 func run() -> void:
 	create_timer(240).timeout.connect(func()->void: print("FAIL measurement timeout"); quit(2))
 	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("route_out="):output=arg.trim_prefix("route_out=")+"/"
 		if arg.begins_with("route_label="):label=arg.trim_prefix("route_label=")
 		if arg=="record_frames=1":record_frames=true
 	DirAccess.make_dir_recursive_absolute(output); root.size=Vector2i(1280,720)

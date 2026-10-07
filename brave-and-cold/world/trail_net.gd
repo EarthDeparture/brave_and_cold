@@ -11,6 +11,7 @@ const XS: Array = [
 	[1.2, Color(0.70, 0.75, 0.86), 0.04],
 ]
 
+var path_material:ShaderMaterial
 var walk_surface := WalkSurface.new()
 var trails: Array = []            # Array of Array[Vector2]
 var _hash: Dictionary = {}        # Vector2i(8 m cell) -> Array[Vector2]
@@ -93,6 +94,8 @@ func build_mesh(terrain: Terrain3D) -> void:
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var tris := 0
 	for pts in trails:
+		var distances:Array[float]=[0.0]
+		for i in range(1,pts.size()):distances.append(distances[-1]+pts[i].distance_to(pts[i-1]))
 		var rows: Array = []
 		for i in range(pts.size()):
 			var a: Vector2 = pts[maxi(i - 1, 0)]
@@ -108,7 +111,7 @@ func build_mesh(terrain: Terrain3D) -> void:
 				if is_nan(h):
 					h = 0.0
 				var c: Color = xs[1]
-				row.append([Vector3(q.x, h + float(xs[2]), q.y), Color(c.r * wob, c.g * wob, c.b * wob)])
+				row.append([Vector3(q.x, h + (float(xs[2]) if absf(float(xs[0]))<1 else .005), q.y), Color(c.r * wob, c.g * wob, c.b * wob,edge_fade),Vector2(float(xs[0])*(0.4+0.6*edge_fade),distances[i])])
 			rows.append(row)
 		var heights:Array=[]
 		for row in rows:
@@ -129,16 +132,15 @@ func build_mesh(terrain: Terrain3D) -> void:
 					for vtx in tri:
 						st.set_normal(Vector3.UP)
 						st.set_color(vtx[1])
+						st.set_uv(vtx[2])
 						st.add_vertex(vtx[0])
 					tris += 1
+	st.index();st.generate_normals();st.generate_tangents()
 	var mi := MeshInstance3D.new()
 	mi.name = "TrailMesh"
 	mi.mesh = st.commit()
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.roughness = 1.0
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mi.material_override = mat
+	path_material=WinterPathMaterial.create(1.2,100000.0)
+	mi.material_override=path_material
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mi.visibility_range_end = 400.0
 	add_child(mi)
