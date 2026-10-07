@@ -54,6 +54,7 @@ static func tool_step(species:String,step:String,inv:Inventory,chosen:String="")
 static func food_age(n:Node) -> float:return maxf(0,float(n.get_meta("food_age_s",0)))
 static func advance_food(n:Node,game_s:float) -> void:
 	n.set_meta("food_age_s",food_age(n)+maxf(0,game_s)*StorageChest.COLD_RATE)
+	n.set_meta("scent_age_s",age_s(n)+maxf(0,game_s))
 
 ## Deterministic loot for a zombie body (seed from position). Returns {id: n}.
 static func body_loot(seed_value: int) -> Dictionary:
@@ -78,11 +79,11 @@ static var wind_dir := Vector2(0.8, 0.6)  # xz direction the wind blows toward (
 
 
 static func age_s(n: Node) -> float:
-	return (Time.get_ticks_msec() - int(n.get_meta("born", Time.get_ticks_msec()))) / 1000.0
+	return maxf(0,float(n.get_meta("scent_age_s",0)))
 
 
 static func scent_radius(age: float) -> float:
-	return 25.0 + 75.0 * clampf(age / 600.0, 0.0, 1.0)
+	return 25.0 + 75.0 * clampf(age / (5.0*3600.0), 0.0, 1.0)
 
 
 static func smelled_by(carcass: Node3D, listener: Vector3) -> bool:

@@ -276,7 +276,8 @@ func _entries(id: String, from: String, n: int, node: Node = null) -> Array:
 			var label: String={"bandage":"Apply bandage","antiseptic":"Clean wound","antibiotics":"Take antibiotics"}.get(id,"Use medicine")
 			out.append({"label":label,"act":func()->void:world.gear_use(id)})
 		"food":
-			out.append({"label": "Eat", "act": func() -> void: world.gear_use(id)})
+			if not Inventory.ITEMS[id].get("raw",false):
+				out.append({"label": "Eat", "act": func() -> void: world.gear_use(id)})
 		"clothing":
 			var worn: bool = inv.is_worn(id)
 			out.append({"label": "Take off" if worn else "Wear", "act": func() -> void: world.gear_use(id)})

@@ -36,14 +36,14 @@ const ITEMS := {
 	"rifle": {"name": "Hunting Rifle", "kind": "weapon", "stack": 1, "desc": "Bolt-action hunting rifle. Loud: everything for a kilometre hears it."},
 	"ammo": {"name": "Rifle Rounds", "kind": "ammo", "stack": 10, "desc": "Soft-point hunting rounds."},
 	"beans": {"name": "Canned Beans", "kind": "food", "stack": 4, "kcal": 650.0, "desc": "Tinned beans. Safe to eat cold."},
-	"venison_raw": {"shelf_h": 30.0, "name": "Raw Venison", "kind": "food", "stack": 4, "kcal": 350.0, "raw": true, "cooked": "venison_cooked", "desc": "Fresh meat. Cook it over a fire for more calories."},
+	"venison_raw": {"shelf_h": 30.0, "name": "Raw Venison", "kind": "food", "stack": 4, "kcal": 900.0, "raw": true, "cooked": "venison_cooked", "desc": "Uncooked portion. Cook before eating; cooking removes water without adding calories."},
 	"venison_cooked": {"shelf_h": 72.0, "name": "Cooked Venison", "kind": "food", "stack": 4, "kcal": 900.0, "desc": "Seared venison steak."},
 	"tackle": {"name": "Fishing Tackle", "kind": "tool", "stack": 1, "desc": "Line, hook and lure. Fish through a hole in the ice. Wears with use."},
-	"trout_raw": {"shelf_h": 24.0, "name": "Raw Trout", "kind": "food", "stack": 4, "kcal": 250.0, "raw": true, "cooked": "trout_cooked", "desc": "Fresh lake trout. Cook it."},
+	"trout_raw": {"shelf_h": 24.0, "name": "Raw Trout", "kind": "food", "stack": 4, "kcal": 600.0, "raw": true, "cooked": "trout_cooked", "desc": "Fresh lake trout. Cook it."},
 	"trout_cooked": {"shelf_h": 60.0, "name": "Cooked Trout", "kind": "food", "stack": 4, "kcal": 600.0, "desc": "Flaky, fatty trout."},
-	"whitefish_raw": {"shelf_h": 24.0, "name": "Raw Whitefish", "kind": "food", "stack": 4, "kcal": 220.0, "raw": true, "cooked": "whitefish_cooked", "desc": "Lean lake whitefish. Cook it."},
+	"whitefish_raw": {"shelf_h": 24.0, "name": "Raw Whitefish", "kind": "food", "stack": 4, "kcal": 520.0, "raw": true, "cooked": "whitefish_cooked", "desc": "Lean lake whitefish. Cook it."},
 	"whitefish_cooked": {"shelf_h": 60.0, "name": "Cooked Whitefish", "kind": "food", "stack": 4, "kcal": 520.0, "desc": "Mild, filling whitefish."},
-	"pike_raw": {"shelf_h": 24.0, "name": "Raw Pike", "kind": "food", "stack": 2, "kcal": 450.0, "raw": true, "cooked": "pike_cooked", "desc": "A big, bony pike. Cook it."},
+	"pike_raw": {"shelf_h": 24.0, "name": "Raw Pike", "kind": "food", "stack": 2, "kcal": 1000.0, "raw": true, "cooked": "pike_cooked", "desc": "A big, bony pike. Cook it."},
 	"pike_cooked": {"shelf_h": 60.0, "name": "Cooked Pike", "kind": "food", "stack": 2, "kcal": 1000.0, "desc": "A whole pike, roasted. A real meal."},
 	"hammer": {"name": "Hammer", "kind": "tool", "stack": 1, "desc": "Claw hammer. Needed to board up windows and doors. Wears a little with every board (about six fully boarded houses) and breaks at 0%. Loud."},
 	"bandage": {"name": "Bandage", "kind": "med", "stack": 6, "desc": "Stops bleeding. Recovery needs >900 kcal and >45% water."},
@@ -53,9 +53,9 @@ const ITEMS := {
 	"plank": {"name": "Plank", "kind": "misc", "stack": 8, "desc": "Rough plank. Board windows from the inside (4 per window)."},
 	"rag": {"name": "Rags", "kind": "misc", "stack": 10, "desc": "Cloth strips. Two make a curtain that hides your light and your silhouette."},
 	"knife": {"name": "Hunting Knife", "kind": "tool", "stack": 1, "desc": "Sharp skinning knife. Needed to skin, gut and fully butcher animals."},
-	"wolf_meat_raw": {"shelf_h": 30.0, "name": "Raw Wolf Meat", "kind": "food", "stack": 4, "kcal": 250.0, "raw": true, "cooked": "wolf_meat_cooked", "desc": "Gamey, lean. Cook it."},
+	"wolf_meat_raw": {"shelf_h": 30.0, "name": "Raw Wolf Meat", "kind": "food", "stack": 4, "kcal": 650.0, "raw": true, "cooked": "wolf_meat_cooked", "desc": "Gamey, lean. Cook it."},
 	"wolf_meat_cooked": {"shelf_h": 72.0, "name": "Cooked Wolf Meat", "kind": "food", "stack": 4, "kcal": 650.0, "desc": "Tough but filling."},
-	"bear_meat_raw": {"shelf_h": 30.0, "name": "Raw Bear Meat", "kind": "food", "stack": 4, "kcal": 300.0, "raw": true, "cooked": "bear_meat_cooked", "desc": "Rich, fatty meat. Cook it."},
+	"bear_meat_raw": {"shelf_h": 30.0, "name": "Raw Bear Meat", "kind": "food", "stack": 4, "kcal": 800.0, "raw": true, "cooked": "bear_meat_cooked", "desc": "Rich, fatty meat. Cook it."},
 	"bear_meat_cooked": {"shelf_h": 72.0, "name": "Cooked Bear Meat", "kind": "food", "stack": 4, "kcal": 800.0, "desc": "Fatty and calorie dense."},
 	"fat": {"name": "Animal Fat", "kind": "misc", "stack": 4, "desc": "Rendered fat. Future: candles, waterproofing, tinder."},
 	"gut": {"name": "Gut", "kind": "misc", "stack": 4, "desc": "Cleaned animal gut. Future: cordage, sewing."},
@@ -342,6 +342,8 @@ func use(id: String) -> String:
 	if id == "bandage" or id == "antiseptic" or id == "antibiotics":
 		return _use_med(id)
 	if ITEMS.has(id) and ITEMS[id].has("kcal") and needs != null:
+		if ITEMS[id].get("raw",false):
+			return "Cook %s at a lit stove before eating" % name_of(id)
 		var k: float = ITEMS[id]["kcal"]
 		if not remove(id):
 			return 'None left'

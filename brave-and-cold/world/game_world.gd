@@ -98,6 +98,7 @@ func _ready() -> void:
 		forest = ForestScatter.new()
 		forest.detail_enabled = environment_detail_enabled
 		forest.diversity_enabled = opts.get("forest_diversity", "winter") != "baseline"
+		forest.crown_quality_enabled = opts.get("forest_crowns", "winter") != "baseline"
 		forest.weather = weather
 		add_child(forest)
 		forest.exclude = func(x: float, z: float) -> bool:
@@ -136,6 +137,8 @@ func _ready() -> void:
 	sky_rig = SkyRig.new() if opts.get("atmosphere", "winter") == "baseline" else preload("res://world/atmosphere_rig.gd").new()
 	add_child(sky_rig)
 	sky_rig.setup(sun, env, sky_mat)
+	if sky_rig is AtmosphereRig:
+		(sky_rig as AtmosphereRig).material.set_shader_parameter("cloud_quality",opts.get("sky_clouds","winter")!="baseline")
 	sky_rig.weather = weather
 	if opts.has('weather'):
 		var wi := ['clear', 'cloudy', 'flurry', 'snow', 'blizzard'].find(String(opts['weather']).to_lower())
@@ -258,7 +261,10 @@ func _ready() -> void:
 				player.place(cxx - float(opts["popview"]), czz)
 				opts["yaw"] = "-90"
 				opts["pitch"] = "-2"
-			_spawn_deer(int(opts.get("deer", 6)), home)
+			if opening_state.enabled and fire_lookout != null:
+				_spawn_route_deer(int(opts.get("deer",6)))
+			else:
+				_spawn_deer(int(opts.get("deer", 6)), home)
 	player.cabins = colliders
 	if opts.has('hutpos') and not huts.is_empty():
 		var hu0: Hut = huts[clampi(int(opts['hutpos']), 0, huts.size() - 1)]
@@ -2135,7 +2141,7 @@ func _carcass_list() -> Array:
 		var sp := Carcass.species_of(c)
 		if sp == '':
 			continue
-		out.append({'sp': sp, 'x': c.global_position.x, 'z': c.global_position.z, 'done': c.get_meta('done', {}),'food_age_s':Carcass.food_age(c)})
+		out.append({'sp': sp, 'x': c.global_position.x, 'z': c.global_position.z, 'done': c.get_meta('done', {}),'food_age_s':Carcass.food_age(c),'scent_age_s':Carcass.age_s(c)})
 	return out
 
 
@@ -2736,6 +2742,35 @@ func _spawn_deer(n: int, center: Vector2) -> void:
 			continue
 		_add_deer(Vector3(x, h, z), made)
 		made += 1
+
+func _spawn_route_deer(n:int) -> void:
+	# The old spawn was centered on the ground cabin, almost a kilometre from
+	# the lookout assignment. Seed natural prey in two off-trail habitat areas.
+	var path:Array=fire_lookout.site.path.points_world_xyz
+	if path.size()<3:return
+	var rng:=RandomNumberGenerator.new();rng.seed=opening_state.seed_value+31
+	var made:=0
+	for attempt in 500:
+		if made>=n:break
+		var index:=clampi(int(path.size()*(.34 if made%2==0 else .72)),1,path.size()-2)
+		var row:Array=path[index];var prev:Array=path[index-1];var next:Array=path[index+1]
+		var along:=Vector2(next[0]-prev[0],next[2]-prev[2]).normalized()
+		var side:=Vector2(-along.y,along.x)*(1.0 if rng.randf()<.5 else -1.0)
+		var point:=Vector2(row[0],row[2])+side*rng.randf_range(45,135)+along*rng.randf_range(-75,75)
+		if absf(point.x)>950 or absf(point.y)>950:continue
+		if point.distance_to(Vector2(fire_lookout.position.x,fire_lookout.position.z))<80:continue
+		var height:float=terrain.data.get_height(Vector3(point.x,0,point.y))
+		if is_nan(height) or not is_nan(ice.ice_at(point.x,point.y)):continue
+		var grade:=0.0
+		for axis:Vector2 in [Vector2(2,0),Vector2(-2,0),Vector2(0,2),Vector2(0,-2)]:
+			var sampled:float=terrain.data.get_height(Vector3(point.x+axis.x,0,point.y+axis.y))
+			if is_nan(sampled):grade=INF;break
+			grade=maxf(grade,absf(sampled-height)/2)
+		if grade>.50:continue
+		if forest!=null:point=forest.resolve_trunks(point.x,point.y,.65)
+		var p:=_ground(point.x,point.y)
+		_add_deer(p,3000+made);made+=1
+	print("OPENING_PREY spawned=",made," requested=",n," seed=",opening_state.seed_value)
 
 
 func _add_deer(p: Vector3, idx: int) -> Deer:
@@ -3420,6 +3455,7 @@ func _restore_creatures(sv: Dictionary) -> void:
 			cn.call('hit', 99999.0, cp)
 			cn.set_meta('done', e.get('done', {}))
 			cn.set_meta('food_age_s',maxf(0,float(e.get('food_age_s',0))))
+			cn.set_meta('scent_age_s',maxf(0,float(e.get('scent_age_s',Carcass.food_age(cn)/StorageChest.COLD_RATE))))
 		ci += 1
 	if forest != null:
 		for info in forest.apply_felled(sv.get('felled', [])):

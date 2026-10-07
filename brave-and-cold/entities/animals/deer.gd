@@ -107,7 +107,21 @@ func _sees_player() -> bool:
 	to.y = 0.0
 	var d := to.length()
 	var rng_m := SIGHT_RANGE * (0.5 if player.crouching else 1.0)
-	return d < rng_m
+	if d >= rng_m:return false
+	if d <= 4.0:return true
+	if forest != null:
+		var trunks:=forest.trunks_on_segment(global_position.x,global_position.z,player.position.x,player.position.z)
+		if d > rng_m*maxf(.15,1-.25*trunks):return false
+	# Use the same actual terrain supporting the animal, sampled along the
+	# sightline. Being close on the other side of a ridge is not visible.
+	if terrain != null and terrain.data != null:
+		var eye:=global_position+Vector3.UP*1.15
+		var steps:=maxi(2,int(ceil(d/2.0)))
+		for i in range(1,steps):
+			var point:=eye.lerp(player.position,float(i)/steps)
+			var ground:float=terrain.data.get_height(point)
+			if not is_nan(ground) and ground>point.y-.08:return false
+	return true
 
 
 func _process(delta: float) -> void:
