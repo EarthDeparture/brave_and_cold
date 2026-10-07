@@ -1,0 +1,167 @@
+{
+  "previous_runtime": "0f13238 (same game runtime as d853ea8 documentation HEAD)",
+  "current_runtime": "86a5a82",
+  "rows": [
+    {
+      "case": "logging-forest",
+      "previous": {
+        "median_ms": 22.13,
+        "p95_range_ms": [
+          23.953,
+          24.099
+        ],
+        "warm_hitches_over_33ms": 0,
+        "active_peaks": [
+          2,
+          2,
+          2
+        ],
+        "entry_max_ms": [
+          29.528,
+          27.158,
+          28.068
+        ]
+      },
+      "current": {
+        "median_ms": 24.046,
+        "p95_range_ms": [
+          25.763,
+          26.219
+        ],
+        "warm_hitches_over_33ms": 0,
+        "active_peaks": [
+          2,
+          2,
+          2
+        ],
+        "entry_max_ms": [
+          29.776,
+          29.908,
+          29.907
+        ]
+      },
+      "active_peaks_equal": true
+    },
+    {
+      "case": "town-road",
+      "previous": {
+        "median_ms": 21.964,
+        "p95_range_ms": [
+          23.295,
+          23.52
+        ],
+        "warm_hitches_over_33ms": 3,
+        "active_peaks": [
+          18,
+          18,
+          18
+        ],
+        "entry_max_ms": [
+          46.659,
+          29.486,
+          26.311
+        ]
+      },
+      "current": {
+        "median_ms": 23.818,
+        "p95_range_ms": [
+          25.482,
+          26.109
+        ],
+        "warm_hitches_over_33ms": 1,
+        "active_peaks": [
+          18,
+          18,
+          18
+        ],
+        "entry_max_ms": [
+          51.579,
+          43.047,
+          28.354
+        ]
+      },
+      "active_peaks_equal": true
+    },
+    {
+      "case": "storm-route",
+      "previous": {
+        "median_ms": 19.601,
+        "p95_range_ms": [
+          21.875,
+          22.319
+        ],
+        "warm_hitches_over_33ms": 1,
+        "active_peaks": [
+          20,
+          2,
+          2
+        ],
+        "entry_max_ms": [
+          54.274,
+          26.452,
+          30.458
+        ]
+      },
+      "current": {
+        "median_ms": 21.519,
+        "p95_range_ms": [
+          24.169,
+          26.099
+        ],
+        "warm_hitches_over_33ms": 0,
+        "active_peaks": [
+          20,
+          2,
+          2
+        ],
+        "entry_max_ms": [
+          61.973,
+          34.482,
+          26.995
+        ]
+      },
+      "active_peaks_equal": true
+    },
+    {
+      "case": "clinic-encounter",
+      "previous": {
+        "median_ms": 17.149,
+        "p95_range_ms": [
+          20.593,
+          21.934
+        ],
+        "warm_hitches_over_33ms": 2,
+        "active_peaks": [
+          56,
+          59,
+          59
+        ],
+        "entry_max_ms": [
+          27.82,
+          32.549,
+          30.677
+        ]
+      },
+      "current": {
+        "median_ms": 21.285,
+        "p95_range_ms": [
+          25.874,
+          28.774
+        ],
+        "warm_hitches_over_33ms": 8,
+        "active_peaks": [
+          55,
+          59,
+          59
+        ],
+        "entry_max_ms": [
+          30.295,
+          50.182,
+          34.404
+        ]
+      },
+      "active_peaks_equal": false
+    }
+  ],
+  "limitations": "Same verified seed/target/renderer/resolution, three 12-second moving repeats per case. Host load is uncontrolled; active peaks are retained because AI is not fixed-step replay. Local frame intervals do not attribute GPU work or establish minimum-spec performance."
+}

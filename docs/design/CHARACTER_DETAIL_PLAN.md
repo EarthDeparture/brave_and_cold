@@ -9,3 +9,5 @@ Start: d853ea8, `codex/opening-quality`. Recovery tag: `checkpoint/pre-character
 5. Run affected skin, hand, opening and encounter regressions. Retain matched before/after captures and a multi-character timing sample with identical visible counts. Record actual results and any remaining acceptance limits. Commit finished batches separately so they can be reverted in reverse order.
 
 Following this pass: review the first shift and first night with an unfamiliar player, then address the specific town approach/interior views that session exposes. Directed radio performances and narrative continuity remain important; broad feature additions should not displace this playable opening.
+
+Completed presentation scope: thirteen-bone worker, original packed texture/source assets, distance-driven planted walking, and dedicated hammer strokes. Full ground solving is bounded to 20 m; farther detailed actors retain joint animation. Final measurements and the unresolved world frame-time regression are recorded in `docs/reviews/CHARACTER_DETAIL_REVIEW_2026-10-07.md`. Performance acceptance and unfamiliar-player opening acceptance remain separate gates.
