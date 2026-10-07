@@ -1,0 +1,26 @@
+{
+  "near": {
+    "triangles": 17790,
+    "surfaces": 7,
+    "bounds_m": [
+      0.7602704763412476,
+      1.7805002927780151,
+      0.3328012228012085
+    ],
+    "zero_area_triangles": 0,
+    "sha256": "554d2ba0074bb656bc1ad9a546a8b10f2d62e69e31c4a5381a9d6d43bd454986"
+  },
+  "proxy": {
+    "triangles": 2192,
+    "surfaces": 1,
+    "bounds_m": [
+      0.7618183493614197,
+      1.7807044982910156,
+      0.3344610333442688
+    ],
+    "zero_area_triangles": 0,
+    "sha256": "a1827c3b937c33db75a30d9c74e2e66a5c8d360b0244ce2d94d1d5f5b00496bb"
+  },
+  "checks": 53,
+  "failures": 0
+}

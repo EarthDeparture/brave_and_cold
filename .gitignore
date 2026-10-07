@@ -112,3 +112,5 @@ tools/blender/watch_build.log
 /tools/blender/generated/forest_quality/*.blend[0-9]
 /tools/blender/generated/infected_skin/*.blend[0-9]
 /tools/blender/generated/opening_props/*.blend[0-9]
+/tools/blender/generated/worker-detail-build.log
+/tools/blender/generated/worker_detail/*.blend[0-9]

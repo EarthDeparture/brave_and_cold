@@ -12,6 +12,8 @@ func shot(id:String,eye:Vector3,target:Vector3)->void:
 	for i in 6:await process_frame
 	await RenderingServer.frame_post_draw;root.get_texture().get_image().save_png(out+"/"+id+".png")
 func run()->void:
+	for arg:String in OS.get_cmdline_user_args():
+		if arg.begins_with("capture_out=res://shots/"):out=arg.trim_prefix("capture_out=")
 	create_timer(150).timeout.connect(func()->void:quit(2))
 	root.size=Vector2i(1600,900);seed(20261004);SaveGame.pending={}
 	w=load("res://world/game_world.gd").new();root.add_child(w)
@@ -24,6 +26,9 @@ func run()->void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
 	var c:Clinic=w.collapse.clinic;var q:=c.to_global(Vector3(0,0,7.3));var p:Vector3=w._ground(q.x,q.z)
 	var z:Zombie=w._add_zombie(p,78);z.set_process(false);z.rotation.y=c.rotation.y
+	if out.contains("worker-detail"):
+		z.state=Zombie.State.INVESTIGATE;z.speed_now=0;z._animate(.1)
+		await shot("clinic-worker",p-z.basis.z*3+Vector3.UP*1.7+z.basis.x*.6,p+Vector3.UP*1.05)
 	z.state=Zombie.State.CHASE;z.speed_now=1.4;z._attack_windup=.1;z._animate(.1);z._die()
 	var eye:=p-z.basis.z*2.5+z.basis.x*1.25+Vector3.UP*1.8;var target:=p-z.basis.z*.7+Vector3.UP*.30
 	z._death_pose(.35);await shot("clinic-collapse",eye,target)

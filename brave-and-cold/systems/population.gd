@@ -435,7 +435,7 @@ func _drag_step(dt: float) -> void:
 
 # ------------------------------------------------------------------ proxies (one draw call)
 func _build_proxy() -> void:
-	var root := (load("res://assets/infected/winter_infected_proxy.glb") as PackedScene).instantiate()
+	var root := (load("res://assets/infected/detail/winter_worker_proxy.glb") as PackedScene).instantiate()
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for mi in root.find_children("*", "MeshInstance3D", true, false):

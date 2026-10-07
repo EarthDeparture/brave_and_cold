@@ -39,7 +39,7 @@ func run()->void:
 			rest.append(actual)
 	check(bind_error<.0001,"exported skin bind preserves actual rest vertices")
 	z.state=Zombie.State.CHASE;z.speed_now=1.4;z._attack_windup=.15;z._animate(.1)
-	var cursor:=0;var motion:=0.0;var stretch:=1.0;var finite:=true
+	var cursor:=0;var motion:=0.0;var stretch:=1.0;var finite:=true;var stretched_region:=""
 	for mesh:MeshInstance3D in meshes:
 		for surface in mesh.mesh.get_surface_count():
 			var actual:=skin_vertices(mesh,surface,sk);var original:=rest[cursor];cursor+=1
@@ -49,8 +49,11 @@ func run()->void:
 				for edge in 3:
 					var a:=indices[i+edge];var b:=indices[i+(edge+1)%3]
 					var length:=original[a].distance_to(original[b])
-					if length>.001:stretch=maxf(stretch,actual[a].distance_to(actual[b])/length)
+					if length>.001:
+						var ratio:=actual[a].distance_to(actual[b])/length
+						if ratio>stretch:stretch=ratio;stretched_region=String(mesh.name)+" "+str(original[a])+" → "+str(original[b])
 	print("INFECTED_VERTEX_METRICS bind_error_m=",bind_error," motion_m=",motion," max_edge_stretch=",stretch)
+	if stretch>=2.5:print("STRETCHED_REGION ",stretched_region)
 	check(finite and motion>.10,"attack deforms finite visible vertices")
 	check(stretch<2.5,"attack has no stretched sleeve spikes")
 	var moved:=0
