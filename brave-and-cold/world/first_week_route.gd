@@ -11,6 +11,8 @@ var directions: Array[Vector3]=[]
 var models: Array[Node3D]=[]
 var _lid: Node3D
 var _label: Label3D
+const CACHE_ITEMS:=["clean_water","bandage","beans","matches"]
+var _cache_stock_nodes:Array[Node3D]=[]
 func build(w: Node3D, saved: Dictionary={}) -> void:
 	world=w;timber_done=bool(saved.get("timber_done",false));feeder_isolated=bool(saved.get("feeder_isolated",false))
 	var path:Array=[]
@@ -55,6 +57,7 @@ func build(w: Node3D, saved: Dictionary={}) -> void:
 	else:
 		for pair: Array in [["matches",4],["beans",2],["bandage",2],["clean_water",2],["empty_bottle",2]]:cache.put(pair[0],pair[1],1,0)
 	cache.rotation.y=models[1].rotation.y
+	_bind_cache_visuals();cache.contents_changed.connect(_update_cache_stock);_update_cache_stock()
 	models.append(asset("feeder_cabinet",points[2]))
 	_label=Label3D.new();add_child(_label);_label.global_position=points[2]+Vector3(0,1.65,.24);_label.font_size=32;_label.pixel_size=.003;_label.outline_size=4;_label.visible=false
 	update(0)
@@ -69,18 +72,23 @@ func asset(id: String, pos: Vector3) -> Node3D:
 	return n
 func update(gs: float) -> void:
 	if cache==null:return
-	cache.tick(gs);cache.want_open=world.gear!=null and world.gear.is_open and world.gear._chest==cache and world.gear._tab=="chest";cache.tick(0)
+	cache.tick(gs);cache.want_open=world.gear!=null and world.gear.is_open and world.gear._chest==cache and world.gear._tab=="chest"
 	# Reserved lid-mounted spares are collected through the same work runner.
 	# Show the actual lid opening while reaching in; cancellation closes it.
 	cache.want_open=cache.want_open or String(world._act.get("text","")).begins_with("Collect sealed fuse")
-	for pair:Array in [["CacheWaterStock","clean_water"],["CacheMedicalStock","bandage"],["CacheFoodStock","beans"],["CacheMatchStock","matches"]]:
-		var stock:Node3D=models[1].find_child(pair[0],true,false)
-		if stock!=null:stock.visible=cache.count(pair[1])>0
-	_label.text="CREW SPUR • ISOLATED" if feeder_isolated else "CREW SPUR • 6 W STANDBY"
+	var label:="CREW SPUR • ISOLATED" if feeder_isolated else "CREW SPUR • 6 W STANDBY"
+	if _label.text!=label:_label.text=label
+func _bind_cache_visuals()->void:
+	_cache_stock_nodes.clear()
+	for id:String in ["CacheWaterStock","CacheMedicalStock","CacheFoodStock","CacheMatchStock"]:
+		_cache_stock_nodes.append(models[1].find_child(id,true,false) as Node3D)
+func _update_cache_stock()->void:
+	for i in _cache_stock_nodes.size():
+		if _cache_stock_nodes[i]!=null:_cache_stock_nodes[i].visible=cache.count(CACHE_ITEMS[i])>0
 func _process(delta:float) -> void:
 	if cache==null:return
 	cache.lid_k=move_toward(cache.lid_k,1.0 if cache.want_open else 0.0,delta*2.6)
-	if _lid!=null:_lid.rotation.x=-cache.lid_k*deg_to_rad(100)
+	if _lid!=null:_lid.rotation.x=-smoothstep(0.0,1.0,cache.lid_k)*deg_to_rad(100)
 func actions() -> Array:
 	if points.size()!=3:return []
 	var op:LookoutOpening=world.opening

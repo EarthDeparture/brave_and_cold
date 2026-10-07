@@ -62,6 +62,11 @@ var _legs: Array[Node3D] = []
 var _model: Node3D
 var _skin: Skeleton3D
 var _skin_drivers: Dictionary = {}
+var _skin_frames:Array=[]
+var _spine_bone:=-1
+var _head_bone:=-1
+var _spine_rest:=Quaternion.IDENTITY
+var _head_rest:=Quaternion.IDENTITY
 var _rng := RandomNumberGenerator.new()
 var _dead_t := 0.0
 var _id := 0
@@ -573,20 +578,27 @@ func _animate(delta:float)->void:
 
 func _deform_skin() -> void:
 	if _skin == null:return
+	if _skin_frames.size()!=_skin_drivers.size():_bind_skin_drivers()
 	# Existing logical joints drive skin in the exported rest frame. Damage and
 	# movement remain authoritative gameplay outcomes, independent of animation.
-	for bone:int in _skin_drivers:
-		var driver:Node3D=_skin_drivers[bone]
-		var frame:=_skin.get_bone_global_rest(bone).basis.orthonormalized()
-		var local:=_skin.get_bone_rest(bone).basis*frame.inverse()*Basis.from_euler(driver.rotation)*frame
-		_skin.set_bone_pose_rotation(bone,local.get_rotation_quaternion())
-	var spine:=_skin.find_bone("spine")
-	if spine>=0:
+	for entry:Array in _skin_frames:
+		var driver:Node3D=entry[1]
+		var local:Basis=entry[2]*Basis.from_euler(driver.rotation)*entry[3]
+		_skin.set_bone_pose_rotation(entry[0],local.get_rotation_quaternion())
+	if _spine_bone>=0:
 		var anticipation:=sin(clampf((.35-_attack_windup)/.35,0,1)*PI)*.10 if _attack_windup>=0 else 0.0
-		_skin.set_bone_pose_rotation(spine,_skin.get_bone_rest(spine).basis.get_rotation_quaternion()*Quaternion(Vector3.RIGHT,anticipation))
-	var head:=_skin.find_bone("head")
-	if head>=0:
-		_skin.set_bone_pose_rotation(head,_skin.get_bone_rest(head).basis.get_rotation_quaternion()*Quaternion(Vector3.UP,sin(_state_t*1.2)*(.09 if state==State.INVESTIGATE else .015)))
+		_skin.set_bone_pose_rotation(_spine_bone,_spine_rest*Quaternion(Vector3.RIGHT,anticipation))
+	if _head_bone>=0:
+		_skin.set_bone_pose_rotation(_head_bone,_head_rest*Quaternion(Vector3.UP,sin(_state_t*1.2)*(.09 if state==State.INVESTIGATE else .015)))
+
+func _bind_skin_drivers()->void:
+	_skin_frames.clear()
+	for bone:int in _skin_drivers:
+		var frame:=_skin.get_bone_global_rest(bone).basis.orthonormalized()
+		_skin_frames.append([bone,_skin_drivers[bone],_skin.get_bone_rest(bone).basis*frame.inverse(),frame])
+	_spine_bone=_skin.find_bone("spine");_head_bone=_skin.find_bone("head")
+	if _spine_bone>=0:_spine_rest=_skin.get_bone_rest(_spine_bone).basis.get_rotation_quaternion()
+	if _head_bone>=0:_head_rest=_skin.get_bone_rest(_head_bone).basis.get_rotation_quaternion()
 
 
 func is_dead() -> bool:

@@ -59,6 +59,10 @@ var _mm: MultiMeshInstance3D
 var _pmat: ShaderMaterial
 var proxy_n := 0
 var last_tick_us := 0
+## Quiet-opening resource preparation; these nodes are never living population.
+var reserve_target:=0
+var _reserve_id:=-1
+var _t_reserve:=0.0
 
 
 func _ready() -> void:
@@ -207,6 +211,10 @@ func tick(delta: float) -> void:
 		return
 	var t0 := Time.get_ticks_usec()
 	clock += delta
+	_t_reserve+=delta
+	if reserve_target>0 and _t_reserve>=.05:
+		_t_reserve=0
+		_prepare_reserve()
 	if _pmat != null:
 		_pmat.set_shader_parameter('now', clock)
 	_t_spawn += delta
@@ -225,6 +233,16 @@ func tick(delta: float) -> void:
 		_despawn_step()
 		_proxy_step()
 	last_tick_us = Time.get_ticks_usec() - t0
+
+func _prepare_reserve()->void:
+	if active.size()+pool.size()>=reserve_target:
+		reserve_target=0;return
+	# Visible encounters get priority; defer construction near a threat.
+	for z:Zombie in active:
+		if is_instance_valid(z) and not z.is_dead() and z.global_position.distance_squared_to(player.position)<900:return
+	var z:Zombie=make_zombie.call(Vector3(0,-500,0),_reserve_id)
+	_reserve_id-=1
+	world_list.erase(z);park(z)
 
 
 func _spawn_step() -> void:

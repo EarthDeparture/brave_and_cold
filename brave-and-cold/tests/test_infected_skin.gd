@@ -53,6 +53,16 @@ func run()->void:
 	for i in sk.get_bone_count():
 		if sk.get_bone_pose_rotation(i).angle_to(sk.get_bone_rest(i).basis.get_rotation_quaternion())>.02:moved+=1
 	check(moved>=5,"movement and attack drive actual bone rotations")
+	var equivalent:=true
+	for frame in 40:
+		for bone:int in z._skin_drivers:
+			var driver:Node3D=z._skin_drivers[bone];driver.rotation=Vector3(sin(frame*.2)*.7,cos(frame*.3)*.2,sin(frame*.4)*.1)
+		z._deform_skin()
+		for bone:int in z._skin_drivers:
+			var driver:Node3D=z._skin_drivers[bone];var basis_frame:=sk.get_bone_global_rest(bone).basis.orthonormalized()
+			var original:=sk.get_bone_rest(bone).basis*basis_frame.inverse()*Basis.from_euler(driver.rotation)*basis_frame
+			equivalent=equivalent and absf(original.get_rotation_quaternion().dot(sk.get_bone_pose_rotation(bone)))>.999999
+	check(equivalent,"cached rest transforms preserve rotations over forty multi-axis poses")
 	var skinned:=0
 	for mesh:MeshInstance3D in z._model.find_children("*","MeshInstance3D",true,false):
 		if mesh.skin!=null:skinned+=1

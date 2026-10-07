@@ -22,6 +22,10 @@ var world:Node3D
 var stock:Array[StorageChest]=[]
 var collapse_phase:=0
 var _dressing:Node3D
+var _stock_groups:Array[Node3D]=[]
+var _dressing_units:Array[Node3D]=[]
+var _antiseptic_units:Array[Node3D]=[]
+var _medicine_unit:Node3D
 
 var floor_y := 0.0
 var door_open := true
@@ -64,22 +68,28 @@ func setup(terrain:Terrain3D,x:float,z:float,yaw_deg:float)->bool:
 	for pair:Array in [[0,1],[ -2.5,-1]]:
 		var side:float=pair[1];var near:=to_global(Vector3(pair[0],.3,side*4.8));var end:=to_global(Vector3(pair[0],0,side*6.8));end.y=terrain.data.get_height(end)+.02;ramps.append([near,end])
 		var mesh:=ArrayMesh.new();var ar:=[];ar.resize(Mesh.ARRAY_MAX);var width:=basis.x*.8;ar[Mesh.ARRAY_VERTEX]=PackedVector3Array([near-width,near+width,end+width,near-width,end+width,end-width]);ar[Mesh.ARRAY_NORMAL]=PackedVector3Array([Vector3.UP,Vector3.UP,Vector3.UP,Vector3.UP,Vector3.UP,Vector3.UP]);mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,ar);var mi:=MeshInstance3D.new();mi.mesh=mesh;add_child(mi);mi.top_level=true;mi.material_override=Opening.wood_material()
-	update_loot_visuals();return true
+	_bind_stock_visuals();update_loot_visuals();return true
+
+func _bind_stock_visuals()->void:
+	_stock_groups.clear();_dressing_units.clear();_antiseptic_units.clear()
+	for id:String in ["MedicalStock","TreatmentStock","MaintenanceStock"]:
+		_stock_groups.append(_dressing.find_child(id,true,false) as Node3D)
+	for i in 5:_dressing_units.append(_dressing.find_child("DressingUnit"+str(i),true,false) as Node3D)
+	for i in 2:_antiseptic_units.append(_dressing.find_child("AntisepticUnit"+str(i),true,false) as Node3D)
+	_medicine_unit=_dressing.find_child("AntibioticUnit",true,false) as Node3D
 
 func update_loot_visuals()->void:
 	if _dressing==null:return
 	for i in stock.size():
-		var node:Node3D=_dressing.find_child(["MedicalStock","TreatmentStock","MaintenanceStock"][i],true,false)
+		var node:Node3D=_stock_groups[i]
 		if node!=null:node.visible=not stock[i].is_empty()
 	if stock.size()==3:
-		for i in 5:
-			var n:=_dressing.find_child("DressingUnit"+str(i),true,false) as Node3D
-			if n!=null:n.visible=i<stock[0].count("bandage")
-		for i in 2:
-			var n:=_dressing.find_child("AntisepticUnit"+str(i),true,false) as Node3D
-			if n!=null:n.visible=i<stock[1].count("antiseptic")
-		var medicine:=_dressing.find_child("AntibioticUnit",true,false) as Node3D
-		if medicine!=null:medicine.visible=stock[1].count("antibiotics")>0
+		var bandages:=stock[0].count("bandage");var antiseptic:=stock[1].count("antiseptic")
+		for i in _dressing_units.size():
+			if _dressing_units[i]!=null:_dressing_units[i].visible=i<bandages
+		for i in _antiseptic_units.size():
+			if _antiseptic_units[i]!=null:_antiseptic_units[i].visible=i<antiseptic
+		if _medicine_unit!=null:_medicine_unit.visible=stock[1].count("antibiotics")>0
 
 func build_stock(w:Node3D,saved:Dictionary={})->void:
 	world=w
@@ -88,6 +98,7 @@ func build_stock(w:Node3D,saved:Dictionary={})->void:
 		if saved.get("stock",[]).size()==3:c.load_dict(saved.stock[i])
 		else:
 			for pair:Array in [[["bandage",5],["rag",4]],[["antiseptic",2],["antibiotics",1]],[["matches",4],["empty_bottle",2],["clean_water",2],["whetstone",1],["sewing_kit",1]]][i]:c.put(pair[0],pair[1],1,0)
+	for c:StorageChest in stock:c.contents_changed.connect(update_loot_visuals)
 	restore_state(saved);update_loot_visuals()
 
 func actions()->Array:

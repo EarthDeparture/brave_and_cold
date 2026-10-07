@@ -64,7 +64,6 @@ func update(gs:float)->void:
 	if clinic!=null:
 		clinic.collapse_phase=day;clinic.set_night(world.sky_rig.gameplay_night_factor)
 		for c:StorageChest in clinic.stock:c.tick(gs)
-		clinic.update_loot_visuals()
 		if day!=phase:phase=day;_triage.visible=day==1 or day==2;_abandoned.visible=day>=2
 		_lamp.light_energy=.25 if state.grid_alive() else 0
 	if not state.enabled:return

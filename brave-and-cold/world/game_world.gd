@@ -231,6 +231,7 @@ func _ready() -> void:
 	pop.world_list = zombies
 	pop.bus = noise_bus
 	pop.make_zombie = Callable(self, "_new_zombie")
+	if opening_state.enabled:pop.reserve_target=Population.T0_CAP
 	noise_bus.noise.connect(pop.on_noise)
 	noise_bus.light.connect(pop.on_light)
 	if opts.has("wound"):
@@ -2433,7 +2434,7 @@ func _new_zombie(p: Vector3, idx: int) -> Zombie:
 	var z := Zombie.new()
 	add_child(z)
 	z.global_position = p
-	z.rotation.y = randf() * TAU
+	z.rotation.y = randf() * TAU if idx>=0 else 0.0
 	z.setup(terrain, snow, player, forest, colliders, noise_bus, idx)
 	zombies.append(z)
 	return z

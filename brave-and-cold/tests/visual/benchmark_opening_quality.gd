@@ -17,6 +17,8 @@ func run()->void:
 		await process_frame
 		if w.collapse!=null and w.reading!=null:break
 	if w.collapse==null:quit(1);return
+	if w.opening_state.seed_value!=int(options.get("opening_seed",20261004)):
+		push_error("Benchmark requires opening_seed=20261004 (or an explicit matching seed)");quit(1);return
 	w._frames=100;w.out_path="benchmark-no-autosave";w._autosave_t=-10000
 	w.player.sim_on=true;w.player.frozen=false;w.player.god=true;w.player.noclip=false;w.player.cam.fov=70
 	w.opening_zombie_count=250;w.opening_state.last_s=96*3600;w.collapse.update(0)
@@ -35,20 +37,26 @@ func run()->void:
 			w.player.sim_dir=Vector3.ZERO;w.player.place(scenario.a.x,scenario.a.y);w.needs.calories=2000;w.needs.water=85;w.needs.fatigue=0;w.body.core=37
 			w.clock.hour=scenario.hour;w.weather.lock_state(scenario.weather);w.weather.advance(120,0)
 			var start_s:=Time.get_ticks_msec();var samples:Array[float]=[];var process_ms:Array[float]=[];var active_max:=0;var proxy_max:=0
+			var entry_frames:Array[float]=[];var population_us:Array[int]=[];var entry_population_us:Array[int]=[];var pool_min:int=w.pop.pool.size()
 			var initial:Vector3=w.player.position;var game_start:float=w.clock.total_game_s;var last:=Time.get_ticks_usec();var low_cal:float=w.needs.calories
 			while Time.get_ticks_msec()-start_s<12000:
 				var toward:Vector2=(scenario.b-Vector2(w.player.position.x,w.player.position.z)).normalized()
 				w.player.sim_dir=Vector3(toward.x,0,toward.y);w.player.yaw=atan2(-toward.x,-toward.y);w.player.pitch=-.055;w.player.rotation.y=w.player.yaw;w.player.cam.rotation.x=w.player.pitch
 				await process_frame;await RenderingServer.frame_post_draw
 				var now:=Time.get_ticks_usec()
-				if Time.get_ticks_msec()-start_s>=3000:samples.append(float(now-last)/1000);process_ms.append(Performance.get_monitor(Performance.TIME_PROCESS)*1000)
+				if Time.get_ticks_msec()-start_s>=3000:
+					samples.append(float(now-last)/1000);process_ms.append(Performance.get_monitor(Performance.TIME_PROCESS)*1000);population_us.append(w.pop.last_tick_us)
+				else:entry_frames.append(float(now-last)/1000);entry_population_us.append(w.pop.last_tick_us)
+				pool_min=mini(pool_min,w.pop.pool.size())
 				last=now;active_max=maxi(active_max,w.pop.active.size());proxy_max=maxi(proxy_max,w.pop.proxy_n);low_cal=minf(low_cal,w.needs.calories)
 			w.player.sim_dir=Vector3.ZERO;samples.sort();process_ms.sort()
+			entry_frames.sort();population_us.sort();entry_population_us.sort()
 			var n:=samples.size();var hitches:=0
 			for value:float in samples:if value>33.333:hitches+=1
 			var row:={"case":scenario.id,"repeat":repeat+1,"frames":n,"median_ms":samples[n/2],"p95_ms":samples[int(n*.95)],"p99_ms":samples[int(n*.99)],"max_ms":samples[-1],"hitches_over_33ms":hitches,"engine_process_median_ms":process_ms[n/2],"walked_m":Vector2(initial.x,initial.z).distance_to(Vector2(w.player.position.x,w.player.position.z)),"game_seconds_advanced":w.clock.total_game_s-game_start,"calories_used":2000-low_cal,"active_infected_max":active_max,"proxy_max":proxy_max}
+			row.merge({"entry_p99_ms":entry_frames[int(entry_frames.size()*.99)],"entry_max_ms":entry_frames[-1],"population_tick_p99_us":population_us[int(n*.99)],"population_tick_max_us":population_us[-1],"entry_population_tick_max_us":entry_population_us[-1],"pool_min":pool_min})
 			rows.append(row);print("OPENING_MOTION ",JSON.stringify(row))
 			if repeat==0:root.get_texture().get_image().save_png(out+"/"+scenario.id+".png")
-	var receipt:={"gpu":RenderingServer.get_video_adapter_name(),"renderer":"Forward+ D3D12","resolution":[1920,1080],"opening_seed":20261004,"forest_crowns":options.get("forest_crowns","winter"),"sky_clouds":options.get("sky_clouds","winter"),"forest_near_end_m":w.forest.near_end,"forest_group_m":w.forest._chunk_m,"population_target":250,"samples":rows,"limitations":"Four 12-second moving cases, three repeats, 3-second warmup. Actual Player physics, world survival/weather and normal AI processing active. God mode prevents damage interruptions, inventory consumption is disabled, audio muted. Same current gameplay code in both visual profiles; not a baseline-commit comparison. Does not cover combat, full town density, autosave IO or human play. Population activation can vary with elapsed simulation and movement; compare the recorded active counts as well as frame times."}
+	var receipt:={"gpu":RenderingServer.get_video_adapter_name(),"renderer":"Forward+ D3D12","resolution":[1920,1080],"opening_seed":w.opening_state.seed_value,"forest_crowns":options.get("forest_crowns","winter"),"sky_clouds":options.get("sky_clouds","winter"),"forest_near_end_m":w.forest.near_end,"forest_group_m":w.forest._chunk_m,"population_target":250,"samples":rows,"limitations":"Four 12-second moving cases, three repeats, 3-second warmup. Actual Player physics, world survival/weather and normal AI processing active. God mode prevents damage interruptions, inventory consumption is disabled, audio muted. Same current gameplay code in both visual profiles; not a baseline-commit comparison. Does not cover combat, full town density, autosave IO or human play. Population activation can vary with elapsed simulation and movement; compare the recorded active counts as well as frame times."}
 	var f:=FileAccess.open(out+"/manifest.json",FileAccess.WRITE);f.store_string(JSON.stringify(receipt,"  "));f.close()
 	w.queue_free();await process_frame;SaveGame.pending={};print("OPENING_MOTION_COMPLETE");quit()
