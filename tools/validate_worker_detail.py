@@ -35,7 +35,15 @@ def inspect(p,near):
     weights=acc(pr['attributes']['WEIGHTS_0']);joints=acc(pr['attributes']['JOINTS_0'])
     if weights.dtype.kind!='f':weights=weights.astype(float)/np.iinfo(weights.dtype).max
     check(np.isfinite(weights).all() and np.max(abs(weights.sum(axis=1)-1))<.001 and joints.max()<13,'normalized four-influence skin '+mesh.get('name',''))
-   else:check('COLOR_0' in pr['attributes'],'proxy vertex palette')
+   else:
+    check('COLOR_0' in pr['attributes'],'proxy vertex palette')
+    col=acc(pr['attributes']['COLOR_0'])
+    if col.dtype.kind!='f':col=col.astype(float)/np.iinfo(col.dtype).max
+    def linear(c):return c/12.92 if c<=.04045 else ((c+.055)/1.055)**2.4
+    expected=np.array([linear(c) for c in (.36,.40,.32)])
+    check((np.linalg.norm(col[:,:3]-expected,axis=1)<.015).sum()>100,'distant canvas matches linear textured albedo')
+    expected=np.array([linear(c) for c in (.38,.35,.30)])
+    check((np.linalg.norm(col[:,:3]-expected,axis=1)<.015).sum()>20,'distant skin matches linear textured albedo')
  bbox=np.ptp(np.concatenate(allpos),axis=0)
  check(1.70<bbox[1]<1.85 and .4<bbox[0]<.8 and bbox[2]<.6,'metre dimensions')
  check(tris<= (22000 if near else 2500) and surfaces<= (8 if near else 1),'mesh budgets')

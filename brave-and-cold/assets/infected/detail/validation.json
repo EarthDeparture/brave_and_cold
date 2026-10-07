@@ -8,7 +8,7 @@
       0.3328012228012085
     ],
     "zero_area_triangles": 0,
-    "sha256": "554d2ba0074bb656bc1ad9a546a8b10f2d62e69e31c4a5381a9d6d43bd454986"
+    "sha256": "cd5a97f622cea3b7cf367ddf705512cb8035e689258f62c6d8e7b020f1400c84"
   },
   "proxy": {
     "triangles": 2192,
@@ -19,8 +19,8 @@
       0.3344610333442688
     ],
     "zero_area_triangles": 0,
-    "sha256": "a1827c3b937c33db75a30d9c74e2e66a5c8d360b0244ce2d94d1d5f5b00496bb"
+    "sha256": "98cab1b23472969d427d70aefa14a7ce1ab70792efbe6b743fa0d9280fdc94bc"
   },
-  "checks": 53,
+  "checks": 55,
   "failures": 0
 }

@@ -273,7 +273,12 @@ for ob in meshes:
  for m in list(cp.modifiers):cp.modifiers.remove(m)
  for g in list(cp.vertex_groups):cp.vertex_groups.remove(g)
  color=cp.data.color_attributes.new(name='Color',type='BYTE_COLOR',domain='CORNER')
- col=(.25,.32,.26,1) if ob==coat else cp.data.materials[0].diffuse_color
+ # glTF vertex colours are linear; painted PNG albedo is sRGB. Match the
+ # actual textured close model instead of baking a brighter arbitrary tint.
+ def linear(c):return c/12.92 if c<=.04045 else ((c+.055)/1.055)**2.4
+ if ob.data.materials[0]==coatmat:col=(*[linear(c) for c in (.36,.40,.32)],1)
+ elif ob.data.materials[0]==skinmat:col=(*[linear(c) for c in (.38,.35,.30)],1)
+ else:col=cp.data.materials[0].node_tree.nodes.get('Principled BSDF').inputs['Base Color'].default_value
  for v in color.data:v.color=col
  copies.append(cp)
 active(copies[0])
