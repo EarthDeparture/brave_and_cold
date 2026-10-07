@@ -357,6 +357,8 @@ func _ready() -> void:
 		opening = LookoutOpening.new(); add_child(opening)
 		opening.build(self,opening_state,sv.get("opening",{}).get("home",{}))
 		first_week=FirstWeekRoute.new();add_child(first_week);first_week.build(self,sv.get("first_week",{}))
+		opening.electrical=ElectricalFieldwork.new();opening.add_child(opening.electrical)
+		opening.electrical.build(self,sv.get("opening",{}).get("home",{}).get("electrical",{}))
 		opening_state.field_load_w=0 if first_week.feeder_isolated else 6
 		if not loading:
 			opening.starting_gear(baseline_pace)

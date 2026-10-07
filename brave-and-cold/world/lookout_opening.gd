@@ -46,6 +46,7 @@ var _receiver_channel: MeshInstance3D
 var _channel_label: Label3D
 var _indicator: MeshInstance3D
 var solar_site: LookoutSolar
+var electrical: ElectricalFieldwork
 var _power_label: Label3D
 const RELAY_LOCAL := Vector3(-9, 0, -6)
 const CASE_LOCAL := Vector3(1.60, 1.42, 1.02)
@@ -157,6 +158,7 @@ func advance(game_s: float) -> void:
 	update_presentation(); _radio_update()
 func update_presentation() -> void:
 	if solar_site!=null:solar_site.update_presentation()
+	if electrical!=null:electrical.update_presentation()
 	if _power_label!=null:
 		_power_label.text="%.0f%% • %s"%[state.battery_wh/LookoutAssignment.BATTERY_CAP_WH*100,power_status()]
 		_power_label.modulate=Color(.60,.84,.61) if state.powered() else Color(.91,.73,.40)
@@ -331,6 +333,7 @@ func actions() -> Array:
 		out.append(_action(case_model.global_position + Vector3.UP * .15, "Collect reserved transfer relay", claim_parts, 3))
 	if world.first_week!=null:out.append_array(world.first_week.actions())
 	if solar_site!=null:out.append_array(solar_site.actions())
+	if electrical!=null:out.append_array(electrical.actions())
 	if not world.player.is_sheltered() and world._view_dir().y<-.2:
 		var gather:Vector3=world.player.position+world._view_dir()*1.4
 		out.append(_action(world._ground(gather.x,gather.z)+Vector3.UP*.04,"Gather clean snow portion",gather_snow,3,.15))
@@ -360,7 +363,8 @@ func toggle_backup() -> void:
 func power_status() -> String:
 	if state.grid_alive():return "MAINS • FULL" if state.battery_wh>=LookoutAssignment.BATTERY_CAP_WH-.01 else "MAINS CHARGING"
 	if state.repair_stage!=3:return "RELAY INCOMPLETE"
-	if not state.solar.controller_ok:return "CHARGER FAULT"
+	if not state.solar.fault().is_empty():return state.solar.fault()
+	if not state.solar.enabled:return "SOLAR DISCONNECTED"
 	if state.solar_watts()<=.01:
 		if state.solar.snow_cover>=.95:return "PANELS SNOWED OVER"
 		return "ON RESERVE • NIGHT" if state.powered() else "WAITING FOR DAYLIGHT"
@@ -371,7 +375,17 @@ func power_status() -> String:
 	return "SOLAR CHARGING" if state.solar_watts()>(state.house_load_w()+charger_w if state.powered() else 0.0) else "RESERVE DRAINING"
 func read_power_status() -> void:
 	var commissioning:="Ground circuit commissioned. The compound solar charger is connected." if state.repair_stage==3 else "Complete the ground cabinet inspection, replacement and commissioning to connect the compound solar charger."
-	var text:="%s\n\nHome reserve: %.1f / %.0f Wh.\nSolar input now: %.1f W. Panel snow cover: %.0f%%.\nSelected home loads: %.1f W, plus up to 6 W for a docked walkie.\n\n%s Your insulated service tester works with an empty home battery. It does not refill it. The backup switch controls the home output; charging continues with that switch off.\n\nAfter a flat battery, outputs wait for a 12 Wh reserve, then resume if backup is enabled. Daylight supplies energy; night does not. Clouds and panel snow reduce it. Brush the array when needed. Turn off the repeater (12 W) and lamp (7 W), and isolate the unused crew spur (6 W) to preserve charge. Solar does not restore the town grid or distant broadcasts."%[power_status(),state.battery_wh,LookoutAssignment.BATTERY_CAP_WH,state.solar_watts(),state.solar.snow_cover*100,state.house_load_w(),commissioning]
+	var diagnosis:="DC circuit checks clear. Night, cloud and snow obstruction are not equipment faults."
+	match state.solar.fault():
+		"DC FUSE OPEN":diagnosis="DC fuse continuity is open. Fit the matched spare from the logging-road crew packet with your service kit."
+		"DC CABLE FAULT":diagnosis="DC lead continuity failed. Isolate the crew-spur feeder, then test and recover its spare lead with your service kit."
+		"CHARGER FAULT":diagnosis="Controller self-test failed. The North Ridge Supply winter controller refit requires the crew packet's connectors and the isolated spur's tested lead."
+	if not state.solar.cable_ok and not state.solar.controller_ok:diagnosis+=" The controller also failed. The matched winter refit replaces both; a healthy tested lead fitted during cable repair can be reused."
+	var text:="%s\n\nHome reserve: %.1f / %.0f Wh.\nSolar input now: %.1f W. Panel snow cover: %.0f%%.\nSelected home loads: %.1f W, plus up to 6 W for a docked walkie."%[power_status(),state.battery_wh,LookoutAssignment.BATTERY_CAP_WH,state.solar_watts(),state.solar.snow_cover*100,state.house_load_w()]
+	text+="\n\nDiagnosis\n"+diagnosis
+	text+="\n\n"+commissioning+" Your insulated service tester works with an empty home battery. It does not refill it. The backup switch controls the home output; charging continues with that switch off."
+	text+="\n\nAfter a flat battery, outputs wait for a 12 Wh reserve, then resume if backup is enabled. Daylight supplies energy; night does not. Clouds and panel snow reduce it. Brush the array when needed. Turn off the repeater (12 W) and lamp (7 W), and isolate the unused crew spur (6 W) to preserve charge. Solar does not restore the town grid or distant broadcasts."
+	text+="\n\nController: "+("winter regulator fitted (86% conversion)." if state.solar.winter_controller else "standard regulator (78% conversion). Optional winter refit stock is recorded at the crew cache and North Ridge Supply.")
 	world.reading.open("Kestrel 07 • local power",text,world.player,world.hud)
 func toggle_auto_transfer() -> void: state.auto_transfer_on = not state.auto_transfer_on
 func toggle_relay() -> void:
@@ -435,7 +449,7 @@ func is_refuge(point: Vector3) -> bool:
 		if actor is Node3D and not bool(actor.call("is_dead")) and boundary.contains_ground(actor.global_position): return false
 	return true
 func to_dict() -> Dictionary:
-	return {"state":state.to_dict(),"home":{"schema":2,"prepared_water":water.to_dict(),"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open}}
+	return {"state":state.to_dict(),"home":{"schema":2,"electrical":electrical.to_dict() if electrical!=null else {},"prepared_water":water.to_dict(),"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open}}
 func _relay_foundations() -> void:
 	var st := SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for foot: Vector2 in [Vector2(-1.04,-1.1),Vector2(1.04,-1.1),Vector2(0,-2.15),Vector2(-.45,0),Vector2(.45,0),Vector2(-.92,-.35)]:

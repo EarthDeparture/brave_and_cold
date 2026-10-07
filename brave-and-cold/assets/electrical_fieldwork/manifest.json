@@ -1,0 +1,182 @@
+{
+  "dc_fuse": {
+    "triangles": 180,
+    "bytes": 9844,
+    "sha256": "c70d0168def2106d854226afa87123fe27d31824edc0ff63fdff0427443ce7ef",
+    "source": "tools/blender/generated/electrical_fieldwork/dc_fuse.blend",
+    "source_sha256": "2a256cc8631b88f00346c91f6c784b169ff0c58eb2a0a0571a6ee2b08ee1bf9f",
+    "mesh_nodes": 2,
+    "bounds_min_xyz": [
+      -0.028999999165534973,
+      0.0009999992325901985,
+      -0.00800000037997961
+    ],
+    "bounds_max_xyz": [
+      0.028999999165534973,
+      0.017000000923871994,
+      0.00800000037997961
+    ],
+    "dimensions_m": [
+      0.057999998331069946,
+      0.016000001691281796,
+      0.01600000075995922
+    ]
+  },
+  "sealed_connector": {
+    "triangles": 328,
+    "bytes": 16440,
+    "sha256": "231d4c3d000ab8941c6156914f85131e70f35d077737b9f99d9aa9b0e4c447cd",
+    "source": "tools/blender/generated/electrical_fieldwork/sealed_connector.blend",
+    "source_sha256": "153b46297ce286acaab0c906f408472c032bd158e25472f0e50d3362ed2ebdd3",
+    "mesh_nodes": 3,
+    "bounds_min_xyz": [
+      -0.04200000315904617,
+      0.0010000010952353477,
+      -0.03999999910593033
+    ],
+    "bounds_max_xyz": [
+      0.03999999910593033,
+      0.03099999949336052,
+      0.03999999910593033
+    ],
+    "dimensions_m": [
+      0.0820000022649765,
+      0.02999999839812517,
+      0.07999999821186066
+    ]
+  },
+  "winter_controller": {
+    "triangles": 2046,
+    "bytes": 659988,
+    "sha256": "029358c211ff30d798c0bd3955fd37933975e1b58166010e8e11230a8da19fb1",
+    "source": "tools/blender/generated/electrical_fieldwork/winter_controller.blend",
+    "source_sha256": "a10602e3527bac59f6ff5adcc130cbb8fb4c0f65db1bc86da9fcc347befcbd8f",
+    "mesh_nodes": 4,
+    "bounds_min_xyz": [
+      -0.125,
+      0.0,
+      -0.07500000298023224
+    ],
+    "bounds_max_xyz": [
+      0.125,
+      0.10300000011920929,
+      0.11499999463558197
+    ],
+    "dimensions_m": [
+      0.25,
+      0.10300000011920929,
+      0.1899999976158142
+    ]
+  },
+  "dc_cable": {
+    "triangles": 4764,
+    "bytes": 220028,
+    "sha256": "48c56973d57242a0eee6494e281682d8b1890c3ab25859893f26ceff245e6b35",
+    "source": "tools/blender/generated/electrical_fieldwork/dc_cable.blend",
+    "source_sha256": "5a9125c8315347c54344fff19f0d4f4b237666ace99a8ca74b1be2660db73706",
+    "mesh_nodes": 3,
+    "bounds_min_xyz": [
+      -0.1769850105047226,
+      0.010000001639127731,
+      -0.1769850105047226
+    ],
+    "bounds_max_xyz": [
+      0.3100000023841858,
+      0.09000000357627869,
+      0.1769850105047226
+    ],
+    "dimensions_m": [
+      0.4869850128889084,
+      0.08000000193715096,
+      0.3539700210094452
+    ]
+  },
+  "spare_packet": {
+    "triangles": 1074,
+    "bytes": 608736,
+    "sha256": "5f5fb08f4da345d20e5d5d0f6b29c1570ad0fa2169ce2fadd554167e489cbb14",
+    "source": "tools/blender/generated/electrical_fieldwork/spare_packet.blend",
+    "source_sha256": "7a764cd52559daf7c70649e96ae2db9768f2a1441b1fd81738b10e69ca8bc5cc",
+    "mesh_nodes": 5,
+    "bounds_min_xyz": [
+      -0.11599999666213989,
+      0.0,
+      -0.07500000298023224
+    ],
+    "bounds_max_xyz": [
+      0.11599999666213989,
+      0.07000000029802322,
+      0.07500000298023224
+    ],
+    "dimensions_m": [
+      0.23199999332427979,
+      0.07000000029802322,
+      0.15000000596046448
+    ]
+  },
+  "controller_case": {
+    "triangles": 2988,
+    "bytes": 712452,
+    "sha256": "cee72bca2b5bd17e8a11db10a27d3e789b417723c0711343a57ac2f6d21eb21e",
+    "source": "tools/blender/generated/electrical_fieldwork/controller_case.blend",
+    "source_sha256": "4f51f567facbacb8dfb41d226061c636b4815a958a2746eb58a71961f2f92361",
+    "mesh_nodes": 8,
+    "bounds_min_xyz": [
+      -0.20000000298023224,
+      0.0,
+      -0.15399999916553497
+    ],
+    "bounds_max_xyz": [
+      0.20000000298023224,
+      0.16699999570846558,
+      0.1459999978542328
+    ],
+    "dimensions_m": [
+      0.4000000059604645,
+      0.16699999570846558,
+      0.29999999701976776
+    ]
+  },
+  "delivery_slate": {
+    "triangles": 390,
+    "bytes": 905320,
+    "sha256": "2a49e1bdcb412f63d873778aa2c01639645a3d4c82e8bda7e944d290362c28dd",
+    "source": "tools/blender/generated/electrical_fieldwork/delivery_slate.blend",
+    "source_sha256": "cb997b3464625856354d98fb4a81188b16798eb2c46d406f518076a31777d5a2",
+    "mesh_nodes": 4,
+    "bounds_min_xyz": [
+      -0.20000000298023224,
+      0.0,
+      -0.1550000011920929
+    ],
+    "bounds_max_xyz": [
+      0.20000000298023224,
+      0.029500000178813934,
+      0.1550000011920929
+    ],
+    "dimensions_m": [
+      0.4000000059604645,
+      0.029500000178813934,
+      0.3100000023841858
+    ]
+  },
+  "provenance": {
+    "license": "Original project-authored geometry and generated printwork; existing original timber texture reused",
+    "seed": 7107,
+    "units": "metres",
+    "blender": "5.2.2 LTS",
+    "generator_sha256_lf": "8d002cebbfb2d55ff119f541d869376e4d30e7f0c405b7a483e16f0434f471d2",
+    "graphics_generator_sha256_lf": "ea464f60174f81b24be77261f054232b3bb334c877b05b6d5889fde3b9f262e8"
+  },
+  "graphics": {
+    "controller.png": "d84a034702b8a6e877904b2f0d5aaa677f5dbba278f01840c21a2b4b09ef18df",
+    "packet.png": "145a841cc49b2e0322bb8db8a9cee84f640666a7799d8a501973e7df5da6ce95",
+    "slate.png": "0af44c6a3a2e85efd288ec7cb3067e7f8eb4cc6e68712c303829855e3bde1b47"
+  },
+  "dependencies": {
+    "helper_source": "tools/blender/gen_first_week.py",
+    "helper_sha256_lf": "07e256fd2c532f62a0bb62a2b8db530f62e7a7668873473ac3dcf48ba2590667",
+    "timber_texture": "brave-and-cold/assets/environment_detail/textures/timber_alb.png",
+    "timber_sha256": "0e510ce6bd0e56ace5ec032e221f1a1e7d74c7288d1c95fb0ee5b1652bd19a0e"
+  }
+}

@@ -1,0 +1,995 @@
+{
+  "date": "2026-10-07",
+  "branch": "codex/electrical-fieldwork",
+  "baseline_commit": "4292c607728435d1c3de2ba0337b3f8a04b05111",
+  "checkpoint": "checkpoint/pre-electrical-fieldwork-2026-10-07",
+  "source_digest_convention": "UTF-8, no BOM, LF normalized; binary/media and raw logs use exact bytes",
+  "source_sha256_lf": {
+    ".gitignore": "f1533cdf5636afed168034220637f451975437561193f2c2d22c2b626974ceff",
+    "brave-and-cold/systems/inventory.gd": "bef8844891fdce70826f5686daa0fd5eb30d0dda2e8c1f97acfe3d15acb9e7c1",
+    "brave-and-cold/systems/solar_supply.gd": "0a3b3af2c15b8cf62036c7dc176a11f67af2450dbaf5a21ad51b1e847539c946",
+    "brave-and-cold/world/first_week_route.gd": "ecea653d1aa87421da757b611bf434cca6f967655359c467bd2a917df4ff4d15",
+    "brave-and-cold/world/game_world.gd": "0c03bd4a598ce48cb6485d5915199a09b5dee8e5834c02f0aedfbddcd16c6d21",
+    "brave-and-cold/world/item_pickup.gd": "42524f8be872f4ec917819c1c0aea665ce8614af6aea06a11e381336e5e49a4b",
+    "brave-and-cold/world/lookout_opening.gd": "6046340c64b3c39fa092d0cbefcebf2344ba91f9dea6b4aaa8059dff16afcb08",
+    "brave-and-cold/world/lookout_solar.gd": "c8ded7c772e199c3629e698f364773160bf702974d00d9e5f7edb77a81f0a926",
+    "brave-and-cold/systems/electrical_service.gd": "8bc2e0bbb2c6d8dedf827af5c298fe176f08939faa77ef11875d32436ed08d94",
+    "brave-and-cold/world/electrical_fieldwork.gd": "2cca5f0c3ee3459f1e08d994e297fb5b25b60bbb70b5f7a44109a9a8eac8a2fe",
+    "brave-and-cold/tests/test_electrical_fieldwork.gd": "fdd891d0fe82859771252738e0d908fcd3cee1b02a987ec57efc2ff17c6a9916",
+    "brave-and-cold/tests/measure_electrical_outing.gd": "0ef3091adad038d8fb9a6a1a3ef4b8017c4edbd14a9674268ffee89977559979",
+    "brave-and-cold/tests/visual/capture_electrical_fieldwork.gd": "6528bb4c1bdead867ba6bb3bfe64fcb324fc5250624dbb0b0645422d8302205c",
+    "tools/blender/gen_electrical_fieldwork.py": "8d002cebbfb2d55ff119f541d869376e4d30e7f0c405b7a483e16f0434f471d2",
+    "tools/blender/gen_electrical_graphics.py": "ea464f60174f81b24be77261f054232b3bb334c877b05b6d5889fde3b9f262e8",
+    "tools/validate_electrical_assets.py": "fda7e0e6531f0e9f0ce90fd09a7c02615768a9f482d509965b38da49c91b291d",
+    "tools/export_electrical_rollback.py": "b935e388cd8e3d7027c65226210790c861c851c3cd2023a944386b7a8fb1c66d",
+    "tools/test_export_electrical_rollback.py": "bc69064236b1b8c7820addf2a23e4a04934223c07615e9a03aa49e8c1e443384",
+    "tools/record_electrical_validation.py": "da4d42706648cfdbc1bdb0995cccdbe7a2ae6161a29ed6261695458506785f7b",
+    "docs/design/ELECTRICAL_FIELDWORK.md": "bdea591ecddcb6099f2eefccaeeed83aafc52e4b6581f9a744050723ffc2b7cb",
+    "docs/design/SOLAR_AND_SUSTAINABLE_FOOD.md": "21a3827df99d5ac0ffacf39c22117fbf210785e17df9ef9a29f7b9fc8e7f1dc8",
+    "docs/validation/ELECTRICAL_FIELDWORK.md": "0f3262e394c430ae325ec6fd0a79e27a77dec0c91796b95c6fd06626b51369f8"
+  },
+  "asset_manifest_sha256_lf": "896624b30ac123b1d476d2921efcbbb06876b6fe9537fb082eb56072cc152320",
+  "asset_manifest": {
+    "dc_fuse": {
+      "triangles": 180,
+      "bytes": 9844,
+      "sha256": "c70d0168def2106d854226afa87123fe27d31824edc0ff63fdff0427443ce7ef",
+      "source": "tools/blender/generated/electrical_fieldwork/dc_fuse.blend",
+      "source_sha256": "2a256cc8631b88f00346c91f6c784b169ff0c58eb2a0a0571a6ee2b08ee1bf9f",
+      "mesh_nodes": 2,
+      "bounds_min_xyz": [
+        -0.028999999165534973,
+        0.0009999992325901985,
+        -0.00800000037997961
+      ],
+      "bounds_max_xyz": [
+        0.028999999165534973,
+        0.017000000923871994,
+        0.00800000037997961
+      ],
+      "dimensions_m": [
+        0.057999998331069946,
+        0.016000001691281796,
+        0.01600000075995922
+      ]
+    },
+    "sealed_connector": {
+      "triangles": 328,
+      "bytes": 16440,
+      "sha256": "231d4c3d000ab8941c6156914f85131e70f35d077737b9f99d9aa9b0e4c447cd",
+      "source": "tools/blender/generated/electrical_fieldwork/sealed_connector.blend",
+      "source_sha256": "153b46297ce286acaab0c906f408472c032bd158e25472f0e50d3362ed2ebdd3",
+      "mesh_nodes": 3,
+      "bounds_min_xyz": [
+        -0.04200000315904617,
+        0.0010000010952353477,
+        -0.03999999910593033
+      ],
+      "bounds_max_xyz": [
+        0.03999999910593033,
+        0.03099999949336052,
+        0.03999999910593033
+      ],
+      "dimensions_m": [
+        0.0820000022649765,
+        0.02999999839812517,
+        0.07999999821186066
+      ]
+    },
+    "winter_controller": {
+      "triangles": 2046,
+      "bytes": 659988,
+      "sha256": "029358c211ff30d798c0bd3955fd37933975e1b58166010e8e11230a8da19fb1",
+      "source": "tools/blender/generated/electrical_fieldwork/winter_controller.blend",
+      "source_sha256": "a10602e3527bac59f6ff5adcc130cbb8fb4c0f65db1bc86da9fcc347befcbd8f",
+      "mesh_nodes": 4,
+      "bounds_min_xyz": [
+        -0.125,
+        0.0,
+        -0.07500000298023224
+      ],
+      "bounds_max_xyz": [
+        0.125,
+        0.10300000011920929,
+        0.11499999463558197
+      ],
+      "dimensions_m": [
+        0.25,
+        0.10300000011920929,
+        0.1899999976158142
+      ]
+    },
+    "dc_cable": {
+      "triangles": 4764,
+      "bytes": 220028,
+      "sha256": "48c56973d57242a0eee6494e281682d8b1890c3ab25859893f26ceff245e6b35",
+      "source": "tools/blender/generated/electrical_fieldwork/dc_cable.blend",
+      "source_sha256": "5a9125c8315347c54344fff19f0d4f4b237666ace99a8ca74b1be2660db73706",
+      "mesh_nodes": 3,
+      "bounds_min_xyz": [
+        -0.1769850105047226,
+        0.010000001639127731,
+        -0.1769850105047226
+      ],
+      "bounds_max_xyz": [
+        0.3100000023841858,
+        0.09000000357627869,
+        0.1769850105047226
+      ],
+      "dimensions_m": [
+        0.4869850128889084,
+        0.08000000193715096,
+        0.3539700210094452
+      ]
+    },
+    "spare_packet": {
+      "triangles": 1074,
+      "bytes": 608736,
+      "sha256": "5f5fb08f4da345d20e5d5d0f6b29c1570ad0fa2169ce2fadd554167e489cbb14",
+      "source": "tools/blender/generated/electrical_fieldwork/spare_packet.blend",
+      "source_sha256": "7a764cd52559daf7c70649e96ae2db9768f2a1441b1fd81738b10e69ca8bc5cc",
+      "mesh_nodes": 5,
+      "bounds_min_xyz": [
+        -0.11599999666213989,
+        0.0,
+        -0.07500000298023224
+      ],
+      "bounds_max_xyz": [
+        0.11599999666213989,
+        0.07000000029802322,
+        0.07500000298023224
+      ],
+      "dimensions_m": [
+        0.23199999332427979,
+        0.07000000029802322,
+        0.15000000596046448
+      ]
+    },
+    "controller_case": {
+      "triangles": 2988,
+      "bytes": 712452,
+      "sha256": "cee72bca2b5bd17e8a11db10a27d3e789b417723c0711343a57ac2f6d21eb21e",
+      "source": "tools/blender/generated/electrical_fieldwork/controller_case.blend",
+      "source_sha256": "4f51f567facbacb8dfb41d226061c636b4815a958a2746eb58a71961f2f92361",
+      "mesh_nodes": 8,
+      "bounds_min_xyz": [
+        -0.20000000298023224,
+        0.0,
+        -0.15399999916553497
+      ],
+      "bounds_max_xyz": [
+        0.20000000298023224,
+        0.16699999570846558,
+        0.1459999978542328
+      ],
+      "dimensions_m": [
+        0.4000000059604645,
+        0.16699999570846558,
+        0.29999999701976776
+      ]
+    },
+    "delivery_slate": {
+      "triangles": 390,
+      "bytes": 905320,
+      "sha256": "2a49e1bdcb412f63d873778aa2c01639645a3d4c82e8bda7e944d290362c28dd",
+      "source": "tools/blender/generated/electrical_fieldwork/delivery_slate.blend",
+      "source_sha256": "cb997b3464625856354d98fb4a81188b16798eb2c46d406f518076a31777d5a2",
+      "mesh_nodes": 4,
+      "bounds_min_xyz": [
+        -0.20000000298023224,
+        0.0,
+        -0.1550000011920929
+      ],
+      "bounds_max_xyz": [
+        0.20000000298023224,
+        0.029500000178813934,
+        0.1550000011920929
+      ],
+      "dimensions_m": [
+        0.4000000059604645,
+        0.029500000178813934,
+        0.3100000023841858
+      ]
+    },
+    "provenance": {
+      "license": "Original project-authored geometry and generated printwork; existing original timber texture reused",
+      "seed": 7107,
+      "units": "metres",
+      "blender": "5.2.2 LTS",
+      "generator_sha256_lf": "8d002cebbfb2d55ff119f541d869376e4d30e7f0c405b7a483e16f0434f471d2",
+      "graphics_generator_sha256_lf": "ea464f60174f81b24be77261f054232b3bb334c877b05b6d5889fde3b9f262e8"
+    },
+    "graphics": {
+      "controller.png": "d84a034702b8a6e877904b2f0d5aaa677f5dbba278f01840c21a2b4b09ef18df",
+      "packet.png": "145a841cc49b2e0322bb8db8a9cee84f640666a7799d8a501973e7df5da6ce95",
+      "slate.png": "0af44c6a3a2e85efd288ec7cb3067e7f8eb4cc6e68712c303829855e3bde1b47"
+    },
+    "dependencies": {
+      "helper_source": "tools/blender/gen_first_week.py",
+      "helper_sha256_lf": "07e256fd2c532f62a0bb62a2b8db530f62e7a7668873473ac3dcf48ba2590667",
+      "timber_texture": "brave-and-cold/assets/environment_detail/textures/timber_alb.png",
+      "timber_sha256": "0e510ce6bd0e56ace5ec032e221f1a1e7d74c7288d1c95fb0ee5b1652bd19a0e"
+    }
+  },
+  "asset_validation": {
+    "dc_fuse": {
+      "triangles": 180,
+      "materials": 2,
+      "mesh_nodes": 2,
+      "dimensions_m": [
+        0.057999998331069946,
+        0.016000001691281796,
+        0.01600000075995922
+      ],
+      "source_export_and_print_hashes_verified": true
+    },
+    "sealed_connector": {
+      "triangles": 328,
+      "materials": 3,
+      "mesh_nodes": 3,
+      "dimensions_m": [
+        0.0820000022649765,
+        0.02999999839812517,
+        0.07999999821186066
+      ],
+      "source_export_and_print_hashes_verified": true
+    },
+    "winter_controller": {
+      "triangles": 2046,
+      "materials": 4,
+      "mesh_nodes": 4,
+      "dimensions_m": [
+        0.25,
+        0.10300000011920929,
+        0.1899999976158142
+      ],
+      "source_export_and_print_hashes_verified": true
+    },
+    "dc_cable": {
+      "triangles": 4764,
+      "materials": 3,
+      "mesh_nodes": 3,
+      "dimensions_m": [
+        0.4869850128889084,
+        0.08000000193715096,
+        0.3539700210094452
+      ],
+      "source_export_and_print_hashes_verified": true
+    },
+    "spare_packet": {
+      "triangles": 1074,
+      "materials": 5,
+      "mesh_nodes": 5,
+      "dimensions_m": [
+        0.23199999332427979,
+        0.07000000029802322,
+        0.15000000596046448
+      ],
+      "source_export_and_print_hashes_verified": true
+    },
+    "controller_case": {
+      "triangles": 2988,
+      "materials": 5,
+      "mesh_nodes": 8,
+      "dimensions_m": [
+        0.4000000059604645,
+        0.16699999570846558,
+        0.29999999701976776
+      ],
+      "source_export_and_print_hashes_verified": true
+    },
+    "delivery_slate": {
+      "triangles": 390,
+      "materials": 4,
+      "mesh_nodes": 4,
+      "dimensions_m": [
+        0.4000000059604645,
+        0.029500000178813934,
+        0.3100000023841858
+      ],
+      "source_export_and_print_hashes_verified": true
+    }
+  },
+  "runtime_diagnostics": {
+    "test_electrical_fieldwork": {
+      "assertions_passed": 49,
+      "failures": 0,
+      "observed_exit_code": 0,
+      "log_sha256": "a3b9757cf092d4a515a58464c3e792fc7f10078c74797d42c05d0c6c895cc095",
+      "shutdown_warnings": [
+        "WARNING: 2 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: 7 ObjectDB instances were leaked at exit (run with `--verbose` for details)."
+      ]
+    },
+    "test_solar_recovery": {
+      "assertions_passed": 29,
+      "failures": 0,
+      "observed_exit_code": 0,
+      "log_sha256": "84148a81665ef5c37ffa0994105f1bf6569ff3404aa5836503e1187ef1b5fb2b",
+      "shutdown_warnings": [
+        "WARNING: 2 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: 7 ObjectDB instances were leaked at exit (run with `--verbose` for details)."
+      ]
+    },
+    "test_lookout_assignment": {
+      "assertions_passed": 27,
+      "failures": 0,
+      "observed_exit_code": 0,
+      "log_sha256": "3030bb3e694a18790ce447f2e30bb0976e40f4f3fa0a5e5d23dae441ef1fc693",
+      "shutdown_warnings": []
+    },
+    "test_lookout_opening": {
+      "assertions_passed": 53,
+      "failures": 0,
+      "observed_exit_code": 0,
+      "log_sha256": "d8b22615aaab55f89b8dcc402cd233d556b58545903afe040a6f01effe703279",
+      "shutdown_warnings": [
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked."
+      ]
+    },
+    "test_watch_walkie_door": {
+      "assertions_passed": 46,
+      "failures": 0,
+      "observed_exit_code": 0,
+      "log_sha256": "e62d7be89bd059d6f53ad99d97d47f76ed4194a76e33e35e5c4f31d81ee55dc5",
+      "shutdown_warnings": [
+        "WARNING: 2 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: 7 ObjectDB instances were leaked at exit (run with `--verbose` for details)."
+      ]
+    },
+    "test_radio_bulletins": {
+      "assertions_passed": 141,
+      "failures": 0,
+      "observed_exit_code": 0,
+      "log_sha256": "db9f93f671ebbcb11930b472711d6b8e92a9606e5548daa4a0c42f0ba7c9f5d3",
+      "shutdown_warnings": [
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked."
+      ]
+    },
+    "test_first_week_core": {
+      "assertions_passed": 33,
+      "failures": 0,
+      "observed_exit_code": 0,
+      "log_sha256": "3a7125841f6a72281879d7f9aebd360efc650aac5b714948feb97971838f8b54",
+      "shutdown_warnings": [
+        "WARNING: 2 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: 7 ObjectDB instances were leaked at exit (run with `--verbose` for details)."
+      ]
+    },
+    "test_first_week_story": {
+      "assertions_passed": 38,
+      "failures": 0,
+      "observed_exit_code": 0,
+      "log_sha256": "9bc5f20f69b105ff94b982c5ecc8908f254b654d3100f180dc1650b02b3a3763",
+      "shutdown_warnings": [
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked."
+      ]
+    },
+    "test_opening_pacing": {
+      "assertions_passed": 50,
+      "failures": 0,
+      "observed_exit_code": 0,
+      "log_sha256": "3187046a62ebeb2c8fcfa190633f689831045bc9fbad2c1e7b754c5575ab1674",
+      "shutdown_warnings": [
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked."
+      ]
+    },
+    "test_lookout_stair_turns": {
+      "assertions_passed": 91,
+      "failures": 0,
+      "observed_exit_code": 0,
+      "log_sha256": "8ca2b7049d8f0a8ade3691291274fbba9d7ba9fd7afb05fcd8837dbadf1b11fa",
+      "shutdown_warnings": []
+    }
+  },
+  "total_runtime_assertions_passed": 557,
+  "rollback_export_tests": {
+    "passed": 3,
+    "log_sha256": "a8a217dddc04f88764d337e0bc9aac025c1827945731730940ae3a0b25fdacbf",
+    "original_user_save_files_read_or_modified": false
+  },
+  "movement_outings": {
+    "electrical-baseline": {
+      "file": "brave-and-cold/shots/opening-pacing-2026-10-06/electrical-baseline-route.json",
+      "sha256": "de10230c9857f9123bff3aff2a835d294ce8026127bc294a633c497bd7dbaabd",
+      "run": {
+        "completed": true,
+        "failure": "",
+        "label": "electrical-baseline",
+        "limitations": "Scripted fixed-step route with actual Player movement/collision, world survival/weather and population tick. Direct action callbacks and no menu/exploration time; other entity process/animation is frozen. Not human playtesting or a frame-time benchmark. No user save files used.",
+        "pace": 30.0,
+        "renderer": "",
+        "repair_stage": 3,
+        "samples": [
+          {
+            "calendar": "Day 1  05:30",
+            "calories": 1999.56666666667,
+            "completed_so_far": true,
+            "core_c": 37.0,
+            "distance_m": 0.559550816193223,
+            "fatigue": 0.0111111111111111,
+            "food_pack": 1,
+            "game_s": 8.0,
+            "hp": 100.0,
+            "position": [
+              528.501831054688,
+              326.839752197266,
+              -764.17529296875
+            ],
+            "real_s": 0.266666666666667,
+            "segment": "depart_room",
+            "stove_game_hours": 7.99777777777778,
+            "walkie_percent": 100,
+            "water": 84.9866666666667,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  05:40",
+            "calories": 1964.4458333334,
+            "completed_so_far": true,
+            "core_c": 37.0,
+            "distance_m": 64.7811603015289,
+            "fatigue": 0.911944444444442,
+            "food_pack": 1,
+            "game_s": 657.0,
+            "hp": 100.0,
+            "position": [
+              532.804626464844,
+              305.465881347656,
+              -764.562133789063
+            ],
+            "real_s": 21.9000000000002,
+            "segment": "stairs_down",
+            "stove_game_hours": 7.8175,
+            "walkie_percent": 100,
+            "water": 83.9055555555565,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  05:45",
+            "calories": 1953.0250000001,
+            "completed_so_far": true,
+            "core_c": 36.9784409902786,
+            "distance_m": 80.0535826096311,
+            "fatigue": 1.2311111111111,
+            "food_pack": 1,
+            "game_s": 922.0,
+            "hp": 100.0,
+            "position": [
+              517.967407226563,
+              304.701751708984,
+              -763.530578613281
+            ],
+            "real_s": 30.733333333334,
+            "segment": "cabinet_inspected",
+            "stove_game_hours": 7.74388888888889,
+            "walkie_percent": 99,
+            "water": 83.5127777777787,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  07:31",
+            "calories": 1606.84583333411,
+            "completed_so_far": true,
+            "core_c": 36.9967702555253,
+            "distance_m": 658.008225762285,
+            "fatigue": 10.1074999999999,
+            "food_pack": 1,
+            "game_s": 7313.0,
+            "hp": 100.0,
+            "position": [
+              549.005920410156,
+              250.547775268555,
+              -259.6669921875
+            ],
+            "real_s": 243.766666666655,
+            "segment": "main_road",
+            "stove_game_hours": 5.96861111111111,
+            "walkie_percent": 92,
+            "water": 72.8611111111217,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  07:44",
+            "calories": 1565.72500000086,
+            "completed_so_far": true,
+            "core_c": 36.976970509147,
+            "distance_m": 725.757236954756,
+            "fatigue": 11.1744444444438,
+            "food_pack": 1,
+            "game_s": 8098.0,
+            "hp": 100.0,
+            "position": [
+              572.965209960938,
+              253.632476806641,
+              -224.881759643555
+            ],
+            "real_s": 269.933333333332,
+            "segment": "depot_part_collected",
+            "stove_game_hours": 5.75055555555556,
+            "walkie_percent": 91,
+            "water": 71.5761111111227,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  09:48",
+            "calories": 1170.0416666683,
+            "completed_so_far": true,
+            "core_c": 36.7152306114931,
+            "distance_m": 1381.50497632392,
+            "fatigue": 21.3644444444455,
+            "food_pack": 1,
+            "game_s": 15494.0,
+            "hp": 100.0,
+            "position": [
+              517.9345703125,
+              304.696350097656,
+              -763.489501953125
+            ],
+            "real_s": 516.466666666854,
+            "segment": "cabinet_commissioned",
+            "stove_game_hours": 3.69611111111111,
+            "walkie_percent": 83,
+            "water": 59.3316666666897,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  10:03",
+            "calories": 1121.5291666684,
+            "completed_so_far": true,
+            "core_c": 36.5687331680474,
+            "distance_m": 1466.2703052276,
+            "fatigue": 22.6119444444465,
+            "food_pack": 1,
+            "game_s": 16397.0,
+            "hp": 100.0,
+            "position": [
+              528.218505859375,
+              326.839752197266,
+              -763.595886230469
+            ],
+            "real_s": 546.566666666827,
+            "segment": "returned_room",
+            "stove_game_hours": 3.44527777777778,
+            "walkie_percent": 82,
+            "water": 57.8333333333578,
+            "wood_pack": 2
+          }
+        ]
+      }
+    },
+    "electrical-outing": {
+      "file": "brave-and-cold/shots/opening-pacing-2026-10-06/electrical-outing-route.json",
+      "sha256": "fc4df82262b27012d310ccef2d8a7e7cb29060e64f763b69beeb46ab25d0064f",
+      "run": {
+        "completed": true,
+        "failure": "",
+        "label": "electrical-outing",
+        "limitations": "Scripted fixed-step route with actual Player movement/collision, world survival/weather and population tick. Direct action callbacks and no menu/exploration time; other entity process/animation is frozen. Not human playtesting or a frame-time benchmark. No user save files used.",
+        "pace": 30.0,
+        "renderer": "",
+        "repair_stage": 3,
+        "samples": [
+          {
+            "cable_pack": 0,
+            "calendar": "Day 1  05:30",
+            "calories": 1999.56666666667,
+            "completed_so_far": true,
+            "connector_pack": 0,
+            "controller_pack": 0,
+            "core_c": 37.0,
+            "distance_m": 0.559550816193223,
+            "electrical_issue": {
+              "cable_claimed": false,
+              "controller_claimed": false,
+              "packet_claimed": false
+            },
+            "fatigue": 0.0111111111111111,
+            "food_pack": 1,
+            "fuse_pack": 0,
+            "game_s": 8.0,
+            "hp": 100.0,
+            "position": [
+              528.501831054688,
+              326.839752197266,
+              -764.17529296875
+            ],
+            "real_s": 0.266666666666667,
+            "segment": "depart_room",
+            "stove_game_hours": 7.99777777777778,
+            "tested_lead_installed": false,
+            "walkie_percent": 100,
+            "water": 84.9866666666667,
+            "winter_controller": false,
+            "wood_pack": 2
+          },
+          {
+            "cable_pack": 0,
+            "calendar": "Day 1  05:40",
+            "calories": 1964.4458333334,
+            "completed_so_far": true,
+            "connector_pack": 0,
+            "controller_pack": 0,
+            "core_c": 37.0,
+            "distance_m": 64.7811603015289,
+            "electrical_issue": {
+              "cable_claimed": false,
+              "controller_claimed": false,
+              "packet_claimed": false
+            },
+            "fatigue": 0.911944444444442,
+            "food_pack": 1,
+            "fuse_pack": 0,
+            "game_s": 657.0,
+            "hp": 100.0,
+            "position": [
+              532.804626464844,
+              305.465881347656,
+              -764.562133789063
+            ],
+            "real_s": 21.9000000000002,
+            "segment": "stairs_down",
+            "stove_game_hours": 7.8175,
+            "tested_lead_installed": false,
+            "walkie_percent": 100,
+            "water": 83.9055555555565,
+            "winter_controller": false,
+            "wood_pack": 2
+          },
+          {
+            "cable_pack": 0,
+            "calendar": "Day 1  05:45",
+            "calories": 1953.0250000001,
+            "completed_so_far": true,
+            "connector_pack": 0,
+            "controller_pack": 0,
+            "core_c": 36.9784409902786,
+            "distance_m": 80.0535826096311,
+            "electrical_issue": {
+              "cable_claimed": false,
+              "controller_claimed": false,
+              "packet_claimed": false
+            },
+            "fatigue": 1.2311111111111,
+            "food_pack": 1,
+            "fuse_pack": 0,
+            "game_s": 922.0,
+            "hp": 100.0,
+            "position": [
+              517.967407226563,
+              304.701751708984,
+              -763.530578613281
+            ],
+            "real_s": 30.733333333334,
+            "segment": "cabinet_inspected",
+            "stove_game_hours": 7.74388888888889,
+            "tested_lead_installed": false,
+            "walkie_percent": 99,
+            "water": 83.5127777777787,
+            "winter_controller": false,
+            "wood_pack": 2
+          },
+          {
+            "cable_pack": 0,
+            "calendar": "Day 1  06:46",
+            "calories": 1756.06666666715,
+            "completed_so_far": true,
+            "connector_pack": 1,
+            "controller_pack": 0,
+            "core_c": 36.9643468122051,
+            "distance_m": 407.149577059085,
+            "electrical_issue": {
+              "cable_claimed": false,
+              "controller_claimed": false,
+              "packet_claimed": true
+            },
+            "fatigue": 6.29388888888955,
+            "food_pack": 1,
+            "fuse_pack": 1,
+            "game_s": 4584.0,
+            "hp": 100.0,
+            "position": [
+              557.868774414063,
+              261.393310546875,
+              -491.061553955078
+            ],
+            "real_s": 152.799999999994,
+            "segment": "crew_spares_collected",
+            "stove_game_hours": 6.72666666666667,
+            "tested_lead_installed": false,
+            "walkie_percent": 95,
+            "water": 77.432777777784,
+            "winter_controller": false,
+            "wood_pack": 2
+          },
+          {
+            "cable_pack": 1,
+            "calendar": "Day 1  07:15",
+            "calories": 1667.41250000066,
+            "completed_so_far": true,
+            "connector_pack": 1,
+            "controller_pack": 0,
+            "core_c": 36.9057796204733,
+            "distance_m": 549.023917541839,
+            "electrical_issue": {
+              "cable_claimed": true,
+              "controller_claimed": false,
+              "packet_claimed": true
+            },
+            "fatigue": 8.61972222222278,
+            "food_pack": 1,
+            "fuse_pack": 1,
+            "game_s": 6329.0,
+            "hp": 100.0,
+            "position": [
+              535.902709960938,
+              251.575119018555,
+              -372.967926025391
+            ],
+            "real_s": 210.966666666657,
+            "segment": "spur_cable_recovered",
+            "stove_game_hours": 6.24194444444444,
+            "tested_lead_installed": false,
+            "walkie_percent": 93,
+            "water": 74.6222222222302,
+            "winter_controller": false,
+            "wood_pack": 2
+          },
+          {
+            "cable_pack": 1,
+            "calendar": "Day 1  07:40",
+            "calories": 1587.13750000082,
+            "completed_so_far": true,
+            "connector_pack": 1,
+            "controller_pack": 0,
+            "core_c": 36.9229109860523,
+            "distance_m": 680.552965721115,
+            "electrical_issue": {
+              "cable_claimed": true,
+              "controller_claimed": false,
+              "packet_claimed": true
+            },
+            "fatigue": 10.6780555555551,
+            "food_pack": 1,
+            "fuse_pack": 1,
+            "game_s": 7811.0,
+            "hp": 100.0,
+            "position": [
+              549.006042480469,
+              250.548385620117,
+              -259.628509521484
+            ],
+            "real_s": 260.366666666658,
+            "segment": "main_road",
+            "stove_game_hours": 5.83027777777778,
+            "tested_lead_installed": false,
+            "walkie_percent": 91,
+            "water": 72.1522222222325,
+            "winter_controller": false,
+            "wood_pack": 2
+          },
+          {
+            "cable_pack": 1,
+            "calendar": "Day 1  07:54",
+            "calories": 1545.07916666757,
+            "completed_so_far": true,
+            "connector_pack": 1,
+            "controller_pack": 1,
+            "core_c": 36.909746938234,
+            "distance_m": 748.296638252214,
+            "electrical_issue": {
+              "cable_claimed": true,
+              "controller_claimed": true,
+              "packet_claimed": true
+            },
+            "fatigue": 11.782499999999,
+            "food_pack": 1,
+            "fuse_pack": 1,
+            "game_s": 8641.0,
+            "hp": 100.0,
+            "position": [
+              572.966735839844,
+              253.632476806641,
+              -224.882354736328
+            ],
+            "real_s": 288.033333333347,
+            "segment": "winter_controller_collected",
+            "stove_game_hours": 5.59972222222222,
+            "tested_lead_installed": false,
+            "walkie_percent": 91,
+            "water": 70.8172222222333,
+            "winter_controller": false,
+            "wood_pack": 2
+          },
+          {
+            "cable_pack": 1,
+            "calendar": "Day 1  07:54",
+            "calories": 1545.07916666757,
+            "completed_so_far": true,
+            "connector_pack": 1,
+            "controller_pack": 1,
+            "core_c": 36.909746938234,
+            "distance_m": 748.296638252214,
+            "electrical_issue": {
+              "cable_claimed": true,
+              "controller_claimed": true,
+              "packet_claimed": true
+            },
+            "fatigue": 11.782499999999,
+            "food_pack": 1,
+            "fuse_pack": 1,
+            "game_s": 8641.0,
+            "hp": 100.0,
+            "position": [
+              572.966735839844,
+              253.632476806641,
+              -224.882354736328
+            ],
+            "real_s": 288.033333333347,
+            "segment": "depot_part_collected",
+            "stove_game_hours": 5.59972222222222,
+            "tested_lead_installed": false,
+            "walkie_percent": 91,
+            "water": 70.8172222222333,
+            "winter_controller": false,
+            "wood_pack": 2
+          },
+          {
+            "cable_pack": 0,
+            "calendar": "Day 1  10:01",
+            "calories": 1139.84166666837,
+            "completed_so_far": true,
+            "connector_pack": 0,
+            "controller_pack": 0,
+            "core_c": 36.5031347754418,
+            "distance_m": 1415.14210368146,
+            "electrical_issue": {
+              "cable_claimed": true,
+              "controller_claimed": true,
+              "packet_claimed": true
+            },
+            "fatigue": 22.2527777777793,
+            "food_pack": 1,
+            "fuse_pack": 1,
+            "game_s": 16286.0,
+            "hp": 100.0,
+            "position": [
+              522.958129882813,
+              304.42236328125,
+              -756.811889648438
+            ],
+            "real_s": 542.86666666683,
+            "segment": "winter_controller_fitted",
+            "stove_game_hours": 3.47611111111111,
+            "tested_lead_installed": true,
+            "walkie_percent": 82,
+            "water": 58.2233333333565,
+            "winter_controller": true,
+            "wood_pack": 2
+          },
+          {
+            "cable_pack": 0,
+            "calendar": "Day 1  10:01",
+            "calories": 1139.84166666837,
+            "completed_so_far": true,
+            "connector_pack": 0,
+            "controller_pack": 0,
+            "core_c": 36.5031347754418,
+            "distance_m": 1415.14210368146,
+            "electrical_issue": {
+              "cable_claimed": true,
+              "controller_claimed": true,
+              "packet_claimed": true
+            },
+            "fatigue": 22.2527777777793,
+            "food_pack": 1,
+            "fuse_pack": 1,
+            "game_s": 16286.0,
+            "hp": 100.0,
+            "position": [
+              522.958129882813,
+              304.42236328125,
+              -756.811889648438
+            ],
+            "real_s": 542.86666666683,
+            "segment": "cabinet_commissioned",
+            "stove_game_hours": 3.47611111111111,
+            "tested_lead_installed": true,
+            "walkie_percent": 82,
+            "water": 58.2233333333565,
+            "winter_controller": true,
+            "wood_pack": 2
+          },
+          {
+            "cable_pack": 0,
+            "calendar": "Day 1  10:15",
+            "calories": 1095.2625000018,
+            "completed_so_far": true,
+            "connector_pack": 0,
+            "controller_pack": 0,
+            "core_c": 36.3277238459193,
+            "distance_m": 1493.55393338122,
+            "electrical_issue": {
+              "cable_claimed": true,
+              "controller_claimed": true,
+              "packet_claimed": true
+            },
+            "fatigue": 23.3997222222247,
+            "food_pack": 1,
+            "fuse_pack": 1,
+            "game_s": 17117.0,
+            "hp": 100.0,
+            "position": [
+              528.221557617188,
+              326.839752197266,
+              -763.589416503906
+            ],
+            "real_s": 570.566666666805,
+            "segment": "returned_room",
+            "stove_game_hours": 3.24527777777778,
+            "tested_lead_installed": true,
+            "walkie_percent": 81,
+            "water": 56.84555555558,
+            "winter_controller": true,
+            "wood_pack": 2
+          }
+        ]
+      }
+    }
+  },
+  "captures": {
+    "depot-controller-stock": {
+      "file": "brave-and-cold/shots/electrical-fieldwork-2026-10-07/depot-controller-stock.png",
+      "sha256": "b17bf5db22b09377827afa61bd2dfefbd775f99e5914baa536955c1ec10d09f1",
+      "visually_inspected": true
+    },
+    "depot-stock-issued": {
+      "file": "brave-and-cold/shots/electrical-fieldwork-2026-10-07/depot-stock-issued.png",
+      "sha256": "01277c702a1c2836b1ffed8623f754074dc2f96768450170ffece7d8007cb946",
+      "visually_inspected": true
+    },
+    "crew-spare-packet": {
+      "file": "brave-and-cold/shots/electrical-fieldwork-2026-10-07/crew-spare-packet.png",
+      "sha256": "3824554dcdc6fba086267c6bba3a78aba8091d74e8a59b76d42f974bee36108d",
+      "visually_inspected": true
+    },
+    "spur-cable-recovery": {
+      "file": "brave-and-cold/shots/electrical-fieldwork-2026-10-07/spur-cable-recovery.png",
+      "sha256": "5aa89bad0902047466846164a1b9481be2688dc810670216b5e67276b84010c5",
+      "visually_inspected": true
+    },
+    "electrical-issue-record": {
+      "file": "brave-and-cold/shots/electrical-fieldwork-2026-10-07/electrical-issue-record.png",
+      "sha256": "eeff8cddd9731a01c4f3cd0ff406bfe04b005fd8a35ad1fd320115aa456c5b4e",
+      "visually_inspected": true
+    },
+    "controller-diagnosis": {
+      "file": "brave-and-cold/shots/electrical-fieldwork-2026-10-07/controller-diagnosis.png",
+      "sha256": "b304adf9c5b270cc354b28aa3cf476411652d3098f11df89e9133d924b487cee",
+      "visually_inspected": true
+    }
+  },
+  "capture_gpu": "NVIDIA GeForce GTX 1080 Ti",
+  "capture_resolution": [
+    1600,
+    900
+  ],
+  "capture_log_sha256": "1ddc32086b65e14c73a3d20e1a548c99f510b6d29f70e4a1d9470481c2590891",
+  "editor_import": {
+    "log_sha256": "d6c5194fd818374e23be98bdb49805938074dae52a8da2baff7d9deae5e1e899",
+    "limitations": "Restricted AppData editor/cache/log writes and root certificate access; unchanged Terrain3D DoubleSlider editor error. Not claimed as a clean editor launch."
+  },
+  "behavior_limits": [
+    "No new automatic hardware failure events",
+    "No battery energy, capacity or outage-deadline gifts",
+    "No map/road/structure relocation or new ground collider",
+    "No user saves used by runtime diagnostics",
+    "No remote push",
+    "No farming, greenhouse or preservation implementation",
+    "Movement diagnostics freeze entity animations and are not human or FPS benchmarks"
+  ]
+}

@@ -70,6 +70,9 @@ func asset(id: String, pos: Vector3) -> Node3D:
 func update(gs: float) -> void:
 	if cache==null:return
 	cache.tick(gs);cache.want_open=world.gear!=null and world.gear.is_open and world.gear._chest==cache and world.gear._tab=="chest";cache.tick(0)
+	# Reserved lid-mounted spares are collected through the same work runner.
+	# Show the actual lid opening while reaching in; cancellation closes it.
+	cache.want_open=cache.want_open or String(world._act.get("text","")).begins_with("Collect sealed fuse")
 	for pair:Array in [["CacheWaterStock","clean_water"],["CacheMedicalStock","bandage"],["CacheFoodStock","beans"],["CacheMatchStock","matches"]]:
 		var stock:Node3D=models[1].find_child(pair[0],true,false)
 		if stock!=null:stock.visible=cache.count(pair[1])>0

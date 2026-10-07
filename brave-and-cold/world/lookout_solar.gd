@@ -29,7 +29,9 @@ func update_presentation() -> void:
 	for surface:Node3D in snow_surfaces:
 		surface.visible=s.solar.snow_cover>.025
 		surface.scale.y=maxf(.025,s.solar.snow_cover)
-	display.text="PV %.0f W\n%s"%[s.solar_watts(),"CONNECTED" if s.repair_stage==3 else "ISOLATED"]
+	var condition:="WINTER REG" if s.solar.winter_controller else "CONNECTED"
+	if not s.solar.fault().is_empty():condition="FAULT"
+	display.text="PV %.0f W\n%s"%[s.solar_watts(),condition if s.repair_stage==3 else "ISOLATED"]
 	display.modulate=Color(.67,.9,.69) if s.solar_watts()>0 else Color(.83,.78,.63)
 func actions() -> Array:
 	var out:Array=[world.opening._action(to_global(Vector3(1.02,1,.63)),"Inspect solar charger and reserve",read_status,0,.02)]

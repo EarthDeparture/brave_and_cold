@@ -92,3 +92,6 @@ tools/blender/watch_build.log
 # Original winter tree authoring: retain editable source, verified exports and reviews.
 /tools/blender/generated/winter_tree_diversity_v1/*.log
 /tools/blender/generated/winter_tree_diversity_v1/*.blend[0-9]
+
+# Editable electrical stock sources retained; Blender's numbered backups are local iterations.
+/tools/blender/generated/electrical_fieldwork/*.blend[0-9]

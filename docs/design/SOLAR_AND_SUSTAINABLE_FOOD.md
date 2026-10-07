@@ -1,6 +1,6 @@
 # Local power, useful fieldwork and later food production
 
-2026-10-06. Baseline `f951ed3`; rollback tag `checkpoint/pre-solar-recovery-2026-10-06`; branch `codex/solar-recovery`. The power recovery and first compound solar array below are implemented. Parts expeditions and farming are planned, not implemented. Existing terrain, roads and structure placement are preserved.
+2026-10-06, updated 2026-10-07. Solar baseline `f951ed3`; rollback tag `checkpoint/pre-solar-recovery-2026-10-06`; initial branch `codex/solar-recovery`. Power recovery and the first compound solar array are implemented. The optional electrical stock outing and winter regulator refit are now implemented on `codex/electrical-fieldwork`, with baseline `4292c60` and rollback checkpoint `checkpoint/pre-electrical-fieldwork-2026-10-07`. See [Electrical fieldwork](ELECTRICAL_FIELDWORK.md) for the delivered behavior. Farming and further food progression remain planned. Existing terrain, roads and structure placement are preserved.
 
 ## The immediate defect and its resolution
 
@@ -31,7 +31,9 @@ A continuous clear model day yields approximately 715 Wh before reserve overflow
 
 The array sits inside the compound, west of the stair structure, beside the existing electrical equipment. Its narrow physical footprint does not occupy the cabinet approach, yard waypoint or gate corridor. Only the rack blocks contact; its discrete feet follow surveyed terrain. No pad or map regrading is introduced. The native Blender source, generated original cell/label textures, GLB and bounds/triangle/hash manifest are retained.
 
-## Next early-game checkpoint batch
+## Early-game checkpoint batch: implemented foundation
+
+The finite crew packet, depot controller, isolated spur lead, component diagnosis, interrupted transactions, persistent depletion and optional regulator refit are implemented. Stock recovery requires no powered home circuit. The refit also reuses a tested lead already installed by cable repair, without a refund or second cable requirement. Healthy hardware has no new automatic failure timers. A larger battery, bench-specific disassembly animations, repeated-replacement supply locations and caused/warned damage events remain future work. The numbered original specification below remains the design reference; fitting currently takes place at the actual compound charger rather than duplicating the operation at the desk bench.
 
 Start with one optional resilience expedition after the existing relay assignment, rather than several versions of the same delivery job. Commissioning remains possible with the original reserved relay and service kit. Do not make the player discover a second hidden prerequisite to fix the bug.
 

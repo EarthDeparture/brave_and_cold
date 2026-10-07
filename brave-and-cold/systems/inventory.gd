@@ -3,6 +3,10 @@ extends RefCounted
 ## Minimal inventory: stackable items + one body clothing slot that drives BodyTemperature insulation.
 
 const ITEMS := {
+	"dc_fuse":{"name":"Matched DC Fuse","kind":"misc","stack":4,"desc":"One correctly rated spare for the compound solar circuit. Fit only to a diagnosed open fuse with your service kit."},
+	"sealed_connector":{"name":"Sealed Connector Pair","kind":"misc","stack":2,"desc":"Matched weather-sealed plugs for the optional winter controller refit. Issued with the crew-cache fuse."},
+	"dc_cable":{"name":"Recovered DC Cable","kind":"misc","stack":1,"desc":"Tested lead recovered once from the isolated crew spur. Repairs a damaged solar cable, or fits the winter controller."},
+	"winter_controller":{"name":"Winter Charge Controller","kind":"misc","stack":1,"desc":"Matched replacement from North Ridge Supply. Fit at the compound array with recovered cable, sealed connectors and your service kit. More efficient conversion; does not fill the battery."},
 	"whetstone":{"name":"Whetstone","kind":"tool","stack":1,"desc":"Hone an axe or knife at the lookout desk. Each session uses a rag and 8% stone condition."},
 	"sewing_kit":{"name":"Sewing Kit","kind":"tool","stack":1,"desc":"Mend clothing at the lookout desk with two rags and cordage. Thread and needle supply wears down."},
 	"clean_water": {"name":"Drinking Water • 0.5 L","kind":"drink","stack":4,"desc":"Boiled water. Drink +25% hydration; keeps its empty bottle."},
@@ -141,6 +145,7 @@ static func stack_max(id: String) -> int:
 
 
 static func weight_of(id: String) -> float:
+	if id in ["dc_fuse","sealed_connector","dc_cable","winter_controller"]:return {"dc_fuse":.025,"sealed_connector":.12,"dc_cable":1.1,"winter_controller":.65}[id]
 	return float(WEIGHTS.get(id, 0.5))
 
 
