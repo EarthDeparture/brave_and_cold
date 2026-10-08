@@ -48,6 +48,7 @@ var _hammer_entry:=Transform3D.IDENTITY
 var _rifle: WeaponPresentation
 var _bolt: Node3D
 var weapon_id := "timber_bolt_carbine"
+var scoped_view := false
 var _weapon_clip := ""
 var _weapon_clip_t := 0.0
 var _guard_k := 0.0
@@ -315,6 +316,10 @@ func _process(delta: float) -> void:
 	_left.visible = shown in ["rifle", "fists"]
 	_sl_r.visible = shown != ""
 	_sl_l.visible = shown != "" and shown != "axe"
+	# Looking through optics: the HUD draws the scope picture, the model and hands step aside.
+	scoped_view = shown == "rifle" and not working and _rifle.has_scope() and player.aim_k > .92 and _weapon_clip == ""
+	if scoped_view:
+		_rifle.visible = false; _right.visible = false; _left.visible = false; _sl_r.visible = false; _sl_l.visible = false
 	if working:
 		# Keep normal arm reach, without moving the player toward distant targets.
 		_pose_work(base)
@@ -424,7 +429,7 @@ func _pose_rifle(base: Transform3D) -> void:
 	# Socket_Aim belongs to the complete imported model, including inspect tilt.
 	_rifle.sample(clip,time)
 	var mag := tan(deg_to_rad(Player.AIM_FOV*.5))/tan(deg_to_rad(player.cam.fov*.5))
-	var aimed := Vector3(0,-.127,-.18-.12-.17*clampf(mag-1,0,1.8))
+	var aimed := Vector3(0,-_rifle.aim_height(),-.18-.12-.17*clampf(mag-1,0,1.8))
 	var rpos := Vector3(.10,-.17,-.42).lerp(aimed,ak)
 	var rb := Basis(Vector3.UP,deg_to_rad(24*(1-ak)))
 	var butt := rpos+Vector3(0,0,.38)

@@ -25,7 +25,7 @@ func set_weapon(id: String) -> void:
 	animation_player = model.find_child("AnimationPlayer", true, false)
 	assert(animation_player != null)
 	rest.clear(); sockets.clear(); remember(model)
-	for name: String in ["HandR","HandL","BoltHand","MagazineHand","Muzzle","Aim","TriggerFinger","LoadingGate"]:
+	for name: String in ["HandR","HandL","BoltHand","MagazineHand","Muzzle","Aim","TriggerFinger","LoadingGate","Scope"]:
 		var target := model.find_child(id+"__Socket_"+name,true,false) as Node3D
 		if target != null: sockets[name] = target
 	# Semi-automatic receivers use the moving charging tab. The art kit's
@@ -59,5 +59,10 @@ func clip_length(clip: String) -> float:
 	return animation_player.get_animation(clip).length if animation_player.has_animation(clip) else 0.0
 func is_pistol_grip() -> bool:
 	return weapon_id in ["north_service_rifle","compact_patrol_rifle","expedition_rifle"]
+## Rifle-sheet art (2026-10-08): optics carry a Socket_Scope at the eyepiece; Aim sits on the optical axis.
+func has_scope() -> bool: return sockets.has("Scope")
+func aim_height() -> float:
+	if not sockets.has("Aim"): return .127
+	return (rest[sockets["Aim"]] as Transform3D).origin.y
 func is_bolt_action() -> bool: return weapon_id == "timber_bolt_carbine"
 func is_lever_action() -> bool: return weapon_id == "brush_lever_rifle"

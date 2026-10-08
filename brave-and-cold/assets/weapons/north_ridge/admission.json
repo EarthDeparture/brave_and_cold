@@ -1,49 +1,49 @@
 {
-  "workflow": "Local offline original Blender assets; exact source-byte verification, not a game-dev CLI admission",
+  "workflow": "Local Blender 5.2 rifle sheet kit v2 (Troy reference sheet 2026-10-08); exact byte copy",
   "files": {
+    "assets/weapons/north_ridge/frontier_vented_rifle.glb": {
+      "sha256": "1eb8f0f08c5d524cf0ca0862c2c0681a61649f553f2b84f461138008c60af54c",
+      "source": "tools/blender/generated/rifle_sheet_kit_v2/godot/frontier_vented_rifle.glb",
+      "provenance": "Original project Blender geometry/painted textures"
+    },
+    "assets/weapons/north_ridge/ridge_scout_rifle.glb": {
+      "sha256": "c4adec10e473af54ced45a32f4c0561fa842aa27b1f177aaf5962ce8684970d8",
+      "source": "tools/blender/generated/rifle_sheet_kit_v2/godot/ridge_scout_rifle.glb",
+      "provenance": "Original project Blender geometry/painted textures"
+    },
+    "assets/weapons/north_ridge/timber_bolt_carbine.glb": {
+      "sha256": "8a05cb7345475216e2d0b223279a5a936c59b69e54643b496ff13dfedec844a5",
+      "source": "tools/blender/generated/rifle_sheet_kit_v2/godot/timber_bolt_carbine.glb",
+      "provenance": "Original project Blender geometry/painted textures"
+    },
+    "assets/weapons/north_ridge/brush_lever_rifle.glb": {
+      "sha256": "733224d693a824c4fffd89b2687eb52934ac66c692f833fe3266c4c21249eba1",
+      "source": "tools/blender/generated/rifle_sheet_kit_v2/godot/brush_lever_rifle.glb",
+      "provenance": "Original project Blender geometry/painted textures"
+    },
+    "assets/weapons/north_ridge/ranger_box_rifle.glb": {
+      "sha256": "abed6b196c4693e374848b1b6d49f03d7a255748c804ede48a908c7480b0306e",
+      "source": "tools/blender/generated/rifle_sheet_kit_v2/godot/ranger_box_rifle.glb",
+      "provenance": "Original project Blender geometry/painted textures"
+    },
+    "assets/weapons/north_ridge/north_service_rifle.glb": {
+      "sha256": "cbd46c3c71857f352a8acc0ae2402afae163b5b0809e64f3bf82682b5c8762ce",
+      "source": "tools/blender/generated/rifle_sheet_kit_v2/godot/north_service_rifle.glb",
+      "provenance": "Original project Blender geometry/painted textures"
+    },
+    "assets/weapons/north_ridge/compact_patrol_rifle.glb": {
+      "sha256": "662e095116109f4dfad6c722dc1c03bafd0f158ac324539ab5cb248ba9731334",
+      "source": "tools/blender/generated/rifle_sheet_kit_v2/godot/compact_patrol_rifle.glb",
+      "provenance": "Original project Blender geometry/painted textures"
+    },
+    "assets/weapons/north_ridge/expedition_rifle.glb": {
+      "sha256": "1e020771bf41f953e5f4c398c248ff63f502187b51c97222759d1a1aa765ef46",
+      "source": "tools/blender/generated/rifle_sheet_kit_v2/godot/expedition_rifle.glb",
+      "provenance": "Original project Blender geometry/painted textures"
+    },
     "assets/models/viewmodel/anatomical_hand_rig.glb": {
       "sha256": "6c8ba2b710faa1059ce5508cbd20ee5a87f793060c579b4d8fd9c8bfc504f5db",
       "source": "tools/blender/generated/live_hand_rig_v2/anatomical_hand_rig.glb",
-      "provenance": "Original project Blender geometry/textures"
-    },
-    "assets/weapons/north_ridge/ridge_scout_rifle.glb": {
-      "sha256": "7450f166231567279a11d8cc6d3d5f3809e91ddff7c50638795016da8a03cac0",
-      "source": "tools/blender/generated/north_ridge_weapon_kit_v1/godot/ridge_scout_rifle.glb",
-      "provenance": "Original project Blender geometry/textures"
-    },
-    "assets/weapons/north_ridge/timber_bolt_carbine.glb": {
-      "sha256": "996df77dbb333ae0fcc2ded641488700a9a9131b77daf69bfc0588b2af3a67e9",
-      "source": "tools/blender/generated/north_ridge_weapon_kit_v1/godot/timber_bolt_carbine.glb",
-      "provenance": "Original project Blender geometry/textures"
-    },
-    "assets/weapons/north_ridge/ranger_box_rifle.glb": {
-      "sha256": "00df05f028d45a85d16365c32b84e7830ba5100e7bccf9d09263db61365750bf",
-      "source": "tools/blender/generated/north_ridge_weapon_kit_v1/godot/ranger_box_rifle.glb",
-      "provenance": "Original project Blender geometry/textures"
-    },
-    "assets/weapons/north_ridge/brush_lever_rifle.glb": {
-      "sha256": "8cae97d3e99718104e3ffcbb84ddbe7b2e9669bbacc43ac44f7d55f49136cb22",
-      "source": "tools/blender/generated/north_ridge_weapon_kit_v1/godot/brush_lever_rifle.glb",
-      "provenance": "Original project Blender geometry/textures"
-    },
-    "assets/weapons/north_ridge/frontier_vented_rifle.glb": {
-      "sha256": "6d5f23650e5d0ce3ea28a008c55df71ff8af54c6cdad08c0a8cc58cae7af6e88",
-      "source": "tools/blender/generated/north_ridge_weapon_kit_v1/godot/frontier_vented_rifle.glb",
-      "provenance": "Original project Blender geometry/textures"
-    },
-    "assets/weapons/north_ridge/north_service_rifle.glb": {
-      "sha256": "9b652f530ab02a349e49a8f1f8172850ca74812ea59f0587d6ba3af75a490c26",
-      "source": "tools/blender/generated/north_ridge_weapon_kit_v1/godot/north_service_rifle.glb",
-      "provenance": "Original project Blender geometry/textures"
-    },
-    "assets/weapons/north_ridge/compact_patrol_rifle.glb": {
-      "sha256": "c0b21c60f0aa18a88a73a25d71136d879b4ffc9219bcca2307e74aa2eff56e30",
-      "source": "tools/blender/generated/north_ridge_weapon_kit_v1/godot/compact_patrol_rifle.glb",
-      "provenance": "Original project Blender geometry/textures"
-    },
-    "assets/weapons/north_ridge/expedition_rifle.glb": {
-      "sha256": "095f02095d816787640cbc0863625923e2e20644725d5de30b7dba455c38939f",
-      "source": "tools/blender/generated/north_ridge_weapon_kit_v1/godot/expedition_rifle.glb",
       "provenance": "Original project Blender geometry/textures"
     }
   }

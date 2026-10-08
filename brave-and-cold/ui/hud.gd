@@ -63,6 +63,7 @@ var _flash := 0.0
 var _last_hp := 100.0
 var _t := 0.0
 var _redraw_t := 1.0
+var scoped := false   # aimed through a rifle optic (viewmodel hides the rifle)
 
 
 func setup(p: Player, b: BodyTemperature, s: SnowField, c: GameClock) -> void:
@@ -294,6 +295,9 @@ func _draw_hitmarker(c: Vector2, k: float) -> void:
 
 
 func _draw_aim_overlay(sz: Vector2, c: Vector2, ak: float) -> void:
+	if scoped:
+		_draw_scope(sz, c)
+		return
 	# smooth dark vignette (clear centre -> black edge), like looking down the rifle
 	var r0 := sz.y * 0.42
 	var r1 := sz.y * 0.62
@@ -309,6 +313,24 @@ func _draw_aim_overlay(sz: Vector2, c: Vector2, ak: float) -> void:
 		_ui.draw_polygon(PackedVector2Array([c + d0 * r0, c + d0 * r1, c + d1 * r1, c + d1 * r0]), PackedColorArray([clear, dark, dark, clear]))
 		_ui.draw_polygon(PackedVector2Array([c + d0 * r1, c + d0 * r2, c + d1 * r2, c + d1 * r1]), PackedColorArray([dark, dark, dark, dark]))
 	_ui.draw_circle(c, 1.8, Color(0.9, 0.2, 0.15, 0.85 * ak))
+
+
+## Optic picture: hard black tube edge, soft inner shadow, thin duplex reticle.
+func _draw_scope(sz: Vector2, c: Vector2) -> void:
+	var r := sz.y * 0.44
+	var n := 96
+	var black := Color(0, 0, 0, 1)
+	var far := sz.length()
+	for i in n:
+		var d0 := Vector2.from_angle(TAU * i / n); var d1 := Vector2.from_angle(TAU * (i + 1) / n)
+		_ui.draw_polygon(PackedVector2Array([c + d0 * r, c + d0 * far, c + d1 * far, c + d1 * r]), PackedColorArray([black, black, black, black]))
+		_ui.draw_polygon(PackedVector2Array([c + d0 * r * .9, c + d0 * r, c + d1 * r, c + d1 * r * .9]), PackedColorArray([Color(0, 0, 0, 0), black, black, Color(0, 0, 0, 0)]))
+	var ink := Color(0.04, 0.04, 0.04, 0.95)
+	var gap := sz.y * 0.035
+	for d: Vector2 in [Vector2.RIGHT, Vector2.LEFT, Vector2.DOWN, Vector2.UP]:
+		_ui.draw_line(c + d * gap, c + d * r * .45, ink, 1.4)
+		_ui.draw_line(c + d * r * .45, c + d * r, ink, 4.0)
+	_ui.draw_circle(c, 1.4, Color(0.85, 0.15, 0.1, 0.9))
 
 
 func _draw_crosshair(sz: Vector2, k: float) -> void:

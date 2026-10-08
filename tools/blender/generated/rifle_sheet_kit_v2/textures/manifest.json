@@ -1,0 +1,29 @@
+{
+  "original": true,
+  "seed": 20261008,
+  "size": 1024,
+  "files": {
+    "wood_brown.png": "701734b414c533b1097cb4b61d1fa865aeb76c346cf2db1d07235de8de4ed027",
+    "wood_orange.png": "25c360335d1777dfe747af7e083c3ca017243738badcd9980bbb44182d09c288",
+    "wood_amber.png": "7b29adb7a68ca60b10f3593d879807adddd3c7559f4aa6800ee779f46d924832",
+    "wood_grain.png": "ff14d8938fc21b394383b98643fd1284eedb2f6adce3b4abb1a42dafe73936bf",
+    "wood_lime.png": "1bb915fe744b6df1a8593f770843baf45f418c193b5c6abc37f806c22653c424",
+    "camo_green.png": "2e58d18f434d3a3caff42df7560c05ccbabf6b0fb3970a771fa5758926a0a821",
+    "camo_grey.png": "8488af7abd2231ca7fdad5ac864c3dec166e5f27de128687b90b58f332dfb157",
+    "metal_dark.png": "04d50472eb1fcd304596d21da0adc3e53b959a58a5ae65c0468b0de1c9f7cd61",
+    "metal_grey.png": "82ea1890e70428ed8c7981c459cee95ed4ce7fe02f178b78a23157fabf37a80c",
+    "scope_dark.png": "448f3543e9a5449ea3f7bd58c882328eb2924d48d3e21252f6ef0cc4869d1168",
+    "scope_red.png": "98d2b158853196a010ef873b93b63c4e86b275edddbd725319af82b7e6ca8edb",
+    "scope_green.png": "cc8e0218daf2a4bbd82d3a0820c314a2d77342f8db275936d2b65b672f81d74e",
+    "scope_brown.png": "b9d8da1507b993488d7c28c6947c25024eb7106d15fd80a0bdb26f085b39d0eb",
+    "copper.png": "9ebf98ef004f8d9b3d8af39688c1187f0eac574164c1f5253f66bf0e42f7a5fc",
+    "tape_green.png": "045701d336de3791ceec0876dbd95f567a728c7502e517ad3c213307e923fcac",
+    "strap_brown.png": "4d1900b273ae454dd3e64fa5552e79b154d3e11cebda9030fb057fb56591f3b5",
+    "rubber_white.png": "1a43d452be36a889aaa665bf072c7bb60e5341610a81a2e4b932f0c759b58e10",
+    "rubber_dark.png": "326f70ecb4b55cbfd46694758ae104b85b18a60ff377f38a6fb508a682a764dc",
+    "lens_orange.png": "dd2933056edd514141050cd2c23419f2e5e2f6bdd382333ca69e85c082ba9a26",
+    "glass.png": "1a56463ffe8501a139a1fe7119d5e98355373c8e14d9665efc953c23aa062628",
+    "brass.png": "9b8f2983bce4133d9345217ed32a0af67c5c53dccbf8c2f31fa19ace66f975f7",
+    "steel.png": "533514da4f187fbd940fabd66e0116e8599545fd235008fba23eceb4b1ff34ec"
+  }
+}

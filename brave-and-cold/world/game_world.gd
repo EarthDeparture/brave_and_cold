@@ -1937,6 +1937,7 @@ func _update_prompt() -> void:
 	info += '   Wt %.1f/%d kg' % [inv.total_weight(), int(Inventory.WEIGHT_SOFT)]
 	hud.info = info
 	hud.rifle_up = rifle_up
+	hud.scoped = viewmodel != null and viewmodel.scoped_view
 	player.aim_req = aim_override or rifle_up and inv != null and inv.count('rifle') > 0 and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
 	player.speed_mult = inv.speed_mult()*needs.travel_mult()
 	hud.kills = _count_kills()
