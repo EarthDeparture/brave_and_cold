@@ -17,6 +17,21 @@ func _init() -> void:
 		Settings.apply()))
 	box.add_child(UiKit.slider_row("Mouse sensitivity", 0.0005, 0.006, Settings.sensitivity, func(v: float) -> void:
 		Settings.sensitivity = v))
+	var gfx_row := HBoxContainer.new()
+	gfx_row.add_theme_constant_override("separation", 16)
+	gfx_row.add_child(UiKit.label("Graphics", 20))
+	var gfx := OptionButton.new()
+	gfx.focus_mode = Control.FOCUS_NONE
+	gfx.add_theme_font_override("font", DZ.font())
+	gfx.add_theme_font_size_override("font_size", 20)
+	for preset: String in Settings.GRAPHICS:
+		gfx.add_item(preset.capitalize())
+	gfx.selected = Settings.GRAPHICS.find(Settings.graphics)
+	gfx.item_selected.connect(func(i: int) -> void:
+		Settings.graphics = Settings.GRAPHICS[i]
+		Settings.apply_graphics(get_viewport()))   # SSAO and tree shadow casters follow on the next load
+	gfx_row.add_child(gfx)
+	box.add_child(gfx_row)
 	var dev := CheckBox.new()
 	dev.text = "Developer menu  (press ` key in game)"
 	dev.button_pressed = Settings.dev_menu

@@ -120,6 +120,7 @@ func _ready() -> void:
 			add_child(plants)
 			plants.build(terrain, forest.exclude)
 	ice.activate_shoreline()
+	if plants != null: print("PLANTS under ice suppressed=", plants.suppress_under_ice(ice))
 	road.build_mesh(terrain)
 	road.build_props(terrain)
 	var w := WaterSurfaces.new()
@@ -514,11 +515,22 @@ const INDOOR_FOG_MULT := 0.12
 const INDOOR_AMBIENT_MULT := 1.6
 
 
+## Frame-budget accounting for profile_frame_budget.gd (off in play): ms per labelled section.
+var prof_on := false
+var prof: Dictionary = {}
+var _prof_t := 0
+func _pm(label: String) -> void:
+	var now := Time.get_ticks_usec()
+	prof[label] = float(prof.get(label, 0.0)) + (now - _prof_t) / 1000.0
+	_prof_t = now
+
 func _process(delta: float) -> void:
 	if hud == null:
 		return
+	if prof_on: _prof_t = Time.get_ticks_usec()
 	_frames += 1
 	_update_viewmodel()
+	if prof_on: _pm('viewmodel')
 	_t += delta
 	if _sl_on:
 		_sleep_update(delta)
@@ -533,10 +545,12 @@ func _process(delta: float) -> void:
 	if opening != null: opening.advance(gs)
 	if first_week!=null:first_week.update(gs)
 	if collapse!=null:collapse.update(gs)
+	if prof_on: _pm('story_route')
 	if inv != null:
 		for sn in inv.tick(gs):
 			_say("%s spoiled" % sn)
 	for food:ItemPickup in get_tree().get_nodes_in_group("perishable_pickups"):food.tick(gs)
+	if prof_on: _pm('food_tick')
 	weather.advance(delta, gs)
 	wind = weather.wind
 	road.update_weather(weather.precip,gs)
@@ -554,6 +568,11 @@ func _process(delta: float) -> void:
 			break
 	if fire_lookout != null and fire_lookout.contains_room(player.position):
 		in_cabin = true
+	if not in_cabin:   # fishing huts and the general store are interiors too: no blizzard haze inside
+		for hb in huts + stores:
+			if hb.contains_xz(player.position.x, player.position.z):
+				in_cabin = true
+				break
 	if collapse!=null and collapse.clinic!=null and collapse.clinic.contains_xz(player.position.x,player.position.z):in_cabin=true
 	_indoor_k = move_toward(_indoor_k, 1.0 if in_cabin else 0.0, delta * 2.0)
 	if sky_rig is AtmosphereRig:
@@ -566,7 +585,9 @@ func _process(delta: float) -> void:
 	var night := sky_rig.gameplay_night_factor
 	Zombie.night_factor = night
 	Zombie.ambient_c = clock.ambient_c()
+	if prof_on: _pm('weather_sky')
 	pop.tick(delta)
+	if prof_on: _pm('pop_tick')
 	_attack_cd = maxf(0.0, _attack_cd - delta)
 	Carcass.wind_dir = weather.wind_dir
 	_craft_update(delta)
@@ -583,8 +604,10 @@ func _process(delta: float) -> void:
 		cb.set_night(night)
 	for stn in stores:
 		stn.set_night(night)
+	if prof_on: _pm('misc')
 	# survival
 	snow.advance(delta)
+	if prof_on: _pm('snow')
 	var fw := player.fire_w
 	for cb in cabins:
 		fw = maxf(fw, cb.heat_at(player.position.x, player.position.z))
@@ -597,7 +620,8 @@ func _process(delta: float) -> void:
 	needs.resting=_sl_on and int(_sl.get("phase",0))==1
 	needs.rest_quality=_sleep_quality() if needs.resting else 1.0
 	needs.update(gs, player.activity, body.core)
-	inv.wear_clothing(gs,player.activity,weather.precip)
+	if inv != null: inv.wear_clothing(gs,player.activity,weather.precip)   # survival mode has no pack until first pickup
+	if prof_on: _pm('survival')
 	_act_update(delta, Input.is_key_pressed(KEY_E))
 	Inventory.infinite = player.god
 	for chx in chests:
@@ -615,7 +639,11 @@ func _process(delta: float) -> void:
 	# One recovery pass after needs and damage, using actual clock advancement.
 	var recovering_sleep:bool=_sl_on and int(_sl.get("phase",0))==1
 	player.injury.recover(gs,needs,body.core,Injury.REST_RECOVERY_MULT*_sleep_quality() if recovering_sleep else 1.0)
-	_update_prompt()
+	if prof_on: _pm('actions')
+	# The candidate scan is ~1.1 ms; at 30 Hz the prompt is still immediate to the eye.
+	if _frames % 2 == 0 or not _act.is_empty():
+		_update_prompt()
+	if prof_on: _pm('prompt')
 	if out_path != "" and _frames == 40:
 		get_viewport().get_texture().get_image().save_png(out_path)
 		print("SHOT_SAVED ", out_path, " hour=", clock.hour, " pos=", player.position, " yaw=", player.yaw, " proxies=", pop.proxy_n, " active=", pop.active.size(), " hordes=", pop.hordes.size())
@@ -1514,7 +1542,7 @@ func _aim_miss(p: Vector3) -> float:
 ## Is p under the crosshair? Within `reach` metres (3D, from the eye) AND within `tol` metres of the view ray.
 ## Standing practically on top of it (< 0.8 m) counts without looking.
 func _ground_y(x: float, z: float) -> float:
-	var h: float = terrain.data.get_height(Vector3(x, 0.0, z))
+	var h: float = IceField.lift(terrain.data.get_height(Vector3(x, 0.0, z)), x, z)   # frozen lakes: the ice is the ground
 	return 0.0 if is_nan(h) else h
 
 

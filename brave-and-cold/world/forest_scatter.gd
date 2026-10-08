@@ -197,6 +197,7 @@ func resolve_trunks(x: float, z: float, r: float) -> Vector2:
 
 func build(t: Terrain3D, seed_value: int = 1337) -> void:
 	terrain = t
+	Settings.load_all()
 	# Smaller visual groups keep the denser near crowns local to the camera.
 	# Roots and species use the same RNG; trunk collision has its own grid.
 	_chunk_m = 64 if detail_enabled and crown_quality_enabled else CHUNK
@@ -331,6 +332,15 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 				inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if lod == 0 else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 				add_child(inst)
 				pair.append(mm)
+			if Settings.forest_shadow_proxies():
+				# Performance preset: near crowns stop casting; the few-card far crown casts in their place.
+				(get_child(get_child_count() - 2) as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				var proxy := MultiMeshInstance3D.new()
+				proxy.multimesh = pair[1]
+				proxy.material_override = mat
+				proxy.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+				proxy.visibility_range_end = near_end + 20.0
+				add_child(proxy)
 			_mms[Vector3i(key.x, key.y, vi)] = pair
 	print("FOREST_EXCL ", excluded)
 	print("FOREST_TREES ", tree_count, " chunks ", buckets.size())

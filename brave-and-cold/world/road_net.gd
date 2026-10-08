@@ -634,13 +634,15 @@ func floor_at_world(foot:Vector3,_terrain_height:float=NAN) -> float:
 
 func resolve_at(candidate:Vector3,previous:Vector3,radius:float) -> Vector2:
 	var result:=Vector2(candidate.x,candidate.z)
-	var old_height:=walk_surface.height_at(previous.x,previous.z,previous.y)
-	if is_nan(old_height) or absf(previous.y-old_height)>.65:return result
 	var origin:=Vector2(previous.x,previous.z)
-	# Contact with the actual finite rails, from either side. Starting beside a
-	# bridge must never project the actor into its corridor or along its deck.
+	# Cheap rail-bounds test first: the deck height lookup is a triangle search and
+	# every walker calls this every frame (same result either order).
 	var bounds:=_rail_bounds.grow(radius+.12)
 	if not bounds.has_point(origin) and not bounds.has_point(result):return result
+	var old_height:=walk_surface.height_at(previous.x,previous.z,previous.y)
+	if is_nan(old_height) or absf(previous.y-old_height)>.65:return result
+	# Contact with the actual finite rails, from either side. Starting beside a
+	# bridge must never project the actor into its corridor or along its deck.
 	for rail in _rail_segments:
 		result=_rail_contact(origin,result,rail[0],rail[1],radius+.06)
 	return result

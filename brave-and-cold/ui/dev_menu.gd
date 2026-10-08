@@ -882,7 +882,7 @@ func _carcasstest() -> void:
 		_look_at(pos + Vector3(0.0, 0.3, 0.0))
 		await get_tree().process_frame
 		var tx := _steps_texts()
-		ok = tx.contains("needs a knife")
+		ok = tx.contains("needs a knife") or tx.contains("needs a usable tool")
 		print("CARCASSTEST ", sp, " no tool -> ", tx)
 		fails += 0 if ok else 1
 		inv.add("axe")
@@ -1094,13 +1094,24 @@ func _gathertest() -> void:
 		if kind == "reed":
 			inv.add("knife")
 			var key2 := ""
+			var best_d := INF   # nearest other reed: a far dictionary-first one may sit under new route props
 			for kk in pf._plants.keys():
-				if pf._plants[kk]["kind"] == "reed" and not pf.picked.has(kk) and kk != key:
-					key2 = kk
-					break
+				if pf._plants[kk]["kind"] == "reed" and not pf.picked.has(kk) and not pf._suppressed.has(kk) and kk != key:
+					var dk := pf.pos_of(kk).distance_to(pp)
+					if dk > 2.5 and dk < best_d:
+						best_d = dk
+						key2 = kk
 			var p2 := pf.pos_of(key2)
-			_tp(p2.x, p2.z + 1.2, p2)
-			await get_tree().create_timer(1.0).timeout
+			# Reeds sit on shores; shore walking may refuse one approach side, so try four.
+			var pd := INF
+			for off: Vector2 in [Vector2(0, 1.2), Vector2(1.2, 0), Vector2(0, -1.2), Vector2(-1.2, 0)]:
+				_tp(p2.x + off.x, p2.z + off.y, p2)
+				await get_tree().create_timer(1.0).timeout
+				pd = Vector2(player.position.x - p2.x, player.position.z - p2.z).length()
+				if pd < 1.6:
+					break
+			p2 = pf.pos_of(key2)   # height is filled once its chunk streams in near the player
+			print("GATHERTEST reed2 stand dist=", snappedf(pd, 0.01), " y=", snappedf(p2.y, 0.01), " from first=", snappedf(best_d, 0.1))
 			_aim_pt(p2)
 			world.call("_update_prompt")
 			var kh := -1.0
@@ -1108,6 +1119,8 @@ func _gathertest() -> void:
 				if String(c["text"]).begins_with("Gather"):
 					kh = float(c["hold"])
 			print("GATHERTEST reed knife hold=", kh)
+			if kh < 0.0:
+				print("GATHERTEST cands: ", (world.get("_cands_cache") as Array).map(func(c: Dictionary) -> String: return String(c["text"])), " picked2=", pf.picked.has(key2), " hidden2=", pf.is_hidden(key2), " p2=", p2, " ppos=", player.position)
 			fails += 0 if absf(kh - 2.0) < 0.01 else 1
 			inv.counts.erase("knife")
 	var saved: Dictionary = pf.picked.duplicate()

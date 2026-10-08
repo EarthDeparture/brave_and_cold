@@ -62,6 +62,7 @@ var _msgs: Array = []     # [{t, text}]
 var _flash := 0.0
 var _last_hp := 100.0
 var _t := 0.0
+var _redraw_t := 1.0
 
 
 func setup(p: Player, b: BodyTemperature, s: SnowField, c: GameClock) -> void:
@@ -118,7 +119,13 @@ func _process(delta: float) -> void:
 	_fx_mat.set_shader_parameter("cold", clampf((36.0 - body.core) / 3.0, 0.0, 1.0))
 	_fx_mat.set_shader_parameter("flash", _flash)
 	aim_k = player.aim_k if player != null else 0.0
-	_ui.queue_redraw()
+	# Text layout is the costly part (~1.5 ms/frame measured). Redraw at 30 Hz unless something
+	# is animating: hold ring, aim blend, hit marker, damage flash, struggle, sleep or death.
+	_redraw_t += delta
+	var live := action_t >= 0.0 or (aim_k > 0.0 and aim_k < 1.0) or _flash > 0.0 or player.struggling or player.dead or sleep_fade > 0.0 or Time.get_ticks_msec() - hit_ms < 600
+	if live or _redraw_t >= 1.0 / 30.0:
+		_redraw_t = 0.0
+		_ui.queue_redraw()
 
 
 # ---------------------------------------------------------------- drawing

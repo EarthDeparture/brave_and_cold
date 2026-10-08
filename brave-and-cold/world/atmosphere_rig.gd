@@ -43,8 +43,9 @@ func setup(sun_light: DirectionalLight3D, environment: Environment, sky_material
 	moon.shadow_normal_bias = 0.65
 	moon.shadow_blur = 2.0
 	add_child(moon)
-	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_HIGH)
-	get_viewport().msaa_3d = Viewport.MSAA_4X
+	Settings.load_all()
+	Settings.apply_graphics(get_viewport())   # shadow atlas, soft filter and MSAA follow the graphics preset
+	env.ssao_enabled = Settings.ssao_enabled()
 
 func _process(delta: float) -> void:
 	if weather != null:

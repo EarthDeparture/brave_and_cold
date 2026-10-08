@@ -356,7 +356,20 @@ func _die() -> void:
 	for joint:Node3D in _arms+_legs+_knees+_elbows:_death_start_joints.append(joint.rotation if joint!=null else Vector3.ZERO)
 
 
+## Optional frame-budget accounting (profile_frame_budget.gd); off in play.
+static var prof_on := false
+static var prof_us := 0
+static var prof_anim_us := 0
+
 func _process(delta: float) -> void:
+	if not prof_on:
+		_tick(delta)
+		return
+	var t0 := Time.get_ticks_usec()
+	_tick(delta)
+	prof_us += Time.get_ticks_usec() - t0
+
+func _tick(delta: float) -> void:
 	if terrain == null or terrain.data == null or player == null:
 		return
 	if state == State.DEAD:
@@ -448,7 +461,12 @@ func _process(delta: float) -> void:
 		want = 0.0
 	_move(want, delta)
 	if _lod <= 1:
-		_animate(delta)
+		if prof_on:
+			var ta := Time.get_ticks_usec()
+			_animate(delta)
+			prof_anim_us += Time.get_ticks_usec() - ta
+		else:
+			_animate(delta)
 
 
 func _barrier(o: Opening) -> float:

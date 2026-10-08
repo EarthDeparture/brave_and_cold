@@ -108,6 +108,9 @@ func is_sheltered_at(_p:Vector3)->bool:return false
 func resolve_at(candidate:Vector3,previous:Vector3,radius:float)->Vector2:
 	if to_local(previous).y>5:return Vector2(candidate.x,candidate.z)
 	var old:=to_local(previous);var p:=to_local(candidate);var q:=Vector2(p.x,p.z);var original:=q
+	# Every walker asks every frame: skip the wall/gate/obstacle tests unless near the compound.
+	var near:=BOUNDS.grow(radius+4.0)
+	if not near.has_point(q) and not near.has_point(Vector2(old.x,old.z)):return Vector2(candidate.x,candidate.z)
 	var walls:=segments.duplicate()
 	walls.append([Vector2(.4,7),leaf_end(gate_k)])
 	for wall:Array in walls:

@@ -223,6 +223,33 @@ func suppress_near(x: float, z: float, r: float) -> void:
 					_hide(key)
 
 
+## Shoreline ice reaches past the old water mask, so some plants were buried under the sheet yet
+## still offered as gatherable. Cattails stand up through frozen margins: lift them onto the ice.
+## Anything else under ice is removed. Returns {"lifted": n, "removed": n}.
+func suppress_under_ice(ice: IceField) -> Dictionary:
+	var out := {"lifted": 0, "removed": 0}
+	if ice == null or ice.mask == null:
+		return out
+	for key: String in _plants.keys():
+		var p: Dictionary = _plants[key]
+		var iy := ice.ice_at(float(p["x"]), float(p["z"]))
+		if is_nan(iy):
+			continue
+		var xf: Transform3D = p["xf"]
+		if iy <= xf.origin.y + 0.17:
+			continue
+		if p["kind"] == "reed":
+			xf.origin.y = iy - 0.04
+			p["xf"] = xf
+			(p["mm"] as MultiMesh).set_instance_transform(int(p["i"]), xf)
+			out["lifted"] = int(out["lifted"]) + 1
+		else:
+			_suppressed[key] = true
+			_hide(key)
+			out["removed"] = int(out["removed"]) + 1
+	return out
+
+
 ## Test helper: first plant key of a kind (not picked), or "".
 func first_of(kind: String) -> String:
 	for key in _plants.keys():

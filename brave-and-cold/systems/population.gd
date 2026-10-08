@@ -234,6 +234,17 @@ func tick(delta: float) -> void:
 		_proxy_step()
 	last_tick_us = Time.get_ticks_usec() - t0
 
+## Virtual walkers far from the player only need terrain height; the road/bridge deck lift
+## (triangle search per point) is reserved for what the player can actually see.
+const LIFT_NEAR_M2 := 220.0 * 220.0
+func _ground(x: float, z: float) -> float:
+	var h: float = terrain.data.get_height(Vector3(x, 0.0, z))
+	var dx := x - player.position.x
+	var dz := z - player.position.z
+	if dx * dx + dz * dz > LIFT_NEAR_M2:
+		return h
+	return RoadNet.lift(h, x, z)
+
 func _prepare_reserve()->void:
 	if active.size()+pool.size()>=reserve_target:
 		reserve_target=0;return
@@ -428,7 +439,7 @@ func _drag_step(dt: float) -> void:
 		else:
 			cells[k] = arr
 		var np: Vector3 = m[2]
-		var h: float = RoadNet.lift(terrain.data.get_height(Vector3(np.x, 0.0, np.z)),np.x,np.z)
+		var h: float = _ground(np.x, np.z)
 		np.y = h if not is_nan(h) else (m[1] as Vector3).y
 		add_virtual(np)
 
@@ -682,7 +693,7 @@ func _horde_step(dt: float) -> void:
 				var v := h.pts[i]
 				var nx := v.x + mv.x
 				var nz := v.z + mv.y
-				var hy: float = RoadNet.lift(terrain.data.get_height(Vector3(nx, 0.0, nz)),nx,nz)
+				var hy: float = _ground(nx, nz)
 				h.pts[i] = Vector3(nx, v.y if is_nan(hy) else hy, nz)
 		# strays within 20 m join (snowball), up to HORDE_MAX
 		h.abs_t += dt
