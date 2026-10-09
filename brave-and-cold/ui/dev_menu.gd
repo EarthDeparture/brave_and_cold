@@ -347,6 +347,12 @@ func _build() -> void:
 		var sv: float = sp[1]
 		_btn(srow, sp[0], func() -> void: _set_speed(sv))
 
+	_head(box, "STORY (forward only, real systems)")
+	var strow := _flow(box)
+	for beat in _story_beats():
+		var bd: int = beat[1]; var bh: float = beat[2]
+		_btn(strow, beat[0], func() -> void: _story_jump(bd, bh))
+
 	_head(box, "PLAYER")
 	var prow := _flow(box)
 	_check(prow, "God mode", false, func(v: bool) -> void: player.god = v)
@@ -578,6 +584,33 @@ func _set_weather(i: int) -> void:
 func _set_hour(h: float) -> void:
 	clock.hour = h
 	_frozen_hour = h
+
+
+## Story beats one game minute early, so the bulletin/call starts live.
+func _story_beats() -> Array:
+	var out: Array = [["D1 08 June", 1, 8.0], ["D1 14 work", 1, 14.0], ["D1 19:30 report", 1, 19.5], ["D2 06", 2, 6.0], ["D2 17 crack", 2, 17.0], ["D2 24 news", 2, 24.0], ["D3 06 ramp", 3, 6.0], ["D3 08 suspend", 3, 8.0]]
+	var st: LookoutAssignment = world.get("opening_state")
+	if st != null:
+		var names := ["first infected", "clinic wave", "road wave", "full town"]
+		var i := 0
+		for c: Dictionary in st.story.get("infected_cohorts", []):
+			out.append(["D%d %s %s" % [int(c.day), _hm(float(c.hour)), names[mini(i, 3)]], int(c.day), float(c.hour)]); i += 1
+		var g: Dictionary = st.story.get("grid_fail", {}).get("from", {})
+		if not g.is_empty(): out.append(["D%d %s grid window" % [int(g.day), _hm(float(g.hour))], int(g.day), float(g.hour)])
+	out.append(["D4 08 released", 4, 8.0])
+	out.sort_custom(func(a: Array, b: Array) -> bool: return a[1] * 24 + a[2] < b[1] * 24 + b[2])
+	return out
+
+
+static func _hm(h: float) -> String: return "%02d:%02d" % [int(h), int(round(fposmod(h, 1.0) * 60))]
+
+
+func _story_jump(day: int, hour: float) -> void:
+	if not world.has_method("story_skip_to") or not bool(world.call("story_skip_to", day, hour - 1.0 / 60.0)):
+		world.call("_say", "Story jump: only forward, and only in the lookout opening")
+	else:
+		_frozen_hour = clock.hour
+		world.call("_say", "Story jump • " + clock.time_string())
 
 
 func _set_speed(s: float) -> void:

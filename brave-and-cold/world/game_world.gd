@@ -39,6 +39,8 @@ var collapse:FirstWeekCollapse
 var clinic_plan:Dictionary={}
 var opening_state: LookoutAssignment
 var opening_zombie_count := 250
+var interaction_count := 0 # completed/instant player interactions (pacing log)
+var pacing: PacingLog
 var out_path := ""
 var walk_secs := 0.0
 var _t := 0.0
@@ -365,6 +367,9 @@ func _ready() -> void:
 	if opening_state.enabled and fire_lookout != null:
 		opening = LookoutOpening.new(); add_child(opening)
 		opening.build(self,opening_state,sv.get("opening",{}).get("home",{}))
+		# Playtest pacing CSV (user://pacing/), real play only: not headless tests or autostart runs.
+		if DisplayServer.get_name() != "headless" and not opts.has("autostart"):
+			pacing = PacingLog.new(); add_child(pacing); pacing.start(self)
 		first_week=FirstWeekRoute.new();add_child(first_week);first_week.build(self,sv.get("first_week",{}))
 		if route_detail_enabled:
 			route_dressing=RouteDressing.new();add_child(route_dressing);route_dressing.build(self);player.spatial_structures.append(route_dressing)
@@ -1959,6 +1964,7 @@ func _act_begin(c: Dictionary, repeating := false) -> void:
 	_act_cancel()
 	var hold := float(c.get("hold", 0.0))
 	if hold <= 0.0:
+		interaction_count += 1
 		(c["act"] as Callable).call()
 		return
 	_act = c
@@ -2018,6 +2024,7 @@ func _act_update(delta: float, held: bool) -> void:
 		var kc := float(c.get("kcal", 0.0))
 		if kc > 0.0:
 			needs.calories = maxf(0.0, needs.calories - kc)
+		interaction_count += 1
 		(c["act"] as Callable).call()
 		if held and c.has("again") and not player.dead and (c["again"] as Callable).call():
 			_act_begin(c, true)
@@ -3467,6 +3474,25 @@ func save_game() -> bool:
 
 
 ## In-memory snapshot also supports non-destructive save/load verification.
+## Dev/test: run the real story clock forward to a calendar beat (day 1 = arrival,
+## hour may be fractional). Only the story systems tick (clock, lookout power and
+## radio, route, outbreak cohorts, work order); body needs are left as they are.
+func story_skip_to(day: int, hour: float) -> bool:
+	if opening_state == null or not opening_state.enabled: return false
+	var target := opening_state.calendar_s(day, hour)
+	if target <= clock.total_game_s + .5: return false
+	var pace := clock.time_scale
+	clock.time_scale = 1.0
+	while clock.total_game_s < target - .001:
+		var gs := clock.advance(minf(900.0, target - clock.total_game_s))
+		if opening != null: opening.advance(gs)
+		if first_week != null: first_week.update(gs)
+		if collapse != null: collapse.update(gs)
+	clock.time_scale = pace
+	sky_rig.apply_hour(clock.hour)
+	return true
+
+
 func _save_data() -> Dictionary:
 	var cabs: Array = []
 	for cb in cabins:

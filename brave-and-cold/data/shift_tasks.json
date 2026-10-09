@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "note": "Quiet-day work orders (days 1-2). Calendar day/hour. Windowed tasks only count inside their hours on their own day; other tasks latch when their check becomes true and carry over unfinished.",
+  "report_hour": 19.5,
+  "suspend": {"day": 3, "hour": 8},
+  "day_names": {"1": "Monday", "2": "Tuesday", "3": "Wednesday"},
+  "days": {
+    "1": [
+      {"id": "weather_d1", "kind": "weather", "window": [6.5, 11.0], "title": "Morning weather readings", "detail": "Read the deck station on the west rail and log temperature, wind and sky before 11:00."},
+      {"id": "relay_inspect", "check": "relay_inspect", "title": "Inspect the ground transfer cabinet", "detail": "Bring the insulated service kit to the cabinet beside the compound."},
+      {"id": "relay_collect", "check": "relay_collect", "title": "Collect the reserved relay at North Ridge Supply", "detail": "Follow the logging track to the road. The relay case is on the store counter."},
+      {"id": "smoke_d1", "kind": "smoke", "window": [14.0, 18.0], "title": "Afternoon smoke check", "detail": "Sight the horizon with the fire finder on the front rail between 14:00 and 18:00. Report any smoke by bearing."},
+      {"id": "woodbox_d1", "check": "woodbox", "target": 8, "title": "Restock the stove rack to eight logs", "detail": "Mara set a dry trunk aside below the tower. Split it and stack the rack before dark."}
+    ],
+    "2": [
+      {"id": "weather_d2", "kind": "weather", "window": [6.5, 11.0], "title": "Morning weather readings", "detail": "Read the deck station and log it before 11:00."},
+      {"id": "relay_install", "check": "relay_install", "title": "Fit the replacement transfer relay", "detail": "Seat the relay in the ground cabinet with your service kit."},
+      {"id": "relay_verify", "check": "relay_verify", "title": "Verify and sign off the transfer circuit", "detail": "Commission the circuit with your service tester."},
+      {"id": "feeder_d2", "check": "feeder", "title": "Isolate the unused crew spur", "detail": "Follow Mara's timber markers to the labelled disconnect and save the 6 W standby load."},
+      {"id": "smoke_d2", "kind": "smoke", "window": [10.5, 14.5], "title": "Midday smoke check", "detail": "Sight the horizon with the fire finder between 10:30 and 14:30."}
+    ]
+  },
+  "smoke": [
+    {"day": 1, "from": 12.5, "to": 18.5, "reply": "June: \"That's Mara's crew burning slash off the logging road. Logged, thanks.\""}
+  ],
+  "reports": {
+    "all": "June: \"Every line ticked off. Good work, Kestrel Seven.\"",
+    "most": "June: \"Most of the list done. The rest keeps until tomorrow.\"",
+    "some": "June: \"A slow day. Carry the open lines over.\"",
+    "none": "June: \"Nothing logged today. Call in if something's wrong up there.\""
+  }
+}

@@ -50,6 +50,7 @@ var _channel_label: Label3D
 var _indicator: MeshInstance3D
 var solar_site: LookoutSolar
 var electrical: ElectricalFieldwork
+var shift: ShiftWork
 var _power_label: Label3D
 const RELAY_LOCAL := Vector3(-9, 0, -6)
 const CASE_LOCAL := Vector3(1.60, 1.42, 1.02)
@@ -149,6 +150,7 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 	fire_loop.stream = Sfx.get_stream("fire"); fire_loop.volume_db = -18; fire_loop.unit_size = 1.2; fire_loop.max_distance = 8
 	_build_smoke(tower)
 	_last_grid = state.grid_alive(); world.hud.show_monitor = false
+	shift = ShiftWork.new(); shift.build(self, saved.get("shift", {}))
 	update_presentation()
 func _asset(parent: Node3D, id: String) -> Node3D:
 	var node := (load("res://assets/lookout_opening/" + id + ".glb") as PackedScene).instantiate() as Node3D
@@ -169,7 +171,7 @@ func starting_gear(baseline_pace := false) -> void:
 	for pair: Array in [["clean_water",2],["empty_bottle",2],["axe",1],["knife",1],["service_kit",1],["matches",2],["wood",2],["beans",1],["bandage",1],["parka",1],["sweater",1],["toque",1],["hide_mitts",1],["hide_boots",1],["hide_leggings",1]]:
 		world.inv.add(pair[0], pair[1])
 	for item: String in ["parka","sweater","toque","hide_mitts","hide_boots","hide_leggings"]: world.inv.use(item)
-	world._say("Inspect the relay cabinet beside the tower. Read the service log on your desk.")
+	world._say("Your work order is in the service binder on the desk. Start with the morning weather readings.")
 	world._say("Your charged walkie is on the desk. Take it to hear dispatch and public news outside.")
 	update_presentation()
 func advance(game_s: float) -> void:
@@ -184,6 +186,7 @@ func advance(game_s: float) -> void:
 	if state.walkie_carried and state.walkie_wh<=LookoutAssignment.WALKIE_CAP_WH*.15 and not _warned_walkie_low:
 		world._say("Walkie battery low. Return it to the desk charger.");_warned_walkie_low=true
 	if state.walkie_wh>LookoutAssignment.WALKIE_CAP_WH*.20:_warned_walkie_low=false
+	if shift != null: shift.update()
 	update_presentation(); _radio_update()
 func update_presentation() -> void:
 	if cook_display!=null:cook_display.sync([cooking] if not cooking.is_empty() else [])
@@ -374,6 +377,7 @@ func actions() -> Array:
 	if world.first_week!=null:out.append_array(world.first_week.actions())
 	if solar_site!=null:out.append_array(solar_site.actions())
 	if electrical!=null:out.append_array(electrical.actions())
+	if shift!=null:out.append_array(shift.actions())
 	if not world.player.is_sheltered() and world._view_dir().y<-.2:
 		var gather:Vector3=world.player.position+world._view_dir()*1.4
 		out.append(_action(world._ground(gather.x,gather.z)+Vector3.UP*.04,"Gather clean snow portion",gather_snow,3,.15))
@@ -406,6 +410,9 @@ func field_plan_text() -> String:
 		3:work="Relay signed off. Choose your next outing from your actual food, water and fuel reserves."
 	var heat:="Stove out — replenish and light it before preparing water or food." if fuel_s<=0 else "Stove: %.1f game hours remaining; %d logs on the rack."%[fuel_s/3600,wood_left]
 	var bottles:int=pantry.count("clean_water")+world.inv.count("clean_water")+water.ready
+	if shift!=null:
+		var p:=shift.progress()
+		work="Work order: %d of %d done. Next: %s\n%s"%[p.x,p.y,shift.next_task_title(),work]
 	var result:="FIELD PLAN — %s\n\n%s\n\nBefore leaving\n%s\nPrepared drinking water: %.1f L in home stock, pack and kettle.\nWalkie: %s, %.0f%% charge.\n\n"%[world.clock.time_string(),work,heat,bottles*.5,"carried" if state.walkie_carried else "on its desk cradle",state.walkie_percent()]
 	result+="Bring enough heat, water and food for the return, and leave room for supplies. The timber stop provides wood; the crew cache is finite. Animals range off the logging track. Cook raw portions, then use the drying rack for longer storage. Processing continues while you work nearby.\n\n"
 	result+="Public bulletins: 06:00 / 12:00 / 17:00 / 00:00. Listening is optional. The store counter and clinic notices provide local evidence when reports are missed."
@@ -517,7 +524,7 @@ func is_refuge(point: Vector3) -> bool:
 		if actor is Node3D and not bool(actor.call("is_dead")) and boundary.contains_ground(actor.global_position): return false
 	return true
 func to_dict() -> Dictionary:
-	return {"state":state.to_dict(),"home":{"schema":2,"electrical":electrical.to_dict() if electrical!=null else {},"prepared_water":water.to_dict(),"preservation":preservation.to_dict(),"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open,"gate_state":boundary.gate_state()}}
+	return {"state":state.to_dict(),"home":{"schema":2,"electrical":electrical.to_dict() if electrical!=null else {},"prepared_water":water.to_dict(),"shift":shift.to_dict() if shift!=null else {},"preservation":preservation.to_dict(),"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open,"gate_state":boundary.gate_state()}}
 func _relay_foundations() -> void:
 	var st := SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for foot: Vector2 in [Vector2(-1.04,-1.1),Vector2(1.04,-1.1),Vector2(0,-2.15),Vector2(-.45,0),Vector2(.45,0),Vector2(-.92,-.35)]:
