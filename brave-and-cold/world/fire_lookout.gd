@@ -140,6 +140,34 @@ func _floor_local(p: Vector2, foot_y: float, deck_y: float = DECK_Y, flight_coun
 	return best
 
 
+## Eye-height surface: identical to floor_at_world except on a flight, where the
+## 12 treads become one eased ramp (C1 at both landings). The camera follows this;
+## feet, footsteps and dropped items keep the real stepped treads.
+const CAMERA_EASE_RUN := 0.45
+func camera_floor_at_world(foot: Vector3, _terrain_height: float = NAN) -> float:
+	var p := to_local(foot)
+	var stepped := _floor_local(Vector2(p.x, p.z), p.y)
+	if is_nan(stepped): return NAN
+	if p.z >= -1.8 and p.z <= 1.8:
+		for flight in range(FLIGHT_COUNT):
+			if absf(p.x - STAIR_LANES[flight % 2]) > FLIGHT_WIDTH * 0.5: continue
+			var base := float(flight) * FLIGHT_RISE
+			if stepped < base + STEP_RISE * 0.5 or stepped > base + FLIGHT_RISE + 0.001: continue
+			var x := clampf(1.8 - p.z if flight % 2 == 0 else p.z + 1.8, 0.0, FLIGHT_RUN)
+			# Shift half a tread so the ramp runs through the tread centres (camera within
+			# +/-0.20 m of the stepped floor); the 1.7 cm entry offset is below perception.
+			return global_position.y + base + FLIGHT_RISE * eased_run(x + STEP_RUN * 0.5)
+	return global_position.y + stepped
+
+## 0..1 along a flight: linear middle, quadratic ease over CAMERA_EASE_RUN at each end.
+static func eased_run(x: float) -> float:
+	var b := CAMERA_EASE_RUN; var l := FLIGHT_RUN
+	x = clampf(x, 0.0, l)
+	if x < b: return x * x / (2.0 * b * (l - b))
+	if x > l - b: return 1.0 - (l - x) * (l - x) / (2.0 * b * (l - b))
+	return (x - b * 0.5) / (l - b)
+
+
 func contains_room(eye: Vector3) -> bool:
 	var p := to_local(eye)
 	return ROOM.grow(-0.08).has_point(Vector2(p.x, p.z)) and p.y >= DECK_Y + 0.30 and p.y < DECK_Y + 2.65
@@ -172,7 +200,7 @@ func resolve_at(candidate: Vector3, previous: Vector3, radius: float) -> Vector2
 			# Furniture bounds mirror the source asset (bed, desk, chair, stove,
 			# provisions rack and inward-open door leaf).
 			Rect2(-2.225, -2.0, 1.25, 2.0), Rect2(0.50, -1.70, 1.80, 0.70),
-			Rect2(1.12, -0.85, 0.46, 0.65),
+			Rect2(1.12, -1.00, 0.46, 0.08), # tucked chair: only the backrest stands proud of the desk
 			Rect2(1.375, 1.47, 1.05, 0.36),
 		]
 		for wall in walls:

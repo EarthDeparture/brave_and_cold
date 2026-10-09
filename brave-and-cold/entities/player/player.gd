@@ -37,6 +37,9 @@ var _camera_ground := NAN
 var _ground_velocity := 0.0
 var _ground_acceleration := 0.0
 var _ground_offset := 0.0
+var _cam_prev_target := NAN # last camera-ground target, for continuous-surface feed-forward
+var _cam_prev_xz := Vector2.ZERO
+var _eye_authored := false # last _eye_ground() height came from an authored smooth surface
 var chests: Array = []   # StorageChest colliders
 var footprints: Footprints
 var ice: IceField   # frozen water is walkable: the surface, not the carved bed under it
@@ -302,7 +305,7 @@ func _move(delta: float) -> void:
 		for i in count:
 			_move(minf(delta, 8.0 / 60.0) / float(count))
 		return
-	if is_nan(_camera_ground):_camera_ground=position.y-eye_h
+	if is_nan(_camera_ground):_camera_ground=position.y-eye_h;_cam_prev_target=NAN
 	var fwd := Vector3(-sin(yaw), 0.0, -cos(yaw))
 	var right := Vector3(cos(yaw), 0.0, -sin(yaw))
 	var dir := Vector3.ZERO
@@ -393,7 +396,7 @@ func _move(delta: float) -> void:
 	var g: float = ground_at(position.x, position.z)
 	_jump_cooldown = maxf(0.0, _jump_cooldown - delta)
 	if airborne:
-		_ground_offset*=exp(-delta*10.0)
+		_ground_offset*=exp(-delta*10.0);_cam_prev_target=NAN
 		_jump_vertical(delta, g)
 	elif not is_nan(g):
 		# Feet remain on the floor; only the camera absorbs ground corrugation.
@@ -423,15 +426,21 @@ func _slope_step(step: Vector2) -> Vector2:
 
 ## Camera ground height: structures exact, open terrain low-passed over ~1.5 m so lidar-scale bumps don't shake the view.
 func _eye_ground(x: float, z: float) -> float:
+	_eye_authored = false
 	var th: float = _terrain_h(x, z)
 	for cb in cabins:
 		var f: float = cb.floor_at(x, z, th)
 		if not is_nan(f):
 			return f
 	for structure in spatial_structures:
-		var f: float = structure.call("floor_at_world", Vector3(x, _surface_probe_y(), z), th)
+		# Authored stairs offer a smooth eased ramp for the eye; feet keep the real treads.
+		var probe := Vector3(x, _surface_probe_y(), z)
+		var authored: bool = structure.has_method("camera_floor_at_world")
+		var f: float = structure.call("camera_floor_at_world", probe) if authored else structure.call("floor_at_world", probe, th)
 		if not is_nan(f):
+			_eye_authored = authored
 			return f
+	_eye_authored = false
 	if is_nan(th):return th
 	# Apply one footprint filter to terrain, snow/ice and road/trail triangles.
 	# Changing the surface under a sample must not switch the camera algorithm.
@@ -452,7 +461,16 @@ func _eye_ground(x: float, z: float) -> float:
 func _smooth_ground(delta:float, height:float, support:float) -> void:
 	if is_nan(height):height=support
 	if is_nan(_camera_ground):
-		_camera_ground=support;_ground_velocity=0.0;_ground_acceleration=0.0
+		_camera_ground=support;_ground_velocity=0.0;_ground_acceleration=0.0;_cam_prev_target=NAN
+	# An authored smooth surface (the tower's eased stair ramp) is already free of
+	# seams: follow its continuous change exactly, so the spring below only absorbs
+	# real discontinuities (terrain->stair, teleports). A per-frame rise steeper
+	# than 45 degrees over this frame's travel is treated as a seam, not followed.
+	var xz := Vector2(position.x, position.z)
+	if _eye_authored and not is_nan(_cam_prev_target):
+		var dh := height-_cam_prev_target
+		if absf(dh) <= xz.distance_to(_cam_prev_xz)+.002: _camera_ground += dh
+	_cam_prev_target=height if _eye_authored else NAN;_cam_prev_xz=xz
 	# A height seam changes the target, never the view in one frame. Bound both
 	# vertical acceleration and its rate of change, including material borders.
 	var acceleration:=clampf((height-_camera_ground)*100.0-_ground_velocity*20.0,-6.0,6.0)

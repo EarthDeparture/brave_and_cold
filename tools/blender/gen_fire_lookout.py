@@ -350,11 +350,14 @@ def cabin(b):
         inside.box((.97,1.17+i*.065,FLOOR+.892),(.35,.008,.002),(0.25,.38,.35,1))
     metal.cylinder((.60,1.50,FLOOR+1.16),.025,.54)
     metal.box((.68,1.50,FLOOR+1.45),(.30,.22,.08),(0.52,.45,.26,1))
-    inside.box((1.35,.60,FLOOR+.45),(.46,.44,.07))
+    # Desk chair tucked in: seat slid under the desk top (seat .485 m, desk
+    # underside .785 m), backrest on the room side resting at the desk edge
+    # (desk front face y=1.00). Same box count keeps the seeded palette stable.
+    inside.box((1.35,1.185,FLOOR+.45),(.46,.44,.07))
     for x in [1.16,1.54]:
-        for y in [.42,.78]:
+        for y in [1.005,1.365]:
             inside.box((x,y,FLOOR+.22),(.05,.05,.44))
-    inside.box((1.35,.83,FLOOR+.72),(.46,.06,.48))
+    inside.box((1.35,.955,FLOOR+.72),(.46,.06,.48))
     # Provisions shelf and exterior numbered plaque, limited discrete meshes.
     for z in [FLOOR+.20,FLOOR+.65,FLOOR+1.1]:
         inside.box((1.90,-1.65,z),(1.05,.36,.055))
