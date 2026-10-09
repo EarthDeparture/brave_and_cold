@@ -57,6 +57,9 @@ var _sway_t := 0.0
 var _breath := 4.0      # seconds of held breath left (Shift while aimed steadies the rifle)
 var breath_held := false
 var _winded := false
+var sway := Vector2.ZERO      # current aim sway (rad, yaw/pitch); the scope shadow follows it
+var sway_mult := 1.0          # body-state hold steadiness (1 = rested, warm, still)
+var scope_settle := 0.0       # s left of the eye-to-scope settle after scoping in
 const AIM_FOV := 36.0
 const AIM_FOVS := [36.0, 22.0, 13.0]   # wheel while aimed: iron sights -> 2x -> 3x style zoom
 var aim_fovs: Array = AIM_FOVS.duplicate()   # per rifle (RifleDB zoom), always three steps
@@ -250,8 +253,24 @@ func _update_aim(delta: float) -> void:
 	if _breath <= 0.0:
 		_winded = true  # out of air: release Shift to recover
 		breath_held = false
-	var amp := aim_k * (0.0016 if crouching else 0.0032) * (1.0 + (0.8 if sprinting else 0.0)) * (0.12 if breath_held else 1.0)
-	var sw := Vector2(sin(_sway_t * 1.1) + 0.5 * sin(_sway_t * 2.3), cos(_sway_t * 0.9) + 0.5 * sin(_sway_t * 1.9 + 1.0)) * amp
+	# Hold steadiness from the body (TLD-like): winded lungs, cold shivers, fatigue,
+	# bleeding and walking all widen it; crouch and a held breath narrow it.
+	var st := clampf(stamina / 100.0, 0.0, 1.0)
+	var m := 1.0 + 1.6 * pow(1.0 - st, 1.5)
+	if body != null: m += 1.5 * clampf((36.5 - body.core) / 1.5, 0.0, 1.0)
+	if needs != null: m += 0.6 * clampf(needs.fatigue / 100.0, 0.0, 1.0)
+	if injury != null and injury.bleeding(): m += 0.4
+	m += 1.2 * clampf(_vel.length() / WALK, 0.0, 1.0) + (0.8 if sprinting else 0.0)
+	scope_settle = maxf(0.0, scope_settle - delta)
+	m *= 1.0 + 1.5 * scope_settle / 0.6
+	if crouching: m *= 0.55
+	if breath_held: m *= 0.15
+	elif _winded: m *= 1.5
+	sway_mult = m
+	var amp := aim_k * 0.0026 * m
+	var sw := Vector2(sin(_sway_t * 1.1) + 0.5 * sin(_sway_t * 2.3 + 0.7) + 0.25 * sin(_sway_t * 4.7), cos(_sway_t * 0.9) + 0.5 * sin(_sway_t * 1.9 + 1.0) + 0.25 * cos(_sway_t * 5.3)) * amp
+	if not breath_held: sw.y += sin(_sway_t * TAU * 0.22) * aim_k * 0.0011 * (1.0 + 1.5 * (1.0 - st))  # breathing rise and fall
+	sway = sw
 	cam.rotation = Vector3(pitch + sw.y, yaw + sw.x, 0.0)
 
 
@@ -533,7 +552,8 @@ func _footsteps(delta: float) -> void:
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		var ss: float = Settings.sensitivity * lerpf(1.0, 0.45 * _aim_fov / AIM_FOV, aim_k)
+		# Same on-screen speed at every power: scale by the zoom ratio of the live FOV.
+		var ss: float = Settings.sensitivity * tan(deg_to_rad(cam.fov) * 0.5) / tan(deg_to_rad(HIP_FOV) * 0.5)
 		yaw -= e.relative.x * ss
 		pitch = clampf(pitch - e.relative.y * ss, -1.5, 1.5)
 	elif e is InputEventKey and e.pressed and not e.echo:

@@ -536,6 +536,7 @@ func _process(delta: float) -> void:
 	if prof_on: _prof_t = Time.get_ticks_usec()
 	_frames += 1
 	_update_viewmodel()
+	_update_optic(delta)
 	if prof_on: _pm('viewmodel')
 	_t += delta
 	if _sl_on:
@@ -1948,6 +1949,34 @@ func _update_prompt() -> void:
 	player.aim_req = aim_override or rifle_up and inv != null and inv.count('rifle') > 0 and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
 	player.speed_mult = inv.speed_mult()*needs.travel_mult()
 	hud.kills = _count_kills()
+
+
+# ---- Optics: GPU scope picture, scope-in settle, long-range targets in the scope cone.
+var _was_scoped := false
+var _scope_promote_t := 0.0
+func _update_optic(delta: float) -> void:
+	if hud == null or hud.scope == null or player == null: return
+	var rid := inv.rifle_id() if inv != null else ''
+	var o: Dictionary = RifleDB.optic(rid) if rid != '' else {}
+	var kind := String(o.get('type', 'iron'))
+	hud.optic_kind = kind if rifle_up else ''
+	var scoped: bool = viewmodel != null and viewmodel.scoped_view
+	if scoped and not _was_scoped: player.scope_settle = 0.6
+	_was_scoped = scoped
+	var on := scoped or (kind == 'reflex' and rifle_up and player.aim_k > 0.9)
+	var mag := tan(deg_to_rad(Player.HIP_FOV) * 0.5) / tan(deg_to_rad(player.cam.fov) * 0.5)
+	hud.scope.update_view(on, kind, String(o.get('reticle', 'none')), mag, player.cam.fov, player.sway, delta)
+	if forest != null: forest.set_view_scale(clampf(mag / 1.6, 1.0, 3.0) if scoped else 1.0)
+	if pop == null: return
+	# Through 3x+ glass the player sees past the 240 m proxy ring and must be able
+	# to hit what is seen: widen proxies, promote the ones in the cone to actors.
+	var long := scoped and mag >= 2.5
+	pop.proxy_r = Population.SCOPE_PROXY_R if long else Population.PROXY_R
+	_scope_promote_t -= delta
+	if long and _scope_promote_t <= 0.0:
+		_scope_promote_t = 0.25
+		var half := atan(tan(deg_to_rad(player.cam.fov) * 0.5) * 0.9)
+		pop.promote_cone(player.cam.global_position, -player.cam.global_basis.z, cos(half), minf(pop.proxy_r, BULLET_RANGE), 6)
 
 
 # ---- ActionRunner: hold-to-act with progress ring. Candidates may carry "hold" (s), "kcal", "noise" (m), "label".

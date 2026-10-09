@@ -3221,7 +3221,7 @@ func _riflestest() -> void:
 	# 1. data, item and art for all eight
 	ok = RifleDB.ids().size() == 8
 	for rid: String in Inventory.RIFLE_IDS:
-		ok = ok and Inventory.ITEMS.has(rid) and Inventory.kind_of(rid) == "weapon" and RifleDB.mag(rid) > 0 and RifleDB.zoom(rid).size() == 3
+		ok = ok and Inventory.ITEMS.has(rid) and Inventory.kind_of(rid) == "weapon" and RifleDB.mag(rid) > 0 and RifleDB.zoom(rid).size() >= 1 and RifleDB.optic(rid).has("type")
 		ok = ok and ResourceLoader.exists("res://assets/weapons/north_ridge/%s.glb" % rid) and ResourceLoader.exists("res://assets/ui/rifles/%s.png" % rid)
 		ok = ok and rid in WeaponPresentation.IDS
 	print("RIFLESTEST data/items/art for 8 ok=", ok)
@@ -4020,7 +4020,7 @@ func _hittest() -> void:
 	world.set("aim_override", true)
 	for k in 30:
 		await get_tree().process_frame
-	ok = player.aim_k > 0.99 and absf(player.cam.fov - Player.AIM_FOV) < 0.5
+	ok = player.aim_k > 0.99 and absf(player.cam.fov - float(player.aim_fovs[0])) < 0.5   # the slung rifle's first optic power
 	print("HITTEST aim_k=%.2f fov=%.1f ok=%s" % [player.aim_k, player.cam.fov, str(ok)])
 	fails += 0 if ok else 1
 	# 2. point blank + range: zombie frozen at several distances, aim at its chest, trace must hit it
@@ -4343,7 +4343,7 @@ func _hittest() -> void:
 	player.zoom_step(1)
 	var z_top: int = player.zoom_i
 	player.zoom_step(-9)
-	ok = z_top == Player.AIM_FOVS.size() - 1 and player.zoom_i == 0
+	ok = z_top == player.aim_fovs.size() - 1 and player.zoom_i == 0
 	print("HITTEST zoom steps clamp top=%d bottom=%d ok=%s" % [z_top, player.zoom_i, str(ok)])
 	fails += 0 if ok else 1
 	print("HITTEST failures=", fails)

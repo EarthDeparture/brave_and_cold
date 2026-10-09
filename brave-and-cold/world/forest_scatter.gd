@@ -24,6 +24,10 @@ var excluded := 0
 var exclude: Callable  # (x, z) -> bool: skip trees here (roads, buildings)
 const TRUNK_CELL := 8.0
 var _trunks: Dictionary = {}  # Vector2i cell -> Array of Vector3(x, z, radius)
+var _near_insts: Array[GeometryInstance3D] = []  # lod0 per chunk/variant
+var _far_insts: Array[GeometryInstance3D] = []   # lod1 card crowns
+var _shadow_proxies: Array[GeometryInstance3D] = []
+var view_scale := 1.0
 var _mms: Dictionary = {}  # Vector3i(chunk x, chunk z, variant) -> [MultiMesh lod0, lod1]
 var _meshes: Array[Mesh] = []
 var _mat: Material
@@ -305,6 +309,7 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 			(_trunks[ck] as Array).append(Vector3(wx, wz, 0.12 + 0.012 * height_m))
 
 	_meshes = meshes
+	_near_insts.clear(); _far_insts.clear(); _shadow_proxies.clear()
 	for key in buckets:
 		var per_variant: Array = buckets[key]
 		for vi in range(variant_count):
@@ -323,10 +328,12 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 				inst.multimesh = mm
 				inst.material_override = mat
 				if lod == 0:
+					_near_insts.append(inst)
 					inst.visibility_range_end = near_end
 					inst.visibility_range_end_margin = 20.0
 					inst.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
 				else:
+					_far_insts.append(inst)
 					inst.visibility_range_begin = near_end - 10.0
 					inst.visibility_range_end = VIS_END
 				inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if lod == 0 else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -340,6 +347,7 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 				proxy.material_override = mat
 				proxy.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
 				proxy.visibility_range_end = near_end + 20.0
+				_shadow_proxies.append(proxy)
 				add_child(proxy)
 			_mms[Vector3i(key.x, key.y, vi)] = pair
 	print("FOREST_EXCL ", excluded)
@@ -396,3 +404,13 @@ func update_detail_appearance() -> void:
 
 func _process(_delta: float) -> void:
 	update_detail_appearance()
+
+## Scope LOD: visibility ranges are camera distance, blind to FOV. Through glass the
+## far card crowns are magnified to near-view size, so push the full-crown tier out
+## by s (1 = normal view). Only the narrow scope frustum renders the extra crowns.
+func set_view_scale(s: float) -> void:
+	if absf(s - view_scale) < 0.01: return
+	view_scale = s
+	for inst in _near_insts: inst.visibility_range_end = near_end * s
+	for inst in _far_insts: inst.visibility_range_begin = near_end * s - 10.0
+	for inst in _shadow_proxies: inst.visibility_range_end = near_end * s + 20.0

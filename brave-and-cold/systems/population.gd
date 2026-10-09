@@ -12,6 +12,9 @@ const NC := 32
 const SPAWN_R := 85.0
 const DESPAWN_R := 115.0
 const PROXY_R := 240.0
+const SCOPE_PROXY_R := 420.0   # proxy ring while looking through 2.5x+ glass
+const SCOPE_PIN_S := 6.0         # promoted actors stay real this long after leaving the cone
+var proxy_r := PROXY_R
 const T0_CAP := 60
 const PROXY_CAP := 420
 const SPAWNS_PER_TICK := 2
@@ -344,6 +347,53 @@ func _materialize(v: Vector3, from_horde: Horde = null, kind: int = -1) -> void:
 			z.on_noise(Vector3(float(ev[0]), v.y, float(ev[1])), float(ev[2]), null)
 			break
 
+## Scope LOD: virtual zombies inside the view cone (beyond the actor ring, within
+## max_d) become real, hittable actors, nearest the reticle first, up to cap per
+## call. Re-promoting refreshes the pin; parked again after SCOPE_PIN_S unwatched.
+func promote_cone(eye: Vector3, dir: Vector3, cos_half: float, max_d: float, cap: int) -> int:
+	for z in active:
+		if is_instance_valid(z) and z.has_meta("scope_pin"):
+			var t: Vector3 = z.global_position + Vector3.UP * 1.2 - eye
+			if t.length() > 1.0 and t.normalized().dot(dir) >= cos_half: z.set_meta("scope_pin", clock + SCOPE_PIN_S)
+	if active.size() >= T0_CAP + 8: return 0
+	var cand: Array = []
+	var pc := cell_of(eye.x, eye.z)
+	var rc := int(ceilf(max_d / CELL))
+	for dx in range(-rc, rc + 1):
+		for dz in range(-rc, rc + 1):
+			var k := (pc.x + dx) * 64 + (pc.y + dz)
+			if pc.x + dx < 0 or pc.y + dz < 0 or pc.x + dx >= NC or pc.y + dz >= NC or not cells.has(k): continue
+			for v: Vector3 in (cells[k] as PackedVector3Array):
+				var to := v + Vector3.UP * 1.2 - eye; var d := to.length()
+				if d < SPAWN_R or d > max_d: continue
+				var c := to.dot(dir) / d
+				if c >= cos_half: cand.append([c, k, v, null])
+	for h in hordes:
+		for v: Vector3 in (h as Horde).pts:
+			var to2 := v + Vector3.UP * 1.2 - eye; var d2 := to2.length()
+			if d2 < SPAWN_R or d2 > max_d: continue
+			var c2 := to2.dot(dir) / d2
+			if c2 >= cos_half: cand.append([c2, -1, v, h])
+	cand.sort_custom(func(a: Array, b: Array) -> bool: return a[0] > b[0])
+	var n := 0
+	for e: Array in cand:
+		if n >= cap or active.size() >= T0_CAP + 8: break
+		var v: Vector3 = e[2]
+		if e[3] != null:
+			var hh: Horde = e[3]; var hi := hh.pts.find(v)
+			if hi < 0: continue
+			hh.pts.remove_at(hi); _materialize(v, hh)
+		else:
+			var arr: PackedVector3Array = cells[e[1]]; var ai := arr.find(v)
+			if ai < 0: continue
+			arr.remove_at(ai)
+			if arr.is_empty(): cells.erase(e[1])
+			else: cells[e[1]] = arr
+			_materialize(v)
+		(active.back() as Node).set_meta("scope_pin", clock + SCOPE_PIN_S)
+		n += 1
+	return n
+
 func _despawn_step() -> void:
 	var pp := player.position
 	var lim := DESPAWN_R * DESPAWN_R
@@ -355,6 +405,8 @@ func _despawn_step() -> void:
 		if z.is_dead():
 			active.remove_at(i)       # corpse stays in the world list until it rots
 			continue
+		if float(z.get_meta("scope_pin", -1.0)) > clock:
+			continue                  # promoted through a scope: stays real while watched
 		var dx: float = z.global_position.x - pp.x
 		var dz: float = z.global_position.z - pp.z
 		if dx * dx + dz * dz > lim and z.can_park():
@@ -513,8 +565,8 @@ func _proxy_step() -> void:
 	var pp := player.position
 	var pc := cell_of(pp.x, pp.z)
 	var n := 0
-	var lim := PROXY_R * PROXY_R
-	var rc := int(ceilf(PROXY_R / CELL))
+	var lim := proxy_r * proxy_r
+	var rc := int(ceilf(proxy_r / CELL))
 	var hid := 0
 	for h in hordes:
 		hid += 1

@@ -317,7 +317,9 @@ func _process(delta: float) -> void:
 	_sl_r.visible = shown != ""
 	_sl_l.visible = shown != "" and shown != "axe"
 	# Looking through optics: the HUD draws the scope picture, the model and hands step aside.
-	scoped_view = shown == "rifle" and not working and _rifle.has_scope() and player.aim_k > .92 and _weapon_clip == ""
+	scoped_view = shown == "rifle" and not working and RifleDB.is_scoped(weapon_id) and player.aim_k > .92 and _weapon_clip == ""
+	# Reflex boxes are solid in the art kit: a clear lens shows the box interior. Kept opaque until
+	# the sheet generator builds hollow sight frames (see scope plan). _rifle.set_lens_see_through(...)
 	if scoped_view:
 		_rifle.visible = false; _right.visible = false; _left.visible = false; _sl_r.visible = false; _sl_l.visible = false
 	if working:

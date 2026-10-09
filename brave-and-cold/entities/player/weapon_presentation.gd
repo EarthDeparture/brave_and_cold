@@ -10,6 +10,8 @@ var sockets: Dictionary = {}
 var current_clip := "idle"
 var current_time := 0.0
 var contact_profiles: Dictionary = {}
+var lens: MeshInstance3D          # amber sight glass (reflex sights look through it)
+var _lens_glass: StandardMaterial3D
 func _init() -> void:
 	contact_profiles = JSON.parse_string(FileAccess.get_file_as_string("res://assets/weapons/north_ridge/contact_profiles.json"))
 func contact_offset(state: String, side: String) -> Vector3:
@@ -25,6 +27,7 @@ func set_weapon(id: String) -> void:
 	animation_player = model.find_child("AnimationPlayer", true, false)
 	assert(animation_player != null)
 	rest.clear(); sockets.clear(); remember(model)
+	lens = model.find_child(id + "__Sheet_lens_orange", true, false) as MeshInstance3D
 	for name: String in ["HandR","HandL","BoltHand","MagazineHand","Muzzle","Aim","TriggerFinger","LoadingGate","Scope"]:
 		var target := model.find_child(id+"__Socket_"+name,true,false) as Node3D
 		if target != null: sockets[name] = target
@@ -61,6 +64,13 @@ func is_pistol_grip() -> bool:
 	return weapon_id in ["north_service_rifle","compact_patrol_rifle","expedition_rifle"]
 ## Rifle-sheet art (2026-10-08): optics carry a Socket_Scope at the eyepiece; Aim sits on the optical axis.
 func has_scope() -> bool: return sockets.has("Scope")
+## Aimed reflex sights: the painted lens becomes faintly tinted glass so the dot sits over the world.
+func set_lens_see_through(on: bool) -> void:
+	if lens == null: return
+	if on and _lens_glass == null:
+		_lens_glass = StandardMaterial3D.new(); _lens_glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_lens_glass.albedo_color = Color(1.0, .62, .25, .14); _lens_glass.roughness = .08; _lens_glass.metallic_specular = .9
+	lens.material_override = _lens_glass if on else null
 func aim_height() -> float:
 	if not sockets.has("Aim"): return .127
 	return (rest[sockets["Aim"]] as Transform3D).origin.y
