@@ -49,6 +49,11 @@ func _build_visual() -> void:
 	if id in ["wood", "plank", "stick"]:
 		_resource_pile()
 		return
+	if Inventory.is_rifle(id):
+		# The real rifle art, lying on its left side (no animation player needed on the ground).
+		var gun: Node3D = (load("res://assets/weapons/north_ridge/" + id + ".glb") as PackedScene).instantiate()
+		add_child(gun); gun.rotation = Vector3(0, randf() * TAU, PI * .5); gun.position = Vector3(0, .025, 0)
+		return
 	var m := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	var kind := Inventory.kind_of(id)

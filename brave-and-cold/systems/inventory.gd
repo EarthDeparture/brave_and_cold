@@ -34,6 +34,14 @@ const ITEMS := {
 	"flare": {"name": "Road Flare", "kind": "tool", "stack": 3, "desc": "Burns red for 60 seconds. Predators keep well away from it."},
 	"axe": {"name": "Hatchet", "kind": "tool", "stack": 1, "desc": "Melee weapon. Loud. Zombies take two good hits."},
 	"rifle": {"name": "Hunting Rifle", "kind": "weapon", "stack": 1, "desc": "Bolt-action hunting rifle. Loud: everything for a kilometre hears it."},
+	"timber_bolt_carbine": {"name": "Timber Bolt Carbine", "kind": "weapon", "stack": 1, "weight": 3.6, "desc": "Green-camo bolt carbine with a short scout scope. Five rounds, slow and sure. Loud: everything for a kilometre hears it."},
+	"ranger_box_rifle": {"name": "Ranger Hunting Rifle", "kind": "weapon", "stack": 1, "weight": 3.9, "desc": "Amber-stocked hunting rifle under a long red scope. Four heavy rounds. Loud: everything for a kilometre hears it."},
+	"frontier_vented_rifle": {"name": "Frontier Vented Rifle", "kind": "weapon", "stack": 1, "weight": 4.3, "desc": "Self-loading rifle with a vented shroud. Ten rounds, quick follow-ups. Loud: everything for a kilometre hears it."},
+	"ridge_scout_rifle": {"name": "Ridge Marksman Rifle", "kind": "weapon", "stack": 1, "weight": 4.6, "desc": "Long-receiver marksman rifle with a big scope. Accurate at range. Loud: everything for a kilometre hears it."},
+	"brush_lever_rifle": {"name": "Brush Lever Rifle", "kind": "weapon", "stack": 1, "weight": 3.3, "desc": "Thumbhole lever gun with a block sight. Six rounds, loaded one at a time. Loud: everything for a kilometre hears it."},
+	"north_service_rifle": {"name": "North Service Rifle", "kind": "weapon", "stack": 1, "weight": 4.1, "desc": "Lime-stocked service rifle with a red-dot tube. Ten rounds. Loud: everything for a kilometre hears it."},
+	"compact_patrol_rifle": {"name": "Compact Patrol Carbine", "kind": "weapon", "stack": 1, "weight": 3.0, "desc": "Folding-stock carbine. Twenty light rounds, short reach. Loud: everything for a kilometre hears it."},
+	"expedition_rifle": {"name": "Expedition Long Rifle", "kind": "weapon", "stack": 1, "weight": 5.6, "desc": "Grey-camo heavy rifle with a large optic. Five devastating, very loud rounds. Loud: everything for a kilometre hears it."},
 	"ammo": {"name": "Rifle Rounds", "kind": "ammo", "stack": 10, "desc": "Soft-point hunting rounds."},
 	"beans": {"name": "Canned Beans", "kind": "food", "stack": 4, "kcal": 650.0, "desc": "Tinned beans. Safe to eat cold."},
 	"venison_raw": {"shelf_h": 30.0, "name": "Raw Venison", "kind": "food", "stack": 4, "kcal": 900.0, "raw": true, "cooked": "venison_cooked", "desc": "Uncooked portion. Cook before eating; cooking removes water without adding calories."},
@@ -83,6 +91,10 @@ const INFINITE_IDS := ["ammo", "flare", "matches"]
 const KIND_ORDER := ["weapon", "tool", "ammo", "clothing", "food", "fuel", "misc"]
 const CAPACITY := 24          # backpack cells
 const EQUIP_ITEMS := ["rifle", "axe"]   # live in equipment slots, not backpack cells
+## Eight real rifles (rifle sheet art). "rifle" stays a legacy alias: count("rifle") = rifles carried,
+## add("rifle") gives the default carbine, remove("rifle") drops the one in the equipment slot.
+const RIFLE_IDS := ["timber_bolt_carbine", "ranger_box_rifle", "frontier_vented_rifle", "ridge_scout_rifle", "brush_lever_rifle", "north_service_rifle", "compact_patrol_rifle", "expedition_rifle"]
+const DEFAULT_RIFLE := "timber_bolt_carbine"
 const WEIGHTS := {"whetstone":.25,"sewing_kit":.15,"clean_water":.6,"empty_bottle":.1,"snow_portion":.5,"service_kit":1.4,"power_relay":0.7,"wood": 1.2, "stick": 0.15, "thatch": 0.05, "cordage": 0.05, "kindling": 0.1, "bow_drill": 0.4, "jerky": 0.2, "reed": 0.06, "tinder": 0.02, "matches": 0.02, "flare": 0.3, "axe": 1.1, "rifle": 3.6, "ammo": 0.03, "beans": 0.45, "venison_raw": 0.9, "knife": 0.25, "wolf_meat_raw": 0.7, "wolf_meat_cooked": 0.5, "bear_meat_raw": 0.9, "bear_meat_cooked": 0.65, "fat": 0.4, "gut": 0.3, "deer_hide": 1.5, "wolf_pelt": 0.9, "bear_pelt": 4.0, "venison_cooked": 0.6, "sweater": 0.7, "parka": 1.6, "cured_hide": 1.0, "wolf_fur": 0.7, "bear_fur": 3.0, "toque": 0.1, "hide_cap": 0.3, "wolf_hat": 0.3, "hide_mitts": 0.3, "wolf_mitts": 0.3, "hide_boots": 0.8, "hide_leggings": 0.8, "bear_coat": 4.5, "rotten_meat": 0.5, "hammer": 0.8, "nails": 0.01, "plank": 0.9, "bandage": 0.05, "antiseptic": 0.2, "antibiotics": 0.05, "rag": 0.05, "tackle": 0.1, "trout_raw": 0.6, "trout_cooked": 0.45, "whitefish_raw": 0.5, "whitefish_cooked": 0.38, "pike_raw": 1.6, "pike_cooked": 1.2}
 const WEIGHT_SOFT := 30.0   # kg carried before you slow down
 const WEIGHT_HARD := 45.0   # kg hard cap (cannot pick up more)
@@ -102,6 +114,8 @@ const WEAR_IDS := ["whetstone","sewing_kit","axe", "knife", "hammer", "bow_drill
 var cond: Dictionary = {}       # id -> 0..1 condition for tools/weapons (missing = 1.0)
 var age: Dictionary = {}           # perishable id -> average age of the stack, game seconds
 var extra: Dictionary = {}          # slot (head/top/jacket/legs/hands/feet) -> id
+var active_rifle := ""              # rifle in the equipment slot (others ride in the pack)
+var loaded: Dictionary = {}         # rifle id -> rounds in its magazine / tube (taken from "ammo")
 var body: BodyTemperature
 var needs: Needs
 
@@ -215,10 +229,11 @@ func top() -> String:
 ## Backpack cells: [{id, n}] sorted by kind. Worn clothing (one unit each) and equipment-slot items are not counted.
 func stacks_for(cnt: Dictionary, worn: Array) -> Array:
 	var out: Array = []
+	var eq := _equipped_rifle(cnt)
 	for id in cnt.keys():
 		if EQUIP_ITEMS.has(id):
 			continue
-		var n: int = int(cnt[id]) - (1 if worn.has(id) else 0)
+		var n: int = int(cnt[id]) - (1 if worn.has(id) or id == eq else 0)
 		var sm := stack_max(id)
 		while n > 0:
 			out.append({"id": id, "n": mini(n, sm)})
@@ -243,7 +258,8 @@ func slots_used() -> int:
 
 
 func can_add(id: String, n: int = 1) -> bool:
-	if EQUIP_ITEMS.has(id):
+	if id == "rifle": return true   # legacy query: the equipment slot always takes a rifle
+	if EQUIP_ITEMS.has(id) or (is_rifle(id) and rifle_id() == ""):
 		return true
 	if total_weight() + weight_of(id) * float(n) > WEIGHT_HARD:
 		return false
@@ -253,7 +269,46 @@ func can_add(id: String, n: int = 1) -> bool:
 
 
 func count(id: String) -> int:
+	if id == "rifle":
+		var n := int(counts.get("rifle", 0))
+		for r: String in RIFLE_IDS: n += int(counts.get(r, 0))
+		return n
 	return int(counts.get(id, 0))
+
+
+static func is_rifle(id: String) -> bool:
+	return RIFLE_IDS.has(id)
+
+
+## The rifle in the equipment slot: the chosen one if still carried, else the first carried.
+func rifle_id() -> String:
+	return _equipped_rifle(counts)
+
+
+func _equipped_rifle(cnt: Dictionary) -> String:
+	if active_rifle != "" and int(cnt.get(active_rifle, 0)) > 0: return active_rifle
+	for r: String in RIFLE_IDS:
+		if int(cnt.get(r, 0)) > 0: return r
+	return ""
+
+
+## Rounds ready in the equipped rifle (never more than the loose "ammo" actually carried).
+func rifle_loaded() -> int:
+	var r := rifle_id()
+	return mini(int(loaded.get(r, 0)), count("ammo")) if r != "" else 0
+
+
+func set_loaded(n: int) -> void:
+	var r := rifle_id()
+	if r != "": loaded[r] = clampi(n, 0, RifleDB.mag(r))
+
+
+## Old saves / tests stored the single "rifle" item.
+func migrate_legacy() -> void:
+	if counts.has("rifle"):
+		var n := int(counts["rifle"]); counts.erase("rifle")
+		counts[DEFAULT_RIFLE] = int(counts.get(DEFAULT_RIFLE, 0)) + n
+		if not loaded.has(DEFAULT_RIFLE): loaded[DEFAULT_RIFLE] = RifleDB.mag(DEFAULT_RIFLE)
 
 
 func add_aged(id:String,n:int,seconds:float) -> void:
@@ -264,6 +319,8 @@ func add_aged(id:String,n:int,seconds:float) -> void:
 
 func add(id: String, n: int = 1) -> void:
 	if n<=0:return
+	if id == "rifle": id = DEFAULT_RIFLE
+	if is_rifle(id) and not loaded.has(id): loaded[id] = RifleDB.mag(id)   # found rifles come loaded
 	if shelf_s(id) > 0.0:
 		var old := count(id)
 		age[id] = float(age.get(id, 0.0)) * float(old) / float(old + n)   # new items are fresh: stack age averages down
@@ -273,12 +330,18 @@ func add(id: String, n: int = 1) -> void:
 func remove(id: String, n: int = 1) -> bool:
 	if infinite and INFINITE_IDS.has(id):
 		return true
+	if id == "rifle":
+		id = rifle_id()
+		if id == "": return false
 	if count(id) < n:
 		return false
 	counts[id] = count(id) - n
 	if counts[id] <= 0:
 		counts.erase(id)
 		cond.erase(id)
+		if is_rifle(id):
+			loaded.erase(id)
+			if active_rifle == id: active_rifle = ""
 		age.erase(id)
 		for s in EXTRA_SLOTS:
 			if extra.get(s, "") == id:
@@ -331,6 +394,10 @@ static var injury: Injury   # set by the world; medical items act on it
 
 
 func use(id: String) -> String:
+	if is_rifle(id):
+		if count(id) < 1: return ""
+		active_rifle = id
+		return "Slung the " + name_of(id)
 	if id=="clean_water":
 		if needs==null or count(id)<1:return "No drinking water"
 		if needs.water>=100:return "Already hydrated"

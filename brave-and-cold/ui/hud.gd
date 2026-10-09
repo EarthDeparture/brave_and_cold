@@ -201,7 +201,9 @@ func _draw_weapon(sz: Vector2, k: float) -> void:
 	var y := sz.y - 28.0 * k - 56.0 * k - 18.0 * k
 	var line := ""
 	if rifle_up and inv.count("rifle") > 0:
-		line = "HUNTING RIFLE    %d" % inv.count("ammo")
+		var rid := inv.rifle_id()
+		line = "%s    %d / %d" % [inv.name_of(rid).to_upper(), inv.rifle_loaded(), maxi(0, inv.count("ammo") - inv.rifle_loaded())]
+		if inv.rifle_loaded() == 0 and inv.count("ammo") > 0: line += "    [R] RELOAD"
 	elif inv.count("axe") > 0:
 		line = "HATCHET"
 	if line != "":

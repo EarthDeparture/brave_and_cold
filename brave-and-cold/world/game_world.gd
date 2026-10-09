@@ -219,6 +219,7 @@ func _ready() -> void:
 	_build_store()
 	_build_huts()
 	_build_ice_holes()
+	if not loading and (not instant_bullets or opts.has('rifles')): _place_rifle_caches()
 	_build_fire_lookout(opts)
 	if plants != null:
 		for cb in cabins:
@@ -591,6 +592,7 @@ func _process(delta: float) -> void:
 	_attack_cd = maxf(0.0, _attack_cd - delta)
 	Carcass.wind_dir = weather.wind_dir
 	_craft_update(delta)
+	_reload_update(delta)
 	if Engine.get_process_frames() % 90 == 0:
 		_hole_upkeep()
 	if plants != null and Engine.get_process_frames() % 120 == 0:
@@ -1067,7 +1069,7 @@ func _loot_store(st: Store, i: int) -> void:
 	rng.seed = int(absf(st.position.x) * 13.0 + absf(st.position.z) * 7.0) + i * 101
 	var tables := [
 		[['beans', 3, 30], ['matches', 3, 20], ['flare', 1, 8], ['rag', 2, 10], ['bandage', 1, 8]],
-		[['ammo', 8, 25], ['bandage', 2, 16], ['antiseptic', 1, 12], ['antibiotics', 1, 8], ['matches', 2, 14], ['knife', 1, 5], ['tackle', 1, 10]],
+		[['ammo', 8, 25], ['bandage', 2, 16], ['antiseptic', 1, 12], ['antibiotics', 1, 8], ['matches', 2, 14], ['knife', 1, 5], ['tackle', 1, 10], ['compact_patrol_rifle', 1, 2], ['frontier_vented_rifle', 1, 2]],
 		[['sweater', 1, 12], ['toque', 1, 12], ['hammer', 1, 8], ['nails', 30, 14], ['plank', 6, 14], ['rag', 3, 12], ['axe', 1, 3]],
 	]
 	var table: Array = tables[i]
@@ -2207,6 +2209,9 @@ func _unhandled_input(e: InputEvent) -> void:
 		SaveGame.pending = SaveGame.read()
 		get_tree().reload_current_scene()
 		return
+	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_R and rifle_up and not player.ui_open:
+		_start_reload()
+		return
 	if e is InputEventMouseButton and e.pressed and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and (e.button_index == MOUSE_BUTTON_WHEEL_UP or e.button_index == MOUSE_BUTTON_WHEEL_DOWN):
 		if player.aim_k > 0.6:
 			player.zoom_step(1 if e.button_index == MOUSE_BUTTON_WHEEL_UP else -1)   # scope zoom while aimed
@@ -2710,6 +2715,7 @@ func _shot_dir() -> Vector3:
 	var deg := lerpf(2.2, 0.12, player.aim_k)
 	deg *= 0.7 if player.crouching else 1.0
 	deg += minf(player._vel.length(), 6.0) * lerpf(0.35, 0.12, player.aim_k)
+	if inv != null and inv.rifle_id() != '': deg *= RifleDB.value(inv.rifle_id(), 'spread', 1.0)
 	var sp := deg_to_rad(deg)
 	var ang := randf() * TAU
 	var rad := sqrt(randf()) * sp
@@ -2752,6 +2758,40 @@ var _dt := 0.0
 var _dt_spawned := false
 var _dt_last := -1
 const RIFLE_DAMAGE := 100.0
+var _shot_damage := RIFLE_DAMAGE   # damage of the rifle that fired the last bullet (RifleDB)
+var _reload_t := 0.0                # >0 while a reload is running
+var _reload_full := false
+
+
+## Fill the equipped rifle from loose ammo. Magazine rifles swap in one go (tactical / empty clip);
+## the lever rifle is loaded round by round. Tests (autostart) finish instantly.
+func _start_reload() -> void:
+	if inv == null or player.dead or _reload_t > 0.0 or not rifle_up: return
+	var rid := inv.rifle_id()
+	if rid == '': return
+	var cap := RifleDB.mag(rid)
+	var have := inv.rifle_loaded()
+	if have >= mini(cap, inv.count('ammo')):
+		_say('Magazine full' if inv.count('ammo') > 0 else 'No ammo')
+		return
+	var single := String(RifleDB.spec(rid).get('reload', 'magazine')) == 'single'
+	var clip := 'reload_insert' if single else ('reload_tactical' if have > 0 else 'reload_empty')
+	var dur: float = viewmodel._rifle.clip_length(clip) if viewmodel != null and viewmodel._rifle != null else 2.4
+	if single: dur = maxf(dur, .9) * float(mini(cap, inv.count('ammo')) - have) * .6 + .5
+	if viewmodel != null: viewmodel.play_weapon_clip(clip)
+	_reload_t = 0.001 if instant_bullets else dur
+	_say('Reloading %s' % inv.name_of(rid))
+
+
+func _reload_update(delta: float) -> void:
+	if _reload_t <= 0.0: return
+	if not rifle_up or player.dead or inv.rifle_id() == '':
+		_reload_t = 0.0; return
+	_reload_t -= delta
+	if _reload_t <= 0.0:
+		_reload_t = 0.0
+		inv.set_loaded(mini(RifleDB.mag(inv.rifle_id()), inv.count('ammo')))
+		noise_bus.emit_noise(player.position, 8.0, player)
 
 
 func _spawn_deer(n: int, center: Vector2) -> void:
@@ -2813,20 +2853,44 @@ func _add_deer(p: Vector3, idx: int) -> Deer:
 	return d
 
 
+## Six of the eight rifles lie in the world on a fresh game (two more only in fishing-hut crates).
+## Pickups are saved like any dropped item, so they are placed once and never duplicated on load.
+func _place_rifle_caches() -> void:
+	var spots: Array = []
+	if cabins.size() > 1: spots.append(['ranger_box_rifle', cabins[1].to_global(Vector3(2.2, Cabin.FLOOR_LOCAL_Y + .01, .3))])
+	if cabins.size() > 3: spots.append(['brush_lever_rifle', cabins[3].to_global(Vector3(2.2, Cabin.FLOOR_LOCAL_Y + .01, .3))])
+	if cabins.size() > 2: spots.append(['timber_bolt_carbine', cabins[cabins.size() - 1].to_global(Vector3(2.2, Cabin.FLOOR_LOCAL_Y + .01, .3))])
+	if not stores.is_empty(): spots.append(['north_service_rifle', (stores[0] as Store).loot_world_pos(0)])
+	if not huts.is_empty(): spots.append(['ridge_scout_rifle', (huts[0] as Hut).tackle_world_pos() + Vector3(.35, .01, .35)])
+	if huts.size() > 1: spots.append(['expedition_rifle', (huts[huts.size() - 1] as Hut).tackle_world_pos() + Vector3(.35, .01, .35)])
+	for s: Array in spots:
+		ItemPickup.spawn(self, String(s[0]), 1, s[1] as Vector3)
+	print('RIFLE_CACHES ', spots.map(func(s: Array) -> String: return String(s[0])))
+
+
 func _shoot() -> void:
+	if _reload_t > 0.0:
+		return
+	var rid := inv.rifle_id()
 	if inv.count('ammo') == 0 and not player.god:
 		_attack_cd = 0.4
 		viewmodel.dry()
 		_say('Click. No ammo')
 		return
+	if inv.rifle_loaded() <= 0 and not player.god:
+		_start_reload()   # empty magazine with rounds in the pack: reload instead of firing
+		return
+	var ld := inv.rifle_loaded()
 	inv.remove('ammo')   # no-op while god (Inventory.infinite)
-	_attack_cd = 1.2
+	if not player.god: inv.set_loaded(ld - 1)
+	_shot_damage = RifleDB.value(rid, 'damage', RIFLE_DAMAGE)
+	_attack_cd = RifleDB.value(rid, 'cycle_s', 1.2)
 	viewmodel.fire()
-	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_GUNSHOT, player)
+	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_GUNSHOT * RifleDB.value(rid, 'noise', 1.0), player)
 	audio.gunshot()
 	var eye := player.cam.global_position
 	var dir := _shot_dir()
-	player.pitch += lerpf(0.022, 0.014, player.aim_k)  # recoil kick, player pulls it back down
+	player.pitch += lerpf(0.022, 0.014, player.aim_k) * RifleDB.value(rid, 'recoil', 1.0)  # recoil kick, player pulls it back down
 	player.yaw += randf_range(-0.004, 0.004)
 	_spawn_bullet(eye, dir)
 
@@ -2899,7 +2963,7 @@ func _bullet_result(r: Dictionary) -> void:
 	if r.has('node') and is_instance_valid(r['node']):
 		var n: Node3D = r['node']
 		var head := String(r['zone']) == 'head'
-		n.call('hit', RIFLE_DAMAGE * float(r['mult']), player.position)
+		n.call('hit', _shot_damage * float(r['mult']), player.position)
 		audio.hit(n.global_position + Vector3(0, 1.0, 0))
 		_hit_feedback(n, head)
 		_impact_fx('flesh', r.get('pos', n.global_position + Vector3(0, 1.2, 0)))
@@ -3418,7 +3482,7 @@ func _save_data() -> Dictionary:
 		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
 		'body': {'core': body.core, 'wet': body.wetness},
 		'needs': {'cal': needs.calories, 'water': needs.water,'fatigue':needs.fatigue},
-		'inv': {'counts': inv.counts, 'worn': inv.jacket(), 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age},
+		'inv': {'counts': inv.counts, 'worn': inv.jacket(), 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age, 'loaded': inv.loaded, 'active_rifle': inv.active_rifle},
 		'cabins': cabs,
 		'huts': huts.map(func(h: Hut) -> Dictionary: return h.state_dict()),
 		'holes': ice_holes.map(func(h: IceHole) -> Dictionary: return h.to_dict()),
@@ -3570,6 +3634,9 @@ func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 		if Inventory.EXTRA_SLOTS.has(String(sl)) and inv.count(String(ex[sl])) > 0 and Inventory.slot_of(String(ex[sl])) == String(sl):
 			inv.extra[String(sl)] = String(ex[sl])
 	inv._recompute()
+	for k in sv['inv'].get('loaded', {}):
+		if Inventory.is_rifle(String(k)): inv.loaded[String(k)] = int(sv['inv']['loaded'][k])
+	inv.active_rifle = String(sv['inv'].get('active_rifle', ''))
 	rifle_up = bool(sv['inv']['rifle_up']) and inv.count('rifle') > 0
 	var hsv: Array = sv.get('huts', [])
 	for hi in range(mini(hsv.size(), huts.size())):
@@ -3625,6 +3692,9 @@ func _update_viewmodel() -> void:
 			m = 'rifle'
 		elif inv.count('axe') > 0:
 			m = 'axe'
+		var rid := inv.rifle_id()
+		if rid != '' and viewmodel.weapon_id != rid: viewmodel.weapon_id = rid
+		if rid != '': player.aim_fovs = RifleDB.zoom(rid)
 	viewmodel.mode = m
 
 

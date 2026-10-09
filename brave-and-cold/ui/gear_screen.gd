@@ -213,7 +213,7 @@ func _slot_rect(slot: String) -> Rect2:
 func _slot_item(slot: String) -> String:
 	match slot:
 		"primary":
-			return "rifle" if inv.count("rifle") > 0 else ""
+			return inv.rifle_id()
 		"tool":
 			return "axe" if inv.count("axe") > 0 else ""
 	return String(inv.extra.get(slot, ""))

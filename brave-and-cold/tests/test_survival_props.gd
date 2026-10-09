@@ -126,6 +126,7 @@ func run() -> void:
 	SaveGame.pending=snap;w=await build_world();op=w.opening
 	check(units(op,"wood")==0 and units(op,"beans")==4 and op.pantry.count("beans")==34,"fresh loading derives bounded visuals from authoritative saved counts")
 	var exact:=0
-	for pick:ItemPickup in get_nodes_in_group("pickups"):exact+=pick.n
+	for pick:ItemPickup in get_nodes_in_group("pickups"):
+		if not Inventory.is_rifle(pick.id):exact+=pick.n
 	check(exact==1009,"pickup save/load preserves large quantities and original unit models")
 	w.queue_free();await process_frame;print("SURVIVAL_PROPS_TEST failures=",failures);quit(1 if failures else 0)

@@ -98,6 +98,8 @@ func setup(w: Node) -> void:
 		_sfxlevels()
 	if "interiorshot=1" in ua:
 		_interiorshot()
+	if "riflestest=1" in ua:
+		_riflestest()
 	if "hammertest=1" in ua:
 		_hammertest()
 	if "weathershot=1" in ua:
@@ -3175,6 +3177,79 @@ func _sfxlevels() -> void:
 
 
 ## Hammer: wear per board, 15 boards = a fully boarded cabin, ~6 cabins per hammer, breaks at 0, wear survives drop/pickup/save, shown in the Gear screen.
+func _riflestest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var ok := false
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	inv.infinite = false
+	player.god = false
+	# 1. data, item and art for all eight
+	ok = RifleDB.ids().size() == 8
+	for rid: String in Inventory.RIFLE_IDS:
+		ok = ok and Inventory.ITEMS.has(rid) and Inventory.kind_of(rid) == "weapon" and RifleDB.mag(rid) > 0 and RifleDB.zoom(rid).size() == 3
+		ok = ok and ResourceLoader.exists("res://assets/weapons/north_ridge/%s.glb" % rid) and ResourceLoader.exists("res://assets/ui/rifles/%s.png" % rid)
+		ok = ok and rid in WeaponPresentation.IDS
+	print("RIFLESTEST data/items/art for 8 ok=", ok)
+	fails += 0 if ok else 1
+	# 2. legacy alias
+	for rid: String in Inventory.RIFLE_IDS: inv.counts.erase(rid)
+	inv.loaded.clear(); inv.active_rifle = ""
+	inv.add("rifle")
+	ok = inv.count("rifle") == 1 and inv.rifle_id() == Inventory.DEFAULT_RIFLE and inv.loaded.get(Inventory.DEFAULT_RIFLE, 0) == RifleDB.mag(Inventory.DEFAULT_RIFLE)
+	inv.counts["rifle"] = 1; inv.migrate_legacy()
+	ok = ok and not inv.counts.has("rifle") and inv.count(Inventory.DEFAULT_RIFLE) == 2
+	inv.remove(Inventory.DEFAULT_RIFLE)
+	print("RIFLESTEST legacy 'rifle' alias + migration ok=", ok)
+	fails += 0 if ok else 1
+	# 3. second rifle rides in the pack; Use slings it; art and zoom follow
+	inv.add("ranger_box_rifle")
+	var in_pack := false
+	for s: Dictionary in inv.stacks(): in_pack = in_pack or s["id"] == "ranger_box_rifle"
+	ok = inv.rifle_id() == Inventory.DEFAULT_RIFLE and in_pack
+	inv.use("ranger_box_rifle")
+	world.set("rifle_up", true)
+	world.call("_update_viewmodel")
+	await get_tree().process_frame
+	var vm: Viewmodel = world.get("viewmodel")
+	ok = ok and inv.rifle_id() == "ranger_box_rifle" and vm.weapon_id == "ranger_box_rifle" and player.aim_fovs == RifleDB.zoom("ranger_box_rifle")
+	print("RIFLESTEST pack + sling swap + art/zoom follow ok=", ok, " vm=", vm.weapon_id)
+	fails += 0 if ok else 1
+	# 4. magazine: four rounds, then the trigger reloads instead of firing
+	inv.counts.erase("ammo"); inv.add("ammo", 10)
+	inv.set_loaded(RifleDB.mag("ranger_box_rifle"))
+	var shots := 0
+	for k in 4:
+		world.set("_attack_cd", 0.0); world.set("_reload_t", 0.0); world.set("last_shot", {})
+		world.call("_shoot")
+		if not (world.get("last_shot") as Dictionary).is_empty(): shots += 1
+	ok = shots == 4 and inv.count("ammo") == 6 and inv.rifle_loaded() == 0 and is_equal_approx(float(world.get("_shot_damage")), 125.0)
+	world.set("_attack_cd", 0.0); world.set("last_shot", {})
+	world.call("_shoot")
+	ok = ok and (world.get("last_shot") as Dictionary).is_empty() and inv.count("ammo") == 6 and float(world.get("_reload_t")) > 0.0
+	world.call("_reload_update", 0.1)
+	ok = ok and inv.rifle_loaded() == 4
+	print("RIFLESTEST 4-round magazine, reload refills ok=", ok, " shots=", shots, " ammo=", inv.count("ammo"))
+	fails += 0 if ok else 1
+	# 5. dropped rifle shows its real model
+	var pk := ItemPickup.spawn(world, "expedition_rifle", 1, player.position + Vector3(1, 0, 0))
+	await get_tree().process_frame
+	ok = pk != null and not pk.find_children("*", "MeshInstance3D", true, false).is_empty() and pk.find_children("*", "MeshInstance3D", true, false).size() > 3
+	pk.free()
+	print("RIFLESTEST pickup uses rifle art ok=", ok)
+	fails += 0 if ok else 1
+	# 6. world caches (world started with rifles=1)
+	var placed: Array = []
+	for n: Node in world.get_children():
+		if n is ItemPickup and Inventory.is_rifle((n as ItemPickup).id): placed.append((n as ItemPickup).id)
+	ok = placed.size() == 6
+	print("RIFLESTEST world caches ", placed, " ok=", ok)
+	fails += 0 if ok else 1
+	print("RIFLESTEST failures=", fails)
+	get_tree().quit()
+
+
 func _hammertest() -> void:
 	await get_tree().create_timer(2.5).timeout
 	var fails := 0

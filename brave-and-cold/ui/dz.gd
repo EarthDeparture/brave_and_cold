@@ -50,6 +50,7 @@ static func panel(ci: CanvasItem, r: Rect2, fill: Color = PANEL, edge: Color = E
 
 
 static func item_color(id: String) -> Color:
+	if Inventory.is_rifle(id): id = "rifle"
 	match id:
 		"whetstone":return Color(.38,.43,.40)
 		"sewing_kit":return Color(.33,.48,.36)
@@ -120,7 +121,24 @@ static func _quad(ci: CanvasItem, c: Vector2, w: float, h: float, a: float, col:
 
 
 ## Pictogram for an item inside rect r.
+static var _rifle_icons: Dictionary = {}
+## Rendered side views of the eight rifles (tools/blender/render_rifle_icons.py).
+static func _rifle_icon(id: String) -> Texture2D:
+	if not _rifle_icons.has(id):
+		var path := "res://assets/ui/rifles/%s.png" % id
+		_rifle_icons[id] = load(path) if ResourceLoader.exists(path) else null
+	return _rifle_icons[id]
+
+
 static func item_icon(ci: CanvasItem, id: String, r: Rect2, dim: float = 1.0) -> void:
+	if Inventory.is_rifle(id):
+		var tex := _rifle_icon(id)
+		if tex != null:
+			var s := minf(r.size.x / tex.get_width(), r.size.y / tex.get_height())
+			var sz := Vector2(tex.get_width(), tex.get_height()) * s
+			ci.draw_texture_rect(tex, Rect2(r.get_center() - sz * .5, sz), false, Color(dim, dim, dim, 1))
+			return
+		id = "rifle"
 	var col := item_color(id) * Color(dim, dim, dim, 1.0)
 	var dark := col.darkened(0.45)
 	var lite := col.lightened(0.3)

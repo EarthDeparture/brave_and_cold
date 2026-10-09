@@ -56,6 +56,7 @@ var breath_held := false
 var _winded := false
 const AIM_FOV := 36.0
 const AIM_FOVS := [36.0, 22.0, 13.0]   # wheel while aimed: iron sights -> 2x -> 3x style zoom
+var aim_fovs: Array = AIM_FOVS.duplicate()   # per rifle (RifleDB zoom), always three steps
 var zoom_i := 0
 var _aim_fov := 36.0
 const HIP_FOV := 70.0
@@ -229,13 +230,13 @@ func noise_radius() -> float:
 
 
 func zoom_step(s: int) -> void:
-	zoom_i = clampi(zoom_i + s, 0, AIM_FOVS.size() - 1)
+	zoom_i = clampi(zoom_i + s, 0, aim_fovs.size() - 1)
 
 
 func _update_aim(delta: float) -> void:
 	var want := aim_req and not dead and not sleeping and not struggling and not sprinting and not airborne
 	aim_k = move_toward(aim_k, 1.0 if want else 0.0, delta * 5.0)
-	_aim_fov = move_toward(_aim_fov, float(AIM_FOVS[zoom_i]), delta * 90.0)
+	_aim_fov = move_toward(_aim_fov, float(aim_fovs[mini(zoom_i, aim_fovs.size() - 1)]), delta * 90.0)
 	cam.fov = lerpf(HIP_FOV, _aim_fov, aim_k * aim_k * (3.0 - 2.0 * aim_k))
 	_sway_t += delta
 	var shift := Input.is_key_pressed(KEY_SHIFT)

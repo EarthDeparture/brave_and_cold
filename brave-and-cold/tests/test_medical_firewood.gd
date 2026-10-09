@@ -39,7 +39,7 @@ func run()->void:
 	ui_event(g,MOUSE_BUTTON_LEFT,point,true);ui_event(g,MOUSE_BUTTON_LEFT,point,false)
 	ui_event(g,MOUSE_BUTTON_LEFT,point,true);ui_event(g,MOUSE_BUTTON_LEFT,point,false)
 	check(not p.injury.bleeding() and w.inv.count("bandage")==bandages-1 and p.health==old_hp,"actual inventory double-click consumes bandage and stops bleeding without instant healing")
-	check(get_nodes_in_group("pickups").is_empty(),"using medical item never drops it on ground")
+	check(get_nodes_in_group("pickups").filter(func(p:ItemPickup)->bool:return not Inventory.is_rifle(p.id)).is_empty(),"using medical item never drops it on ground")
 	w.inv.add("bandage",2);p.injury.wound(.5,0)
 	ui_event(g,MOUSE_BUTTON_RIGHT,point,true)
 	check(not g._menu.is_empty() and g._menu.entries[0].label=="Apply bandage","right-click menu offers treatment first")
