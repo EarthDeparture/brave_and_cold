@@ -200,7 +200,9 @@ def stairs(b):
     # The link lies over the narrow void between lanes, outside the turn aisle.
     nose_rng = RNG.getstate()
     for landing in range(1, FLIGHTS):
-        y = -1.8 + RAIL_END_INSET if landing % 2 else 1.8 - RAIL_END_INSET
+        # Odd landings sit at +Y (flight 0 climbs toward +Y); the link joins the two inner
+        # rail ends there. It was at -Y and floated mid-bay on every level.
+        y = 1.8 - RAIL_END_INSET if landing % 2 else -1.8 + RAIL_END_INSET
         h = landing * FLIGHT_RISE
         previous_x = 4.45 if landing % 2 else 5.80
         next_x = 5.80 if landing % 2 else 4.45
@@ -238,17 +240,19 @@ def stairs(b):
             inner_y = math.copysign(1.90, y)
             t.beam((x,outer_y,z-.25),(x,inner_y,z-.25),.22)
     wood.box((4.20,-2.30,FLOOR-.08),(1.30,1.0,.16))
-    # Four continuous columns replace repeated overlapping posts. All X-bracing
-    # is in exterior planes, beyond the outer landing rails and the player's body.
-    for y in STAIR_POST_Y:
+    # Four continuous columns replace repeated overlapping posts. X-bracing sits in
+    # the LEFT/RIGHT planes (X = 3.40 / 6.80) beside the flights, never across the
+    # front/back faces you walk through at the bottom of the stairs.
+    for i, y in enumerate(STAIR_POST_Y):
         for x in STAIR_POST_X:
             t.beam((x,y,-.25),(x,y,FLOOR-.22),.28)
             metal.box((x,y,-.12),(.5,.5,.35),(0.26,.29,.32,1))
+        plane_x = STAIR_POST_X[i]
         for f in range(FLIGHTS):
             low=f*FLIGHT_RISE+.15
             high=(f+1)*FLIGHT_RISE-.35
-            t.beam((STAIR_POST_X[0],y,low),(STAIR_POST_X[1],y,high),.14)
-            t.beam((STAIR_POST_X[1],y,low),(STAIR_POST_X[0],y,high),.14)
+            t.beam((plane_x,STAIR_POST_Y[0],low),(plane_x,STAIR_POST_Y[1],high),.14)
+            t.beam((plane_x,STAIR_POST_Y[1],low),(plane_x,STAIR_POST_Y[0],high),.14)
 
 
 def cabin(b):
