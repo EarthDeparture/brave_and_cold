@@ -41,9 +41,9 @@ func run()->void:
  # Temporal integration, ignoring all optional assignments; survival pacing is tested separately.
  for half_hour in 7*48:
   var gs:float=w.clock.advance(1800/w.clock.time_scale);op.advance(gs);w.first_week.update(gs);w.collapse.update(gs)
-  if half_hour==55:mid_save=JSON.parse_string(JSON.stringify(w._save_data()))
+  if half_hour==111:mid_save=JSON.parse_string(JSON.stringify(w._save_data()))
   if half_hour%48==47:
-   check(c.collapse_phase==clampi(w.clock.day-1,0,4),"physical clinic phase agrees with calendar day "+str(w.clock.day))
+   check(c.collapse_phase==[0,0,1,2,3,4,4,4,4][w.clock.day],"physical clinic phase agrees with story day "+str(w.clock.day))
    check(c.stock[0].to_dict()==stock and w.first_week.cache.to_dict()==route_stock,"ignored optional work never replenishes loot on day "+str(w.clock.day))
    check(s.dispatch_at(s.last_s).is_empty() and s.public_signal_at(s.last_s).is_empty(),"missed scheduled speech is not replayed on day "+str(w.clock.day))
  check(w.collapse.stage==4 and w.pop.count_alive()==40,"all one-time threat waves occur without completing the assignment")
@@ -59,7 +59,7 @@ func run()->void:
  check(w.collapse.clinic.stock[0].count("bandage")==3 and w.first_week.cache.to_dict()==route_stock,"full-week save cannot restore consumed finite stock")
  # Missing/disabled optional art must not disable the survival threat state.
  var fallback:=FirstWeekCollapse.new();w.add_child(fallback);w.opening_state.zombies_seeded=false;w.opening_zombie_count=40;fallback.build(w,{})
- w.opening_state.last_s=29*3600;var before:int=w.pop.count_alive();fallback.update(0)
+ w.opening_state.last_s=float(w.opening_state.infected_cohorts()[0].at_s)+60;var before:int=w.pop.count_alive();fallback.update(0)
  check(fallback.stage==1 and w.pop.count_alive()==before+2,"staged outbreak still works without a clinic site")
  fallback.queue_free();w.queue_free();await process_frame;await process_frame;SaveGame.pending={}
  print("FIRST_WEEK_STORY_TEST checks=",checks," failures=",failures);quit(1 if failures else 0)

@@ -60,21 +60,30 @@ func build(w:Node3D,site:Dictionary,saved:Dictionary={})->void:
 func _box(parent:Node3D,p:Vector3,size:Vector3,col:Color)->void:
 	var mi:=MeshInstance3D.new();var bm:=BoxMesh.new();bm.size=size;mi.mesh=bm;mi.position=p;var m:=StandardMaterial3D.new();m.albedo_color=col;m.roughness=.88;mi.material_override=m;parent.add_child(mi)
 func update(gs:float)->void:
-	var state:LookoutAssignment=world.opening_state;var day:=clampi(int(floor((state.last_s+state.calendar_origin_s)/86400)),0,4)
+	var state:LookoutAssignment=world.opening_state
+	if state.enabled:_issue_cohorts(state)
+	var day:=clampi(int(floor((state.last_s+state.calendar_origin_s)/86400)),0,4)
 	if clinic!=null:
-		clinic.collapse_phase=day;clinic.set_night(world.sky_rig.gameplay_night_factor)
+		var ph:=clinic_phase(day,stage)
+		clinic.collapse_phase=ph;clinic.set_night(world.sky_rig.gameplay_night_factor)
 		for c:StorageChest in clinic.stock:c.tick(gs)
-		if day!=phase:phase=day;_triage.visible=day==1 or day==2;_abandoned.visible=day>=2
+		if ph!=phase:phase=ph;_triage.visible=ph==2;_abandoned.visible=ph>=3
 		_lamp.light_energy=.25 if state.grid_alive() else 0
-	if not state.enabled:return
-	var thresholds:=[28.0,50.0,74.0,96.0];var targets:=[.05,.22,.55,1.0]
-	while stage<4 and state.last_s>=thresholds[stage]*3600:
+## Notice + props: 0 Mon routine, 1 Tue fever hint, 2 Wed-morning yard triage,
+## 3 abandoned once the first local infected exist, 4 final notice from day five.
+static func clinic_phase(day:int,stage_issued:int)->int:
+	if day<2:return day
+	if day==2 and stage_issued==0:return 2
+	return 3 if day<4 else 4
+func _issue_cohorts(state:LookoutAssignment)->void:
+	var cohorts:Array=state.infected_cohorts()
+	while stage<cohorts.size() and state.last_s>=float(cohorts[stage].at_s):
 		if target_count<0:target_count=world.opening_zombie_count
-		var n:=int(target_count*targets[stage])-int(target_count*(targets[stage-1] if stage>0 else 0.0));var rng:=RandomNumberGenerator.new();rng.seed=state.seed_value+1901+stage*719;var placed:=0
+		var n:=int(target_count*float(cohorts[stage].share))-int(target_count*(float(cohorts[stage-1].share) if stage>0 else 0.0));var rng:=RandomNumberGenerator.new();rng.seed=state.seed_value+1901+stage*719;var placed:=0
 		for attempt in n*60:
 			if placed>=n:break
 			var anchor:=Vector2(clinic.global_position.x,clinic.global_position.z) if clinic!=null else (Vector2(world.stores[0].global_position.x,world.stores[0].global_position.z) if not world.stores.is_empty() else Vector2.ZERO)
-			if stage>=2 and not world.road.points.is_empty():anchor=world.road.points[rng.randi()%world.road.points.size()]
+			if String(cohorts[stage].anchor)=="roads" and not world.road.points.is_empty():anchor=world.road.points[rng.randi()%world.road.points.size()]
 			var close:=anchor.distance_to(Vector2(world.player.position.x,world.player.position.z))<120
 			var pt:=anchor+Vector2.from_angle(rng.randf()*TAU)*rng.randf_range(140 if close else 15,220 if close else 95)
 			if absf(pt.x)>930 or absf(pt.y)>930 or pt.distance_to(Vector2(world.player.position.x,world.player.position.z))<120:continue
@@ -84,6 +93,6 @@ func update(gs:float)->void:
 			if safe.distance_squared_to(pos)>.01:continue
 			world.pop.add_virtual(pos);placed+=1
 		issued+=placed;stage+=1
-	state.zombies_seeded=stage==4
+	state.zombies_seeded=stage>=cohorts.size()
 func actions()->Array:return clinic.actions() if clinic!=null else []
 func to_dict()->Dictionary:return {"stage":stage,"issued":issued,"target_count":target_count,"clinic":clinic.state_dict() if clinic!=null else {}}

@@ -53,11 +53,12 @@ func run()->void:
  for step in reserve_goal+1:w.pop._prepare_reserve()
  check(w.pop.pool.size()==reserve_goal and w.pop.count_alive()==0 and w.pop._next_id==identity,"real-model preparation leaves fresh opening population and identity unchanged")
  check(w.zombies.is_empty() and w.pop.all_alive().is_empty(),"actual prepared actors stay outside world population and save records")
- w.opening_state.last_s=28*3600;w.collapse.update(0);check(w.pop.count_alive()==2 and w.collapse.stage==1,"first cohort is sparse instead of full map population")
+ var plan:Array=w.opening_state.infected_cohorts();w.opening_state.last_s=float(plan[0].at_s)-1;w.collapse.update(0);check(w.pop.count_alive()==0 and w.collapse.stage==0 and w.collapse.clinic.collapse_phase==2 and w.collapse._triage.visible,"quiet work days end with yard triage but no infected before the authored turn")
+ w.opening_state.last_s=float(plan[0].at_s);w.collapse.update(0);check(w.pop.count_alive()==2 and w.collapse.stage==1,"first cohort is sparse instead of full map population")
  w.collapse.update(0);check(w.pop.count_alive()==2,"repeated updates do not refill issued cohort")
  for entry:Dictionary in w.pop.all_alive():check(Vector2(entry.x,entry.z).distance_to(Vector2(w.player.position.x,w.player.position.z))>=120,"arrival is outside player observation distance")
- w.opening_state.last_s=96*3600;w.collapse.update(0);check(w.pop.count_alive()==40 and w.collapse.stage==4,"four cohorts issue the exact configured total")
- check(w.collapse.clinic.collapse_phase==4 and not w.collapse._triage.visible and w.collapse._abandoned.visible,"clinic phase follows calendar rather than load time")
+ w.opening_state.last_s=float(plan[-1].at_s);w.collapse.update(0);check(w.pop.count_alive()==40 and w.collapse.stage==4,"four cohorts issue the exact configured total")
+ check(w.collapse.clinic.collapse_phase==3 and not w.collapse._triage.visible and w.collapse._abandoned.visible,"clinic phase follows calendar rather than load time")
  var save:Dictionary=JSON.parse_string(JSON.stringify(w._save_data()));var loc:Vector3=c.position;w.queue_free();await process_frame;await process_frame
  w=await build(save);c=w.collapse.clinic
  check(c.position==loc and c.stock[0].count("bandage")==n-2,"clinic identity and withdrawals survive a full fresh-world reload")

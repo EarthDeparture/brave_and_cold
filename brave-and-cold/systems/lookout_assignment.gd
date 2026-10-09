@@ -38,6 +38,8 @@ var depot_visited := false
 var seed_value := 0
 var broadcasts: Array = []
 var audio_clips: Dictionary = {}
+var story: Dictionary = {} # authored calendar beats (data/lookout_broadcasts.json "story")
+var grid_fail_u := .5 # seeded position inside the authored outage window
 func _init() -> void:
 	var data:Dictionary=JSON.parse_string(FileAccess.get_file_as_string(DATA))
 	broadcasts=data.get("broadcasts",[])
@@ -45,6 +47,8 @@ func _init() -> void:
 	dispatch_guard_s=float(data.get("dispatch_guard_game_s",120))
 	audio_clock_rate=float(data.get("audio_game_seconds_per_second",48))
 	public_days=int(data.get("public_days",5))
+	story=data.get("story",{})
+	_schedule_grid()
 	var manifest: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://assets/audio/radio_bulletins/manifest.json"))
 	audio_clips=manifest.get("clips",{})
 func new_run(seed_id:int) -> void:
@@ -52,10 +56,25 @@ func new_run(seed_id:int) -> void:
 	solar.enabled=true
 	walkie_carried=false; walkie_wh=WALKIE_CAP_WH
 	var rng:=RandomNumberGenerator.new();rng.seed=seed_id
-	grid_fail_s=rng.randf_range(48,72)*3600
+	grid_fail_u=rng.randf();_schedule_grid()
 	source_end_s=public_days*DAY_S+public_window_s-calendar_origin_s
 func grid_alive(at:float=-1) -> bool:
 	return (last_s if at<0 else at)<grid_fail_s
+## Elapsed seconds of an authored calendar beat (day 1 = arrival day; hour 24 = that day's midnight).
+func calendar_s(day:int, hour:float) -> float:
+	return (day-1)*DAY_S+hour*3600-calendar_origin_s
+func _beat_s(beat:Dictionary, day:int, hour:float) -> float:
+	return calendar_s(int(beat.get("day",day)),float(beat.get("hour",hour)))
+## Mains outage is story-anchored: seeded inside the turn night, never during the quiet work days.
+func _schedule_grid() -> void:
+	var window:Dictionary=story.get("grid_fail",{})
+	grid_fail_s=maxf(0,lerpf(_beat_s(window.get("from",{}),3,22),_beat_s(window.get("to",{}),4,1),grid_fail_u))
+## One-time outbreak cohorts in calendar order: {at_s, cumulative share, anchor}.
+func infected_cohorts() -> Array:
+	var out:Array=[]
+	for c:Dictionary in story.get("infected_cohorts",[]):
+		out.append({"at_s":_beat_s(c,3,10.5),"share":clampf(float(c.get("share",1)),0,1),"anchor":String(c.get("anchor","clinic"))})
+	return out
 func powered() -> bool:
 	return grid_alive() or (backup_on and not recovery_lock and battery_wh>.0001)
 func solar_watts() -> float:
@@ -120,12 +139,12 @@ func walkie_status() -> String:
 func phase() -> String:
 	if last_s>=source_end_s:return "Self-sufficiency"
 	if not grid_alive():return "Abandonment"
-	if last_s>=20*3600:return "Disruption"
+	if last_s>=_beat_s(story.get("disruption",{}),3,0):return "Disruption"
 	return "Assignment"
 ## Clock calendar, not hours since the player happened to start or load.
 func align_calendar(day: int, hour: float, elapsed: float, new_start := false) -> void:
 	calendar_origin_s=(day-1)*DAY_S+hour*3600-elapsed
-	if new_start: source_end_s=public_days*DAY_S+public_window_s-calendar_origin_s
+	if new_start: source_end_s=public_days*DAY_S+public_window_s-calendar_origin_s;_schedule_grid()
 func entry_start(entry: Dictionary) -> float:
 	return (int(entry.day)-1)*DAY_S+float(entry.hour)*3600-calendar_origin_s
 ## Reserve station windows globally, even if the desk receiver is off/unpowered.

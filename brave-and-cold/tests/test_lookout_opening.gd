@@ -78,7 +78,7 @@ func run() -> void:
 	w.body.core=37;w.player.injury.wound(1,0);check(w._sleep_block_reason()!="","refuge does not bypass bleeding")
 	w.player.injury=Injury.new();w.body.core=37
 	w.drop_item("beans",1)
-	var dropped:ItemPickup=get_nodes_in_group("pickups")[0]
+	var dropped:ItemPickup=get_nodes_in_group("pickups").filter(func(p:ItemPickup)->bool:return p.id=="beans")[0]
 	check(absf(dropped.global_position.y-(w.fire_lookout.global_position.y+FireLookout.DECK_Y))<.01,"items dropped at home stay on elevated floor")
 	w.fire_lookout.restore_door({"boards":2,"plank_hp":13,"hp":73})
 	var snapshot:Dictionary=w._save_data();var encoded:=JSON.stringify(snapshot);var decoded:Dictionary=JSON.parse_string(encoded)
@@ -93,7 +93,7 @@ func run() -> void:
 	check(w._sl_on and not w.save_game(),"tower sleep uses existing rest system and blocks unsafe mid-sleep save")
 	w._sleep_restore_clock();w._sl_on=false;w.player.sleeping=false
 	# Scheduled world population must seed once even after long time skips.
-	w.clock.total_game_s=29*3600;op.advance(0);w.collapse.update(0)
+	w.clock.total_game_s=float(w.opening_state.infected_cohorts()[0].at_s)+3600;op.advance(0);w.collapse.update(0)
 	check(w.collapse.stage==1,"disruption issues only the first persistent population cohort")
 	s.solar.enabled=false # This assertion intentionally has no generating source.
 	s.backup_on=true;s.receiver_on=true;s.last_s=s.grid_fail_s;s.battery_wh=22
@@ -114,7 +114,7 @@ func run() -> void:
 	check(is_equal_approx(loaded.opening.state.grid_fail_s,saved_state.grid_fail_s),"loading does not reroll outage date")
 	check(loaded.fire_lookout.contains_room(loaded.player.position),"fresh world restores elevated home")
 	check(loaded.fire_lookout.door_boards==2 and loaded.fire_lookout.door_plank_hp==13 and loaded.fire_lookout.door_hp==73,"fresh world restores elevated door reinforcement and damage")
-	var loaded_pickup:ItemPickup=get_nodes_in_group("pickups")[0]
+	var loaded_pickup:ItemPickup=get_nodes_in_group("pickups").filter(func(p:ItemPickup)->bool:return p.id=="beans")[0]
 	check(absf(loaded_pickup.global_position.y-(loaded.fire_lookout.global_position.y+FireLookout.DECK_Y))<.01,"loading retains dropped item elevation")
 	check(loaded.opening.pantry.count("beans")==4,"loading preserves pantry without double spawn")
 	var legacy:Dictionary=loaded._save_data();legacy.erase("opening")
