@@ -98,6 +98,7 @@ var sleeping := false       # lying in a bed: no movement, world keeps running
 var hits_taken := 0         # damage events >= 1 HP (wakes sleepers)
 var _vel := Vector2.ZERO
 var _snow_mult := 1.0
+var structure_mult := 1.0  # authored stairs etc. (FireLookout.speed_mult_at)
 var _bob_t := 0.0
 var _bob_amp := 0.0
 var airborne := false
@@ -341,9 +342,15 @@ func _move(delta: float) -> void:
 	# deep snow: a slight, smoothly blended slowdown (no hard steps when the tier flips under the boots)
 	var tier: int = _step_snow_tier()
 	_snow_mult = lerpf(_snow_mult, SnowField.PLAYER_SPEED[tier], minf(1.0, delta * 2.5))
+	# Authored stairs (tower flights) slow walk and sprint; blended over ~0.3 s.
+	var structure_target := 1.0
+	for structure in spatial_structures:
+		if structure.has_method("speed_mult_at"):
+			structure_target = minf(structure_target, float(structure.call("speed_mult_at", Vector3(position.x, _surface_probe_y(), position.z))))
+	structure_mult = lerpf(structure_mult, structure_target, minf(1.0, delta * 6.0))
 	var want := Vector2.ZERO
 	if wish:
-		want = Vector2(dir.x, dir.z).normalized() * base * _snow_mult * speed_mult * lerpf(1.0, 0.55, aim_k)
+		want = Vector2(dir.x, dir.z).normalized() * base * _snow_mult * structure_mult * speed_mult * lerpf(1.0, 0.55, aim_k)
 	var rate := ACCEL if want.length_squared() > _vel.length_squared() else DECEL
 	if airborne:
 		rate *= 0.35

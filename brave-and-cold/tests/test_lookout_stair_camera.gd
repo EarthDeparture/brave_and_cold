@@ -28,6 +28,7 @@ func analyse(label: String, fps: int) -> Dictionary:
 	var reversals := 0
 	var worst_acc := 0.0
 	var dt := 1.0/fps
+	var hs := 0.0; var hn := 0
 	# Camera climb per metre walked: speed-independent, so acceleration out of a
 	# landing turn is not mistaken for bounce. On the ramp it must be constant.
 	for i in range(2, samples.size()):
@@ -37,6 +38,7 @@ func analyse(label: String, fps: int) -> Dictionary:
 		if run1 < .4*dt or run2 < .4*dt: continue
 		var v1: float = (samples[i-1][1]-samples[i-2][1])/run1
 		var v2: float = (samples[i][1]-samples[i-1][1])/run2
+		hs += run2/dt; hn += 1
 		vs.append(v2); worst_acc = maxf(worst_acc, absf(v2-v1))
 	for i in range(2, vs.size()):
 		if signf(vs[i]-vs[i-1]) != signf(vs[i-1]-vs[i-2]) and absf(vs[i]-vs[i-1]) > .02: reversals += 1
@@ -52,7 +54,8 @@ func analyse(label: String, fps: int) -> Dictionary:
 		# Whole route incl. landings and turns (overshoot shows here), after the first half second.
 		if float(s[0])-float(samples[0][0]) > .5: lag = maxf(lag, absf(float(s[1])-float(s[2])-Player.EYE))
 	print("STAIR_CAMERA %s fps=%d frames=%d climb_per_m=%.3f cv=%.3f reversals_per_s=%.2f worst_jump=%.3f max_eye_error=%.3f" % [label, fps, vs.size(), mean, cv, reversals/(vs.size()*dt+.001), worst_acc, lag])
-	return {"cv":cv,"rev":reversals/(vs.size()*dt+.001),"acc":worst_acc,"lag":lag,"mean":mean}
+	print("STAIR_SPEED %s fps=%d mid_flight_m_s=%.2f" % [label, fps, hs/maxf(1,hn)])
+	return {"cv":cv,"rev":reversals/(vs.size()*dt+.001),"acc":worst_acc,"lag":lag,"mean":mean,"speed":hs/maxf(1,hn)}
 func run() -> void:
 	var terrain := Terrain3D.new(); terrain.assets=load("res://data/terrain/terrain_assets.tres")
 	terrain.data_directory="res://data/terrain/valley_b"; root.add_child(terrain)
@@ -88,7 +91,16 @@ func run() -> void:
 			var down:=analyse("down_"+mode,fps)
 			check(ok and absf(p.position.y-p.eye_h-h)<.25,"reach the ground %s fps=%d"%[mode,fps])
 			check(down.cv<.15 and down.rev<1.0,"descent camera falls steadily, no per-tread bounce %s fps=%d"%[mode,fps])
+			var pace:float=(Player.SPRINT if sprint else Player.WALK)*FireLookout.STAIR_SPEED_MULT
+			check(absf(up.speed-pace)<pace*.08 and absf(down.speed-pace)<pace*.08,"stair pace is %.0f%% of flat %s (up %.2f down %.2f want %.2f m/s) fps=%d"%[FireLookout.STAIR_SPEED_MULT*100,mode,up.speed,down.speed,pace,fps])
 			check(up.lag<.25 and down.lag<.25,"camera stays within 25 cm of eye height on treads, landings and turns %s fps=%d"%[mode,fps])
+	# Slowdown is on the flights only: landings, deck, ground keep full pace.
+	var mid:=tower.to_global(Vector3(FireLookout.STAIR_LANES[0],FireLookout.FLIGHT_RISE*.5,0))
+	var landing:=tower.to_global(Vector3(5.1,FireLookout.FLIGHT_RISE,-2.2))
+	var deck:=tower.to_global(Vector3(0,FireLookout.DECK_Y,0))
+	var beside:=tower.to_global(Vector3(8.5,0,0))
+	check(is_equal_approx(tower.speed_mult_at(mid),FireLookout.STAIR_SPEED_MULT),"mid-flight tread is slowed")
+	check(tower.speed_mult_at(landing)==1.0 and tower.speed_mult_at(deck)==1.0 and tower.speed_mult_at(beside)==1.0,"landing, deck and ground keep full pace")
 	# Tucked desk chair: the aisle in front of the desk is open up to the backrest.
 	var from:=tower.to_global(Vector3(1.35,FireLookout.DECK_Y,.30))
 	var near:=tower.to_global(Vector3(1.35,FireLookout.DECK_Y,-.45));var free:=tower.resolve_at(near,from,.35)

@@ -167,6 +167,20 @@ static func eased_run(x: float) -> float:
 	if x > l - b: return 1.0 - (l - x) * (l - x) / (2.0 * b * (l - b))
 	return (x - b * 0.5) / (l - b)
 
+## Heavy-boot pace on the flights only; landings, deck and ground keep full speed.
+## Applies to walking and sprinting alike (Player blends it so entry is not a step).
+const STAIR_SPEED_MULT := 0.75
+func speed_mult_at(foot: Vector3) -> float:
+	var p := to_local(foot)
+	if p.z < -1.8 or p.z > 1.8: return 1.0
+	var stepped := _floor_local(Vector2(p.x, p.z), p.y)
+	if is_nan(stepped): return 1.0
+	for flight in range(FLIGHT_COUNT):
+		if absf(p.x - STAIR_LANES[flight % 2]) > FLIGHT_WIDTH * 0.5: continue
+		var base := float(flight) * FLIGHT_RISE
+		if stepped > base + STEP_RISE * 0.5 and stepped < base + FLIGHT_RISE - STEP_RISE * 0.5: return STAIR_SPEED_MULT
+	return 1.0
+
 
 func contains_room(eye: Vector3) -> bool:
 	var p := to_local(eye)
