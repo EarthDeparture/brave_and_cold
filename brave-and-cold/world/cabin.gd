@@ -16,16 +16,23 @@ var glass_mat: StandardMaterial3D
 var light: OmniLight3D
 var _walls: Array[Rect2] = []  # local xz rects
 const STOVE_LOCAL := Vector3(-2.35, 0.0, -1.75)
-const WOOD_BURN_S := 7200.0  # GAME seconds per log (2 h)
+const RACK_LOCAL := Vector3(-HX + 0.30, 0.25, -0.55)  # wall-mounted drying rack beside the stove
 var _snd: AudioStreamPlayer3D
 var door_open := false
 var tint := Color.WHITE   # per-cabin weathering variation (hamlet), multiplies the vertex colours
 var door_hp := 100.0
 var door_broken := false
-var stove_fuel_s := 0.0
-var prepared_water:=PreparedWater.new()
-var cooking:=CookBatch.new(2)
+## Stove rules are the shared FireSource "wood_stove" (identical to the lookout stove).
+var fire := FireSource.new("wood_stove")
+var stove_fuel_s: float:
+	get: return fire.fuel_s
+	set(v): fire.set_fuel(v)
+var prepared_water: PreparedWater:
+	get: return fire.water
+var cooking: CookBatch:
+	get: return fire.cooking
 var cook_display:CookDisplay
+var drying_rack: Node3D
 var wood_pile := 6
 var crate_looted := false
 var _door_pivot: Node3D
@@ -104,6 +111,9 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	_build_stove_fire()
 	cook_display=CookDisplay.new();add_child(cook_display);cook_display.build(2)
 	cook_display.position=STOVE_LOCAL+Vector3(0,FLOOR_LOCAL_Y+.852,.13)
+	drying_rack=(load("res://assets/food_preservation/stove_drying_rack.glb") as PackedScene).instantiate()
+	add_child(drying_rack);drying_rack.position=RACK_LOCAL+Vector3(0,FLOOR_LOCAL_Y,0);drying_rack.rotation.y=PI/2
+	refresh_fire()
 	_build_openings()
 	_build_dust()
 	return true
@@ -217,11 +227,7 @@ func sight_line_open(a: Vector3, b: Vector3) -> bool:
 
 
 func emit_light_cue() -> void:
-	var sg := light_signal()
-	if bus != null and sg > 0.0 and _night > 0.15:
-		bus.emit_light(global_position, 8.0 + 28.0 * sg * _night, self)
-	elif bus != null and _night <= 0.15 and is_lit():
-		bus.emit_smoke(global_position, 24.0, self)
+	fire.cue(bus, global_position, _night, light_signal(), self)
 
 
 func light_signal() -> float:
@@ -279,11 +285,24 @@ func _build_stove_fire() -> void:
 
 
 func is_lit() -> bool:
-	return stove_fuel_s > 0.0
+	return fire.is_lit()
 
 
+## Scripted fuel only (tests/dev); players stoke through FireSource.stoke.
 func add_wood() -> void:
-	stove_fuel_s += WOOD_BURN_S
+	fire.add_fuel("wood")
+
+
+func rack_world_pos() -> Vector3:
+	return to_global(RACK_LOCAL + Vector3(0.0, FLOOR_LOCAL_Y + 0.4, 0.0))
+
+
+## Pans and rack strips follow the fire's reserved food.
+func refresh_fire() -> void:
+	if cook_display != null:
+		cook_display.sync(cooking.portions)
+	if drying_rack != null and fire.rack != null:
+		FoodPreservation.sync_model(drying_rack, fire.rack)
 
 
 func take_firewood() -> bool:
@@ -389,20 +408,15 @@ func woodpile_world_pos() -> Vector3:
 
 ## Heat (W) felt at world xz from the stove: strong near it, room-level inside the cabin.
 func heat_at(x: float, z: float) -> float:
-	if not is_lit():
-		return 0.0
 	var l := to_local_xz(x, z)
 	if absf(l.x) > HX or absf(l.y) > HZ:
 		return 0.0
-	var d := l.distance_to(Vector2(STOVE_LOCAL.x, STOVE_LOCAL.z))
-	return 120.0 + 430.0 * clampf(1.0 - d / 2.5, 0.0, 1.0)
+	return fire.heat_at(l.distance_to(Vector2(STOVE_LOCAL.x, STOVE_LOCAL.z)), true)
 
 
 func advance(game_s:float) -> void:
-	var elapsed:=maxf(0,game_s);var burn:=minf(stove_fuel_s,elapsed)
-	prepared_water.advance(burn);cooking.advance(elapsed,burn)
-	stove_fuel_s=maxf(0,stove_fuel_s-elapsed)
-	if cook_display!=null:cook_display.sync(cooking.portions)
+	fire.advance(game_s)
+	refresh_fire()
 
 func _process(delta: float) -> void:
 	if _fire_mat == null:
@@ -416,10 +430,11 @@ func _process(delta: float) -> void:
 	if (stove_fuel_s > 0.0) != _was_lit:
 		_was_lit = stove_fuel_s > 0.0
 		_apply_glow()
-	if stove_fuel_s > 0.0:
+	var glow := fire.glow()
+	if glow > 0.0:
 		var fl := 0.75 + 0.25 * sin(_t * 11.0) * sin(_t * 7.3) + 0.1 * sin(_t * 23.0)
-		_fire_mat.emission_energy_multiplier = 3.0 * fl
-		_fire_light.light_energy = 2.2 * fl
+		_fire_mat.emission_energy_multiplier = 3.0 * fl * glow
+		_fire_light.light_energy = 2.2 * fl * glow
 	else:
 		_fire_mat.emission_energy_multiplier = 0.0
 		_fire_light.light_energy = 0.0

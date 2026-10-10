@@ -1237,8 +1237,8 @@ func _crafttest() -> void:
 	print("CRAFTTEST interrupt keeps inputs=", ok)
 	fails += 0 if ok else 1
 	# station recipe
-	inv.add("venison_raw", 2)
-	why = world.call("craft_start", "dry_meat")
+	inv.add("deer_hide", 1)
+	why = world.call("craft_start", "cure_hide")
 	ok = why.contains("fire")
 	print("CRAFTTEST fire station required=", ok, " ", why)
 	fails += 0 if ok else 1
@@ -1263,7 +1263,7 @@ func _crafttest() -> void:
 	world.call("_build_campfire")
 	ok = fires.size() == f0 + 1 and inv.count("wood") == 0 and inv.count("kindling") == 0 and inv.count("matches") == 0
 	var cf: Campfire = fires[fires.size() - 1]
-	ok = ok and absf(cf.fuel_s - Campfire.LOG_BURN_S * 2.0) < 1.0
+	ok = ok and absf(cf.fuel_s - (FireSource.burn_s_for("campfire", "wood") + 2.0 * FireSource.burn_s_for("campfire", "kindling"))) < 1.0
 	print("CRAFTTEST campfire 1 wood + 2 kindling + match=", ok, " fuel ", cf.fuel_s)
 	fails += 0 if ok else 1
 	# bow drill: success + failure (move so the site is free)
@@ -1309,17 +1309,12 @@ func _crafttest() -> void:
 	print("CRAFTTEST cook timing=", ok)
 	fails += 0 if ok else 1
 	world.call("_take_cooked", cf2)
-	ok = inv.count("venison_cooked") == 2 and cf2.cooking.is_empty()
+	ok = inv.count("venison_cooked") == 2 and cf2.cooking.portions.is_empty()
 	print("CRAFTTEST take cooked=", ok)
 	fails += 0 if ok else 1
-	# dry meat with fire nearby (fire still lit? relight)
-	cf2.fuel_s = 3000.0
-	inv.add("venison_raw", 2)
-	world.call("_update_prompt")
-	var jr: String = world.call("craft_start", "dry_meat")
-	_craft_run(21.0)
-	ok = jr == "" and inv.count("jerky") == 2 and inv.count("venison_raw") == 0
-	print("CRAFTTEST dry meat at fire=", ok, " ", jr)
+	# drying is the stove rack only (FireSource standard): no instant jerky craft
+	ok = not RecipeDB.all().any(func(r: Dictionary) -> bool: return String(r.id) == "dry_meat")
+	print("CRAFTTEST no instant jerky recipe=", ok)
 	fails += 0 if ok else 1
 	# save list includes cooking
 	cf2.start_cook("venison_cooked")
@@ -1327,8 +1322,8 @@ func _crafttest() -> void:
 	var gw = world
 	var data: Array = []
 	for cfx in fires:
-		data.append({"cook": cfx.cooking})
-	found = (data[data.size() - 1]["cook"] as Array).size() == 1
+		data.append(cfx.fire.to_dict())
+	found = (data[data.size() - 1]["cooking"]["portions"] as Array).size() == 1
 	print("CRAFTTEST cooking state present for save=", found)
 	fails += 0 if found else 1
 	print("CRAFTTEST failures=", fails)

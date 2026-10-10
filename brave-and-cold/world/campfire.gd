@@ -1,22 +1,20 @@
 class_name Campfire
 extends Node3D
-## Outdoor fire: logs ring, flame particles, flickering light, radiant heat. Fuel is in GAME seconds.
-
-const LOG_BURN_S := 2400.0      # 40 game-minutes per log
-const MAX_FUEL_S := 4.0 * 3600.0
-const HEAT_W := 480.0
-const HEAT_RADIUS := 7.0
-
-const COOK_S := 1200.0   # 20 game-minutes per piece of meat
-const SLOTS := 4
-
-var fuel_s := 0.0
-var prepared_water:=PreparedWater.new()
-var cooking: Array = []  # [{id: cooked item id, t: game seconds left}]
+## Outdoor fire: logs ring, flame particles, flickering light. All rules (fuel,
+## embers, cooking, water, heat, beacon) are the shared FireSource "campfire" type.
+var fire := FireSource.new("campfire")
+var fuel_s: float:
+	get: return fire.fuel_s
+	set(v): fire.set_fuel(v)
+var prepared_water: PreparedWater:
+	get: return fire.water
+var cooking: CookBatch:
+	get: return fire.cooking
 var _light: OmniLight3D
 var _flames: CPUParticles3D
 var _embers: CPUParticles3D
 var _flame_mat: StandardMaterial3D
+var _wood_mat: StandardMaterial3D
 var _t := 0.0
 var _phase := randf() * 10.0
 var _snd: AudioStreamPlayer3D
@@ -30,6 +28,16 @@ func _ready() -> void:
 	var wood_mat := StandardMaterial3D.new()
 	wood_mat.albedo_color = Color(0.28, 0.17, 0.09)
 	wood_mat.roughness = 0.95
+	wood_mat.emission_enabled = true  # coal glow: under the flames, and alone on embers
+	wood_mat.emission = Color(0.95, 0.20, 0.03)
+	wood_mat.emission_energy_multiplier = 0.0
+	var cracks := NoiseTexture2D.new()  # glowing cracks in charred wood, not neon logs
+	cracks.width = 64; cracks.height = 128; cracks.seamless = true
+	var fn := FastNoiseLite.new(); fn.frequency = 0.11; fn.fractal_octaves = 3; cracks.noise = fn
+	var ramp := Gradient.new(); ramp.offsets = PackedFloat32Array([0.0, 0.52, 0.78]); ramp.colors = PackedColorArray([Color.BLACK, Color.BLACK, Color.WHITE])
+	cracks.color_ramp = ramp
+	wood_mat.emission_texture = cracks
+	_wood_mat = wood_mat
 	for i in range(9):
 		var a := TAU * i / 9.0
 		var s := MeshInstance3D.new()
@@ -78,7 +86,7 @@ func _ready() -> void:
 	_snd.volume_db = -4.0
 	_snd.position = Vector3(0, 0.4, 0)
 	add_child(_snd)
-	_set_visual(false)
+	_set_visual(false, false)
 
 
 func _soft_dot() -> Texture2D:
@@ -121,80 +129,81 @@ func _make_particles(n: int, life: float, _unused: float, c0: Color, c1: Color, 
 
 
 func is_lit() -> bool:
-	return fuel_s > 0.0
+	return fire.is_lit()
 
 
+## Scripted fuel only (tests/dev); players stoke through FireSource.stoke.
 func add_wood(n: int = 1) -> void:
-	fuel_s = minf(MAX_FUEL_S, fuel_s + LOG_BURN_S * n)
+	fire.add_fuel("wood", n)
 
 
 func heat_at(x: float, z: float) -> float:
-	if fuel_s <= 0.0:
-		return 0.0
-	var d := Vector2(x - global_position.x, z - global_position.z).length()
-	if d >= HEAT_RADIUS:
-		return 0.0
-	var f := 1.0 - d / HEAT_RADIUS
-	return HEAT_W * f * f * (0.6 + 0.4 * minf(1.0, fuel_s / 900.0))
+	return fire.heat_at(Vector2(x - global_position.x, z - global_position.z).length())
 
 
 func free_slots() -> int:
-	return SLOTS - cooking.size()
+	return fire.cooking.free_slots()
 
 
-func start_cook(cooked_id: String,input_id:String="",age:float=0) -> bool:
+func start_cook(cooked_id: String, input_id: String = "", age: float = 0) -> bool:
 	if free_slots() <= 0:
 		return false
-	var p:=FoodPortion.create(input_id if input_id!="" else cooked_id,cooked_id,COOK_S,age)
-	p.t=COOK_S;cooking.append(p)
+	fire.cooking.portions.append(FoodPortion.create(input_id if input_id != "" else cooked_id, cooked_id, CookBatch.COOK_S, age))
 	return true
 
 
 func cooking_count() -> int:
-	var n := 0
-	for c in cooking:
-		if float(c["t"]) > 0.0:
-			n += 1
-	return n
+	return fire.cooking.portions.size() - fire.cooking.ready_count()
 
 
 func done_count() -> int:
-	return cooking.size() - cooking_count()
+	return fire.cooking.ready_count()
 
 
 func min_left() -> float:
 	var m := 1e9
-	for c in cooking:
-		if float(c["t"]) > 0.0:
-			m = minf(m, float(c["t"]))
+	for c: Dictionary in fire.cooking.portions:
+		if float(c.remaining_s) > 0.0:
+			m = minf(m, float(c.remaining_s))
 	return m
 
 
-func advance(game_s: float) -> void:
-	var elapsed:=maxf(0,game_s);var burn:=minf(fuel_s,elapsed)
-	prepared_water.advance(burn)
-	for c:Dictionary in cooking:
-		c.remaining_s=float(c.t);FoodPortion.advance(c,elapsed,burn);c.t=c.remaining_s
-	fuel_s=maxf(0,fuel_s-elapsed)
-	if fuel_s==0 and _flames!=null:_set_visual(false)
+## Snow or rain on an open fire shortens its embers (ember_rate > 1).
+func advance(game_s: float, ember_rate: float = 1.0) -> void:
+	fire.advance(game_s, ember_rate)
 
 
-func _set_visual(on: bool) -> void:
-	_flames.emitting = on
-	_embers.emitting = on
-	_light.visible = on
-	if on and not _snd.playing:
+## Pre-standard saves stored [{id, t, age_s, ...}] per fire.
+static func legacy_cook(rows: Array) -> Dictionary:
+	var out: Array = []
+	for c: Variant in rows:
+		if c is Dictionary:
+			var p: Dictionary = (c as Dictionary).duplicate(true)
+			p.remaining_s = float(p.get("t", p.get("remaining_s", 0)))
+			p.erase("t")
+			out.append(p)
+	return {"portions": out}
+
+
+func _set_visual(flames: bool, embers: bool) -> void:
+	_flames.emitting = flames
+	_embers.emitting = flames or embers
+	_light.visible = flames or embers
+	if flames and not _snd.playing:
 		_snd.play()
-	elif not on:
+	elif not flames and _snd.playing:
 		_snd.stop()
 
 
 func _process(delta: float) -> void:
 	_t += delta
-	if fuel_s > 0.0 and not _flames.emitting:
-		_set_visual(true)
+	var flames := fire.is_lit()
+	var embers := fire.has_embers()
+	if flames != _flames.emitting or (flames or embers) != _light.visible:
+		_set_visual(flames, embers)
 	if _light.visible:
 		var fl := 0.85 + 0.15 * sin(_t * 13.0 + _phase) + 0.1 * sin(_t * 31.0 + _phase * 2.0)
-		var low := clampf(fuel_s / 600.0, 0.3, 1.0)
-		_light.light_energy = 1.5 * fl * low
-		_flames.scale = Vector3.ONE * (0.7 + 0.3 * low)
+		_light.light_energy = 1.5 * fl * fire.glow()
+		_flames.scale = Vector3.ONE * (0.55 + 0.45 * minf(1.0, fire.fuel_s / 3600.0))
+	if _wood_mat != null:
+		_wood_mat.emission_energy_multiplier = (0.35 if flames else 0.85 * fire.glow() / 0.24) * (0.8 + 0.2 * sin(_t * 1.7 + _phase))

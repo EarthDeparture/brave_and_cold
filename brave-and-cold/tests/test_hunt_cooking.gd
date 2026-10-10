@@ -123,7 +123,8 @@ func run() -> void:
 	op.advance(1200);check(op.cook_display.marks[0].visible,"finished lookout portion shows searing and cooked state")
 	op.take_cooked();check(not op.cook_display.foods[0].visible,"collecting lookout food empties its skillet")
 	snapshot=JSON.parse_string(JSON.stringify(w._save_data()))
-	for row:Dictionary in snapshot.cabins:row.erase("cooking")
+	for row:Dictionary in snapshot.cabins:
+		row.stove=row.fire.fuel_s;row.prepared_water=row.fire.water;row.erase("fire") # pre-standard row: no pans recorded
 	for row:Dictionary in snapshot.carcasses:row.erase("food_age_s")
 	w.queue_free();await process_frame;await process_frame;w=await build(snapshot)
 	check(w.cabins[0].cooking.portions.is_empty(),"legacy cabin state loads empty without inventing reserved meals")

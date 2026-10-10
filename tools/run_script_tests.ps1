@@ -1,7 +1,7 @@
 # Runs every brave-and-cold/tests/test_*.gd headless, one at a time (never in parallel).
 # Result per suite: exit code, FAIL/SCRIPT ERROR/Parse Error counts. Summary -> shots/script_tests.txt
 # Usage: powershell -File tools\run_script_tests.ps1 [-Only test_jump,test_survival] [-TimeoutS 400]
-param([string[]]$Only = @(), [int]$TimeoutS = 400)
+param([string[]]$Only = @(), [int]$TimeoutS = 600)  # test_walk_surfaces needs ~385 s
 $Only = @($Only | ForEach-Object { $_ -split ',' } | Where-Object { $_ -ne '' })   # -File passes "a,b" as one string
 $g = 'C:\Users\parst\Downloads\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe'
 $root = Split-Path $PSScriptRoot -Parent

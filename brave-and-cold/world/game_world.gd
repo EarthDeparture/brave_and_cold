@@ -610,6 +610,13 @@ func _process(delta: float) -> void:
 			_say('Autosaved')
 	for cb in cabins:
 		cb.set_night(night)
+	_fire_cue_t += delta
+	if _fire_cue_t > 2.0:
+		_fire_cue_t = 0.0
+		for cf in campfires:
+			cf.fire.cue(noise_bus, cf.global_position, night, 1.0, cf)
+		if opening != null:
+			opening.fire.cue(noise_bus, opening.chimney_world(), night, LookoutOpening.LIGHT_LEAK, opening)
 	for stn in stores:
 		stn.set_night(night)
 	if prof_on: _pm('misc')
@@ -621,7 +628,7 @@ func _process(delta: float) -> void:
 		fw = maxf(fw, cb.heat_at(player.position.x, player.position.z))
 	if opening != null: fw = maxf(fw,opening.heat_at(player.position))
 	for cf in campfires:
-		cf.advance(gs)
+		cf.advance(gs, 2.0 if weather.precip > 0.2 else 1.0)
 		fw = maxf(fw, cf.heat_at(player.position.x, player.position.z))
 	body.metabolism_mult = needs.metabolism_mult()
 	body.update(gs, clock.ambient_c() + _indoor_c(), wind, player.is_sheltered(), fw, player.activity, 0.0 if player.is_sheltered() else weather.precip * 0.05, false)
@@ -1750,27 +1757,8 @@ func _update_prompt() -> void:
 			cands.append({"m":_lm,"d":dp.distance_to(player.position),"text":text,"act":_toggle_lookout_door})
 		if fire_lookout.contains_room(player.position):_door_cands(cands,fire_lookout,fwd)
 	for cb in cabins:
-		var stove_text := "Add wood to stove (%d)" % inv.count("wood")
-		if not cb.is_lit():
-			stove_text = "Light stove (wood + match)"
-		if inv.count("wood") == 0:
-			stove_text = "Stove needs wood"
 		var items: Array[Dictionary] = [
 			{"pos": cb.door_world_pos(), "r": 2.0, "tol": 1.1, "text": "Door is broken" if cb.door_broken else ("Close door" if cb.door_open else "Open door"), "act": cb.toggle_door},
-			{"pos": cb.stove_world_pos(), "r": 1.7, "text": stove_text, "act": func() -> void:
-				if inv.count("wood") == 0:
-					_say("No firewood")
-				elif not cb.is_lit():
-					if inv.remove("matches"):
-						inv.remove("wood")
-						cb.add_wood()
-						_say("Struck a match: the stove catches")
-					else:
-						_say("No matches")
-				else:
-					inv.remove("wood")
-					cb.add_wood()
-					_say("Added firewood")},
 			{"pos": cb.woodpile_world_pos(), "r": 1.9, "text": "Take firewood (%d left)" % cb.wood_pile, "act": func() -> void:
 				if cb.take_firewood():
 					inv.add("wood")
@@ -1799,8 +1787,7 @@ func _update_prompt() -> void:
 				inv.add("antiseptic", 1)
 				inv.add("antibiotics", 1)
 				_say("Found: hatchet, knife, rifle + 6 rounds, parka, sweater, toque, matches, beans, hammer, nails, planks, rags")})
-		items.append_array(_cabin_food_actions(cb))
-		items.append(_water_action(cb.prepared_water,cb.stove_world_pos(),cb.is_lit()))
+		items.append_array(fire_actions(cb.fire, cb.stove_world_pos(), cb.refresh_fire, 1.7, 0.9, cb.rack_world_pos()))
 		items.append_array(_sleep_items(cb))
 		for it in items:
 			if it.get('hide', false):
@@ -1824,27 +1811,13 @@ func _update_prompt() -> void:
 	_chest_cands(cands)
 	_opening_cands(cands, fwd)
 	for cf in campfires:
-		var cd: float = cf.global_position.distance_to(player.position)
-		if _aim_ok(cf.global_position + Vector3(0.0, 0.2, 0.0), 2.6, 0.9):
-			var cfire: Campfire = cf
-			var ctext := 'Add log to fire (%d)' % inv.count('wood')
-			if inv.count('wood') == 0:
-				ctext = 'Fire needs wood'
-			cands.append({"m": _lm, "d": cd, "text": ctext, "act": func() -> void:
-				if inv.remove('wood'):
-					cfire.add_wood()
-					_say('Added log: %d min of fuel' % int(cfire.fuel_s / 60.0))
-				else:
-					_say('No firewood')})
-			if cfire.is_lit() and inv.has_raw() and cfire.free_slots() > 0 and cd < 1.8:
-				cands.append({"m": _lm, "d": cd - 0.01, "text": "Put meat on the fire (%d free)" % cfire.free_slots(), "hold": 1.5, "act": func() -> void:
-					_say('%d on the fire: ready in ~20 min' % _cook_start(cfire))})
-			if cfire.done_count() > 0 and cd < 1.8:
-				cands.append({"m": _lm, "d": cd - 0.02, "text": "Take cooked meat (%d)" % cfire.done_count(), "act": func() -> void: _take_cooked(cfire)})
-			elif cfire.cooking_count() > 0 and cd < 1.8:
-				cands.append({"m": _lm, "d": cd + 0.05, "text": "Meat cooking (%d min left)" % int(ceil(cfire.min_left() / 60.0)), "act": func() -> void: _say('Still cooking')})
-			var wa:=_water_action(cfire.prepared_water,cfire.global_position+Vector3.UP*.25,cfire.is_lit())
-			wa["m"]=_lm;wa["d"]=cd+.01;cands.append(wa)
+		var cfire: Campfire = cf
+		for it: Dictionary in fire_actions(cfire.fire, cfire.global_position + Vector3(0.0, 0.2, 0.0), Callable(), 2.6, 0.9):
+			if not _aim_ok(it.pos, float(it.r), float(it.tol)):
+				continue
+			it["m"] = _lm
+			it["d"] = cfire.global_position.distance_to(player.position) + float(it.get("dbias", 0.0))
+			cands.append(it)
 	for cn in get_tree().get_nodes_in_group("carcasses"):
 		var cnode := cn as Node3D
 		if cnode == null or cnode.is_queued_for_deletion():
@@ -2173,16 +2146,7 @@ func _give_or_drop_aged(id:String,n:int,pos:Vector3,age:float) -> void:
 		_say("Pack full: %d %s left on the ground"%[left,inv.name_of(id)])
 
 func _cabin_food_actions(cb:Cabin) -> Array:
-	var point:=cb.stove_world_pos();var out:Array=[]
-	if cb.cooking.free_slots()>0 and inv.has_raw():
-		out.append({"pos":point,"r":1.7,"text":"Load stove food (%d free slots)"%cb.cooking.free_slots(),"hold":2.0,"work":"reach","act":func()->void:
-			_say(cb.cooking.begin(inv,cb.is_lit()));cb.cook_display.sync(cb.cooking.portions)})
-	if not cb.cooking.portions.is_empty():
-		out.append({"pos":point,"r":1.7,"text":cb.cooking.status(),"dbias":.02,"act":func()->void:
-			var n:=cb.cooking.collect(inv)
-			_say("Collected %d stove portions; food left on the stove continues to age"%n if n>0 else "Food is still cooking, or your pack is full")
-			cb.cook_display.sync(cb.cooking.portions)})
-	return out
+	return fire_actions(cb.fire, cb.stove_world_pos(), cb.refresh_fire, 1.7).filter(func(it:Dictionary)->bool:return String(it.get("tag",""))=="cook")
 
 
 func _search_body(bz: Node3D) -> void:
@@ -3115,6 +3079,7 @@ func _deertest_step(delta: float) -> void:
 		get_tree().quit()
 
 var campfires: Array[Campfire] = []
+var _fire_cue_t := 0.0
 
 
 var drill_chance := 0.7
@@ -3188,33 +3153,25 @@ func _place_campfire(p: Vector3, plan: Dictionary, use_match: bool) -> void:
 	var cf := Campfire.new()
 	add_child(cf)
 	cf.global_position = p
-	cf.fuel_s = Campfire.LOG_BURN_S * (float(plan['wood']) + 0.5 * float(plan['kindling']))
+	cf.fuel_s = cf.fire.burn_s('wood') * float(plan['wood']) + cf.fire.burn_s('kindling') * float(plan['kindling'])
 	campfires.append(cf)
 	_say('Built a campfire')
 
 
 func _cook_start(cf: Campfire) -> int:
 	var n := 0
-	for id in inv.counts.keys():
-		if not Inventory.ITEMS.has(id) or not Inventory.ITEMS[id].get('raw', false):
-			continue
-		while inv.count(id) > 0 and cf.free_slots() > 0:
-			var age:=float(inv.age.get(id,0))
-			if inv.freshness(id)<=0:break
-			inv.remove(id)
-			cf.start_cook(String(Inventory.ITEMS[id]['cooked']),id,age)
-			n += 1
+	while cf.is_lit() and cf.free_slots() > 0:
+		var before: int = cf.fire.cooking.portions.size()
+		cf.fire.cooking.begin(inv, true)
+		if cf.fire.cooking.portions.size() == before:
+			break
+		n += 1
 	return n
 
 
 func _take_cooked(cf: Campfire) -> void:
-	var keep:Array=[];var taken:=0
-	for c:Dictionary in cf.cooking:
-		var p:Dictionary=c.duplicate(true);p.remaining_s=float(c.t)
-		if FoodPortion.collect(p,inv):taken+=1
-		else:keep.append(c)
-	cf.cooking=keep
-	_say('Collected %d fire portions. Uncollected food stays by the fire.'%taken)
+	var taken: int = cf.fire.cooking.collect(inv)
+	_say('Collected %d fire portions. Uncollected food stays by the fire.' % taken)
 
 
 func _near_fire() -> bool:
@@ -3525,10 +3482,10 @@ func story_skip_to(day: int, hour: float) -> bool:
 func _save_data() -> Dictionary:
 	var cabs: Array = []
 	for cb in cabins:
-		cabs.append({'prepared_water':cb.prepared_water.to_dict(),'cooking':cb.cooking.to_dict(),'stove': cb.stove_fuel_s, 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'dboards': cb.door_boards, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
+		cabs.append({'fire': cb.fire.to_dict(), 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'dboards': cb.door_boards, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
 	var fires: Array = []
 	for cf in campfires:
-		fires.append({'x': cf.global_position.x, 'y': cf.global_position.y, 'z': cf.global_position.z, 'fuel': cf.fuel_s,'prepared_water':cf.prepared_water.to_dict(), 'cook': cf.cooking})
+		fires.append({'x': cf.global_position.x, 'y': cf.global_position.y, 'z': cf.global_position.z, 'fire': cf.fire.to_dict()})
 	var d := {
 		'clock': clock.to_dict(),
 		'weather': weather.to_dict(),
@@ -3707,9 +3664,11 @@ func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 	var cabs: Array = sv['cabins']
 	for i in range(mini(cabs.size(), cabins.size())):
 		var cb = cabins[i]
-		cb.stove_fuel_s = float(cabs[i]['stove'])
-		cb.prepared_water.restore(cabs[i].get('prepared_water',{}))
-		cb.cooking.restore(cabs[i].get('cooking',{}));cb.cook_display.sync(cb.cooking.portions)
+		if cabs[i].has('fire'):
+			cb.fire.restore(cabs[i]['fire'])
+		else:  # pre-standard save: separate stove fuel / kettle / pans
+			cb.fire.restore({'fuel_s': float(cabs[i].get('stove', 0)), 'water': cabs[i].get('prepared_water', {}), 'cooking': cabs[i].get('cooking', {})})
+		cb.refresh_fire()
 		cb.wood_pile = int(cabs[i]['wood'])
 		cb.crate_looted = bool(cabs[i]['looted'])
 		cb.door_boards = int(cabs[i].get('dboards', 0))
@@ -3723,9 +3682,10 @@ func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 		var cf := Campfire.new()
 		add_child(cf)
 		cf.global_position = Vector3(float(f['x']), float(f['y']), float(f['z']))
-		cf.fuel_s = float(f['fuel'])
-		cf.prepared_water.restore(f.get('prepared_water',{}))
-		cf.cooking = f.get('cook', [])
+		if f.has('fire'):
+			cf.fire.restore(f['fire'])
+		else:  # pre-standard save
+			cf.fire.restore({'fuel_s': float(f.get('fuel', 0)), 'water': f.get('prepared_water', {}), 'cooking': Campfire.legacy_cook(f.get('cook', []))})
 		campfires.append(cf)
 
 var _savetest := ''
@@ -3773,6 +3733,73 @@ func _run_vmtest() -> void:
 	elif act == 'aim':
 		aim_override = true
 		player.aim_k = 1.0
+
+## The one interaction list for every FireSource: the lookout stove, cabin stoves,
+## campfires and any future stove. Stoke with each carried fuel (longest first,
+## mouse wheel picks), kettle, pans, drying rack. Entries carry a "tag".
+func fire_actions(src: FireSource, point: Vector3, refresh: Callable = Callable(), r: float = 1.9, tol: float = 0.9, rack_point: Variant = null) -> Array:
+	var out: Array = []
+	var lbl := src.label()
+	var options: Array = src.fuel_options(inv) if inv != null else []
+	var verb := ("Light " if src.needs_starter() else ("Relight " if src.has_embers() else "Stoke ")) + lbl
+	var after := func() -> void:
+		if refresh.is_valid():
+			refresh.call()
+	if options.is_empty():
+		out.append(_fire_entry(point, r, tol, "stoke", "%s • %s • no fuel carried" % [lbl.capitalize(), src.status()], 0.0, 0.0, func() -> void: _say("Carry firewood, planks, kindling or sticks to burn")))
+	for i in options.size():
+		var id: String = options[i]
+		var text := "%s • %s +%s • %s" % [verb, inv.name_of(id).to_lower(), FireSource.duration(src.burn_s(id)), "needs a match" if src.needs_starter() else src.status()]
+		out.append(_fire_entry(point, r, tol, "stoke", text, src.hold_s(), 0.001 * i, func() -> void:
+			var res: Dictionary = src.stoke(inv, id)
+			_say(String(res.msg))
+			if bool(res.ok):
+				audio.play_at("rustle", point, -8, 1, 3, 18)
+			after.call()))
+	var pot := src.water
+	if src.is_lit() or pot.batch > 0 or pot.ready > 0:
+		out.append(_fire_entry(point, r, tol, "water", pot.status(), 2.0 if pot.batch == 0 and pot.ready == 0 else (1.0 if pot.ready > 0 else 0.0), 0.01, func() -> void:
+			if pot.ready > 0:
+				var n := pot.collect(inv)
+				_say("Collected %.1f L drinking water" % (n * 0.5) if n > 0 else "Make room in your pack; water stays in the kettle")
+			elif pot.batch > 0:
+				_say("Boiling progresses while the %s burns" % lbl)
+			elif src.is_lit():
+				_say(pot.begin(inv))
+			else:
+				_say("Light the %s first" % lbl)
+			after.call()))
+	var pans := src.cooking
+	if src.is_lit() and pans.free_slots() > 0 and inv != null and inv.has_raw():
+		out.append(_fire_entry(point, r, tol, "cook", "Cook raw food on the %s (%d free)" % [lbl, pans.free_slots()], 2.0, 0.02, func() -> void:
+			_say(pans.begin(inv, src.is_lit()))
+			after.call()))
+	if not pans.portions.is_empty():
+		out.append(_fire_entry(point, r, tol, "cook", pans.status(), 0.0, 0.03, func() -> void:
+			var n := pans.collect(inv)
+			_say("Collected %d portions; food left at the %s keeps aging" % [n, lbl] if n > 0 else "Food is still cooking, or your pack is full")
+			after.call()))
+	if src.rack != null:
+		var rp: Vector3 = rack_point if rack_point != null else point
+		var rack := src.rack
+		var hold := 4.0 if rack.portions.is_empty() else (1.0 if rack.ready_count() > 0 else 0.0)
+		out.append(_fire_entry(rp, r, tol, "rack", rack.status(), hold, 0.02, func() -> void:
+			if rack.ready_count() > 0:
+				var n := rack.collect(inv)
+				_say("Collected %d rack portions" % n if n > 0 else "Pack full. Rack food remains in place and continues to age.")
+			elif not rack.portions.is_empty():
+				_say(rack.status())
+			elif not src.is_lit():
+				_say("Light the %s before starting the drying rack" % lbl)
+			else:
+				_say(rack.begin(inv))
+			after.call()))
+	return out
+
+
+func _fire_entry(point: Vector3, r: float, tol: float, tag: String, text: String, hold: float, bias: float, act: Callable) -> Dictionary:
+	return {"pos": point, "r": r, "tol": tol, "tag": tag, "text": text, "hold": hold, "dbias": bias, "act": act, "work": "reach"}
+
 
 func _water_action(pot:PreparedWater,point:Vector3,lit:bool)->Dictionary:
 	var text:=pot.status() if pot.batch>0 else ("Collect boiled water • %d bottles"%pot.ready if pot.ready>0 else "Boil snow in field bottles • 20 min")

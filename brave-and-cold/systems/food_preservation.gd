@@ -26,6 +26,12 @@ func begin(inv:Inventory) -> String:
 	inv.wear("knife",.01*portions.size())
 	return "Sliced %d portions. Drying needs two hours of stove burn; unheated food still spoils."%portions.size()
 
+## Rack model: one strip per uncollected, unspoiled portion (Portion0..3 nodes).
+static func sync_model(model:Node3D,pres:FoodPreservation) -> void:
+	for i in CAP:
+		var portion:=model.find_child("Portion%d"%i,true,false) as Node3D
+		if portion!=null:portion.visible=i<pres.portions.size() and pres.portions[i].id!="rotten_meat"
+
 func advance(game_s:float,burn_s:float) -> void:
 	for p:Dictionary in portions:FoodPortion.advance(p,game_s,burn_s)
 

@@ -23,7 +23,7 @@ func run()->void:
 	create_timer(150).timeout.connect(func()->void:print("FAIL timeout");quit(2))
 	var w:Node3D=await build();var op:LookoutOpening=w.opening;var p:Player=w.player;var g:GearScreen=w.gear
 	check(op.wood_left==6 and op.pantry.count("wood")==6 and wood(op)==6,"new game has six real stored and visible logs")
-	check(op.fuel_s+op.wood_left*7200+w.inv.count("wood")*7200==18*3600,"starting stove/rack/pack fuel requires restocking within first day")
+	check(op.fuel_s+op.wood_left*7200+w.inv.count("wood")*7200==24*3600,"starting stove/rack/pack fuel lasts one day: restock before the second night")
 	p.health=70;p.injury.wound(1,0);w.needs.calories=2000;w.needs.water=85;w.body.core=37
 	var old_hp:=p.health;w._process(1)
 	check(p.health<old_hp and p.injury.bleeding(),"real world update loses blood during untreated bleeding")
@@ -81,10 +81,10 @@ func run()->void:
 	var fuel_before:float=op.fuel_s;var pack_fuel:int=w.inv.count("wood");op.take_wood();op.stoke()
 	check(op.wood_left==4 and wood(op)==4 and op.fuel_s==fuel_before+7200 and w.inv.count("wood")==pack_fuel,"stored gathered log can be taken and burned exactly once")
 	var saved_fuel:float=op.fuel_s;var saved_matches:int=w.inv.count("matches")
-	w.inv.counts["wood"]=2;op.fuel_s=15*3600;op.stoke()
-	check(op.fuel_s==15*3600 and w.inv.count("wood")==2 and w.inv.count("matches")==saved_matches,"nearly full stove preserves whole log rather than discarding partial burn time")
-	op.fuel_s=14*3600;op.stoke()
-	check(op.fuel_s==16*3600 and w.inv.count("wood")==1,"stove accepts a complete two-hour log at exact remaining capacity")
+	w.inv.counts["wood"]=2;op.fuel_s=11*3600;op.stoke()
+	check(op.fuel_s==11*3600 and w.inv.count("wood")==2 and w.inv.count("matches")==saved_matches,"nearly full stove preserves whole log rather than discarding partial burn time")
+	op.fuel_s=10*3600;op.stoke()
+	check(op.fuel_s==12*3600 and w.inv.count("wood")==1,"stove accepts a complete two-hour log at exact remaining capacity")
 	op.fuel_s=0;w.inv.counts.erase("matches");op.stoke()
 	check(op.fuel_s==0 and w.inv.count("wood")==1,"unlit stove cannot consume wood without a match")
 	w.inv.add("matches",1);op.stoke()

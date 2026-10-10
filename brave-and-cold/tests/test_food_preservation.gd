@@ -56,8 +56,8 @@ func run() -> void:
 	FoodPortion.advance(whole,240*3600,0);check(whole.id=="rotten_meat","uncollected dried food eventually spoils")
 	resumed.restore({});check(resumed.portions.is_empty(),"legacy save receives no free preserved food")
 	var fire:=Campfire.new();fire.fuel_s=300;fire.start_cook("trout_cooked","trout_raw",3600)
-	fire.advance(900);check(fire.cooking[0].t==900 and fire.fuel_s==0,"campfire cooks only through its actual 300-second fuel remainder")
-	fire.advance(900);check(fire.cooking[0].t==900 and fire.cooking[0].age_s==5400,"unlit campfire still ages its unfinished fish")
+	fire.advance(900);check(fire.cooking.portions[0].remaining_s==900 and fire.fuel_s==0,"campfire cooks only through its actual 300-second fuel remainder")
+	fire.advance(900);check(fire.cooking.portions[0].remaining_s==900 and fire.cooking.portions[0].age_s==5400 and not fire.fire.has_embers(),"unlit campfire still ages its unfinished fish")
 	fire.free()
 	inv=Inventory.new();inv.add("venison_raw");inv.age.venison_raw=15*3600.0
 	var cooked:=CookBatch.new(1);cooked.begin(inv,true);cooked.advance(1200,1200);cooked.collect(inv)
@@ -69,9 +69,9 @@ func run() -> void:
 	check(op.pantry.spoilage_rate==1,"indoor pantry uses normal food aging rather than outdoor snow cooling")
 	w.inv=Inventory.new(w.body);w.inv.needs=w.needs;w.inv.add("knife");w.inv.add("venison_raw");w.inv.age.venison_raw=3600
 	op.fuel_s=300;op.cook();op.advance(900)
-	check(op.cooking.remaining_s==900 and op.cooking.age_s==4500,"actual lookout cooking follows heat limit and input age")
+	check(op.cooking.portions[0].remaining_s==900 and op.cooking.portions[0].age_s==4500,"actual lookout cooking follows heat limit and input age")
 	op.fuel_s=900;op.advance(900);op.take_cooked()
-	check(w.inv.count("venison_cooked")==1 and op.cooking.is_empty(),"lookout stove collection moves exactly one cooked portion")
+	check(w.inv.count("venison_cooked")==1 and op.cooking.portions.is_empty(),"lookout stove collection moves exactly one cooked portion")
 	var cooked_age:=float(w.inv.age.venison_cooked)
 	check(cooked_age>3600,"cooking changes shelf fraction rather than resetting raw age")
 	op.fuel_s=0;op.dry_food();check(op.preservation.portions.is_empty(),"unlit rack start leaves cooked food in pack")
@@ -121,13 +121,15 @@ func run() -> void:
 	pickup.tick(Inventory.shelf_s("whitefish_cooked"));check(pickup.id=="rotten_meat","ground food eventually spoils and cannot become free fresh food")
 	var outdoor:=Campfire.new();w.add_child(outdoor);w.campfires.append(outdoor);freeze(outdoor)
 	w.inv.add("pike_raw");w.inv.age.pike_raw=8*3600
+	check(w._cook_start(outdoor)==0 and w.inv.count("pike_raw")==1,"cold campfire cannot take food (standard: cook only while lit)")
+	outdoor.fuel_s=1200
 	check(w._cook_start(outdoor)==1 and w.inv.count("pike_raw")==0,"actual campfire loading reserves raw fish once")
-	outdoor.fuel_s=1200;outdoor.advance(1200)
-	var fire_age:float=outdoor.cooking[0].age_s
+	outdoor.advance(1200)
+	var fire_age:float=outdoor.cooking.portions[0].age_s
 	w.inv.add("wood",100);w._take_cooked(outdoor)
-	check(outdoor.cooking.size()==1 and w.inv.count("pike_cooked")==0,"actual full-pack campfire collection retains prepared food instead of losing age on a fresh ground drop")
+	check(outdoor.cooking.portions.size()==1 and w.inv.count("pike_cooked")==0,"actual full-pack campfire collection retains prepared food instead of losing age on a fresh ground drop")
 	w.inv.remove("wood",100);w._take_cooked(outdoor)
-	check(w.inv.count("pike_cooked")==1 and outdoor.cooking.is_empty() and is_equal_approx(w.inv.age.pike_cooked,fire_age),"actual campfire collection retains finished portion age")
+	check(w.inv.count("pike_cooked")==1 and outdoor.cooking.portions.is_empty() and is_equal_approx(w.inv.age.pike_cooked,fire_age),"actual campfire collection retains finished portion age")
 	check(op.drying_rack.find_children("*","CollisionObject3D",true,false).is_empty(),"rack exports no invisible collider through the room walking area")
 	op.read_food_notes();check(w.reading.is_open,"food preparation notes use readable dismissible modal");w.reading.close()
 	w.queue_free();await process_frame;await process_frame;SaveGame.pending={}

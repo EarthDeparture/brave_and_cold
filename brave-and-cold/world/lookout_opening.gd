@@ -24,19 +24,27 @@ var fire_loop: AudioStreamPlayer3D
 var fire_light: OmniLight3D
 var stove_smoke: GPUParticles3D
 var ember: MeshInstance3D
-var fuel_s := 7200.0
+## Stove rules: the shared FireSource "wood_stove". This stove top fits one pan beside the kettle.
+var fire := FireSource.new("wood_stove", {"cook_slots": 1})
+const LIGHT_LEAK := 0.3  # glazed room 25 m up: firelight shows, mostly above eye level
+var fuel_s: float:
+	get: return fire.fuel_s
+	set(v): fire.set_fuel(v)
 const STARTING_WOOD := 6
 const VISIBLE_WOOD_CAP := 12
 var wood_left: int:
 	get: return maxi(pantry.count("wood"),0) if pantry!=null else 0
-var water:=PreparedWater.new()
+var water: PreparedWater:
+	get: return fire.water
 var water_label:Label3D
 var kettle_steam:GPUParticles3D
 var city_letter:Node3D
 var repair_stock:Node3D
 var bottle_stock:Node3D
-var cooking: Dictionary = {}
-var preservation:=FoodPreservation.new()
+var cooking: CookBatch:
+	get: return fire.cooking
+var preservation: FoodPreservation:
+	get: return fire.rack
 var drying_rack:Node3D
 var cook_display:CookDisplay
 var _stock: Node3D
@@ -94,16 +102,19 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 	pantry.spoilage_rate=1.0 # an indoor provisions shelf is not a snow-cooled outdoor chest
 	pantry.position = Vector3(1.90, FireLookout.DECK_Y + .40, 1.62)
 	if saved.is_empty():
-		pantry.put("beans", 4, 1, 0); pantry.put("jerky", 2, 1, 0); pantry.put("matches", 4, 1, 0); pantry.put("bandage", 2, 1, 0); pantry.put("wood",STARTING_WOOD,1,0)
+		fuel_s = 7200.0; pantry.put("beans", 4, 1, 0); pantry.put("jerky", 2, 1, 0); pantry.put("matches", 4, 1, 0); pantry.put("bandage", 2, 1, 0); pantry.put("wood",STARTING_WOOD,1,0)
 	else:
-		pantry.load_dict(saved.get("storage", {})); fuel_s = float(saved.get("fuel_s", 0)); cooking = saved.get("cooking", {}).duplicate(true)
+		pantry.load_dict(saved.get("storage", {}))
+		if saved.has("fire"):
+			fire.restore(saved.fire)
+		else:  # pre-standard save: separate fuel / single pan / kettle / rack keys
+			var pan: Dictionary = saved.get("cooking", {})
+			fire.restore({"fuel_s": float(saved.get("fuel_s", 0)), "cooking": {"portions": [pan] if not pan.is_empty() else []}, "water": saved.get("prepared_water", {}), "rack": saved.get("preservation", {})})
 		# Older saves had a separate loose rack and collected wood in storage.
 		# Merge both exactly once; schema-two storage is already authoritative.
 		if int(saved.get("schema",1))<2:
 			var loose:=maxi(int(saved.get("wood_left",0)),0)
 			if loose>0:pantry.put("wood",loose,1,0)
-	water.restore(saved.get("prepared_water",{}))
-	preservation.restore(saved.get("preservation",{}))
 	drying_rack=(load("res://assets/food_preservation/stove_drying_rack.glb") as PackedScene).instantiate()
 	tower.add_child(drying_rack);drying_rack.position=Vector3(-2.12,FireLookout.DECK_Y+.25,.35);drying_rack.rotation.y=PI/2
 	cook_display=CookDisplay.new();tower.add_child(cook_display);cook_display.build(1)
@@ -176,10 +187,7 @@ func starting_gear(baseline_pace := false) -> void:
 	update_presentation()
 func advance(game_s: float) -> void:
 	state.advance_to(world.clock.total_game_s,world.weather.overcast,world.weather.precip)
-	var burn := minf(game_s, fuel_s); fuel_s = maxf(0, fuel_s - game_s)
-	water.advance(burn)
-	if not cooking.is_empty():FoodPortion.advance(cooking,game_s,burn)
-	preservation.advance(game_s,burn)
+	fire.advance(game_s)
 	pantry.tick(game_s)
 	if _last_grid and not state.grid_alive(): world._say("The mains have gone silent. " + ("Local backup is supplying the site." if state.backup_on else "Enable local backup at the desk panel."))
 	_last_grid = state.grid_alive()
@@ -189,11 +197,8 @@ func advance(game_s: float) -> void:
 	if shift != null: shift.update()
 	update_presentation(); _radio_update()
 func update_presentation() -> void:
-	if cook_display!=null:cook_display.sync([cooking] if not cooking.is_empty() else [])
-	if drying_rack!=null:
-		for i in FoodPreservation.CAP:
-			var portion:=drying_rack.find_child("Portion%d"%i,true,false) as Node3D
-			if portion!=null:portion.visible=i<preservation.portions.size() and preservation.portions[i].id!="rotten_meat"
+	if cook_display!=null:cook_display.sync(cooking.portions)
+	if drying_rack!=null:FoodPreservation.sync_model(drying_rack,preservation)
 	if solar_site!=null:solar_site.update_presentation()
 	if electrical!=null:electrical.update_presentation()
 	if _power_label!=null:
@@ -212,9 +217,10 @@ func update_presentation() -> void:
 		cm.albedo_color=color if active else Color(.025,.03,.025);cm.emission_enabled=active;cm.emission=color if active else Color.BLACK
 	var lamp := world.fire_lookout.get_node_or_null("LookoutDeskLamp") as OmniLight3D
 	if lamp != null: lamp.light_energy = .65 if state.powered() and state.lamp_on else 0
-	fire_light.light_energy = (0.80 + .05 * sin(state.last_s * .19)) if fuel_s > 0 else 0
-	fire_bounce.light_energy = .18 if fuel_s > 0 else 0
-	ember.visible = fuel_s > 0
+	var glow := fire.glow()
+	fire_light.light_energy = (0.80 + .05 * sin(state.last_s * .19)) * glow
+	fire_bounce.light_energy = .18 * glow
+	ember.visible = glow > 0
 	stove_smoke.emitting = fuel_s > 0
 	var motion := stove_smoke.process_material as ParticleProcessMaterial
 	motion.gravity = Vector3(world.weather.wind_dir.x*.18,.45,world.weather.wind_dir.y*.18)
@@ -343,17 +349,8 @@ func actions() -> Array:
 	out.append(_action(panel, "Switch desk lamp off" if state.lamp_on else "Switch desk lamp on", toggle_lamp, 0, .01))
 	out.append(_action(pantry.global_position, "Open lookout provisions", func() -> void: world.gear.open_chest(pantry)))
 	var stove: Vector3 = world.fire_lookout.to_global(stove_point(Vector3(0,.55,.301)))
-	out.append(_action(stove, "Stoke stove • %.1f h fuel" % (fuel_s / 3600), stoke, 2))
-	if fuel_s > 0:
-		if water.batch==0 and water.ready==0:out.append(_action(stove,water.status(),boil,4,.01))
-	if water.ready>0:out.append(_action(stove,water.status(),take_water,1,.01))
-	elif water.batch>0:out.append(_action(stove,water.status(),func()->void:world._say("Boiling progresses while the stove burns"),0,.01))
-	if fuel_s>0:
-		if cooking.is_empty() and world.inv.has_raw(): out.append(_action(stove, "Cook one portion on stove", cook, 2, .02))
-	if not cooking.is_empty():
-		out.append(_action(stove, ("Remove spoiled food" if cooking.id=="rotten_meat" else "Take cooked food") if float(cooking.remaining_s) <= 0 else "Cooking • %d min left" % int(ceil(float(cooking.remaining_s)/60)), take_cooked, 0, .03))
 	var dry_point:=home_point(Vector3(-1.94,.65,.35))
-	out.append(_action(dry_point,preservation.status(),take_dried if preservation.ready_count()>0 else dry_food,4 if preservation.portions.is_empty() else (1 if preservation.ready_count()>0 else 0),.02))
+	out.append_array(world.fire_actions(fire, stove, update_presentation, 2.1, .8, dry_point))
 	out.append(_action(dry_point,"Read food preparation notes",read_food_notes,0,.04))
 	var rack:=home_point(Vector3(1.87,.18,1.55))
 	out.append(_action(rack, "Take firewood (%d left)" % wood_left, take_wood, 1, .03))
@@ -475,12 +472,10 @@ func verify_relay() -> void:
 	if state.verify():
 		update_presentation();_radio_update()
 		world._say("Circuit commissioned; solar charger connected and backup armed. An empty reserve recovers in daylight. Switch off unneeded loads while it charges. The town grid remains separate.")
-func stoke() -> void:
-	if fuel_s + 2 * 3600 > 16 * 3600: world._say("Stove too full for another log; let the current fuel burn down"); return
-	if world.inv.count("wood") < 1: world._say("Need firewood"); return
-	if fuel_s <= 0 and world.inv.count("matches") < 1: world._say("Need a match to relight the stove"); return
-	if fuel_s <= 0: world.inv.remove("matches")
-	world.inv.remove("wood"); fuel_s += 2 * 3600; update_presentation()
+## Thin wrappers over the shared FireSource rules (scripts, tests, shift tasks).
+func stoke(fuel_id: String = "wood") -> void:
+	var res := fire.stoke(world.inv, fuel_id)
+	world._say(String(res.msg)); update_presentation()
 func take_wood() -> void:
 	if wood_left > 0 and world.inv.can_add("wood"):
 		world.chest_take(pantry,"wood",1)
@@ -494,16 +489,12 @@ func boil() -> void:
 	if fuel_s>0:world._say(water.begin(world.inv));update_presentation()
 	else:world._say("Light the stove before boiling")
 func cook() -> void:
-	if not cooking.is_empty() or fuel_s <= 0: return
-	for id: String in world.inv.counts:
-		if Inventory.ITEMS[id].get("raw", false):
-			var age:=float(world.inv.age.get(id,0))
-			if world.inv.freshness(id)<=0:continue
-			if world.inv.remove(id):cooking=FoodPortion.create(id,Inventory.ITEMS[id].cooked,1200,age);update_presentation();return
+	if fuel_s <= 0: return
+	world._say(cooking.begin(world.inv, true)); update_presentation()
 func take_cooked() -> void:
-	if cooking.is_empty() or float(cooking.remaining_s) > 0: return
-	if FoodPortion.collect(cooking,world.inv):cooking={};update_presentation()
-	else:world._say("Pack full. Food remains on the stove and continues to age.")
+	if cooking.ready_count() == 0: return
+	if cooking.collect(world.inv) > 0: update_presentation()
+	else: world._say("Pack full. Food remains on the stove and continues to age.")
 func dry_food() -> void:
 	if not preservation.portions.is_empty():world._say(preservation.status());return
 	if fuel_s<=0:world._say("Light the stove before starting the drying rack");return
@@ -514,9 +505,10 @@ func take_dried() -> void:
 func read_food_notes() -> void:
 	world.reading.open("Lookout - Food preparation","Cook raw meat or fish on the stove first. One portion needs 20 game minutes of actual burn.\n\nSlice up to four cooked portions with a hunting knife (at least 4% condition); this uses 1% knife condition per portion. The rack needs two game hours of stove burn. Unlit work pauses, but food still spoils. You can leave it running while working outside.\n\nDrying keeps the cooked portion's calories and halves its weight. A fresh dried portion lasts ten game days at normal storage rate. Older food retains the same fraction of shelf life already spent: drying cannot make spoiled food fresh.\n\nCollect finished food promptly. A full pack leaves it on the rack. Keep a meal and drinking water for the next outing; do not spend your final stove fuel just to preserve surplus.",world.player,world.hud)
 func heat_at(eye: Vector3) -> float:
-	if fuel_s <= 0 or not world.fire_lookout.contains_room(eye): return 0
-	var distance: float = eye.distance_to(home_point(Vector3(-1.65,.55,1.20)))
-	return (145.0 + 340.0 * pow(maxf(0,1-distance/3),2)) * minf(1,fuel_s/300)
+	if not world.fire_lookout.contains_room(eye): return 0
+	return fire.heat_at(eye.distance_to(home_point(Vector3(-1.65,.55,1.20))), true)
+func chimney_world() -> Vector3:
+	return world.fire_lookout.to_global(Vector3(-1.65,FireLookout.DECK_Y+4.02,1.20))
 func is_refuge(point: Vector3) -> bool:
 	if world.fire_lookout.contains_room(point): return true
 	if not boundary.is_latched() or not boundary.contains_ground(point): return false
@@ -524,7 +516,7 @@ func is_refuge(point: Vector3) -> bool:
 		if actor is Node3D and not bool(actor.call("is_dead")) and boundary.contains_ground(actor.global_position): return false
 	return true
 func to_dict() -> Dictionary:
-	return {"state":state.to_dict(),"home":{"schema":2,"electrical":electrical.to_dict() if electrical!=null else {},"prepared_water":water.to_dict(),"shift":shift.to_dict() if shift!=null else {},"preservation":preservation.to_dict(),"fuel_s":fuel_s,"wood_left":wood_left,"cooking":cooking.duplicate(true),"storage":pantry.to_dict(),"gate_open":boundary.gate_open,"gate_state":boundary.gate_state()}}
+	return {"state":state.to_dict(),"home":{"schema":2,"electrical":electrical.to_dict() if electrical!=null else {},"shift":shift.to_dict() if shift!=null else {},"fire":fire.to_dict(),"wood_left":wood_left,"storage":pantry.to_dict(),"gate_open":boundary.gate_open,"gate_state":boundary.gate_state()}}
 func _relay_foundations() -> void:
 	var st := SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for foot: Vector2 in [Vector2(-1.04,-1.1),Vector2(1.04,-1.1),Vector2(0,-2.15),Vector2(-.45,0),Vector2(.45,0),Vector2(-.92,-.35)]:

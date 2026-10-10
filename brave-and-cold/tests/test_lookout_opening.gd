@@ -45,7 +45,7 @@ func run() -> void:
 	w.inv.add("matches");op.stoke();check(op.fuel_s>0 and w.inv.count("matches")==0,"cold stove consumes one ignition match")
 	w.inv.add("venison_raw");op.cook();op.fuel_s=30
 	w.clock.total_game_s+=120;op.advance(120)
-	check(is_equal_approx(float(op.cooking.remaining_s),1170),"cooking cannot advance beyond actual stove burn time")
+	check(is_equal_approx(float(op.cooking.portions[0].remaining_s),1170),"cooking cannot advance beyond actual stove burn time")
 	check(op.heat_at(w.fire_lookout.to_global(Vector3(0,1.7,0)))==0,"upstairs stove cannot heat ground through 21 metres")
 	# Independent live devices seek elapsed audio; neither queues missed messages.
 	s.walkie_carried=true;s.receiver_on=false;s.last_s=2.5*3600+s.audio_clock_rate*2
