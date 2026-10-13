@@ -36,6 +36,7 @@ var opening: LookoutOpening
 var route_dressing:RouteDressing
 var first_week:FirstWeekRoute
 var collapse:FirstWeekCollapse
+var town_life:TownLife
 var clinic_plan:Dictionary={}
 var opening_state: LookoutAssignment
 var opening_zombie_count := 250
@@ -386,6 +387,8 @@ func _ready() -> void:
 				player.yaw = fire_lookout.rotation.y; player.pitch = -.08
 	reading=ReadingModal.new();add_child(reading)
 	collapse=FirstWeekCollapse.new();add_child(collapse);collapse.build(self,clinic_plan,sv.get("collapse",{}))
+	if opening_state.enabled and opts.get("town_life","1")!="0":
+		town_life=TownLife.new();add_child(town_life);town_life.build(self,sv.get("town_life",{}),loading and not sv.has("town_life"))
 	pause_menu = PauseMenu.new()
 	add_child(pause_menu)
 	dev = DevMenu.new()
@@ -552,6 +555,7 @@ func _process(delta: float) -> void:
 	if opening != null: opening.advance(gs)
 	if first_week!=null:first_week.update(gs)
 	if collapse!=null:collapse.update(gs)
+	if town_life!=null:town_life.update(gs)
 	if prof_on: _pm('story_route')
 	if inv != null:
 		for sn in inv.tick(gs):
@@ -1808,6 +1812,11 @@ func _update_prompt() -> void:
 		for it:Dictionary in collapse.actions():
 			var pt:Vector3=it.pos
 			if _aim_ok(pt,float(it.get("r",2.1)),float(it.get("tol",.8))):it["m"]=_lm;it["d"]=pt.distance_to(player.position)+float(it.get("dbias",0));cands.append(it)
+	if town_life!=null:
+		for it:Dictionary in town_life.actions():
+			var pt:Vector3=it.pos
+			if _aim_ok(pt,float(it.get("r",2.1)),float(it.get("tol",.8))) and HitZones.building_block(_building_list(),player.position,(pt-player.position).normalized(),player.position.distance_to(pt))>=player.position.distance_to(pt)-.15:
+				it["m"]=_lm;it["d"]=pt.distance_to(player.position);cands.append(it)
 	_chest_cands(cands)
 	_opening_cands(cands, fwd)
 	for cf in campfires:
@@ -2682,7 +2691,7 @@ func _melee_pick(reach: float) -> Node3D:
 	var bt := INF
 	for off: Vector2 in [Vector2(0, 0), Vector2(0.1, 0), Vector2(-0.1, 0), Vector2(0, 0.1), Vector2(0, -0.12), Vector2(0.18, -0.1), Vector2(-0.18, -0.1), Vector2(0, -0.3)]:
 		var d := (cb * Vector3(off.x, off.y, -1.0)).normalized()
-		var r := HitZones.trace(get_tree(), terrain, forest, origin, d, reach, ['hostile'], _building_list())
+		var r := HitZones.trace(get_tree(), terrain, forest, origin, d, reach, ['hostile','resident'], _building_list())
 		if r.has('node') and float(r['t']) < bt:
 			bt = float(r['t'])
 			best = r['node']
@@ -2690,7 +2699,7 @@ func _melee_pick(reach: float) -> Node3D:
 		return best
 	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
 	var bd := reach
-	for h in get_tree().get_nodes_in_group('hostile'):
+	for h in get_tree().get_nodes_in_group('hostile')+get_tree().get_nodes_in_group('resident'):
 		var n := h as Node3D
 		if n == null or (n.has_method('is_dead') and n.call('is_dead')):
 			continue
@@ -2927,7 +2936,7 @@ func _step_bullet(b: Dictionary, dt: float) -> Dictionary:
 	v.y -= GRAV * dt
 	var seg := v * dt
 	var sl := seg.length()
-	var r := HitZones.trace(get_tree(), terrain, forest, p0, seg / sl, sl, ['hostile', 'prey'], _building_list())
+	var r := HitZones.trace(get_tree(), terrain, forest, p0, seg / sl, sl, ['hostile', 'prey','resident'], _building_list())
 	var d0 := float(b['dist'])
 	b['v'] = v
 	b['p'] = p0 + seg
@@ -3474,6 +3483,7 @@ func story_skip_to(day: int, hour: float) -> bool:
 		if opening != null: opening.advance(gs)
 		if first_week != null: first_week.update(gs)
 		if collapse != null: collapse.update(gs)
+		if town_life != null: town_life.update(gs)
 	clock.time_scale = pace
 	sky_rig.apply_hour(clock.hour)
 	return true
@@ -3523,6 +3533,7 @@ func _save_data() -> Dictionary:
 	if opening != null: d['opening'] = opening.to_dict()
 	if first_week!=null:d["first_week"]=first_week.to_dict()
 	if collapse!=null:d["collapse"]=collapse.to_dict()
+	if town_life!=null:d["town_life"]=town_life.to_dict()
 	return d
 
 

@@ -70,7 +70,8 @@ var _spine_bone:=-1
 var _head_bone:=-1
 var _spine_rest:=Quaternion.IDENTITY
 var _head_rest:=Quaternion.IDENTITY
-static var _contact_templates:Array=[]
+static var _contact_models:Dictionary={}
+var _contact_templates:Array=[]
 const COLLAPSE_S:=.85
 var _death_progress:=0.0
 var _death_start_rotation:=Vector3.ZERO
@@ -100,7 +101,7 @@ var _vault_from := Vector3.ZERO
 var _vault_to := Vector3.ZERO
 
 
-func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, bus: NoiseBus, seed_value: int) -> void:
+func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, bus: NoiseBus, seed_value: int, model_path: String = MODEL) -> void:
 	terrain = t
 	snow = s
 	player = p
@@ -110,7 +111,7 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	_id = seed_value
 	_bus = bus
 	bus.register(self)
-	_model = (load(MODEL) as PackedScene).instantiate()
+	_model = (load(model_path) as PackedScene).instantiate()
 	add_child(_model)
 	for candidate:Node in _model.find_children("*","Skeleton3D",true,false):
 		_skin = candidate as Skeleton3D;break
@@ -119,7 +120,7 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	if _skin!=null:_skin.reset_bone_poses()
 	for mi:MeshInstance3D in _model.find_children("*","MeshInstance3D",true,false):
 		if String(mi.name).contains("winter_canvas"):_coat_meshes.append(mi)
-	if _coats.is_empty() and not _coat_meshes.is_empty():
+	if model_path == MODEL and _coats.is_empty() and not _coat_meshes.is_empty():
 		var original:=_coat_meshes[0].mesh.surface_get_material(0) as StandardMaterial3D
 		for color:Color in [Color(1,1,1),Color(.72,.87,1.12)]:
 			var m:=original.duplicate() as StandardMaterial3D;m.albedo_color=color;_coats.append(m)
@@ -687,6 +688,8 @@ func _death_pose(t:float)->void:
 ## These are visual support probes, not new collision shapes or rigid bodies.
 func _prepare_contact_samples()->void:
 	if _skin==null or not _contact_templates.is_empty():return
+	var model_key:=_model.scene_file_path
+	if _contact_models.has(model_key):_contact_templates=_contact_models[model_key];return
 	for mi:MeshInstance3D in _model.find_children("*","MeshInstance3D",true,false):
 		if mi.skin==null:continue
 		var bone_ids:=PackedInt32Array();var binds:Array[Transform3D]=[]
@@ -712,6 +715,7 @@ func _prepare_contact_samples()->void:
 				if used.has(i):continue
 				used[i]=true;points.append([vertices[i],slots.slice(i*stride,(i+1)*stride),weights.slice(i*stride,(i+1)*stride)])
 			_contact_templates.append({"bone_ids":bone_ids,"binds":binds,"points":points})
+	_contact_models[model_key]=_contact_templates
 
 func _corpse_floor(p:Vector3)->float:
 	if terrain==null or terrain.data==null:return global_position.y

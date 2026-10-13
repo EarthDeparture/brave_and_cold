@@ -1,0 +1,139 @@
+class_name TownResident
+extends Zombie
+## Reuse the proven skin, hit zones and foot contact, not the hostile brain.
+var resident_id := ""
+var life: Node3D
+var phase := TownResidentState.Phase.ORDINARY
+var route: Array[Vector3] = []
+var route_index := 0
+var routine_s := 0.0
+var talking := false
+var infected := false
+var turn_s := -1.0
+var _pause_s := 2.0
+var _pose_clock := 0.0
+var _rest_pitch := 0.0
+var leaving := false
+var _alarm_s := 0.0
+
+func _apply_coat(_seed: int) -> void: pass # Keep each imported civilian outfit.
+func _pick_wander() -> void:
+	# The named owner's quiet infected idle stays in the shop; chase/noise can leave.
+	if life != null and resident_id == "rowan":
+		_target = life.store.to_global(Vector3(2.52, Store.FLOOR_LOCAL_Y, _rng.randf_range(-.8,.9)))
+	else: super._pick_wander()
+
+func initialize(owner: Node3D, id: String, points: Array[Vector3], saved: Dictionary) -> void:
+	life = owner; resident_id = id; route = points
+	setup(life.world.terrain,life.world.snow,life.world.player,life.world.forest,life.world.colliders,life.world.noise_bus,901 if id=="rowan" else (903 if id=="lin" else 905),"res://assets/town_residents/"+{"rowan":"rowan_shopkeeper","lin":"lin_runner","sam":"sam_clinic"}[id]+".glb")
+	_base_scale = 1.0; _model.scale = Vector3.ONE
+	remove_from_group("hostile"); add_to_group("resident")
+	global_position = route[0]; rotation.y = life.store.rotation.y+PI/2
+	hp = float(saved.hp); route_index = clampi(int(saved.get("route_index",0)),0,route.size()-1)
+	routine_s = float(saved.get("routine_s",0))
+	if saved.has("position"):
+		var p: Array = saved.position
+		if p.size()==3 and is_finite(float(p[0])) and is_finite(float(p[1])) and is_finite(float(p[2])):
+			global_position = Vector3(p[0],p[1],p[2]); rotation.y = float(saved.get("yaw",rotation.y))
+	_bind_skin_drivers()
+	died.connect(func() -> void: life.history.killed(resident_id); remove_from_group("resident"))
+	state = State.IDLE; _gait_speed = 0; speed_now = 0
+
+func set_phase(next: int, restoring := false) -> void:
+	if phase == next and not restoring: return
+	phase = next; talking = false
+	if next == TownResidentState.Phase.DEAD:
+		if state != State.DEAD: _die()
+		if restoring: _death_progress=1;_dead_t=float(life.history.record(resident_id).get("dead_s",0)); _death_pose(1)
+		return
+	if next == TownResidentState.Phase.DEPARTED:
+		leaving=true;talking=false;route=life.departure_route(self);route_index=0;_pause_s=0
+		life.history.record(resident_id).leaving=true
+		if restoring:route_index=clampi(int(life.history.record(resident_id).get("exit_index",0)),0,route.size()-1)
+		if global_position.distance_squared_to(player.position)>80*80 and not life.observed(self):
+			life.history.record(resident_id).departed=true;remove_from_group("resident");_bus.unregister(self);visible=false;set_process(false)
+		return
+	if next == TownResidentState.Phase.INFECTED:
+		infected=true; remove_from_group("resident"); add_to_group("hostile"); _bus.register(self)
+		turn_s = float(life.history.record(resident_id).get("turn_s",0)) if restoring else 0.0
+		state = State.IDLE; _attack_windup=-1; _cd=COOLDOWN
+		_gait.reset(); _pick_wander()
+
+func hit(amount: float, source: Vector3) -> void:
+	if infected: super.hit(amount, source); return
+	if state == State.DEAD: return
+	hp -= amount; talking=false; _stagger=.5
+	if hp <= 0: _die()
+	else: damaged.emit()
+
+func on_noise(p: Vector3, radius: float, source: Object) -> void:
+	if infected: super.on_noise(p,radius,source)
+	elif state!=State.DEAD and radius>=10: _alarm_s=3;talking=false;_target=p
+func on_light(p: Vector3, radius: float, source: Object) -> void:
+	if infected: super.on_light(p,radius,source)
+
+func _move(want: float, delta: float) -> void:
+	# The front aisle is the only clear way around the existing shop counter.
+	# Keep the real store collision; route the owner's pursuit around its end.
+	var desired := _target
+	if infected and resident_id == "rowan":
+		var p: Vector3 = life.store.to_local(global_position)
+		var to: Vector3 = life.store.to_local(_target)
+		if p.x > 2.05 and to.x < 2.05:
+			_target = life.store.to_global(Vector3(2.52,Store.FLOOR_LOCAL_Y,1.78)) if p.z < 1.65 else life.store.to_global(Vector3(.0,Store.FLOOR_LOCAL_Y,1.78))
+	super._move(want,delta); _target = desired
+
+func _process(delta: float) -> void:
+	if life == null: return
+	if state == State.DEAD: super._process(delta); return
+	if infected:
+		if turn_s >= 0 and turn_s < 2.5:
+			turn_s += delta; _stagger=0; _gait_speed=0; speed_now=0
+			_model.rotation.x=lerpf(_rest_pitch,0,smoothstep(0,1.5,turn_s)); _animate(delta)
+			return
+		super._process(delta)
+		if state!=State.DEAD and _vault_t<0 and not crawling:_model.rotation.x=.08
+		return
+	if global_position.distance_squared_to(player.position)>100*100: return
+	if leaving:
+		var goal:=route[route_index]
+		if Vector2(goal.x-global_position.x,goal.z-global_position.z).length()<.16:
+			if route_index<route.size()-1:route_index+=1
+			elif not life.observed(self):
+				life.history.record(resident_id).departed=true;remove_from_group("resident");_bus.unregister(self);visible=false;set_process(false);return
+		_target=route[route_index];_move(.85 if route_index<route.size()-1 or global_position.distance_to(_target)>.16 else 0,delta)
+		_animate(delta);return
+	_pose_clock += delta; routine_s += delta; _stagger=maxf(0,_stagger-delta)
+	_alarm_s=maxf(0,_alarm_s-delta)
+	var stopped := talking or phase >= TownResidentState.Phase.ILL or _alarm_s>0
+	if not stopped:
+		var goal := route[route_index]
+		if Vector2(goal.x-global_position.x,goal.z-global_position.z).length()<.14:
+			_pause_s -= delta
+			if _pause_s<=0: route_index=(route_index+1)%route.size(); _pause_s=4.0 if resident_id=="rowan" else 2.0
+			stopped=true
+		else:
+			# Yield without pushing the player or oscillating contact correction.
+			stopped=Vector2(player.position.x-global_position.x,player.position.z-global_position.z).length()<.85
+			if not stopped: _target=goal; _move(.65 if resident_id=="rowan" else .85,delta)
+	if stopped:
+		speed_now=move_toward(speed_now,0,delta*4); _gait_speed=0
+		if talking: _face(player.position,delta,3)
+		elif _alarm_s>0:_face(_target,delta,3)
+	_animate(delta)
+	# Healthy posture: quiet arm swing and a task gesture, not a reaching shambler.
+	for i in 2:
+		_arms[i].rotation.x=-sin(_phase+i*PI)*minf(.14,speed_now*.12)
+		_elbows[i].rotation.x=.12
+	if stopped and resident_id=="rowan" and not talking and phase<TownResidentState.Phase.ILL:
+		_face(life.store.to_global(Vector3(1.65,Store.FLOOR_LOCAL_Y,life.store.to_local(global_position).z)),delta,3)
+		_arms[1].rotation.x=.18+.04*sin(_pose_clock*1.3); _elbows[1].rotation.x=.30
+	if phase==TownResidentState.Phase.ILL:
+		_arms[0].rotation.x=.55; _elbows[0].rotation.x=.70
+	var pitch_target := .28 if phase==TownResidentState.Phase.UNRESPONSIVE else (.12 if phase==TownResidentState.Phase.ILL else 0.0)
+	_rest_pitch=move_toward(_rest_pitch,pitch_target,delta*.16); _model.rotation.x=_rest_pitch
+	_deform_skin()
+	if _spine_bone>=0: _skin.set_bone_pose_rotation(_spine_bone,_spine_rest*Quaternion(Vector3.RIGHT,.015*sin(_pose_clock*1.1)))
+
+func snapshot() -> Dictionary:
+	return {"hp":maxf(0,hp),"position":[global_position.x,global_position.y,global_position.z],"yaw":rotation.y,"route_index":route_index,"routine_s":routine_s,"leaving":leaving,"exit_index":route_index,"turn_s":turn_s,"dead_s":_dead_t,"corpse_cleared":state==State.DEAD and _dead_t>CORPSE_LIFE_S}
