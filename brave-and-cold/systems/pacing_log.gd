@@ -17,10 +17,10 @@ var _last_pos := Vector3.INF
 var _seen_interactions := 0
 var _row_interactions := 0
 
-func start(w: Node3D) -> void:
+func start(w: Node3D, directory: String = "user://pacing") -> void:
 	world = w
-	DirAccess.make_dir_recursive_absolute("user://pacing")
-	path = "user://pacing/pacing_%d.csv" % int(Time.get_unix_time_from_system())
+	DirAccess.make_dir_recursive_absolute(directory)
+	path = directory.path_join("pacing_%d.csv" % int(Time.get_unix_time_from_system()))
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	if f == null: path = ""; return
 	f.store_line("real_min,day,time,phase,work_done,work_total,next_task,metres,interactions,idle_s,worst_idle_s,infected_alive")

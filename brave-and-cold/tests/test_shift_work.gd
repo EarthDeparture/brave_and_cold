@@ -78,7 +78,7 @@ func run() -> void:
 	check(sw.order_text().begins_with("*** SUSPENDED") and sw.next_task_title().begins_with("Suspended") and sw.tasks.suspend_noted, "day three 08:00 suspends the work order")
 	check(sw.tasks.reports.has("2"), "a slept-through evening still files its report")
 	# ---- pacing log
-	var pl := PacingLog.new(); w.add_child(pl); pl.start(w)
+	var pl := PacingLog.new(); w.add_child(pl); pl.start(w,"res://shots/town-life/pacing-test")
 	w.interaction_count += 2; pl._process(.5); pl._write()
 	var lines := FileAccess.get_file_as_string(pl.path).strip_edges().split("\n")
 	check(lines.size() == 2 and lines[1].split(",").size() == 12 and lines[1].split(",")[8] == "2", "pacing log writes one CSV row with the interaction count")

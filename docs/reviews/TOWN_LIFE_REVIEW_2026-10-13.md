@@ -1,0 +1,43 @@
+# North Ridge town encounter
+
+Implemented from 33715e0 on codex/opening-quality. Recovery tag: checkpoint/pre-town-life-2026-10-13. Local commits only, no push. Existing map placement, terrain, store layout, surveyed access, radio schedules, reserved equipment, finite stock and anonymous cohort budget are preserved.
+
+## What to play
+
+On either quiet work day, follow the logging track to North Ridge Supply. Rowan Bell works in the clear aisle behind the existing counter. Aim at him and choose **Talk to Rowan Bell**. The optional bottom conversation panel offers equipment, delivery and local-people topics; Esc or X leaves. Time continues. Talking issues no items, grants no replenishment and is not required to collect the relay or winter controller. The counted display stock is covered by the crew account, avoiding an unexplained theft/trading requirement.
+
+Lin Hu walks a short service-area loop outside the store; Sam Roy checks the clinic entrance. Both can be approached for brief practical exchanges. Their appearance and routes are distinct. They are deliberately three authored people rather than a generic town-life simulation.
+
+Rowan becomes worried on day two. Delivery replies use the current day/hour: they cannot describe the held truck before the 14:00 dispatch information. His family exposure predates the player's Monday arrival. At day-three 11:00 he is visibly ill, at 18:00 he stops responding, and at 21:00 the same actor becomes infected. The body never disappears and is replaced while watched. A 2.5-second recognition interval precedes the hostile brain; the store closes counter service and the physical issue ledger gives local evidence. Nothing replays missed broadcasts or offers a rescue quest the game cannot honor.
+
+Rowan retains his cap and apron after infection, follows the existing infected combat/terrain rules, and can pursue around the front of the counter using its actual collision. He can leave the store during pursuit. Death before or after infection is terminal. Health, meeting/topic history, position, route progress, turn progress, departures and corpse expiry are saved separately from pooled anonymous zombies. A cleared corpse stays cleared on reload. The ledger and reserved equipment survive his death.
+
+Lin withdraws at day-three 08:00; Sam at 14:00. Nearby workers walk into their buildings instead of snapping out of existence. They stop participating only when out of view or occluded; an observer can keep watching them. Their onward travel is offscreen, and no claim is made that a full evacuation across the map is simulated. Closed doors continue to block them; the system does not silently open player-barricaded buildings.
+
+Old saves without resident state receive calendar-correct residents. If such a late save loads near the store, Rowan's first materialization waits until the player leaves a 40 m map-plane radius. That pending state survives another save/reload. This uses horizontal proximity because Player.place temporarily holds Y at 400 before its first grounding pass. Existing living characters are not teleported away by this migration rule.
+
+## Art and presentation
+
+Original project assets were authored into a new Blender destination, preserving the original worker source. Rowan uses 18,574 triangles and ten material surfaces, a rust cap and a shaped canvas apron. Sam and Lin use 17,790 triangles and seven surfaces, with independently baked blue/tan albedos. All retain the thirteen-bone skin, cloth normal/roughness maps and metre scale. Editable packed source: tools/blender/generated/town_residents/north_ridge_residents.blend. The 19 x 27 cm ledger has its own native source and original geometry/writing. It sits in a clear counter space beside the existing first-aid display, clear of the register and reserved equipment.
+
+The initial material-tint approach exported identical supporting outfits; those bytes were rejected and replaced with distinct baked albedos. The first work gesture read as a wave and was replaced with restrained stock-checking posture. The first conversation layout grew beyond the screen; the final panel has a bounded bottom layout with stacked choices at narrower widths. Shared corpse support is now cached by model, preserving correct support for both civilians and pooled workers.
+
+Conversation is live text. Directed voices, lip acting, a broader civilian wardrobe, full daily shelter/resource routines and NPC-versus-infected combat are future work; they are not represented as completed systems. This slice establishes the persistent encounter and its consequences before adding those broader simulations.
+
+## Evidence and limits
+
+The retained evidence directory contains actual Godot captures, independent GLB/source validation, test receipts and local timing diagnostics. The test suite exercises walking, counter pursuit, observed transformation, partial injuries, interaction interruption/Esc, stable height-aware clearance, death, corpse cleanup, actual reloads, legacy migration and parts independence. Existing skin/gait, collapse, electrical assignment, lookout opening and quiet-day work checks were also run. Production pacing still writes to user://pacing; its test now selects a workspace-only directory so it does not touch a player's files.
+
+**466 gameplay/pose checks and 111 independent asset checks pass, zero failures.** The town-specific suite contributes 47 checks, including six real world constructions/restorations. Receipts retain test-log hashes and runtime/asset/capture hashes. Native captures are previewed at up to 1600x900 in the review directory; source image dimensions and hashes are retained. Existing sandbox log/cache/certificate warnings and engine shutdown RID/ObjectDB warnings remain separate from runtime script/failed-assertion acceptance. The editor import has the pre-existing Terrain3D DoubleSlider Nil-to-int error; runtime test/capture/timing receipts contain no script errors.
+
+The earlier clinic diagnostic reported warm base GPU time around 14.61 ms and 10.94 ms with post effects disabled. This is attribution evidence, not a recommendation to remove the game's visual effects or proof that the previous frame regression is fixed. Actor positions and host load vary during that diagnostic.
+
+An initial timing attempt exited through the world's screenshot hook, and a subsequent D3D12 run reported buffer-creation failure 0x887a0005. A Vulkan retry completed but had no resident centres in view and a 3200x1800 viewport; those results are rejected for NPC-cost acceptance. The fixture was corrected to set player-controlled yaw/pitch, warm resident rendering, assert the actual 1920x1080 viewport and require a resident in each enabled sample. The project renderer settings were not changed.
+
+The corrected **Forward+ D3D12 / GTX 1080 Ti / 1920x1080** run completed without script or buffer-creation errors. Six interleaved eight-second samples discard their first two seconds. Three resident nodes exist in both variants; one resident centre is in view in each enabled sample. Median-of-repeat frame intervals are **12.056 ms enabled / 12.352 ms disabled**, and enabled P95 values range **13.972–14.595 ms**. This small negative difference is within uncontrolled-host/world variability and is not a speed-up claim. The result measures this counter scene with three bounded routines, not three simultaneously visible people, combat, the crowded clinic, cold loading or minimum hardware. The prior crowded-world regression is not claimed fixed.
+
+No unfamiliar-player recognition, emotional response or complete first-shift/first-night acceptance is claimed. The next playtest should compare a routine equipment visit with a day-four return, then test watching the entire transition, killing Rowan early, arriving late and returning after a reload. After that, prioritize directed performance, supporting-worker weather/shelter behaviour and the specific store/clinic surfaces exposed by those visits.
+
+## Reversal
+
+Assets are isolated in c616ba8; encounter runtime and plan are in d1c0118. The final QA checkpoint contains the fixtures, receipts and pacing-test directory seam. For a complete rollback, revert that QA checkpoint first, then d1c0118, then c616ba8. Preserve review images separately beforehand if wanted. Do not reset the shared branch, overwrite other contributors' work or restore older user saves. The recovery tag identifies the exact pre-pass commit, 33715e0. Earlier game code ignores the additive town_life save block; existing inventory, electrical, clock and anonymous-population records retain their prior meanings.
