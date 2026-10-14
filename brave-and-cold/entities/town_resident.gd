@@ -15,6 +15,8 @@ var _pose_clock := 0.0
 var _rest_pitch := 0.0
 var leaving := false
 var _alarm_s := 0.0
+var _health_materials:Array[StandardMaterial3D]=[]
+var _finger_frames:Array=[]
 
 func _apply_coat(_seed: int) -> void: pass # Keep each imported civilian outfit.
 func _pick_wander() -> void:
@@ -25,23 +27,26 @@ func _pick_wander() -> void:
 
 func initialize(owner: Node3D, id: String, points: Array[Vector3], saved: Dictionary) -> void:
 	life = owner; resident_id = id; route = points
-	setup(life.world.terrain,life.world.snow,life.world.player,life.world.forest,life.world.colliders,life.world.noise_bus,901 if id=="rowan" else (903 if id=="lin" else 905),"res://assets/town_residents/"+{"rowan":"rowan_shopkeeper","lin":"lin_runner","sam":"sam_clinic"}[id]+".glb")
+	setup(life.world.terrain,life.world.snow,life.world.player,life.world.forest,life.world.colliders,life.world.noise_bus,901 if id=="rowan" else (903 if id=="lin" else 905),"res://assets/modular_human/"+id+".glb")
 	_base_scale = 1.0; _model.scale = Vector3.ONE
 	remove_from_group("hostile"); add_to_group("resident")
 	global_position = route[0]; rotation.y = life.store.rotation.y+PI/2
 	hp = float(saved.hp); route_index = clampi(int(saved.get("route_index",0)),0,route.size()-1)
+	turn_s=float(saved.get("turn_s",-1));infected=bool(life.history.record(id).get("dead",false)) and turn_s>=0
 	routine_s = float(saved.get("routine_s",0))
 	if saved.has("position"):
 		var p: Array = saved.position
 		if p.size()==3 and is_finite(float(p[0])) and is_finite(float(p[1])) and is_finite(float(p[2])):
 			global_position = Vector3(p[0],p[1],p[2]); rotation.y = float(saved.get("yaw",rotation.y))
 	_bind_skin_drivers()
+	_prepare_appearance()
 	died.connect(func() -> void: life.history.killed(resident_id); remove_from_group("resident"))
 	state = State.IDLE; _gait_speed = 0; speed_now = 0
 
 func set_phase(next: int, restoring := false) -> void:
 	if phase == next and not restoring: return
 	phase = next; talking = false
+	_apply_health_appearance()
 	if next == TownResidentState.Phase.DEAD:
 		if state != State.DEAD: _die()
 		if restoring: _death_progress=1;_dead_t=float(life.history.record(resident_id).get("dead_s",0)); _death_pose(1)
@@ -58,6 +63,35 @@ func set_phase(next: int, restoring := false) -> void:
 		turn_s = float(life.history.record(resident_id).get("turn_s",0)) if restoring else 0.0
 		state = State.IDLE; _attack_windup=-1; _cd=COOLDOWN
 		_gait.reset(); _pick_wander()
+
+func _prepare_appearance()->void:
+	# Private material copies keep one person's deterioration off other bodies.
+	for mesh:MeshInstance3D in _model.find_children("*","MeshInstance3D",true,false):
+		for surface in mesh.mesh.get_surface_count():
+			var original:=mesh.mesh.surface_get_material(surface) as StandardMaterial3D
+			if original!=null and original.resource_name=="HumanSkin":
+				var material:=original.duplicate() as StandardMaterial3D
+				mesh.set_surface_override_material(surface,material);_health_materials.append(material)
+	for side:String in ["l","r"]:
+		for digit:String in ["index","middle","ring","little","thumb"]:
+			for segment in range(1,4):
+				var bone:=_skin.find_bone("%s_%d_%s"%[digit,segment,side])
+				if bone>=0:
+					var frame:=_skin.get_bone_global_rest(bone).basis.orthonormalized()
+					_finger_frames.append([bone,_skin.get_bone_rest(bone).basis*frame.inverse(),frame,segment,digit=="thumb"])
+	_apply_health_appearance()
+
+func _apply_health_appearance()->void:
+	var pallor:=Color.WHITE
+	if phase==TownResidentState.Phase.ILL:pallor=Color(.88,.96,.92)
+	elif phase==TownResidentState.Phase.UNRESPONSIVE:pallor=Color(.78,.90,.84)
+	elif phase==TownResidentState.Phase.INFECTED or (phase==TownResidentState.Phase.DEAD and infected):pallor=Color(.67,.80,.70)
+	for material:StandardMaterial3D in _health_materials:material.albedo_color=pallor
+	for row:Array in _finger_frames:
+		var curl:float=[.10,.27,.12][int(row[3])-1]
+		if row[4]:curl*=.6
+		if phase==TownResidentState.Phase.INFECTED:curl*=1.7
+		_skin.set_bone_pose_rotation(row[0],(row[1]*Basis(Vector3.RIGHT,curl)*row[2]).get_rotation_quaternion())
 
 func hit(amount: float, source: Vector3) -> void:
 	if infected: super.hit(amount, source); return
