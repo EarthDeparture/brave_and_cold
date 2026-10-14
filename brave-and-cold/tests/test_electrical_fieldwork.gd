@@ -71,7 +71,7 @@ func run() -> void:
 	check(field.packet.visible and field.controller_stock.visible and field.cable.visible,"new game starts with finite prepared stock visible")
 	var road_clear:=INF
 	for row:Array in w.fire_lookout.site.path.points_world_xyz:road_clear=minf(road_clear,Vector2(field.cable.global_position.x,field.cable.global_position.z).distance_to(Vector2(row[0],row[2])))
-	check(road_clear>1.85 and field.packet.get_parent()==w.first_week._lid and field.packet.position.x+.116<.08 and absf(ElectricalFieldwork.DEPOT_LOCAL.x-LookoutOpening.CASE_LOCAL.x)>.7,"cable stays off walking lane, packet follows crate lid and depot stock clears reserved relay")
+	check(road_clear>1.85 and field.packet.get_parent()==w.first_week._lid and field.packet.position.x+.116<.08 and absf(ElectricalFieldwork.DEPOT_LOCAL.z-LookoutOpening.CASE_LOCAL.z)>.34 and is_equal_approx(ElectricalFieldwork.DEPOT_LOCAL.x,1.60),"cable stays off walking lane, packet follows crate lid and supported depot stock clears reserved relay along the counter")
 	field.read_record()
 	check(w.reading._body.text.contains("optional") and w.reading._body.text.contains("78%") and w.reading._body.text.contains("June"),"readable field record explains optional refit and named crew continuity")
 	w.reading.close()

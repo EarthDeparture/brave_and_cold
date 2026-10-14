@@ -61,7 +61,7 @@ var electrical: ElectricalFieldwork
 var shift: ShiftWork
 var _power_label: Label3D
 const RELAY_LOCAL := Vector3(-9, 0, -6)
-const CASE_LOCAL := Vector3(1.60, 1.42, 1.02)
+const CASE_LOCAL := Vector3(1.60, 1.402, 1.11)
 
 func stove_point(offset: Vector3) -> Vector3:
 	return FireLookout.STOVE_CENTER+Vector3.UP*FireLookout.DECK_Y+Basis(Vector3.UP,FireLookout.STOVE_YAW)*offset

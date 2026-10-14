@@ -11,7 +11,7 @@ const WALL_T := 0.12
 const DOOR_HALF := 0.5
 const RAMP_LEN := 1.4
 ## Physical stock locations for the three existing searches.
-const LOOT_SPOTS := [Vector3(-1.5, 1.53, -1.95), Vector3(1.59, 1.50, -0.92), Vector3(-2.49, 1.11, -0.9)]
+const LOOT_SPOTS := [Vector3(-1.5, 1.517, -1.95), Vector3(1.59, 1.487, -0.92), Vector3(-2.49, 1.207, -0.9)]
 const LOOT_NAMES := ["Search shelves", "Search counter", "Search crates"]
 
 var detail_enabled := false
@@ -80,7 +80,7 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	openings.append(Opening.make(self, "window", 1.0, 0.8, Vector3(-HX, 1.5, 0.0), -90.0))
 	if detail_enabled:
 		var identity:Node3D=(load("res://assets/route_detail/store_identity.glb") as PackedScene).instantiate();add_child(identity)
-		_dressing=(load("res://assets/route_detail/store_dressing.glb") as PackedScene).instantiate();add_child(_dressing)
+		_dressing=(load("res://assets/store_supported/store_dressing.glb") as PackedScene).instantiate();add_child(_dressing)
 		for node:MeshInstance3D in identity.find_children("*","MeshInstance3D",true,false):node.visibility_range_end=220
 		for node:MeshInstance3D in _dressing.find_children("*","MeshInstance3D",true,false):node.visibility_range_end=85
 		update_loot_visuals()
@@ -91,6 +91,24 @@ func update_loot_visuals()->void:
 	for i in 3:
 		var stock:Node3D=_dressing.find_child(["ShelfStock","CounterStock","CrateStock"][i],true,false)
 		if stock!=null:stock.visible=not looted[i]
+
+func support_rifle(pickup:ItemPickup)->void:
+	# Empty middle-shelf section: 1.2 m long and .35 m deep, top 1.425 m.
+	pickup.support="store_rifle";pickup.rotation.y=rotation.y
+	var gun:=pickup.get_child(0) as Node3D
+	gun.rotation=Vector3(0,PI/2,PI/2);gun.position=Vector3.ZERO
+	var lo:=Vector3(INF,INF,INF);var hi:=-lo
+	for m:MeshInstance3D in gun.find_children("*","MeshInstance3D",true,false):
+		for surface in m.mesh.get_surface_count():
+			for v:Vector3 in m.mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]:
+				var q:=pickup.to_local(m.to_global(v));lo=lo.min(q);hi=hi.max(q)
+	gun.position=Vector3(-(lo.x+hi.x)*.5,-lo.y,-(lo.z+hi.z)*.5)
+	pickup.global_position=to_global(Vector3(.95,1.427,-2.0))
+
+func is_legacy_rifle_cache(pickup:ItemPickup)->bool:
+	# Old authored cache used the search marker plus floor height. Player drops
+	# are placed on the floor, so this exact elevated spot is safe to migrate.
+	return pickup.id=="north_service_rifle" and pickup.n==1 and pickup.cond<0 and to_local(pickup.global_position).distance_to(Vector3(-1.5,1.83,-1.95))<.003
 
 func _build_door() -> void:
 	_door_pivot = Node3D.new()
@@ -141,7 +159,7 @@ func restore_state(d: Dictionary) -> void:
 
 func loot_world_pos(i: int) -> Vector3:
 	var s: Vector3 = LOOT_SPOTS[i]
-	return to_global(Vector3(s.x, FLOOR_LOCAL_Y + s.y, s.z))
+	return to_global(s)
 
 
 func noise_leak() -> float:

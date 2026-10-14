@@ -2873,7 +2873,8 @@ func _place_rifle_caches() -> void:
 	if not huts.is_empty(): spots.append(['ridge_scout_rifle', (huts[0] as Hut).tackle_world_pos() + Vector3(.35, .01, .35)])
 	if huts.size() > 1: spots.append(['expedition_rifle', (huts[huts.size() - 1] as Hut).tackle_world_pos() + Vector3(.35, .01, .35)])
 	for s: Array in spots:
-		ItemPickup.spawn(self, String(s[0]), 1, s[1] as Vector3)
+		var pickup:=ItemPickup.spawn(self, String(s[0]), 1, s[1] as Vector3)
+		if pickup.id=="north_service_rifle" and not stores.is_empty():(stores[0] as Store).support_rifle(pickup)
 	print('RIFLE_CACHES ', spots.map(func(s: Array) -> String: return String(s[0])))
 
 
@@ -3542,7 +3543,7 @@ func _pickup_list() -> Array:
 	for pk in get_tree().get_nodes_in_group('pickups'):
 		var ip := pk as ItemPickup
 		if ip != null and not ip.is_queued_for_deletion():
-			out.append({'id': ip.id, 'n': ip.n, 'x': ip.global_position.x, 'y': ip.global_position.y, 'z': ip.global_position.z, 'c': ip.cond,'age_s':ip.age_s})
+			out.append({'id': ip.id, 'n': ip.n, 'x': ip.global_position.x, 'y': ip.global_position.y, 'z': ip.global_position.z, 'c': ip.cond,'age_s':ip.age_s,'support':ip.support})
 	return out
 
 
@@ -3585,7 +3586,10 @@ func _restore_creatures(sv: Dictionary) -> void:
 		if Inventory.ITEMS.has(String(e['id'])):
 			var pickup_pos := _ground(float(e['x']), float(e['z']))
 			if e.has('y'): pickup_pos.y = float(e['y'])
-			ItemPickup.spawn(self, String(e['id']), int(e['n']), pickup_pos, float(e.get('c', -1.0)),float(e.get('age_s',0)))
+			var pickup:=ItemPickup.spawn(self, String(e['id']), int(e['n']), pickup_pos, float(e.get('c', -1.0)),float(e.get('age_s',0)))
+			if pickup.id=="north_service_rifle" and not stores.is_empty():
+				var shop:=stores[0] as Store
+				if e.get('support',"")=="store_rifle" or shop.is_legacy_rifle_cache(pickup):shop.support_rifle(pickup)
 	var i := 0
 	for e in sv.get('wolves', []):
 		var w := _add_wolf(_ground(float(e['x']), float(e['z'])), i)

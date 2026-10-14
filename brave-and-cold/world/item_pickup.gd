@@ -5,6 +5,7 @@ extends Node3D
 var id := ""
 var n := 1
 var age_s:=0.0
+var support := "" # Only authored placements; ordinary player drops keep their position.
 var cond := -1.0   # worn tools keep their condition on the ground (-1 = pristine); dropping must not repair them
 
 

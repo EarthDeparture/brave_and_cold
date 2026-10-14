@@ -8,7 +8,7 @@ var controller_stock: Node3D
 var cable: Node3D
 var slate: Node3D
 var issue_label: Label3D
-const DEPOT_LOCAL := Vector3(.82,1.42,1.02)
+const DEPOT_LOCAL := Vector3(1.60,1.402,.75)
 
 func build(w: Node3D, saved: Dictionary) -> void:
 	world=w;service.restore(saved)
@@ -21,7 +21,7 @@ func build(w: Node3D, saved: Dictionary) -> void:
 	if not world.stores.is_empty():
 		var kit:=prop("controller_case",world.stores[0],DEPOT_LOCAL)
 		controller_stock=kit.find_child("ControllerStock",true,false) as Node3D
-		slate=prop("delivery_slate",world.stores[0],Vector3(.20,1.42,1.02))
+		slate=prop("delivery_slate",world.stores[0],Vector3(1.60,1.402,.07))
 		issue_label=Label3D.new();slate.add_child(issue_label);issue_label.position=Vector3(0,.023,.018);issue_label.rotation.x=-PI/2
 		issue_label.font_size=26;issue_label.pixel_size=.0008;issue_label.outline_size=0;issue_label.shaded=true
 		issue_label.modulate=Color(.18,.22,.18)

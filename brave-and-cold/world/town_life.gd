@@ -18,7 +18,7 @@ func build(w: Node3D, saved: Dictionary={}, legacy:=false) -> void:
 	store=w.stores[0];dialogue=JSON.parse_string(FileAccess.get_file_as_string("res://data/town_dialogue.json"))
 	history.restore(saved)
 	conversation=TownConversation.new();conversation.life=self;add_child(conversation)
-	ledger=(load("res://assets/town_residents/issue_ledger.glb") as PackedScene).instantiate();store.add_child(ledger);ledger.position=Vector3(1.60,1.416,-1.17);ledger.rotation.y=PI/2
+	ledger=(load("res://assets/town_residents/issue_ledger.glb") as PackedScene).instantiate();store.add_child(ledger);ledger.position=Vector3(1.60,1.407,-1.17);ledger.rotation.y=PI/2
 	closed_sign=Label3D.new();store.add_child(closed_sign);closed_sign.text="CLOSED\nCollect marked service cases";closed_sign.font_size=40;closed_sign.pixel_size=.0017
 	closed_sign.position=Vector3(.82,1.60,Store.HZ+.14);closed_sign.modulate=Color(.86,.76,.59)
 	var backing:=MeshInstance3D.new();backing.mesh=BoxMesh.new();backing.mesh.size=Vector3(.75,.24,.012);closed_sign.add_child(backing);backing.position.z=-.005
