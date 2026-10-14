@@ -8,9 +8,19 @@ class GLB:
   self.doc=json.loads(raw[20:20+jl]);bl,bt=struct.unpack_from('<II',raw,20+jl);assert bt==0x004e4942
   self.binary=raw[28+jl:28+jl+bl]
  def acc(self,i):
-  a=self.doc['accessors'][i];v=self.doc['bufferViews'][a['bufferView']]
+  a=self.doc['accessors'][i]
   n={'SCALAR':1,'VEC2':2,'VEC3':3,'VEC4':4,'MAT4':16}[a['type']];dt=np.dtype({5126:'<f4',5125:'<u4',5123:'<u2',5121:'u1'}[a['componentType']])
-  return np.ndarray((a['count'],n),dtype=dt,buffer=self.binary,offset=v.get('byteOffset',0)+a.get('byteOffset',0),strides=(v.get('byteStride',dt.itemsize*n),dt.itemsize))
+  if 'bufferView' in a:
+   v=self.doc['bufferViews'][a['bufferView']]
+   result=np.ndarray((a['count'],n),dtype=dt,buffer=self.binary,offset=v.get('byteOffset',0)+a.get('byteOffset',0),strides=(v.get('byteStride',dt.itemsize*n),dt.itemsize))
+  else:result=np.zeros((a['count'],n),dtype=dt)
+  if 'sparse' in a:
+   s=a['sparse'];indices=s['indices'];values=s['values'];iv=self.doc['bufferViews'][indices['bufferView']];vv=self.doc['bufferViews'][values['bufferView']]
+   idt=np.dtype({5121:'u1',5123:'<u2',5125:'<u4'}[indices['componentType']])
+   ids=np.frombuffer(self.binary,dtype=idt,count=s['count'],offset=iv.get('byteOffset',0)+indices.get('byteOffset',0))
+   val=np.frombuffer(self.binary,dtype=dt,count=s['count']*n,offset=vv.get('byteOffset',0)+values.get('byteOffset',0)).reshape(-1,n)
+   result=result.copy();result[ids]=val
+  return result
  def image(self,i):
   v=self.doc['bufferViews'][self.doc['images'][i]['bufferView']];at=v.get('byteOffset',0)
   return self.binary[at:at+v['byteLength']]

@@ -1,0 +1,34 @@
+{
+  "checks": 142,
+  "failures": 0,
+  "models": [
+    {
+      "id": "rowan",
+      "triangles": 39588,
+      "surfaces": 9,
+      "changed_export_vertices": 384,
+      "maximum_blink_delta_m": 0.005789614282548428
+    },
+    {
+      "id": "sam",
+      "triangles": 38542,
+      "surfaces": 7,
+      "changed_export_vertices": 384,
+      "maximum_blink_delta_m": 0.005789614282548428
+    },
+    {
+      "id": "lin",
+      "triangles": 38542,
+      "surfaces": 7,
+      "changed_export_vertices": 384,
+      "maximum_blink_delta_m": 0.005789614282548428
+    },
+    {
+      "id": "infected_preview",
+      "triangles": 38542,
+      "surfaces": 7,
+      "changed_export_vertices": 384,
+      "maximum_blink_delta_m": 0.005789614282548428
+    }
+  ]
+}

@@ -12,7 +12,9 @@ func check(ok:bool,label:String)->void:
 	if not ok:failures+=1
 func make_actor()->Walker:
 	var z:=Walker.new();root.add_child(z);z.set_process(false)
-	z._model=(load("res://assets/modular_human/rowan.glb") as PackedScene).instantiate();z.add_child(z._model)
+	var family:=OS.get_cmdline_user_args()[0] if not OS.get_cmdline_user_args().is_empty() else "modular_human"
+	assert(family in ["modular_human","resident_presence"])
+	z._model=(load("res://assets/"+family+"/rowan.glb") as PackedScene).instantiate();z.add_child(z._model)
 	for n:Node in z._model.find_children("*","Skeleton3D",true,false):z._skin=n as Skeleton3D;break
 	for ap:AnimationPlayer in z._model.find_children("*","AnimationPlayer",true,false):ap.stop()
 	for side:String in ["l","r"]:

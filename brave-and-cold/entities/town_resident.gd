@@ -17,6 +17,17 @@ var leaving := false
 var _alarm_s := 0.0
 var _health_materials:Array[StandardMaterial3D]=[]
 var _finger_frames:Array=[]
+var presence:=ResidentPresence.new()
+var _eye_materials:Array[StandardMaterial3D]=[]
+var _blink_mesh:MeshInstance3D
+var _blink_index:=-1
+var _head_actor_left:=Basis.IDENTITY
+var _head_actor_right:=Basis.IDENTITY
+var _cue_focus:=Vector3.ZERO
+var _cue_left_s:=0.0
+var _attention_check_s:=0.0
+var _attention_clear:=false
+var _death_spine_start:=0.0
 
 func _apply_coat(_seed: int) -> void: pass # Keep each imported civilian outfit.
 func _pick_wander() -> void:
@@ -27,7 +38,7 @@ func _pick_wander() -> void:
 
 func initialize(owner: Node3D, id: String, points: Array[Vector3], saved: Dictionary) -> void:
 	life = owner; resident_id = id; route = points
-	setup(life.world.terrain,life.world.snow,life.world.player,life.world.forest,life.world.colliders,life.world.noise_bus,901 if id=="rowan" else (903 if id=="lin" else 905),"res://assets/modular_human/"+id+".glb")
+	setup(life.world.terrain,life.world.snow,life.world.player,life.world.forest,life.world.colliders,life.world.noise_bus,901 if id=="rowan" else (903 if id=="lin" else 905),"res://assets/resident_presence/"+id+".glb")
 	_base_scale = 1.0; _model.scale = Vector3.ONE
 	remove_from_group("hostile"); add_to_group("resident")
 	global_position = route[0]; rotation.y = life.store.rotation.y+PI/2
@@ -39,6 +50,7 @@ func initialize(owner: Node3D, id: String, points: Array[Vector3], saved: Dictio
 		if p.size()==3 and is_finite(float(p[0])) and is_finite(float(p[1])) and is_finite(float(p[2])):
 			global_position = Vector3(p[0],p[1],p[2]); rotation.y = float(saved.get("yaw",rotation.y))
 	_bind_skin_drivers()
+	presence.initialize(_id)
 	_prepare_appearance()
 	died.connect(func() -> void: life.history.killed(resident_id); remove_from_group("resident"))
 	state = State.IDLE; _gait_speed = 0; speed_now = 0
@@ -46,6 +58,7 @@ func initialize(owner: Node3D, id: String, points: Array[Vector3], saved: Dictio
 func set_phase(next: int, restoring := false) -> void:
 	if phase == next and not restoring: return
 	phase = next; talking = false
+	_cue_left_s=0;presence.interrupt()
 	_apply_health_appearance()
 	if next == TownResidentState.Phase.DEAD:
 		if state != State.DEAD: _die()
@@ -67,11 +80,17 @@ func set_phase(next: int, restoring := false) -> void:
 func _prepare_appearance()->void:
 	# Private material copies keep one person's deterioration off other bodies.
 	for mesh:MeshInstance3D in _model.find_children("*","MeshInstance3D",true,false):
+		var index:=mesh.find_blend_shape_by_name("Blink")
+		if index>=0:_blink_mesh=mesh;_blink_index=index
 		for surface in mesh.mesh.get_surface_count():
 			var original:=mesh.mesh.surface_get_material(surface) as StandardMaterial3D
 			if original!=null and original.resource_name=="HumanSkin":
 				var material:=original.duplicate() as StandardMaterial3D
 				mesh.set_surface_override_material(surface,material);_health_materials.append(material)
+			elif original!=null and original.resource_name=="HumanEye":
+				var material:=original.duplicate() as StandardMaterial3D
+				material.roughness=.60;material.metallic_specular=.25
+				mesh.set_surface_override_material(surface,material);_eye_materials.append(material)
 	for side:String in ["l","r"]:
 		for digit:String in ["index","middle","ring","little","thumb"]:
 			for segment in range(1,4):
@@ -80,6 +99,38 @@ func _prepare_appearance()->void:
 					var frame:=_skin.get_bone_global_rest(bone).basis.orthonormalized()
 					_finger_frames.append([bone,_skin.get_bone_rest(bone).basis*frame.inverse(),frame,segment,digit=="thumb"])
 	_apply_health_appearance()
+	if _head_bone>=0:
+		_head_actor_right=_skin.get_bone_global_rest(_head_bone).basis.orthonormalized()
+		_head_actor_left=_skin.get_bone_rest(_head_bone).basis*_head_actor_right.inverse()
+
+func acknowledge(topic:String)->void:
+	if phase>=TownResidentState.Phase.UNRESPONSIVE or is_dead():return
+	presence.acknowledge();_cue_left_s=0
+	if resident_id=="rowan" and topic=="relay":
+		_cue_focus=life.store.to_global(LookoutOpening.CASE_LOCAL+Vector3.UP*.12);_cue_left_s=1.25
+
+func end_exchange()->void:
+	_cue_left_s=0;presence.interrupt()
+
+func _update_presence(delta:float)->void:
+	_cue_left_s=maxf(0,_cue_left_s-delta)
+	var target:Vector3=player.cam.global_position if talking else player.position
+	if talking and _cue_left_s>0:target=_cue_focus
+	var origin:=global_position+Vector3.UP*1.69
+	var focus:=_model.to_local(target)-Vector3(0,1.69,0)
+	var nearby:=origin.distance_squared_to(target)<3.2*3.2 and focus.z<0 and absf(atan2(focus.x,-focus.z))<1.2
+	_attention_check_s-=delta
+	if _attention_check_s<=0:
+		_attention_check_s=.15;_attention_clear=false
+		if nearby or talking:
+			var ray:=target-origin;var length:=ray.length()
+			_attention_clear=length<.01 or HitZones.building_block(life.world._building_list(),origin,ray/length,length)>=length-.08
+	var attend:=not leaving and _attention_clear and (nearby or talking)
+	presence.step(delta,TownResidentState.Phase.DEAD if is_dead() else phase,focus,attend,talking)
+	if _blink_mesh!=null:_blink_mesh.set_blend_shape_value(_blink_index,presence.blink)
+	for material:StandardMaterial3D in _eye_materials:material.uv1_offset=Vector3(-presence.eye_uv.x,presence.eye_uv.y,0)
+	if not is_dead() and not infected and _head_bone>=0:
+		_skin.set_bone_pose_rotation(_head_bone,(_head_actor_left*Basis.from_euler(Vector3(presence.pitch+presence.nod,presence.yaw,0))*_head_actor_right).get_rotation_quaternion())
 
 func _apply_health_appearance()->void:
 	var pallor:=Color.WHITE
@@ -96,13 +147,26 @@ func _apply_health_appearance()->void:
 func hit(amount: float, source: Vector3) -> void:
 	if infected: super.hit(amount, source); return
 	if state == State.DEAD: return
-	hp -= amount; talking=false; _stagger=.5
+	hp -= amount; talking=false;end_exchange(); _stagger=.5
 	if hp <= 0: _die()
 	else: damaged.emit()
 
+func _die()->void:
+	if state!=State.DEAD:_death_spine_start=0.0 if infected else _rest_pitch
+	super._die()
+
+func _death_pose(t:float)->void:
+	super._death_pose(t)
+	if _spine_bone>=0 and absf(_death_spine_start)>.001 and t<.35:
+		var from_slump:=_death_spine_start*(1-smoothstep(0,.35,t))
+		var fold:=smoothstep(0,.55,t)
+		var target:=-.16*fold*(1-smoothstep(.65,1,t))
+		_skin.set_bone_pose_rotation(_spine_bone,_spine_rest*Quaternion(Vector3.RIGHT,target+from_slump))
+		_settle_corpse()
+
 func on_noise(p: Vector3, radius: float, source: Object) -> void:
 	if infected: super.on_noise(p,radius,source)
-	elif state!=State.DEAD and radius>=10: _alarm_s=3;talking=false;_target=p
+	elif state!=State.DEAD and radius>=10: _alarm_s=3;talking=false;end_exchange();_target=p
 func on_light(p: Vector3, radius: float, source: Object) -> void:
 	if infected: super.on_light(p,radius,source)
 
@@ -119,14 +183,17 @@ func _move(want: float, delta: float) -> void:
 
 func _process(delta: float) -> void:
 	if life == null: return
-	if state == State.DEAD: super._process(delta); return
+	if state == State.DEAD: super._process(delta);_update_presence(delta);return
 	if infected:
 		if turn_s >= 0 and turn_s < 2.5:
 			turn_s += delta; _stagger=0; _gait_speed=0; speed_now=0
-			_model.rotation.x=lerpf(_rest_pitch,0,smoothstep(0,1.5,turn_s)); _animate(delta)
+			_model.rotation.x=0;_animate(delta)
+			if _spine_bone>=0:_skin.set_bone_pose_rotation(_spine_bone,_spine_rest*Quaternion(Vector3.RIGHT,lerpf(_rest_pitch,0,smoothstep(0,1.5,turn_s))))
+			_update_presence(delta)
 			return
 		super._process(delta)
 		if state!=State.DEAD and _vault_t<0 and not crawling:_model.rotation.x=.08
+		_update_presence(delta)
 		return
 	if global_position.distance_squared_to(player.position)>100*100: return
 	if leaving:
@@ -136,7 +203,7 @@ func _process(delta: float) -> void:
 			elif not life.observed(self):
 				life.history.record(resident_id).departed=true;remove_from_group("resident");_bus.unregister(self);visible=false;set_process(false);return
 		_target=route[route_index];_move(.85 if route_index<route.size()-1 or global_position.distance_to(_target)>.16 else 0,delta)
-		_animate(delta);return
+		_animate(delta);_update_presence(delta);return
 	_pose_clock += delta; routine_s += delta; _stagger=maxf(0,_stagger-delta)
 	_alarm_s=maxf(0,_alarm_s-delta)
 	var stopped := talking or phase >= TownResidentState.Phase.ILL or _alarm_s>0
@@ -164,10 +231,11 @@ func _process(delta: float) -> void:
 		_arms[1].rotation.x=.18+.04*sin(_pose_clock*1.3); _elbows[1].rotation.x=.30
 	if phase==TownResidentState.Phase.ILL:
 		_arms[0].rotation.x=.55; _elbows[0].rotation.x=.70
-	var pitch_target := .28 if phase==TownResidentState.Phase.UNRESPONSIVE else (.12 if phase==TownResidentState.Phase.ILL else 0.0)
-	_rest_pitch=move_toward(_rest_pitch,pitch_target,delta*.16); _model.rotation.x=_rest_pitch
+	var pitch_target := -.28 if phase==TownResidentState.Phase.UNRESPONSIVE else (-.12 if phase==TownResidentState.Phase.ILL else 0.0)
+	_rest_pitch=move_toward(_rest_pitch,pitch_target,delta*.16); _model.rotation.x=0
 	_deform_skin()
-	if _spine_bone>=0: _skin.set_bone_pose_rotation(_spine_bone,_spine_rest*Quaternion(Vector3.RIGHT,.015*sin(_pose_clock*1.1)))
+	if _spine_bone>=0: _skin.set_bone_pose_rotation(_spine_bone,_spine_rest*Quaternion(Vector3.RIGHT,_rest_pitch+.015*sin(_pose_clock*1.1)))
+	_update_presence(delta)
 
 func snapshot() -> Dictionary:
 	return {"hp":maxf(0,hp),"position":[global_position.x,global_position.y,global_position.z],"yaw":rotation.y,"route_index":route_index,"routine_s":routine_s,"leaving":leaving,"exit_index":route_index,"turn_s":turn_s,"dead_s":_dead_t,"corpse_cleared":state==State.DEAD and _dead_t>CORPSE_LIFE_S}

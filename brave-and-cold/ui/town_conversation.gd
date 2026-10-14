@@ -53,16 +53,18 @@ func open(resident: TownResident) -> void:
 		var id:=String(topic.id);var button:=UiKit.button(String(topic.label),0)
 		button.pressed.connect(func() -> void: choose(id));_topics.add_child(button)
 	life.history.remember(actor.resident_id,"greeting")
+	actor.acknowledge("greeting")
 	is_open=true;visible=true;_layout();_layout.call_deferred()
 
 func choose(topic: String) -> void:
 	if not is_open or not is_instance_valid(actor): return
 	_line.text=life.line_for(actor,topic);life.history.remember(actor.resident_id,topic);_layout.call_deferred()
+	actor.acknowledge(topic)
 
 func close() -> void:
 	if not is_open:return
 	is_open=false;visible=false
-	if is_instance_valid(actor):actor.talking=false
+	if is_instance_valid(actor):actor.talking=false;actor.end_exchange()
 	if is_instance_valid(life) and is_instance_valid(life.world.player):life.world.player.ui_open=_prior_ui
 	Input.mouse_mode=_prior_mouse
 

@@ -1,0 +1,82 @@
+{
+	"engine_arguments": [
+		"--script",
+		"res://tests/visual/benchmark_resident_presence.gd"
+	],
+	"gpu": "NVIDIA GeForce GTX 1080 Ti",
+	"renderer": "forward_plus",
+	"resolution": [
+		1920,
+		1080
+	],
+	"rows": [
+		{
+			"draws_median": 2199.0,
+			"frames": 489,
+			"gpu_median_ms": 11.6429996490479,
+			"median_ms": 11.979,
+			"p95_ms": 13.824,
+			"render_cpu_median_ms": 3.45300006866455,
+			"resident_nodes": 3,
+			"variant": "off",
+			"visible_centres_max": 0
+		},
+		{
+			"draws_median": 2205.0,
+			"frames": 457,
+			"gpu_median_ms": 12.0520000457764,
+			"median_ms": 12.654,
+			"p95_ms": 16.622,
+			"render_cpu_median_ms": 4.01700019836426,
+			"resident_nodes": 3,
+			"variant": "on",
+			"visible_centres_max": 1
+		},
+		{
+			"draws_median": 2195.0,
+			"frames": 470,
+			"gpu_median_ms": 12.1160001754761,
+			"median_ms": 12.568,
+			"p95_ms": 15.138,
+			"render_cpu_median_ms": 3.76799988746643,
+			"resident_nodes": 3,
+			"variant": "on",
+			"visible_centres_max": 1
+		},
+		{
+			"draws_median": 2166.0,
+			"frames": 468,
+			"gpu_median_ms": 12.3339996337891,
+			"median_ms": 12.699,
+			"p95_ms": 14.569,
+			"render_cpu_median_ms": 3.70000004768372,
+			"resident_nodes": 3,
+			"variant": "off",
+			"visible_centres_max": 0
+		},
+		{
+			"draws_median": 2153.0,
+			"frames": 467,
+			"gpu_median_ms": 12.2580003738403,
+			"median_ms": 12.688,
+			"p95_ms": 14.904,
+			"render_cpu_median_ms": 3.74300003051758,
+			"resident_nodes": 3,
+			"variant": "off",
+			"visible_centres_max": 0
+		},
+		{
+			"draws_median": 2168.0,
+			"frames": 468,
+			"gpu_median_ms": 12.0600004196167,
+			"median_ms": 12.48,
+			"p95_ms": 15.22,
+			"render_cpu_median_ms": 3.80299997329712,
+			"resident_nodes": 3,
+			"variant": "on",
+			"visible_centres_max": 1
+		}
+	],
+	"scope": "Same current quiet-day shop scene, resident visibility/processing on versus off. Six alternating eight-second runs with two-second warmup. Terrain, weather, post effects, props and anonymous reserve unchanged. Local diagnostic, uncontrolled host load; not a previous-commit comparison or minimum-spec acceptance.",
+	"seed": 1791988565
+}

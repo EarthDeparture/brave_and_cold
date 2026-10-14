@@ -65,7 +65,7 @@ func run() -> void:
 	check(not life.conversation.is_open and not w.player.ui_open,"deterioration safely ends an active conversation")
 	var body_id:=a.get_instance_id();var point:=a.global_position
 	for i in 120:a._process(1.0/60)
-	check(a._model.rotation.x>.15 and a.hp==83,"same injured body visibly slumps without restoring health")
+	check(a._model.rotation.x==0 and a._rest_pitch<-.15 and a._skin.get_bone_pose_rotation(a._spine_bone).angle_to(a._spine_rest)>.15 and a.hp==83,"same injured body visibly slumps through its spine with planted feet and no restored health")
 	when(w,3,21)
 	check(a.get_instance_id()==body_id and a.global_position==point and a.infected and a.is_in_group("hostile"),"observed transformation retains identity and position")
 	for i in 120:a._process(1.0/60)

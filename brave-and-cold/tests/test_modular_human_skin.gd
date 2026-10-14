@@ -13,7 +13,9 @@ func check(ok:bool,label:String)->void:
 func run()->void:
 	var z:=SlopedZombie.new();root.add_child(z)
 	var model_id:=OS.get_cmdline_user_args()[0] if not OS.get_cmdline_user_args().is_empty() else "rowan"
-	z._model=(load("res://assets/modular_human/"+model_id+".glb") as PackedScene).instantiate();z.add_child(z._model)
+	var family:=OS.get_cmdline_user_args()[1] if OS.get_cmdline_user_args().size()>1 else "modular_human"
+	assert(family in ["modular_human","resident_presence"])
+	z._model=(load("res://assets/"+family+"/"+model_id+".glb") as PackedScene).instantiate();z.add_child(z._model)
 	for candidate:Node in z._model.find_children("*","Skeleton3D",true,false):z._skin=candidate as Skeleton3D;break
 	check(z._skin!=null,"live infected export contains a deforming skeleton")
 	if z._skin==null:quit(1);return
