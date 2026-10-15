@@ -38,6 +38,7 @@ var openings: Array[Opening] = []
 var _door_pivot: Node3D
 var _exam_fill:OmniLight3D
 var _fill: OmniLight3D
+var interior: InteriorLighting
 var _door_rect := Rect2(-DOOR_HALF, HZ - 0.04, 2 * DOOR_HALF, 0.08)
 
 
@@ -58,13 +59,12 @@ func setup(terrain:Terrain3D,x:float,z:float,yaw_deg:float)->bool:
 	_dressing=(load(MODEL) as PackedScene).instantiate();add_child(_dressing)
 	for mi:MeshInstance3D in _dressing.find_children("*","MeshInstance3D",true,false):mi.visibility_range_end=160
 	_walls=[Rect2(-5.12,-3.92,1.92,.24),Rect2(-1.8,-3.92,6.92,.24),Rect2(-5.12,3.68,4.42,.24),Rect2(.7,3.68,4.42,.24),Rect2(-5.12,-3.92,.24,7.84),Rect2(4.88,-3.92,.24,7.84),Rect2(.95,-3.7,.10,4.05),Rect2(.95,1.75,.1,1.95),Rect2(-4.9,-.75,1.7,.1),Rect2(-1.8,-.75,2.75,.1),Rect2(-4.85,2.12,2.5,.62),Rect2(-4.45,-.30,2.5,.66),Rect2(2.35,-1.68,2.2,.96),Rect2(2.8,-3.65,1.9,.55),Rect2(-4.78,-2.98,1.2,.62),Rect2(1.9,-2.96,.4,.33)]
-	_fill=OmniLight3D.new();_fill.position=Vector3(0,2.8,1);_fill.light_color=Color(.87,.91,.86);_fill.omni_range=5.5;_fill.light_energy=.55;add_child(_fill)
-	_exam_fill=OmniLight3D.new();add_child(_exam_fill);_exam_fill.position=Vector3(3.4,2.7,-1.2);_exam_fill.omni_range=4.5;_exam_fill.light_color=Color(.90,.92,.86);_exam_fill.light_energy=.35
 	_build_door();_door_rect=Rect2(-.7,3.70,1.4,.20)
 	rear=Node3D.new();rear.position=Vector3(-3.2,.3,-3.8);add_child(rear)
 	var leaf:=MeshInstance3D.new();var bm:=BoxMesh.new();bm.size=Vector3(1.4,2.04,.07);leaf.mesh=bm;leaf.position=Vector3(.7,1.02,0);leaf.material_override=Opening.wood_material();rear.add_child(leaf)
 	openings.append(Opening.make(self,"window",1.4,.8,Vector3(-5,1.8,1.5),-90))
 	openings.append(Opening.make(self,"window",1.4,.8,Vector3(5,1.8,0),90))
+	interior=InteriorLighting.new();add_child(interior);interior.build(openings,Vector3(0,2.0,0),maxf(HX,HZ),null,Vector3.INF,2)
 	for pair:Array in [[0,1],[ -2.5,-1]]:
 		var side:float=pair[1];var near:=to_global(Vector3(pair[0],.3,side*4.8));var end:=to_global(Vector3(pair[0],0,side*6.8));end.y=terrain.data.get_height(end)+.02;ramps.append([near,end])
 		_build_ramp_visual(near,end)

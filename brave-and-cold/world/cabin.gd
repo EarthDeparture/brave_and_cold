@@ -33,6 +33,7 @@ var cooking: CookBatch:
 	get: return fire.cooking
 var cook_display:CookDisplay
 var drying_rack: Node3D
+var interior: InteriorLighting
 var wood_pile := 6
 var crate_looted := false
 var _door_pivot: Node3D
@@ -115,6 +116,8 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	add_child(drying_rack);drying_rack.position=RACK_LOCAL+Vector3(0,FLOOR_LOCAL_Y,0);drying_rack.rotation.y=PI/2
 	refresh_fire()
 	_build_openings()
+	interior = InteriorLighting.new(); add_child(interior)
+	interior.build(openings, Vector3(0, FLOOR_LOCAL_Y + 1.6, 0), maxf(HX, HZ), fire, STOVE_LOCAL + Vector3(0, FLOOR_LOCAL_Y, 0))
 	_build_dust()
 	return true
 
@@ -277,7 +280,7 @@ func _build_stove_fire() -> void:
 	add_child(_snd)
 	_fire_light = OmniLight3D.new()
 	_fire_light.position = STOVE_LOCAL + Vector3(0.0, FLOOR_LOCAL_Y + 0.55, 0.5)
-	_fire_light.light_color = Color(1.0, 0.5, 0.2)
+	_fire_light.light_color = Color(1.0, 0.62, 0.36)  # amber, less red
 	_fire_light.light_energy = 0.0
 	_fire_light.omni_range = 6.0
 	_fire_light.shadow_enabled = true
@@ -434,7 +437,7 @@ func _process(delta: float) -> void:
 	if glow > 0.0:
 		var fl := 0.75 + 0.25 * sin(_t * 11.0) * sin(_t * 7.3) + 0.1 * sin(_t * 23.0)
 		_fire_mat.emission_energy_multiplier = 3.0 * fl * glow
-		_fire_light.light_energy = 2.2 * fl * glow
+		_fire_light.light_energy = 1.7 * fl * glow
 	else:
 		_fire_mat.emission_energy_multiplier = 0.0
 		_fire_light.light_energy = 0.0
@@ -456,7 +459,7 @@ func set_night(f: float) -> void:
 func _apply_glow() -> void:
 	var lit := 1.0 if stove_fuel_s > 0.0 else 0.0
 	glass_mat.emission_energy_multiplier = 0.1 + 1.4 * _night + 1.1 * lit
-	light.light_energy = 0.1 + 0.9 * _night + 0.7 * lit
+	light.light_energy = 0.05 + 0.25 * _night + 0.45 * lit  # room bounce now comes from InteriorLighting; this only feeds the glow
 	for o in openings:
 		o.set_glow(0.1 + 1.4 * _night + 1.1 * lit)
 

@@ -27,6 +27,7 @@ var _walls: Array[Rect2] = []
 var openings: Array[Opening] = []
 var _door_pivot: Node3D
 var _fill: OmniLight3D
+var interior: InteriorLighting
 var _door_rect := Rect2(-DOOR_HALF, HZ - 0.04, 2 * DOOR_HALF, 0.08)
 
 
@@ -66,18 +67,13 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 		Rect2(-HX - t, -HZ - t, 2 * t, 2 * HZ + 2 * t),
 		Rect2(HX - t, -HZ - t, 2 * t, 2 * HZ + 2 * t),
 	]
-	_fill = OmniLight3D.new()   # window daylight fill, faded out at night by set_night()
-	_fill.position = Vector3(0.0, FLOOR_LOCAL_Y + 2.0, 0.0)
-	_fill.light_color = Color(0.82, 0.88, 1.0)
-	_fill.light_energy = 0.9
-	_fill.omni_range = 6.5
-	_fill.shadow_enabled = false
-	add_child(_fill)
 	_build_door()
 	openings.append(Opening.make(self, "window", 1.0, 0.8, Vector3(-1.9, 1.5, HZ), 0.0))
 	openings.append(Opening.make(self, "window", 1.0, 0.8, Vector3(1.9, 1.5, HZ), 0.0))
 	openings.append(Opening.make(self, "window", 1.0, 0.8, Vector3(HX, 1.5, 0.0), 90.0))
 	openings.append(Opening.make(self, "window", 1.0, 0.8, Vector3(-HX, 1.5, 0.0), -90.0))
+	interior = InteriorLighting.new(); add_child(interior)  # window pools + bounce (replaces the flat fill)
+	interior.build(openings, Vector3(0, FLOOR_LOCAL_Y + 1.7, 0), maxf(HX, HZ), null, Vector3.INF, 2)
 	if detail_enabled:
 		var identity:Node3D=(load("res://assets/route_detail/store_identity.glb") as PackedScene).instantiate();add_child(identity)
 		_dressing=(load("res://assets/store_supported/store_dressing.glb") as PackedScene).instantiate();add_child(_dressing)

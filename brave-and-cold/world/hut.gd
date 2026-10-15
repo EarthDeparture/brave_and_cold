@@ -22,6 +22,7 @@ var _door_rect := Rect2(-DOOR_HALF, HZ - 0.04, 2 * DOOR_HALF, 0.08)
 var crate_looted := false   # tackle box
 var _walls: Array[Rect2] = []
 var openings: Array[Opening] = []
+var interior: InteriorLighting
 
 
 ## Candidate sites near the road: [{x, z, yaw}]. Terrain-only checks so it can run before the forest is built.
@@ -124,6 +125,8 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float, base_y: float
 	]
 	_build_door()
 	openings.append(Opening.make(self, "window", 0.75, 0.7, Vector3(HX, 1.7, -0.275), 90.0))  # gen_hut.py WIN
+	interior = InteriorLighting.new(); add_child(interior)
+	interior.build(openings, Vector3(0, FLOOR_LOCAL_Y + 1.4, 0), maxf(HX, HZ))
 	return true
 
 
