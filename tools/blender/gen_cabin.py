@@ -223,20 +223,25 @@ def build_cabin():
     m.box(bx, by, FLOOR_TOP + 0.4, 1.8, 0.88, 0.12, FABRIC, top=FABRIC, j=0.1)
     m.box(bx + 0.72, by, FLOOR_TOP + 0.51, 0.4, 0.6, 0.1, (0.55, 0.53, 0.5))
     m.box(bx - 0.35, by, FLOOR_TOP + 0.48, 0.9, 0.86, 0.05, FABRIC2)
-    # table + two stools (front-left)
+    # table + two stools (front-left): separate breakable objects (Furn_*), built in the
+    # original call order so the seeded vertex colours of everything else are unchanged.
     tx, ty = -1.6, -0.9
-    m.box(tx, ty, FLOOR_TOP + 0.74, 1.2, 0.75, 0.06, WOOD_LIGHT)
+    table = Mesh()
+    table.box(tx, ty, FLOOR_TOP + 0.74, 1.2, 0.75, 0.06, WOOD_LIGHT)
     for lx in (-0.53, 0.53):
         for ly in (-0.3, 0.3):
-            m.box(tx + lx, ty + ly, FLOOR_TOP + 0.36, 0.07, 0.07, 0.72, WOOD)
+            table.box(tx + lx, ty + ly, FLOOR_TOP + 0.36, 0.07, 0.07, 0.72, WOOD)
+    stools = []
     for sxx, syy in ((tx - 0.3, ty - 0.7), (tx + 0.4, ty + 0.72)):
-        m.box(sxx, syy, FLOOR_TOP + 0.42, 0.34, 0.34, 0.05, WOOD_LIGHT)
+        s = Mesh()
+        s.box(sxx, syy, FLOOR_TOP + 0.42, 0.34, 0.34, 0.05, WOOD_LIGHT)
         for lx in (-0.12, 0.12):
             for ly in (-0.12, 0.12):
-                m.box(sxx + lx, syy + ly, FLOOR_TOP + 0.2, 0.05, 0.05, 0.4, WOOD)
-    # tin cup + lantern on table
-    m.pipe(tx + 0.3, ty, FLOOR_TOP + 0.77, FLOOR_TOP + 0.87, 0.04, (0.30, 0.30, 0.32))
-    m.box(tx - 0.3, ty + 0.1, FLOOR_TOP + 0.87, 0.14, 0.14, 0.2, (0.22, 0.05, 0.04))
+                s.box(sxx + lx, syy + ly, FLOOR_TOP + 0.2, 0.05, 0.05, 0.4, WOOD)
+        stools.append(s)
+    # tin cup + lantern ride on the table object
+    table.pipe(tx + 0.3, ty, FLOOR_TOP + 0.77, FLOOR_TOP + 0.87, 0.04, (0.30, 0.30, 0.32))
+    table.box(tx - 0.3, ty + 0.1, FLOOR_TOP + 0.87, 0.14, 0.14, 0.2, (0.22, 0.05, 0.04))
     # shelf + crate (right wall)
     m.box(HX - 0.35, -0.9, FLOOR_TOP + 1.55, 0.3, 1.5, 0.05, WOOD_LIGHT)
     for k in range(4):
@@ -250,7 +255,8 @@ def build_cabin():
     # snow drift piles at foundation
     m.box(0, -HY - 0.2, FLOOR_TOP - 0.1, 5.8, 0.5, 0.35, SNOW, top=SNOW, j=0.02)
     m.box(HX + 0.3, 0.5, FLOOR_TOP - 0.1, 0.5, 4.4, 0.35, SNOW, top=SNOW, j=0.02)
-    return m.finish("cabin")
+    furniture = [table.finish("Furn_table"), stools[0].finish("Furn_stool_a"), stools[1].finish("Furn_stool_b")]
+    return m.finish("cabin"), furniture
 
 
 def build_glass():
@@ -277,8 +283,8 @@ def export(objs, path):
 
 if __name__ == "__main__":
     clear()
-    cab = build_cabin()
+    cab, furniture = build_cabin()
     gl = build_glass()
-    tris = sum(len(p.vertices) - 2 for p in cab.data.polygons)
-    export([cab, gl], f"{OUT}/cabin.glb")
+    tris = sum(len(p.vertices) - 2 for o in [cab] + furniture for p in o.data.polygons)
+    export([cab, gl] + furniture, f"{OUT}/cabin.glb")
     print("CABIN tris", tris, "wall_top", WALL_TOP)

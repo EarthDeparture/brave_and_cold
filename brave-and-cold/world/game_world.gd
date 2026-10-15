@@ -1805,6 +1805,7 @@ func _update_prompt() -> void:
 				inv.add("antibiotics", 1)
 				_say("Found: hatchet, knife, rifle + 6 rounds, parka, sweater, toque, matches, beans, hammer, nails, planks, rags")})
 		items.append_array(fire_actions(cb.fire, cb.stove_world_pos(), cb.refresh_fire, 1.7, 0.9, cb.rack_world_pos()))
+		items.append_array(_furniture_items(cb))
 		items.append_array(_sleep_items(cb))
 		for it in items:
 			if it.get('hide', false):
@@ -2166,6 +2167,39 @@ func _give_or_drop_aged(id:String,n:int,pos:Vector3,age:float) -> void:
 	if left>0:
 		ItemPickup.spawn(self,id,left,_ground(pos.x,pos.z),-1,age)
 		_say("Pack full: %d %s left on the ground"%[left,inv.name_of(id)])
+
+## Break cabin furniture down into reclaimed wood (planks) and sticks: hatchet or hammer, loud.
+func _furniture_items(cb: Cabin) -> Array:
+	var out: Array = []
+	for id: String in Cabin.FURNITURE:
+		if id in cb.broken: continue
+		var spec: Dictionary = Cabin.FURNITURE[id]
+		var at := cb.furniture_world_pos(id)
+		var tool := "axe" if inv != null and inv.count("axe") > 0 else ("hammer" if inv != null and inv.count("hammer") > 0 else "")
+		var hold: float = float(spec.hold) * (1.0 if tool == "axe" else 1.5)
+		var label := "Break down %s • %d planks, %d sticks" % [spec.name, int(spec.plank), int(spec.stick)]
+		if tool == "":
+			out.append({"pos": at, "r": 1.6, "tol": 0.8, "text": label + " • needs hatchet or hammer", "dbias": 0.05, "act": func() -> void: _say("Breaking down furniture needs a hatchet or a hammer")})
+			continue
+		var cid := id
+		out.append({"pos": at, "r": 1.6, "tol": 0.8, "text": label, "hold": hold, "kcal": 30.0, "noise": 30.0, "work": "split", "dbias": 0.05, "act": func() -> void: _break_furniture(cb, cid)})
+	return out
+
+
+func _break_furniture(cb: Cabin, id: String) -> void:
+	if id in cb.broken: return
+	var tool := "axe" if inv.count("axe") > 0 else ("hammer" if inv.count("hammer") > 0 else "")
+	if tool == "":
+		_say("Breaking down furniture needs a hatchet or a hammer"); return
+	var spec: Dictionary = Cabin.FURNITURE[id]
+	var at := cb.furniture_world_pos(id)
+	cb.break_furniture(id)
+	_give_or_drop("plank", int(spec.plank), at)
+	_give_or_drop("stick", int(spec.stick), at)
+	inv.wear(tool, 0.02)
+	audio.play_at("chop", at, -4, 1, 4, 40)
+	_say("Broke down the %s: %d planks, %d sticks of reclaimed wood" % [spec.name, int(spec.plank), int(spec.stick)])
+
 
 func _cabin_food_actions(cb:Cabin) -> Array:
 	return fire_actions(cb.fire, cb.stove_world_pos(), cb.refresh_fire, 1.7).filter(func(it:Dictionary)->bool:return String(it.get("tag",""))=="cook")
@@ -3549,7 +3583,7 @@ func story_skip_to(day: int, hour: float) -> bool:
 func _save_data() -> Dictionary:
 	var cabs: Array = []
 	for cb in cabins:
-		cabs.append({'fire': cb.fire.to_dict(), 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'dboards': cb.door_boards, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
+		cabs.append({'fire': cb.fire.to_dict(), 'broken': cb.broken.duplicate(), 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'dboards': cb.door_boards, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
 	var fires: Array = []
 	for cf in campfires:
 		fires.append({'x': cf.global_position.x, 'y': cf.global_position.y, 'z': cf.global_position.z, 'fire': cf.fire.to_dict()})
@@ -3741,6 +3775,7 @@ func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 		else:  # pre-standard save: separate stove fuel / kettle / pans
 			cb.fire.restore({'fuel_s': float(cabs[i].get('stove', 0)), 'water': cabs[i].get('prepared_water', {}), 'cooking': cabs[i].get('cooking', {})})
 		cb.refresh_fire()
+		cb.apply_broken(cabs[i].get('broken', []))
 		cb.wood_pile = int(cabs[i]['wood'])
 		cb.crate_looted = bool(cabs[i]['looted'])
 		cb.door_boards = int(cabs[i].get('dboards', 0))

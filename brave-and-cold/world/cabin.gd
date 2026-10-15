@@ -34,6 +34,15 @@ var cooking: CookBatch:
 var cook_display:CookDisplay
 var drying_rack: Node3D
 var interior: InteriorLighting
+## Breakable furniture: gen_cabin.py Furn_* nodes (Blender x,y,z -> Godot x,z,-y).
+## Breaking it down is the TLD reclaimed-wood loop: planks burn 1 h in a stove.
+const FURNITURE := {
+	"Furn_table": {"name": "table", "at": Vector3(-1.6, 1.04, 0.9), "plank": 3, "stick": 2, "hold": 10.0},
+	"Furn_stool_a": {"name": "stool", "at": Vector3(-1.9, 0.72, 1.6), "plank": 1, "stick": 2, "hold": 5.0},
+	"Furn_stool_b": {"name": "stool", "at": Vector3(-1.2, 0.72, 0.18), "plank": 1, "stick": 2, "hold": 5.0},
+}
+var broken: Array = []
+var _furniture := {}
 var wood_pile := 6
 var crate_looted := false
 var _door_pivot: Node3D
@@ -73,6 +82,9 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	var scene := load(MODEL) as PackedScene
 	var model := scene.instantiate()
 	add_child(model)
+	for id: String in FURNITURE:
+		var node := model.find_child(id, true, false) as Node3D
+		if node != null: _furniture[id] = node
 	var mat := StandardMaterial3D.new()
 	mat.vertex_color_use_as_albedo = true
 	mat.roughness = 0.95
@@ -293,6 +305,21 @@ func is_lit() -> bool:
 ## Scripted fuel only (tests/dev); players stoke through FireSource.stoke.
 func add_wood() -> void:
 	fire.add_fuel("wood")
+
+
+func furniture_world_pos(id: String) -> Vector3:
+	return to_global(FURNITURE[id].at)
+
+
+func break_furniture(id: String) -> void:
+	if id in broken or not FURNITURE.has(id): return
+	broken.append(id)
+	if _furniture.has(id): (_furniture[id] as Node3D).visible = false
+
+
+func apply_broken(ids: Array) -> void:
+	for id: Variant in ids:
+		break_furniture(String(id))
 
 
 func rack_world_pos() -> Vector3:
