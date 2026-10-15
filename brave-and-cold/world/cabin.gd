@@ -39,7 +39,11 @@ var crate_looted := false
 var _door_pivot: Node3D
 var _door_rect := Rect2(-DOOR_HALF, HZ - 0.06, 2 * DOOR_HALF, 0.12)
 var _fire_glow: MeshInstance3D
-var _fire_mat: StandardMaterial3D
+var smoke: GPUParticles3D
+
+
+func _set_ember(k: float) -> void:
+	(_fire_glow.material_override as ShaderMaterial).set_shader_parameter("intensity", k)
 var _fire_light: OmniLight3D
 signal event(name: String, pos: Vector3)
 var openings: Array[Opening] = []
@@ -259,18 +263,13 @@ func _build_door() -> void:
 
 
 func _build_stove_fire() -> void:
-	_fire_glow = MeshInstance3D.new()
-	var q := QuadMesh.new()
-	q.size = Vector2(0.26, 0.2)
-	_fire_glow.mesh = q
+	# Same coal-bed ember window as the lookout stove (FireVisual), not a flat emissive quad.
+	_fire_glow = FireVisual.ember_window(Vector2(0.26, 0.2))
 	_fire_glow.position = STOVE_LOCAL + Vector3(0.0, FLOOR_LOCAL_Y + 0.42, 0.285)
-	_fire_mat = StandardMaterial3D.new()
-	_fire_mat.albedo_color = Color(0.1, 0.03, 0.01)
-	_fire_mat.emission_enabled = true
-	_fire_mat.emission = Color(1.0, 0.45, 0.12)
-	_fire_mat.emission_energy_multiplier = 0.0
-	_fire_glow.material_override = _fire_mat
 	add_child(_fire_glow)
+	_set_ember(0.0)
+	# gen_cabin.py: stove pipe tops out 1 m above the 4.27 m ridge
+	smoke = FireVisual.smoke(self, Vector3(STOVE_LOCAL.x, 5.35, STOVE_LOCAL.z))
 	_snd = AudioStreamPlayer3D.new()
 	_snd.stream = Sfx.get_stream("fire")
 	_snd.unit_size = 3.0
@@ -422,7 +421,7 @@ func advance(game_s:float) -> void:
 	refresh_fire()
 
 func _process(delta: float) -> void:
-	if _fire_mat == null:
+	if _fire_glow == null:
 		return
 	_t += delta
 	if _snd != null:
@@ -436,10 +435,10 @@ func _process(delta: float) -> void:
 	var glow := fire.glow()
 	if glow > 0.0:
 		var fl := 0.75 + 0.25 * sin(_t * 11.0) * sin(_t * 7.3) + 0.1 * sin(_t * 23.0)
-		_fire_mat.emission_energy_multiplier = 3.0 * fl * glow
+		_set_ember(clampf(fl * glow, 0.0, 1.2))
 		_fire_light.light_energy = 1.7 * fl * glow
 	else:
-		_fire_mat.emission_energy_multiplier = 0.0
+		_set_ember(0.0)
 		_fire_light.light_energy = 0.0
 	_lt += delta
 	if _lt > 2.0:

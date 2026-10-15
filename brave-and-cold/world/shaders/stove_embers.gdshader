@@ -1,5 +1,6 @@
 shader_type spatial;
 render_mode unshaded, cull_disabled;
+uniform float intensity = 1.0; // FireSource.glow(): 1 roaring, ~.2 embers, 0 cold
 float hash(vec2 p) { return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
 void fragment() {
  vec2 grid=UV*vec2(7.,5.);
@@ -11,7 +12,7 @@ void fragment() {
  float heat=.20+.65*seed+.12*sin(TIME*.8+seed*6.283);
  float crust=.55+.45*hash(floor(UV*vec2(65.,47.)));
  vec3 coal=mix(vec3(.12,.004,.001),vec3(.88,.20,.014),heat);
- vec3 glow=coal*shape*crust;
+ vec3 glow=coal*shape*crust*intensity;
  ALBEDO=glow;
  EMISSION=glow;
 }

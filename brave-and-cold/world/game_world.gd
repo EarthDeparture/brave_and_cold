@@ -617,6 +617,10 @@ func _process(delta: float) -> void:
 	if Engine.get_process_frames() % 6 == 0:
 		for il: Node in get_tree().get_nodes_in_group("interior_lighting"):
 			(il as InteriorLighting).update(1.0 - night, weather.overcast, weather.precip)
+		for cbs in cabins:
+			FireVisual.set_smoke(cbs.smoke, cbs.fire, weather.wind_dir)
+		for cfs in campfires:
+			FireVisual.set_smoke(cfs.smoke, cfs.fire, weather.wind_dir)
 	_fire_cue_t += delta
 	if _fire_cue_t > 2.0:
 		_fire_cue_t = 0.0

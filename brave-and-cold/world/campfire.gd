@@ -15,6 +15,8 @@ var _flames: CPUParticles3D
 var _embers: CPUParticles3D
 var _flame_mat: StandardMaterial3D
 var _wood_mat: StandardMaterial3D
+var _ash: MeshInstance3D
+var smoke: GPUParticles3D
 var _t := 0.0
 var _phase := randf() * 10.0
 var _snd: AudioStreamPlayer3D
@@ -86,6 +88,12 @@ func _ready() -> void:
 	_snd.volume_db = -4.0
 	_snd.position = Vector3(0, 0.4, 0)
 	add_child(_snd)
+	# Ash bed: shows once the fire has gone cold; logs char while burning down.
+	_ash = MeshInstance3D.new(); var disc := CylinderMesh.new(); disc.top_radius = 0.44; disc.bottom_radius = 0.50; disc.height = 0.03; disc.radial_segments = 14
+	_ash.mesh = disc; _ash.position = Vector3(0, 0.012, 0)
+	var ash_mat := StandardMaterial3D.new(); ash_mat.albedo_color = Color(0.17, 0.16, 0.15); ash_mat.roughness = 1.0; _ash.material_override = ash_mat
+	add_child(_ash); _ash.visible = false
+	smoke = FireVisual.smoke(self, Vector3(0, 1.0, 0), 14, 1.3)
 	_set_visual(false, false)
 
 
@@ -205,5 +213,8 @@ func _process(delta: float) -> void:
 		var fl := 0.85 + 0.15 * sin(_t * 13.0 + _phase) + 0.1 * sin(_t * 31.0 + _phase * 2.0)
 		_light.light_energy = 1.5 * fl * fire.glow()
 		_flames.scale = Vector3.ONE * (0.55 + 0.45 * minf(1.0, fire.fuel_s / 3600.0))
+	if _ash != null:
+		_ash.visible = fire.needs_starter()
 	if _wood_mat != null:
+		_wood_mat.albedo_color = Color(0.28, 0.17, 0.09) if flames else Color(0.07, 0.06, 0.055)  # charred once burnt down
 		_wood_mat.emission_energy_multiplier = (0.35 if flames else 0.85 * fire.glow() / 0.24) * (0.8 + 0.2 * sin(_t * 1.7 + _phase))

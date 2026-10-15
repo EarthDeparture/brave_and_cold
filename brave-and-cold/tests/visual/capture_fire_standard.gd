@@ -33,4 +33,10 @@ func run()->void:
 	await shot(site+Vector3(2.4,1.6,2.4),site+Vector3(0,.3,0),"campfire_lit",40)
 	cf.fuel_s=0;cf.fire.ember_s=1800
 	await shot(site+Vector3(2.4,1.6,2.4),site+Vector3(0,.3,0),"campfire_embers",150)
+	cf.fire.ember_s=0
+	await shot(site+Vector3(2.4,1.6,2.4),site+Vector3(0,.3,0),"campfire_cold_ash",30)
+	w.clock.hour=11;w.sky_rig.apply_hour(11);cb.stove_fuel_s=4*3600
+	cb.smoke.set_process(true);FireVisual.set_smoke(cb.smoke,cb.fire,Vector2(.6,.2))
+	await shot(cb.to_global(Vector3(9,2.2,9)),cb.to_global(Vector3(-2.35,4.6,-1.75)),"cabin_chimney_smoke",200)
+	await shot(cb.to_global(Vector3(-1.6,f+1.0,-.6)),cb.to_global(Vector3(-2.35,f+.42,-1.46)),"cabin_ember_window",30)
 	quit(0)

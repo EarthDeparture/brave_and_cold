@@ -221,9 +221,8 @@ func update_presentation() -> void:
 	fire_light.light_energy = (0.80 + .05 * sin(state.last_s * .19)) * glow
 	fire_bounce.light_energy = .18 * glow
 	ember.visible = glow > 0
-	stove_smoke.emitting = fuel_s > 0
-	var motion := stove_smoke.process_material as ParticleProcessMaterial
-	motion.gravity = Vector3(world.weather.wind_dir.x*.18,.45,world.weather.wind_dir.y*.18)
+	(ember.material_override as ShaderMaterial).set_shader_parameter("intensity", minf(1.0, glow))
+	FireVisual.set_smoke(stove_smoke, fire, world.weather.wind_dir)
 	if fuel_s > 0 and not fire_loop.playing: fire_loop.play()
 	elif fuel_s <= 0 and fire_loop.playing: fire_loop.stop()
 	var m := _indicator.material_override as StandardMaterial3D
@@ -529,21 +528,7 @@ func _relay_foundations() -> void:
 	var mat:=StandardMaterial3D.new();mat.albedo_color=Color(.42,.45,.43);mat.roughness=1;mesh.material_override=mat
 
 func _build_smoke(tower: FireLookout) -> void:
-	stove_smoke=GPUParticles3D.new();tower.add_child(stove_smoke)
-	stove_smoke.position=Vector3(-1.65,FireLookout.DECK_Y+4.02,1.20)
-	stove_smoke.amount=20;stove_smoke.lifetime=4;stove_smoke.preprocess=1;stove_smoke.visibility_aabb=AABB(Vector3(-10,-2,-10),Vector3(20,15,20))
-	var motion:=ParticleProcessMaterial.new();motion.direction=Vector3.UP;motion.spread=12;motion.initial_velocity_min=.35;motion.initial_velocity_max=.65
-	motion.scale_min=.18;motion.scale_max=.42
-	var ramp:=Gradient.new();ramp.offsets=PackedFloat32Array([0,.12,.65,1]);ramp.colors=PackedColorArray([Color(.42,.45,.47,0),Color(.70,.72,.74,.18),Color(.76,.78,.80,.10),Color(.52,.54,.56,0)])
-	var fade:=GradientTexture1D.new();fade.gradient=ramp;motion.color_ramp=fade;stove_smoke.process_material=motion
-	var image:=Image.create(64,64,false,Image.FORMAT_RGBA8)
-	for y in 64:
-		for x in 64:
-			var radius:=Vector2((x-31.5)/31.5,(y-31.5)/31.5).length()
-			image.set_pixel(x,y,Color(1,1,1,pow(maxf(0,1-radius*radius),2)))
-	var material:=StandardMaterial3D.new();material.albedo_texture=ImageTexture.create_from_image(image);material.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;material.vertex_color_use_as_albedo=true;material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;material.billboard_mode=BaseMaterial3D.BILLBOARD_ENABLED;material.cull_mode=BaseMaterial3D.CULL_DISABLED
-	var quad:=QuadMesh.new();quad.size=Vector2(1.6,1.6);quad.material=material
-	stove_smoke.draw_pass_1=quad;stove_smoke.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	stove_smoke = FireVisual.smoke(tower, Vector3(-1.65, FireLookout.DECK_Y + 4.02, 1.20))
 
 ## Counts are derived from authoritative inventory. Rebuild only when they change.
 func _build_stock(tower: FireLookout) -> void:
