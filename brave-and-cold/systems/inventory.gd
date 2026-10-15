@@ -137,13 +137,14 @@ func freshness(id: String) -> float:
 
 
 ## Age perishables by game seconds. A whole stack spoils at once into Rotten Meat. Returns names of spoiled items.
-func tick(game_s: float) -> Array:
+## rate: Spoilage.rate_c(air where the pack is); 1.0 = baseline shelf life.
+func tick(game_s: float, rate: float = 1.0) -> Array:
 	var spoiled: Array = []
 	for id in counts.keys():
 		var s := shelf_s(String(id))
 		if s <= 0.0:
 			continue
-		age[id] = float(age.get(id, 0.0)) + game_s
+		age[id] = float(age.get(id, 0.0)) + game_s * rate
 		if float(age[id]) >= s:
 			spoiled.append(String(id))
 	var names: Array = []

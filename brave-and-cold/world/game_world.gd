@@ -563,9 +563,9 @@ func _process(delta: float) -> void:
 	if town_life!=null:town_life.update(gs)
 	if prof_on: _pm('story_route')
 	if inv != null:
-		for sn in inv.tick(gs):
+		for sn in inv.tick(gs, Spoilage.rate_c(air_c())):
 			_say("%s spoiled" % sn)
-	for food:ItemPickup in get_tree().get_nodes_in_group("perishable_pickups"):food.tick(gs)
+	for food:ItemPickup in get_tree().get_nodes_in_group("perishable_pickups"):food.tick(gs, Spoilage.rate_c(air_at(food.global_position)))
 	if prof_on: _pm('food_tick')
 	weather.advance(delta, gs)
 	wind = weather.wind
@@ -658,6 +658,7 @@ func _process(delta: float) -> void:
 	for chx in chests:
 		var cc: StorageChest = chx
 		cc.want_open = gear != null and gear.is_open and gear._chest == cc and gear._tab == "chest"
+		cc.spoilage_rate = Spoilage.rate_c(air_at(cc.global_position))  # snow-cold box or heated room
 		cc.tick(gs)
 	_hold_attack()
 	_bullets_update(delta)
@@ -3338,6 +3339,10 @@ func room_at(p: Vector3) -> RoomClimate:
 		if (r.inside as Callable).call(p): return r.climate
 	return null
 
+func air_at(p: Vector3) -> float:
+	var r := room_at(p)
+	return r.room_c if r != null else clock.ambient_c()
+
 ## Air the body feels: the room's air indoors, the weather outside.
 func air_c() -> float:
 	var r := room_at(player.position)
@@ -3813,10 +3818,10 @@ func fire_actions(src: FireSource, point: Vector3, refresh: Callable = Callable(
 		if refresh.is_valid():
 			refresh.call()
 	if options.is_empty():
-		out.append(_fire_entry(point, r, tol, "stoke", "%s â€¢ %s â€¢ no fuel carried" % [lbl.capitalize(), src.status()], 0.0, 0.0, func() -> void: _say("Carry firewood, planks, kindling or sticks to burn")))
+		out.append(_fire_entry(point, r, tol, "stoke", "%s • %s • no fuel carried" % [lbl.capitalize(), src.status()], 0.0, 0.0, func() -> void: _say("Carry firewood, planks, kindling or sticks to burn")))
 	for i in options.size():
 		var id: String = options[i]
-		var text := "%s â€¢ %s +%s â€¢ %s" % [verb, inv.name_of(id).to_lower(), FireSource.duration(src.burn_s(id)), "needs a match" if src.needs_starter() else src.status()]
+		var text := "%s • %s +%s • %s" % [verb, inv.name_of(id).to_lower(), FireSource.duration(src.burn_s(id)), "needs a match" if src.needs_starter() else src.status()]
 		out.append(_fire_entry(point, r, tol, "stoke", text, src.hold_s(), 0.001 * i, func() -> void:
 			var res: Dictionary = src.stoke(inv, id)
 			_say(String(res.msg))
@@ -3869,7 +3874,7 @@ func _fire_entry(point: Vector3, r: float, tol: float, tag: String, text: String
 
 
 func _water_action(pot:PreparedWater,point:Vector3,lit:bool)->Dictionary:
-	var text:=pot.status() if pot.batch>0 else ("Collect boiled water â€¢ %d bottles"%pot.ready if pot.ready>0 else "Boil snow in field bottles â€¢ 20 min")
+	var text:=pot.status() if pot.batch>0 else ("Collect boiled water • %d bottles"%pot.ready if pot.ready>0 else "Boil snow in field bottles • 20 min")
 	return {"pos":point,"r":1.9,"text":text,"hold":2.0 if pot.batch==0 and pot.ready==0 else 0.0,"act":func()->void:
 		if pot.ready>0:_say("Collected %d bottles; %d remain at heat source"%[pot.collect(inv),pot.ready])
 		elif pot.batch>0:_say(pot.status())

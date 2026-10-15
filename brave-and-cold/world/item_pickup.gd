@@ -25,10 +25,10 @@ func _ready() -> void:
 	if Inventory.shelf_s(id)>0:add_to_group("perishable_pickups")
 	_build_visual()
 
-func tick(game_s:float) -> void:
+func tick(game_s:float, rate:float=1.0) -> void:
 	var shelf:=Inventory.shelf_s(id)
 	if shelf<=0:return
-	age_s+=maxf(0,game_s)
+	age_s+=maxf(0,game_s)*rate
 	if age_s>=shelf:
 		id="rotten_meat";age_s=0;remove_from_group("perishable_pickups")
 		for child:Node in get_children():child.queue_free()

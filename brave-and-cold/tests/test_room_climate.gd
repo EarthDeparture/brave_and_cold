@@ -27,6 +27,7 @@ func run() -> void:
 	var shut := RoomClimate.new(6.0, null); shut.settle(-15.0); var open := RoomClimate.new(6.0, null); open.leak = 0.5; open.room_c = shut.room_c
 	open.advance(3600, -15.0)
 	check(open.room_c < shut.room_c, "an open door bleeds the room toward outside")
+	check(Spoilage.rate_c(-20) == .25 and Spoilage.rate_c(15) == 1.0 and Spoilage.rate_c(25) > 1.3 and Spoilage.rate_c(-2) < Spoilage.rate_c(2), "food decays 4x slower frozen outdoors, faster in a hot room")
 
 	SaveGame.pending = {}; seed(20261004)
 	var w: Node3D = load("res://world/game_world.gd").new(); root.add_child(w)
@@ -47,6 +48,15 @@ func run() -> void:
 	w.player.position = inside
 	w._process(0.1)
 	check(not is_nan(w.hud.indoor_c), "HUD reports indoor temperature")
+	# Cold storage: the same pack food ages slower outside in the cold than in a stoked cabin.
+	cb.stove_fuel_s = 8 * 3600; (w.room_at(inside) as RoomClimate).room_c = 18.0
+	w.inv = Inventory.new(w.body); w.inv.needs = w.needs; w.inv.add("venison_raw", 1)
+	w.clock.time_scale = 600; w.player.sim_on = true; w.player.sim_dir = Vector3.ZERO
+	w._process(1.0); var warm_age: float = w.inv.age.venison_raw
+	w.inv.age.venison_raw = 0.0; w.player.position = cb.to_global(Vector3(0, 1, 14)); w.player.position.y = w._ground(w.player.position.x, w.player.position.z).y + w.player.eye_h
+	w._process(1.0); var cold_age: float = w.inv.age.venison_raw
+	w.clock.time_scale = w.clock.base_time_scale; w.player.position = inside
+	check(cold_age > 0.0 and warm_age > 2.0 * cold_age, "pack meat ages %.0f s in a warm cabin vs %.0f s out in %.0f C" % [warm_age, cold_age, w.clock.ambient_c()])
 	(w.room_at(inside) as RoomClimate).room_c = 7.25
 	var snap: Dictionary = JSON.parse_string(JSON.stringify(w._save_data()))
 	check(snap.has("rooms") and (snap.rooms as Array).size() == w.rooms.size(), "room temperatures are saved")

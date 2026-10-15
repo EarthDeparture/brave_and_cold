@@ -426,7 +426,7 @@ func _on_gui(e: InputEvent) -> void:
 
 ## Permanent wristwatch: uses the same world clock as every broadcast.
 func watch_text() -> String:
-	return "WRISTWATCH â€¢ "+clock.time_string()
+	return "WRISTWATCH • "+clock.time_string()
 func _draw_all() -> void:
 	if inv == null:
 		return
@@ -439,7 +439,7 @@ func _draw_all() -> void:
 	DZ.text(_c, "GEAR", Vector2(140, 122), 34, DZ.TEXT)
 	DZ.text(_c,watch_text(),Vector2(520,106),22,DZ.TEXT)
 	if world.opening!=null:DZ.text(_c,world.opening.state.walkie_status(),Vector2(520,137),15,DZ.ACCENT if world.opening.state.walkie_ready() else DZ.WARN)
-	DZ.text(_c,"Fatigue %d%% â€¢ %s   /   Clothing %d%% wet%s"%[roundi(needs.fatigue),needs.fatigue_state(),roundi(body.wetness*100)," â€¢ "+drying_text() if body.wetness>.005 else ""],Vector2(520,163),14,DZ.WARN if needs.fatigue>=65 else DZ.DIM)
+	DZ.text(_c,"Fatigue %d%% • %s   /   Clothing %d%% wet%s"%[roundi(needs.fatigue),needs.fatigue_state(),roundi(body.wetness*100)," • "+drying_text() if body.wetness>.005 else ""],Vector2(520,163),14,DZ.WARN if needs.fatigue>=65 else DZ.DIM)
 	DZ.text(_c, "Tab / Esc: close     click: select     double-click: use     right-click: options     drag: move, wear, drop", Vector2(140, 812), 15, DZ.DIM)
 	_draw_equipment()
 	_draw_condition()
