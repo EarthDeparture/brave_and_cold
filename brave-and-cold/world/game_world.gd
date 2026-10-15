@@ -390,6 +390,7 @@ func _ready() -> void:
 	if opening_state.enabled and opts.get("town_life","1")!="0":
 		town_life=TownLife.new();add_child(town_life);town_life.build(self,sv.get("town_life",{}),loading and not sv.has("town_life"))
 	_build_rooms(sv.get("rooms", []))
+	_build_forage(sv.get("forage", []))
 	pause_menu = PauseMenu.new()
 	add_child(pause_menu)
 	dev = DevMenu.new()
@@ -1246,7 +1247,7 @@ func _loot_hamlet_crate(cb: Cabin) -> void:
 	cb.crate_looted = true
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(absf(cb.position.x) * 31.0 + absf(cb.position.z) * 17.0)
-	var table := [['matches', 3, 22], ['beans', 2, 20], ['ammo', 5, 12], ['bandage', 1, 14], ['rag', 2, 14], ['antiseptic', 1, 8], ['antibiotics', 1, 5], ['nails', 20, 9], ['plank', 3, 8], ['flare', 1, 7], ['sweater', 1, 4], ['toque', 1, 4], ['knife', 1, 3], ['hammer', 1, 3]]
+	var table := [['matches', 3, 22], ['beans', 2, 20], ['ammo', 5, 12], ['bandage', 1, 14], ['rag', 2, 14], ['antiseptic', 1, 8], ['antibiotics', 1, 5], ['nails', 20, 9], ['plank', 3, 8], ['flare', 1, 7], ['sweater', 1, 4], ['toque', 1, 4], ['knife', 1, 3], ['hammer', 1, 3], ['cooking_pot', 1, 5]]
 	var total := 0
 	for e in table:
 		total += int(e[2])
@@ -1837,6 +1838,7 @@ func _update_prompt() -> void:
 			if _aim_ok(pt,float(it.get("r",2.1)),float(it.get("tol",.8))) and HitZones.building_block(_building_list(),player.position,(pt-player.position).normalized(),player.position.distance_to(pt))>=player.position.distance_to(pt)-.15:
 				it["m"]=_lm;it["d"]=pt.distance_to(player.position);cands.append(it)
 	_chest_cands(cands)
+	_forage_cands(cands)
 	_opening_cands(cands, fwd)
 	for sb: Node in _stove_buildings():
 		var st: Stove = sb.get("stove")
@@ -2636,6 +2638,75 @@ func _add_chest(p: Vector3, yaw: float) -> StorageChest:
 	player.chests = chests.duplicate()
 	if first_week!=null and first_week.cache!=null:player.chests.append(first_week.cache)
 	return c
+
+
+## N3 forage (ForageNode): rose bushes along the road verges, reishi stumps and fallen
+## birch logs back in the timber. Seeded placement, so saves keep only harvested flags.
+var forage: Array[ForageNode] = []
+const FORAGE_PLAN := [["rose", 16, 8.0, 35.0], ["reishi", 8, 18.0, 70.0], ["birch", 10, 14.0, 60.0]]
+func _build_forage(saved: Array) -> void:
+	if road == null or road.points.size() < 60 or terrain == null:
+		return
+	var rng := RandomNumberGenerator.new(); rng.seed = 70417
+	var pts := road.points
+	for plan: Array in FORAGE_PLAN:
+		var placed := 0; var tries := 0
+		while placed < int(plan[1]) and tries < 600:
+			tries += 1
+			var rp: Vector2 = pts[rng.randi_range(20, pts.size() - 21)]
+			var a := rng.randf() * TAU
+			var p := rp + Vector2(cos(a), sin(a)) * rng.randf_range(float(plan[2]), float(plan[3]))
+			if road.is_near(p.x, p.y, 5.0) or road._is_wet(p.x, p.y):
+				continue
+			var h: float = terrain.data.get_height(Vector3(p.x, 0, p.y))
+			if is_nan(h) or not _flat_enough(p, 0.5):
+				continue
+			if forest != null and forest.resolve_trunks(p.x, p.y, 1.2).distance_to(p) > 0.01:
+				continue
+			if colliders.any(func(b: Node3D) -> bool: return Vector2(b.global_position.x, b.global_position.z).distance_to(p) < 9.0):
+				continue
+			if forage.any(func(f: ForageNode) -> bool: return Vector2(f.position.x, f.position.z).distance_to(p) < 25.0):
+				continue
+			var fn := ForageNode.new(); add_child(fn)
+			fn.setup(String(plan[0]), Vector3(p.x, h - 0.04, p.y), rng.randf() * TAU)
+			forage.append(fn); placed += 1
+			if float(fn.spec().solid) > 0.0:
+				player.spatial_structures.append(fn)
+	for i in mini(saved.size(), forage.size()):
+		forage[i].set_harvested(bool(saved[i]))
+
+func _flat_enough(p: Vector2, tol: float) -> bool:
+	var hs: Array = []
+	for o: Vector2 in [Vector2(1.2, 0), Vector2(-1.2, 0), Vector2(0, 1.2), Vector2(0, -1.2)]:
+		hs.append(terrain.data.get_height(Vector3(p.x + o.x, 0, p.y + o.y)))
+	return not hs.any(func(v: float) -> bool: return is_nan(v)) and float(hs.max()) - float(hs.min()) < tol
+
+func _forage_cands(cands: Array) -> void:
+	for fn: ForageNode in forage:
+		if fn.harvested:
+			continue
+		var ap := fn.aim_point()
+		if ap.distance_to(player.position) > 3.2 or not _aim_ok(ap, 2.4, 0.6):
+			continue
+		var sp := fn.spec(); var tool := String(sp.tool)
+		var ok := tool == "" or inv.count(tool) > 0
+		var txt := String(sp.verb) + ("" if ok else " • needs a %s" % inv.name_of(tool).to_lower())
+		cands.append({"m": _lm, "d": ap.distance_to(player.position), "text": txt, "hold": float(sp.hold) if ok else 0.0, "kcal": 8.0, "act": func() -> void: harvest_forage(fn)})
+
+func harvest_forage(fn: ForageNode) -> void:
+	if fn.harvested:
+		return
+	var sp := fn.spec(); var tool := String(sp.tool)
+	if tool != "" and inv.count(tool) < 1:
+		_say("Need a %s" % inv.name_of(tool).to_lower())
+		return
+	var n := randi_range(int(sp.n[0]), int(sp.n[1]))
+	_give_or_drop(String(sp.item), n, fn.aim_point())
+	if tool != "":
+		inv.wear(tool, 0.01)
+	fn.set_harvested(true)
+	audio.play_at("rustle", fn.aim_point(), -8, 1, 3, 18)
+	_say("Collected %d %s" % [n, inv.name_of(String(sp.item)).to_lower()])
 
 
 ## Where a chest would go: 1.4 m ahead on the surface you stand on, not on top of another chest.
@@ -3663,6 +3734,7 @@ func _save_data() -> Dictionary:
 	if collapse!=null:d["collapse"]=collapse.to_dict()
 	if town_life!=null:d["town_life"]=town_life.to_dict()
 	d["rooms"]=rooms.map(func(r:Dictionary)->float:return (r.climate as RoomClimate).room_c)
+	d["forage"]=forage.map(func(f:ForageNode)->bool:return f.harvested)
 	return d
 
 
@@ -3936,6 +4008,16 @@ func fire_actions(src: FireSource, point: Vector3, refresh: Callable = Callable(
 		out.append(_fire_entry(point, r, tol, "cook", "Cook raw food on the %s (%d free)" % [lbl, pans.free_slots()], 2.0, 0.02, func() -> void:
 			_say(pans.begin(inv, src.is_lit()))
 			after.call()))
+	if inv != null and inv.count(PotCooking.POT) > 0 and src.is_lit() and pans.free_slots() > 0:
+		var brews := PotCooking.ready_recipes(inv)
+		if brews.is_empty():
+			out.append(_fire_entry(point, r, tol, "pot", "Cook pot • needs drinking water + rose hips, birch bark, reishi or raw meat", 0.0, 0.025, func() -> void:
+				_say(PotCooking.missing(inv, PotCooking.recipes()[0]))))
+		for bi in brews.size():
+			var rec: Dictionary = brews[bi]
+			out.append(_fire_entry(point, r, tol, "pot", "Cook pot • %s • %d min" % [String(rec.name).to_lower(), int(rec.cook_min)], 2.0, 0.025 + 0.001 * bi, func() -> void:
+				_say(PotCooking.begin(pans, inv, rec, src.is_lit(), lbl))
+				after.call()))
 	if not pans.portions.is_empty():
 		out.append(_fire_entry(point, r, tol, "cook", pans.status(), 0.0, 0.03, func() -> void:
 			var n := pans.collect(inv)

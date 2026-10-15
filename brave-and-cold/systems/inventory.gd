@@ -54,6 +54,15 @@ const ITEMS := {
 	"pike_raw": {"shelf_h": 24.0, "name": "Raw Pike", "kind": "food", "stack": 2, "kcal": 1000.0, "raw": true, "cooked": "pike_cooked", "desc": "A big, bony pike. Cook it."},
 	"pike_cooked": {"shelf_h": 60.0, "name": "Cooked Pike", "kind": "food", "stack": 2, "kcal": 1000.0, "desc": "A whole pike, roasted. A real meal."},
 	"hammer": {"name": "Hammer", "kind": "tool", "stack": 1, "desc": "Claw hammer. Needed to board up windows and doors. Wears a little with every board (about six fully boarded houses) and breaks at 0%. Loud."},
+	"cooking_pot": {"name": "Cooking Pot", "kind": "tool", "stack": 1, "desc": "Dented steel pot. Sits on a lit stove or campfire for teas and stews, and stays there until you collect."},
+	"rose_hips": {"name": "Rose Hips", "kind": "misc", "stack": 12, "desc": "Wild rose fruit frozen on the cane. Two steep a cup of rose hip tea."},
+	"reishi": {"name": "Reishi Mushroom", "kind": "misc", "stack": 6, "desc": "Lacquered bracket fungus cut from birch stumps. Its bitter tea fights early wound infection."},
+	"birch_bark": {"name": "Birch Bark", "kind": "misc", "stack": 12, "desc": "Papery bark peeled from fallen birch. Two make a tea that eases aches."},
+	"tea_rose_hip": {"name": "Rose Hip Tea", "kind": "food", "stack": 2, "kcal": 40.0, "water": 12.5, "hot_min": 40.0, "heal": 3.0, "desc": "Tart and hot. Warms you from the inside for a while."},
+	"tea_birch": {"name": "Birch Bark Tea", "kind": "food", "stack": 2, "kcal": 10.0, "water": 12.5, "hot_min": 40.0, "heal": 8.0, "desc": "Woody and bitter. Eases aches: restores a little condition, and warms you."},
+	"tea_reishi": {"name": "Reishi Tea", "kind": "food", "stack": 2, "kcal": 10.0, "water": 12.5, "hot_min": 30.0, "cure": "reishi", "desc": "Earthy, bitter. Clears a wound infection before fever sets in and only slows it after. Useless against the outbreak."},
+	"meat_stew": {"shelf_h": 48.0, "name": "Meat Stew", "kind": "food", "stack": 2, "kcal": 1100.0, "water": 20.0, "hot_min": 60.0, "desc": "Meat simmered down in a pot of water. More filling than a steak, and hot."},
+	"fish_stew": {"shelf_h": 40.0, "name": "Fish Stew", "kind": "food", "stack": 2, "kcal": 800.0, "water": 20.0, "hot_min": 60.0, "desc": "Fish boiled to a thin, hot chowder."},
 	"bandage": {"name": "Bandage", "kind": "med", "stack": 6, "desc": "Stops bleeding. Recovery needs >900 kcal and >45% water."},
 	"antiseptic": {"name": "Antiseptic", "kind": "med", "stack": 3, "desc": "Disinfectant. Clean recent wounds within two hours. Outbreak risk is separate."},
 	"antibiotics": {"name": "Antibiotics", "kind": "med", "stack": 2, "desc": "A full course. Treats ordinary wound infection. Cannot cure outbreak transmission."},
@@ -390,6 +399,20 @@ func _use_med(id: String) -> String:
 	return "Ordinary wound infection cleared; outbreak risk remains" if injury.outbreak_exposed else "Took the antibiotics: infection cleared"
 
 
+## Pot food extras (N3): water, a hot-drink warmth window, condition, reishi's cure.
+func _food_effects(id: String) -> String:
+	var it: Dictionary = ITEMS[id]; var out := ""
+	if it.has("water") and needs != null:
+		needs.drink(float(it.water)); out += ", +%.2f L water" % (float(it.water) / 50.0)
+	if it.has("hot_min") and body != null:
+		body.hot_s = maxf(body.hot_s, float(it.hot_min) * 60.0); out += ", warming you"
+	if it.has("heal") and injury != null and injury.player != null:
+		injury.player.health = minf(100.0, float(injury.player.health) + float(it.heal))
+	if String(it.get("cure", "")) == "reishi" and injury != null:
+		out += ". " + injury.reishi()
+	return out
+
+
 ## Toggle equip/unequip. Returns a short status message.
 static var injury: Injury   # set by the world; medical items act on it
 
@@ -416,7 +439,7 @@ func use(id: String) -> String:
 		if not remove(id):
 			return 'None left'
 		needs.eat(k)
-		return "Ate %s (+%d kcal)" % [name_of(id), int(k)]
+		return "%s %s (+%d kcal)%s" % ["Drank" if id.begins_with("tea_") else "Ate", name_of(id), int(k), _food_effects(id)]
 	if not is_wearable(id):
 		return "%s: nothing to do" % name_of(id)
 	var slot := slot_of(id)

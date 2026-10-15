@@ -66,7 +66,7 @@ func run() -> void:
 	var w:Node3D=await build();var op:LookoutOpening=w.opening
 	check(op.preservation.portions.is_empty() and op.drying_rack!=null,"new game presents an empty original drying rack without food gifts")
 	check(is_equal_approx(op.drying_rack.position.y-FireLookout.DECK_Y,.25),"rack bolts to timber wall below the window rather than floating on glass")
-	check(op.pantry.spoilage_rate==1,"indoor pantry uses normal food aging rather than outdoor snow cooling")
+	op.advance(1);check(is_equal_approx(op.pantry.spoilage_rate,Spoilage.rate_c(w.air_at(w.fire_lookout.to_global(Vector3(0,FireLookout.DECK_Y+1,0))))),"indoor pantry ages food at the lookout room's air, not outdoor snow cooling (%.2fx)"%op.pantry.spoilage_rate)
 	w.inv=Inventory.new(w.body);w.inv.needs=w.needs;w.inv.add("knife");w.inv.add("venison_raw");w.inv.age.venison_raw=3600
 	op.fuel_s=300;op.cook();op.advance(900)
 	check(op.cooking.portions[0].remaining_s==900 and op.cooking.portions[0].age_s==4500,"actual lookout cooking follows heat limit and input age")
@@ -116,8 +116,8 @@ func run() -> void:
 	check(w.inv.count("venison_dried")==1 and op.preservation.portions.is_empty(),"saved rack completes after remaining real fuel burn")
 	check(not (op.drying_rack.find_child("Portion0",true,false) as Node3D).visible,"collected rack visibly empties")
 	w.chest_put(op.pantry,"venison_dried",1);var stored_age:=float(op.pantry.age.venison_dried)
-	op.advance(3600);w.chest_take(op.pantry,"venison_dried",1)
-	check(is_equal_approx(float(w.inv.age.venison_dried),stored_age+3600),"storage and retrieval preserve dried age at correct indoor rate")
+	op.advance(3600);var prate:=op.pantry.spoilage_rate;w.chest_take(op.pantry,"venison_dried",1)
+	check(is_equal_approx(float(w.inv.age.venison_dried),stored_age+3600*prate),"storage and retrieval preserve dried age at correct indoor rate")
 	pickup.tick(Inventory.shelf_s("whitefish_cooked"));check(pickup.id=="rotten_meat","ground food eventually spoils and cannot become free fresh food")
 	var outdoor:=Campfire.new();w.add_child(outdoor);w.campfires.append(outdoor);freeze(outdoor)
 	w.inv.add("pike_raw");w.inv.age.pike_raw=8*3600

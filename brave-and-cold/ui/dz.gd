@@ -53,6 +53,12 @@ static func item_color(id: String) -> Color:
 	if Inventory.is_rifle(id): id = "rifle"
 	match id:
 		"whetstone":return Color(.38,.43,.40)
+		"cooking_pot":return Color(.42,.43,.45)
+		"rose_hips","tea_rose_hip":return Color(.70,.16,.12)
+		"reishi","tea_reishi":return Color(.55,.20,.10)
+		"birch_bark","tea_birch":return Color(.80,.77,.70)
+		"meat_stew":return Color(.48,.26,.16)
+		"fish_stew":return Color(.70,.62,.45)
 		"sewing_kit":return Color(.33,.48,.36)
 		"clean_water": return Color(.38,.64,.70)
 		"empty_bottle": return Color(.48,.53,.48)

@@ -548,11 +548,34 @@ func _draw_item_cell(r: Rect2, id: String, n: int, selected: bool, hit: Dictiona
 		var bw := r.size.x - 16.0
 		_c.draw_rect(Rect2(r.position + Vector2(8, r.size.y - 9.0), Vector2(bw, 5.0)), Color(0.02, 0.02, 0.02, 0.9))
 		_c.draw_rect(Rect2(r.position + Vector2(8, r.size.y - 9.0), Vector2(bw * clampf(wf, 0.0, 1.0), 5.0)), DZ.status_color(wf))
+	var ff := _hit_fresh(id, hit)
+	if ff >= 0.0:   # food: freshness bar, and the cell sours toward olive as it nears spoiling
+		if ff < 0.4:
+			_c.draw_rect(r.grow(-2), Color(0.36, 0.40, 0.10, 0.34 * (1.0 - ff / 0.4)))
+		var fw := r.size.x - 16.0
+		_c.draw_rect(Rect2(r.position + Vector2(8, r.size.y - 9.0), Vector2(fw, 5.0)), Color(0.02, 0.02, 0.02, 0.9))
+		_c.draw_rect(Rect2(r.position + Vector2(8, r.size.y - 9.0), Vector2(fw * clampf(ff, 0.0, 1.0), 5.0)), DZ.status_color(ff))
 	if n > 1:
 		var cnt := "x%d" % n
 		DZ.text(_c, cnt, r.position + Vector2(CELL - 8 - DZ.text_w(cnt, 18), CELL - 8), 18, DZ.TEXT)
 	hit["r"] = r
 	_hits.append(hit)
+
+
+## Freshness 1..0 of a perishable cell (pack, chest or ground), -1 for anything else.
+func _hit_fresh(id: String, hit: Dictionary) -> float:
+	var s := Inventory.shelf_s(id)
+	if s <= 0.0:
+		return -1.0
+	match String(hit.get("k", hit.get("from", ""))):
+		"pack":
+			return inv.freshness(id)
+		"chest":
+			return clampf(1.0 - float(_chest.age.get(id, 0.0)) / s, 0.0, 1.0) if is_instance_valid(_chest) else 1.0
+		"ground":
+			var p := hit.get("node") as ItemPickup
+			return clampf(1.0 - p.age_s / s, 0.0, 1.0) if p != null else 1.0
+	return -1.0
 
 
 ## Condition 0..1 of a worn-tool cell, or -1 when the item has no tracked condition.

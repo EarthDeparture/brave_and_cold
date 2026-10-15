@@ -99,10 +99,10 @@ func build(w: Node3D, assignment: LookoutAssignment, saved: Dictionary = {}) -> 
 	var mat := StandardMaterial3D.new(); mat.emission_enabled = true; _indicator.material_override = mat
 	home_model = _asset(tower, "lookout_home_detail"); home_model.position.y = FireLookout.DECK_Y
 	pantry = StorageChest.new(); pantry.visual_enabled = false; tower.add_child(pantry)
-	pantry.spoilage_rate=1.0 # an indoor provisions shelf is not a snow-cooled outdoor chest
+	pantry.spoilage_rate=1.0 # set each advance from the lookout room's air (Spoilage.rate_c)
 	pantry.position = Vector3(1.90, FireLookout.DECK_Y + .40, 1.62)
 	if saved.is_empty():
-		fuel_s = 7200.0; pantry.put("beans", 4, 1, 0); pantry.put("jerky", 2, 1, 0); pantry.put("matches", 4, 1, 0); pantry.put("bandage", 2, 1, 0); pantry.put("wood",STARTING_WOOD,1,0)
+		fuel_s = 7200.0; pantry.put("beans", 4, 1, 0); pantry.put("jerky", 2, 1, 0); pantry.put("matches", 4, 1, 0); pantry.put("bandage", 2, 1, 0); pantry.put("wood",STARTING_WOOD,1,0); pantry.put("cooking_pot", 1, 1, 0)
 	else:
 		pantry.load_dict(saved.get("storage", {}))
 		if saved.has("fire"):
@@ -188,6 +188,7 @@ func starting_gear(baseline_pace := false) -> void:
 func advance(game_s: float) -> void:
 	state.advance_to(world.clock.total_game_s,world.weather.overcast,world.weather.precip)
 	fire.advance(game_s)
+	if world.has_method("air_at"): pantry.spoilage_rate = Spoilage.rate_c(world.air_at(world.fire_lookout.to_global(Vector3(0, FireLookout.DECK_Y + 1.0, 0))))  # the lookout room's air (the shelf sits in the wall margin)
 	pantry.tick(game_s)
 	if _last_grid and not state.grid_alive(): world._say("The mains have gone silent. " + ("Local backup is supplying the site." if state.backup_on else "Enable local backup at the desk panel."))
 	_last_grid = state.grid_alive()

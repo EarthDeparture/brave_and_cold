@@ -38,6 +38,18 @@ func wound(sev: float, p_infect: float, outbreak:bool=false) -> void:
 		inf_t = 0.0
 
 
+## Reishi tea: clears an ordinary wound infection before fever (like antibiotics);
+## once feverish it only pushes the fever back a few hours. Never the outbreak.
+func reishi() -> String:
+	if inf_t < 0.0:
+		return "It cannot touch the outbreak" if outbreak_exposed else "No infection for it to fight"
+	if inf_t < INCUBATION_S:
+		inf_t = -1.0
+		return "The wound infection fades"
+	inf_t = maxf(INCUBATION_S - 3600.0, inf_t - 6.0 * 3600.0)
+	return "The fever eases for now; it needs antibiotics"
+
+
 func infected() -> bool:
 	return inf_t >= 0.0 or outbreak_t>=0
 

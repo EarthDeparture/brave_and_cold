@@ -1,0 +1,15 @@
+{
+    "_doc": "N3 cook pot. Each recipe takes one pan slot on a lit fire and the cooking pot itself; the pot and the water bottle come back on collect. cook_min is minutes of real burn.",
+    "groups": {
+        "red_meat": ["venison_raw", "wolf_meat_raw", "bear_meat_raw"],
+        "fish": ["trout_raw", "whitefish_raw", "pike_raw"],
+        "water": ["clean_water"]
+    },
+    "recipes": [
+        {"id": "tea_rose_hip", "name": "Rose hip tea", "inputs": {"rose_hips": 2, "water": 1}, "cook_min": 10},
+        {"id": "tea_birch", "name": "Birch bark tea", "inputs": {"birch_bark": 2, "water": 1}, "cook_min": 10},
+        {"id": "tea_reishi", "name": "Reishi tea", "inputs": {"reishi": 1, "water": 1}, "cook_min": 15},
+        {"id": "meat_stew", "name": "Meat stew", "inputs": {"red_meat": 1, "water": 1}, "cook_min": 45},
+        {"id": "fish_stew", "name": "Fish stew", "inputs": {"fish": 1, "water": 1}, "cook_min": 35}
+    ]
+}

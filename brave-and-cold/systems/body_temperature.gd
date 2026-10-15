@@ -25,6 +25,8 @@ var waterproof: float = 0.1         # 0..1
 var last_loss_w: float = 0.0
 var last_gain_w: float = 0.0
 var feels_like: float = -10.0
+const HOT_W := 70.0                 # a hot tea or stew warms from inside for its window
+var hot_s := 0.0                    # game seconds of hot-drink warmth left
 
 
 ## delta: game seconds. ambient in C, wind in m/s. sheltered: under canopy/indoors reduces wind. fire_w: radiant gain (W).
@@ -47,7 +49,8 @@ func update(delta: float, ambient: float, wind: float, sheltered: bool, fire_w: 
 	var diff := maxf(NORMAL - 10.0 - ambient, -20.0)  # skin ~27 C
 	var loss := LOSS_W_PER_C * diff * wind_mult * (1.0 - insulation) * (1.0 + (WET_LOSS_MULT - 1.0) * wetness)
 	loss = maxf(loss, 0.0)
-	var gain: float = BASE_METABOLISM_W * metabolism_mult + ACTIVITY_W[clampi(activity, 0, 2)] + fire_w
+	var gain: float = BASE_METABOLISM_W * metabolism_mult + ACTIVITY_W[clampi(activity, 0, 2)] + fire_w + (HOT_W if hot_s > 0.0 else 0.0)
+	hot_s = maxf(0.0, hot_s - delta)
 	last_loss_w = loss
 	last_gain_w = gain
 	# Net watts -> deg C / s. Comfort band: gain==loss at ~zero net.

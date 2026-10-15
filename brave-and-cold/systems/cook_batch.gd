@@ -28,7 +28,8 @@ func ready_count() -> int:
 func collect(inv:Inventory) -> int:
 	var keep:Array=[];var n:=0
 	for p:Dictionary in portions:
-		if FoodPortion.collect(p,inv):n+=1
+		if FoodPortion.collect(p,inv):
+			n+=1;PotCooking.give_back(p,inv)  # the pot and water bottle come back with the food
 		else:keep.append(p)
 	portions=keep;return n
 func status() -> String:
@@ -42,6 +43,6 @@ func restore(saved:Dictionary) -> void:
 	for entry:Variant in saved.get("portions",[]):
 		if entry is not Dictionary or portions.size()>=capacity:continue
 		var p:Dictionary=entry.duplicate(true);var id:=String(p.get("id",""))
-		if id!="rotten_meat" and id not in FoodPreservation.RECIPES:continue
-		p.remaining_s=clampf(float(p.get("remaining_s",0)),0,COOK_S)
+		if id!="rotten_meat" and id not in FoodPreservation.RECIPES and id not in PotCooking.outputs():continue
+		p.remaining_s=clampf(float(p.get("remaining_s",0)),0,maxf(COOK_S,float(p.get("cook_s",COOK_S))))
 		FoodPortion.advance(p,0,0);portions.append(p)
