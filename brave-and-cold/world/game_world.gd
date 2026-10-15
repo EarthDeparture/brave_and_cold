@@ -389,6 +389,7 @@ func _ready() -> void:
 	collapse=FirstWeekCollapse.new();add_child(collapse);collapse.build(self,clinic_plan,sv.get("collapse",{}))
 	if opening_state.enabled and opts.get("town_life","1")!="0":
 		town_life=TownLife.new();add_child(town_life);town_life.build(self,sv.get("town_life",{}),loading and not sv.has("town_life"))
+	_build_rooms(sv.get("rooms", []))
 	pause_menu = PauseMenu.new()
 	add_child(pause_menu)
 	dev = DevMenu.new()
@@ -551,6 +552,10 @@ func _process(delta: float) -> void:
 		if is_finite(call_at): clock_delta=(call_at-clock.total_game_s)/clock.time_scale
 	var gs := clock.advance(clock_delta)
 	for cabin:Cabin in cabins:cabin.advance(gs)
+	_advance_rooms(gs)
+	if hud != null:
+		var here := room_at(player.position)
+		hud.indoor_c = here.room_c if here != null else NAN
 	for carcass:Node3D in get_tree().get_nodes_in_group("carcasses"):Carcass.advance_food(carcass,gs)
 	if opening != null: opening.advance(gs)
 	if first_week!=null:first_week.update(gs)
@@ -642,7 +647,7 @@ func _process(delta: float) -> void:
 		cf.advance(gs, 2.0 if weather.precip > 0.2 else 1.0)
 		fw = maxf(fw, cf.heat_at(player.position.x, player.position.z))
 	body.metabolism_mult = needs.metabolism_mult()
-	body.update(gs, clock.ambient_c() + _indoor_c(), wind, player.is_sheltered(), fw, player.activity, 0.0 if player.is_sheltered() else weather.precip * 0.05, false)
+	body.update(gs, air_c(), wind, player.is_sheltered(), fw, player.activity, 0.0 if player.is_sheltered() else weather.precip * 0.05, false)
 	needs.resting=_sl_on and int(_sl.get("phase",0))==1
 	needs.rest_quality=_sleep_quality() if needs.resting else 1.0
 	needs.update(gs, player.activity, body.core)
@@ -3192,7 +3197,7 @@ func _take_cooked(cf: Campfire) -> void:
 
 
 func _near_fire() -> bool:
-	if opening!=null and opening.heat_at(player.position)>100:return true
+	if opening!=null and opening.fire.is_lit() and fire_lookout.contains_room(player.position):return true  # same rule as cabins: lit stove, same room
 	for cf in campfires:
 		if cf.is_lit() and cf.global_position.distance_to(player.position) < 4.0:
 			return true
@@ -3291,13 +3296,52 @@ var sleep_last := ''   # why the last sleep ended (tests, HUD)
 var _sl: Dictionary = {}
 
 
-## Walls blunt the cold: a few degrees warmer inside any cabin even with the stove out (wind is already cut by is_sheltered).
-func _indoor_c() -> float:
-	if fire_lookout != null and fire_lookout.contains_room(player.position): return 6.0
-	for cb in cabins:
-		if cb.contains_xz(player.position.x, player.position.z):
-			return 6.0
-	return 0.0
+## Room climate (F4): every enclosed building has an air temperature that warms
+## with its stove and cools when it goes out or the door stands open.
+## Each entry: {climate: RoomClimate, building: Object, inside: Callable(Vector3)->bool}.
+var rooms: Array = []
+var _rooms_unsettled: Array = []
+func _build_rooms(saved: Array) -> void:
+	rooms.clear()
+	for cb: Cabin in cabins:
+		var c := cb
+		rooms.append({"climate": RoomClimate.new(6.0, c.fire, 30.0), "building": c, "inside": func(p: Vector3) -> bool: return c.contains_xz(p.x, p.z)})
+	for st in stores:
+		var s: Node3D = st
+		rooms.append({"climate": RoomClimate.new(5.0), "building": s, "inside": func(p: Vector3) -> bool: return s.contains_xz(p.x, p.z)})
+	for hb in huts:
+		var h: Node3D = hb
+		rooms.append({"climate": RoomClimate.new(4.0), "building": h, "inside": func(p: Vector3) -> bool: return h.contains_xz(p.x, p.z)})
+	if collapse != null and collapse.clinic != null:
+		var cl: Node3D = collapse.clinic
+		rooms.append({"climate": RoomClimate.new(5.0), "building": cl, "inside": func(p: Vector3) -> bool: return cl.contains_xz(p.x, p.z)})
+	if opening != null and fire_lookout != null:
+		rooms.append({"climate": RoomClimate.new(4.0, opening.fire, 32.0), "building": fire_lookout, "inside": func(p: Vector3) -> bool: return fire_lookout.contains_room(p)})
+	_rooms_unsettled.clear()
+	for i in rooms.size():
+		if saved.size() == rooms.size() and saved[i] is float or (saved.size() == rooms.size() and saved[i] is int):
+			(rooms[i].climate as RoomClimate).room_c = float(saved[i])
+		else:
+			_rooms_unsettled.append(rooms[i].climate)  # settle on the first frame, after fires restore
+
+func _advance_rooms(gs: float) -> void:
+	var outside := clock.ambient_c()
+	for c: RoomClimate in _rooms_unsettled: c.settle(outside)
+	_rooms_unsettled.clear()
+	for r: Dictionary in rooms:
+		var c: RoomClimate = r.climate
+		c.leak = RoomClimate.leak_of(r.building)
+		c.advance(gs, outside)
+
+func room_at(p: Vector3) -> RoomClimate:
+	for r: Dictionary in rooms:
+		if (r.inside as Callable).call(p): return r.climate
+	return null
+
+## Air the body feels: the room's air indoors, the weather outside.
+func air_c() -> float:
+	var r := room_at(player.position)
+	return r.room_c if r != null else clock.ambient_c()
 
 
 func _sleep_block_reason() -> String:
@@ -3542,6 +3586,7 @@ func _save_data() -> Dictionary:
 	if first_week!=null:d["first_week"]=first_week.to_dict()
 	if collapse!=null:d["collapse"]=collapse.to_dict()
 	if town_life!=null:d["town_life"]=town_life.to_dict()
+	d["rooms"]=rooms.map(func(r:Dictionary)->float:return (r.climate as RoomClimate).room_c)
 	return d
 
 
@@ -3768,10 +3813,10 @@ func fire_actions(src: FireSource, point: Vector3, refresh: Callable = Callable(
 		if refresh.is_valid():
 			refresh.call()
 	if options.is_empty():
-		out.append(_fire_entry(point, r, tol, "stoke", "%s • %s • no fuel carried" % [lbl.capitalize(), src.status()], 0.0, 0.0, func() -> void: _say("Carry firewood, planks, kindling or sticks to burn")))
+		out.append(_fire_entry(point, r, tol, "stoke", "%s â€¢ %s â€¢ no fuel carried" % [lbl.capitalize(), src.status()], 0.0, 0.0, func() -> void: _say("Carry firewood, planks, kindling or sticks to burn")))
 	for i in options.size():
 		var id: String = options[i]
-		var text := "%s • %s +%s • %s" % [verb, inv.name_of(id).to_lower(), FireSource.duration(src.burn_s(id)), "needs a match" if src.needs_starter() else src.status()]
+		var text := "%s â€¢ %s +%s â€¢ %s" % [verb, inv.name_of(id).to_lower(), FireSource.duration(src.burn_s(id)), "needs a match" if src.needs_starter() else src.status()]
 		out.append(_fire_entry(point, r, tol, "stoke", text, src.hold_s(), 0.001 * i, func() -> void:
 			var res: Dictionary = src.stoke(inv, id)
 			_say(String(res.msg))
@@ -3824,7 +3869,7 @@ func _fire_entry(point: Vector3, r: float, tol: float, tag: String, text: String
 
 
 func _water_action(pot:PreparedWater,point:Vector3,lit:bool)->Dictionary:
-	var text:=pot.status() if pot.batch>0 else ("Collect boiled water • %d bottles"%pot.ready if pot.ready>0 else "Boil snow in field bottles • 20 min")
+	var text:=pot.status() if pot.batch>0 else ("Collect boiled water â€¢ %d bottles"%pot.ready if pot.ready>0 else "Boil snow in field bottles â€¢ 20 min")
 	return {"pos":point,"r":1.9,"text":text,"hold":2.0 if pot.batch==0 and pot.ready==0 else 0.0,"act":func()->void:
 		if pot.ready>0:_say("Collected %d bottles; %d remain at heat source"%[pot.collect(inv),pot.ready])
 		elif pot.batch>0:_say(pot.status())

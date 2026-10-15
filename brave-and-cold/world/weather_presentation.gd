@@ -51,7 +51,7 @@ func _process(delta: float) -> void:
 	_ground_refresh -= delta
 	var strength := clampf((weather.wind-4.5)/14.0,0.0,1.0)
 	var airborne := strength*(.3+.7*weather.precip)
-	var temperature: float = world.clock.ambient_c()+world._indoor_c()
+	var temperature: float = world.air_c()
 	var sheltered := false
 	for building in world._building_list():
 		if building.has_method("is_sheltered_at") and building.is_sheltered_at(player.global_position):

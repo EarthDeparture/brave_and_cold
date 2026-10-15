@@ -15,7 +15,7 @@
       "stoke_hold_s": 2.0,
       "cook_slots": 2,
       "rack": true,
-      "heat": {"kind": "room", "room_w": 145, "near_w": 340, "near_r": 3.0, "ramp_s": 300},
+      "heat": {"kind": "room", "room_w": 60, "near_w": 340, "near_r": 3.0, "ramp_s": 300},
       "light_r": 36,
       "smoke_r": 24
     },

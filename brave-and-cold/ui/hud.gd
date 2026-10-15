@@ -31,6 +31,7 @@ var radio_device := ""
 var radio_text := ""
 var prompt := ""          # kept for tests: text of the selected action
 var info := ""            # developer overlay extra line
+var indoor_c := NAN       # room air temperature while indoors (GameWorld rooms)
 var player: Player
 var body: BodyTemperature
 var snow: SnowField
@@ -232,7 +233,7 @@ func _draw_monitor(sz: Vector2, k: float) -> void:
 		lines.append("Water: %d%%" % int(needs.water))
 	lines.append("Temperature: %.1f C" % body.core)
 	if weather != null:
-		lines.append("Air: %.0f C   Feels: %.0f C" % [clock.ambient_c(), body.feels_like])
+		lines.append(("Indoors: %.0f C   Feels: %.0f C" % [indoor_c, body.feels_like]) if not is_nan(indoor_c) else ("Air: %.0f C   Feels: %.0f C" % [clock.ambient_c(), body.feels_like]))
 		lines.append("%s   Wind: %.0f m/s" % [weather.state_name(), weather.wind])
 	lines.append("Zombies killed: %d" % kills)
 	var hrs := clock.total_game_s / 3600.0
@@ -359,7 +360,7 @@ func _draw_struggle(sz: Vector2, k: float) -> void:
 
 func _draw_dev(k: float) -> void:
 	var tier: int = snow.tier_at(player.position.x, player.position.z)
-	var t := "%s   Air %.0f C   Feels %.0f C\n" % [clock.time_string(), clock.ambient_c(), body.feels_like]
+	var t := ("%s   Indoors %.0f C   Feels %.0f C\n" % [clock.time_string(), indoor_c, body.feels_like]) if not is_nan(indoor_c) else ("%s   Air %.0f C   Feels %.0f C\n" % [clock.time_string(), clock.ambient_c(), body.feels_like])
 	t += "Core %.1f C  %s\n" % [body.core, body.state_name()]
 	t += "Snow: %s  (x%.2f speed)\n" % [SnowField.TIER_NAMES[tier], SnowField.PLAYER_SPEED[tier]]
 	t += "Noise radius %.0f m%s" % [player.noise_radius(), "   [FIRE]" if player.fire_w > 0.0 else ""]
