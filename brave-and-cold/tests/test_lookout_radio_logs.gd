@@ -46,7 +46,7 @@ func run() -> void:
 	s.battery_wh=1;op.toggle_backup();check(lit(op._receiver_power),"backup restores receiver indicators immediately")
 	w.clock.total_game_s=s.last_s+3600;op.advance(3600)
 	check(s.battery_wh==0 and not lit(op._receiver_power) and not lit(op._receiver_channel),"battery exhaustion extinguishes both receiver LEDs")
-	s.last_s=s.source_end_s+1;s.battery_wh=144;s.backup_on=true;op.update_presentation()
+	s.last_s=s.source_end_s+1;s.battery_wh=144;s.recovery_lock=false;s.backup_on=true;op.update_presentation() # scripted recharged battery: the exhaustion lock (4292c60) clears once recovered
 	check(lit(op._receiver_power) and s.broadcast_at(s.last_s).is_empty(),"local power indicator survives distant transmitter shutdown")
 	s.last_s=0;s.backup_on=false;w.clock.total_game_s=0;op.update_presentation()
 	# Fell a real forest tree just outside the lookout fence, through chop and fall callbacks.

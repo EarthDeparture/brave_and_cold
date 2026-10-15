@@ -8,6 +8,14 @@ func check(ok: bool, label: String) -> void:
 func stop(node: Node) -> void:
 	node.set_process(false);node.set_physics_process(false)
 	for child in node.get_children():stop(child)
+func _variant_sets(forest:ForestScatter) -> Dictionary:
+	var sets:={}
+	for key:Vector3i in forest._mms:
+		var mm:MultiMesh=forest._mms[key][0]
+		if not sets.has(key.z):sets[key.z]=[]
+		for i in mm.instance_count:sets[key.z].append(mm.get_instance_transform(i))
+	for vi in sets:(sets[vi] as Array).sort_custom(func(a:Transform3D,b:Transform3D)->bool:return a.origin.x<b.origin.x or (a.origin.x==b.origin.x and a.origin.z<b.origin.z))
+	return sets
 func run() -> void:
 	SaveGame.pending={}
 	var world: Node3D = load("res://world/game_world.gd").new()
@@ -36,13 +44,9 @@ func run() -> void:
 	candidate.build(world.terrain)
 	check(baseline.tree_count==candidate.tree_count and baseline.excluded==candidate.excluded,"tree population and exclusions preserved")
 	check(baseline._trunks==candidate._trunks,"every trunk location and collision radius preserved")
-	var same_transforms:=true
-	for key in baseline._mms:
-		var a:MultiMesh=baseline._mms[key][0]
-		var b:MultiMesh=candidate._mms[key][0]
-		if a.instance_count!=b.instance_count:same_transforms=false;break
-		for i in a.instance_count:
-			if a.get_instance_transform(i)!=b.get_instance_transform(i):same_transforms=false;break
+	# Crown-quality presentation regroups trees into 64 m render chunks, so compare
+	# each variant's complete set of instance transforms, independent of chunking.
+	var same_transforms:=_variant_sets(baseline)==_variant_sets(candidate)
 	check(same_transforms,"all tree instance transforms and variant assignments preserved")
 	var tree:Dictionary=world.forest.nearest_tree(Vector3(-120,0,133),Vector3.FORWARD,50,false)
 	var old_fell:Dictionary=baseline.fell(tree.x,tree.z)
