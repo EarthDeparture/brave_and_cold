@@ -86,6 +86,7 @@ func _prepare_appearance()->void:
 			var original:=mesh.mesh.surface_get_material(surface) as StandardMaterial3D
 			if original!=null and original.resource_name=="HumanSkin":
 				var material:=original.duplicate() as StandardMaterial3D
+				if _health_materials.is_empty():_measure_skin(material)
 				mesh.set_surface_override_material(surface,material);_health_materials.append(material)
 			elif original!=null and original.resource_name=="HumanEye":
 				var material:=original.duplicate() as StandardMaterial3D
@@ -132,12 +133,55 @@ func _update_presence(delta:float)->void:
 	if not is_dead() and not infected and _head_bone>=0:
 		_skin.set_bone_pose_rotation(_head_bone,(_head_actor_left*Basis.from_euler(Vector3(presence.pitch+presence.nod,presence.yaw,0))*_head_actor_right).get_rotation_quaternion())
 
+## Sickness reads as ashen pallor relative to THIS person's own skin: the painted skin
+## is mixed toward its own mean luminance with the colour drained (grey-olive when ill,
+## grey-blue when infected). Never a darker multiply (that read as a skin-tone change)
+## and never a fixed light grey (that turned every face into a white mannequin).
+## Plus a damp sheen while ill, reddened then clouded eyes. PALLOR_MIX = mix weight.
+const PALLOR_SHIFT := {"ill": Color(1.02,1.04,.94), "unresponsive": Color(1.0,1.03,.98), "infected": Color(.90,1.0,1.02)}
+const PALLOR_MIX := {"ill": .50, "unresponsive": .66, "infected": .85}
+var _skin_mean := Color(.5,.4,.35)
+static var _flat_cache := {}
+var _skin_rough:Array[float]=[]
+var _pallor := 0.0
+static func _flat(c:Color)->ImageTexture:
+	if not _flat_cache.has(c):
+		var image:=Image.create(4,4,false,Image.FORMAT_RGBA8);image.fill(c);_flat_cache[c]=ImageTexture.create_from_image(image)
+	return _flat_cache[c]
+func pallor_amount()->float:return _pallor
+func _pallor_tone(stage:String)->Color:
+	var l:=_skin_mean.get_luminance()*(1.06 if stage=="ill" else 1.0)
+	var shift:Color=PALLOR_SHIFT[stage]
+	return Color(clampf(l*shift.r,0,1),clampf(l*shift.g,0,1),clampf(l*shift.b,0,1))
+func _measure_skin(material:StandardMaterial3D)->void:
+	var tex:=material.albedo_texture
+	if tex==null:_skin_mean=material.albedo_color;return
+	var image:=tex.get_image()
+	if image==null:return
+	if image.is_compressed():image.decompress()
+	image.resize(1,1,Image.INTERPOLATE_BILINEAR);_skin_mean=image.get_pixel(0,0)
+func _health_stage()->String:
+	if phase==TownResidentState.Phase.INFECTED or (phase==TownResidentState.Phase.DEAD and infected):return "infected"
+	if phase==TownResidentState.Phase.UNRESPONSIVE:return "unresponsive"
+	if phase==TownResidentState.Phase.ILL:return "ill"
+	return ""
 func _apply_health_appearance()->void:
-	var pallor:=Color.WHITE
-	if phase==TownResidentState.Phase.ILL:pallor=Color(.88,.96,.92)
-	elif phase==TownResidentState.Phase.UNRESPONSIVE:pallor=Color(.78,.90,.84)
-	elif phase==TownResidentState.Phase.INFECTED or (phase==TownResidentState.Phase.DEAD and infected):pallor=Color(.67,.80,.70)
-	for material:StandardMaterial3D in _health_materials:material.albedo_color=pallor
+	var stage:=_health_stage()
+	_pallor=float(PALLOR_MIX.get(stage,0.0))
+	if _skin_rough.size()!=_health_materials.size():_skin_rough.assign(_health_materials.map(func(m:StandardMaterial3D)->float:return m.roughness))
+	for i in _health_materials.size():
+		var material:=_health_materials[i]
+		material.albedo_color=Color.WHITE
+		material.detail_enabled=_pallor>0
+		if _pallor>0:
+			material.detail_blend_mode=BaseMaterial3D.BLEND_MODE_MIX
+			material.detail_albedo=_flat(_pallor_tone(stage));material.detail_mask=_flat(Color(_pallor,_pallor,_pallor))
+		material.roughness=_skin_rough[i]*(.62 if stage=="ill" or stage=="unresponsive" else 1.0)  # feverish damp sheen
+	var eye:=Color.WHITE
+	if stage=="ill" or stage=="unresponsive":eye=Color(1,.84,.82)
+	elif stage=="infected":eye=Color(.86,.84,.78)
+	for material:StandardMaterial3D in _eye_materials:
+		material.albedo_color=eye;material.roughness=.85 if stage=="infected" else .60  # clouded, no wet glint
 	for row:Array in _finger_frames:
 		var curl:float=[.10,.27,.12][int(row[3])-1]
 		if row[4]:curl*=.6

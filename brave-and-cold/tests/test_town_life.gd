@@ -60,7 +60,7 @@ func run() -> void:
 	a.hit(17,w.player.position);check(a.hp==83 and not a.is_in_group("hostile"),"injuring a civilian does not activate the infected brain")
 	when(w,2,14);check(life.line_for(a,"delivery").contains("held"),"delivery account agrees with dispatch")
 	when(w,3,11);check(a.phase==TownResidentState.Phase.ILL and life.closed_sign.visible and life.line_for(a,"greeting").contains("Sunday"),"illness has a prior exposure rather than an unseen trip while watched")
-	check(a._health_materials[0].albedo_color.r<.9 and life.actors.sam._health_materials[0].albedo_color==Color.WHITE,"ill owner develops pallor without altering the clinic worker")
+	check(a.pallor_amount()>.2 and a._health_materials[0].detail_enabled and a._health_materials[0].albedo_color==Color.WHITE and life.actors.sam.pallor_amount()==0 and not life.actors.sam._health_materials[0].detail_enabled,"ill owner develops pallor (mixed toward grey, never darkened) without altering the clinic worker")
 	life.conversation.open(a);when(w,3,18)
 	check(not life.conversation.is_open and not w.player.ui_open,"deterioration safely ends an active conversation")
 	var body_id:=a.get_instance_id();var point:=a.global_position
@@ -83,7 +83,7 @@ func run() -> void:
 	var terminal: Dictionary=JSON.parse_string(JSON.stringify(w._save_data()))
 	w.queue_free();await process_frame;await process_frame;w=await build(terminal);life=w.town_life;a=life.actors.rowan
 	check(a.is_dead() and not a.is_in_group("hostile") and life.history.record("rowan").dead,"reload cannot resurrect the killed owner")
-	check(a.infected and a._health_materials[0].albedo_color.r<.7,"infected corpse retains its skin deterioration on reload")
+	check(a.infected and a.pallor_amount()>.6 and a._health_materials[0].detail_enabled,"infected corpse retains its skin deterioration on reload")
 	check(life.actions().any(func(it: Dictionary)->bool:return it.text=="Read Rowan's issue ledger"),"ledger survives death independently of NPC service")
 	check(life.history.record("lin").departed or (life.actors.has("lin") and life.actors.lin.leaving),"supporting worker departure survives reload")
 	# The existing reserved item transaction must still work after the owner's death.
