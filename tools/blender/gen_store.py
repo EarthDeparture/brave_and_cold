@@ -124,7 +124,7 @@ def build(include_placeholder_stock=True):
             if h > 0.05:
                 m.box(sx, y, rz + h / 2, 0.07, 0.148, h, CLAP2)
     # chimney
-    m.pipe(-1.8, 1.0, WALL_TOP, ridge + 0.6, 0.09, IRON)
+    m.pipe(-1.87, 0.45, WALL_TOP, ridge + 0.6, 0.09, IRON)  # over the pot-belly (store.gd)
     # covered porch: deck, two posts, shed roof
     PD = 1.5
     m.box(0, -HY - PD / 2, FT - 0.06, 2 * HX - 0.4, PD, 0.12, WOODL, j=0.1)

@@ -28,6 +28,7 @@ var openings: Array[Opening] = []
 var _door_pivot: Node3D
 var _fill: OmniLight3D
 var interior: InteriorLighting
+var stove: Stove
 var _door_rect := Rect2(-DOOR_HALF, HZ - 0.04, 2 * DOOR_HALF, 0.08)
 
 
@@ -72,8 +73,9 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	openings.append(Opening.make(self, "window", 1.0, 0.8, Vector3(1.9, 1.5, HZ), 0.0))
 	openings.append(Opening.make(self, "window", 1.0, 0.8, Vector3(HX, 1.5, 0.0), 90.0))
 	openings.append(Opening.make(self, "window", 1.0, 0.8, Vector3(-HX, 1.5, 0.0), -90.0))
+	stove = Stove.new(); stove.build(self, "pot_belly", Vector3(-1.87, FLOOR_LOCAL_Y, -0.45), Vector3(-1.87, 4.8, -0.45), 0.0, FLOOR_LOCAL_Y + 2.85 if detail_enabled else -1.0)  # plain store.glb has its own pipe (gen_store.py)
 	interior = InteriorLighting.new(); add_child(interior)  # window pools + bounce (replaces the flat fill)
-	interior.build(openings, Vector3(0, FLOOR_LOCAL_Y + 1.7, 0), maxf(HX, HZ), null, Vector3.INF, 2)
+	interior.build(openings, Vector3(0, FLOOR_LOCAL_Y + 1.7, 0), maxf(HX, HZ), stove.fire, stove.position, 2)
 	if detail_enabled:
 		var identity:Node3D=(load("res://assets/route_detail/store_identity.glb") as PackedScene).instantiate();add_child(identity)
 		_dressing=(load("res://assets/store_supported/store_dressing.glb") as PackedScene).instantiate();add_child(_dressing)
@@ -137,7 +139,7 @@ func toggle_door() -> void:
 
 
 func state_dict() -> Dictionary:
-	return {'looted': looted.duplicate(), 'open': door_open, 'broken': door_broken, 'hp': door_hp}
+	return {'looted': looted.duplicate(), 'open': door_open, 'broken': door_broken, 'hp': door_hp, 'fire': stove.fire.to_dict() if stove != null else {}}
 
 
 func restore_state(d: Dictionary) -> void:
@@ -147,6 +149,7 @@ func restore_state(d: Dictionary) -> void:
 	door_broken = bool(d.get('broken', false))
 	door_open = bool(d.get('open', true)) or door_broken
 	door_hp = float(d.get('hp', 90.0))
+	if stove != null and d.has('fire'): stove.fire.restore(d.fire)
 	if _door_pivot != null:
 		_door_pivot.rotation.y = deg_to_rad(120.0 if door_broken else (105.0 if door_open else 0.0))
 
@@ -206,6 +209,7 @@ func resolve(x: float, z: float, r: float) -> Vector2:
 	var l := to_local_xz(x, z)
 	var moved := false
 	var rects := _walls.duplicate()
+	if stove != null: rects.append(stove.footprint)
 	if detail_enabled:
 		rects.append_array([Rect2(1.25,-1.3,.70,2.6),Rect2(-2.90,-1.20,.80,.60),Rect2(-2.88,.12,.56,.56),Rect2(-2.28,.62,.56,.56),Rect2(-2.70,-2.22,3.40,.36)])
 	if not door_open:

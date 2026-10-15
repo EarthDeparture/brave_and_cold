@@ -47,6 +47,8 @@ func hold_s() -> float: return float(spec.get("stoke_hold_s", 2.0))
 func is_lit() -> bool: return fuel_s > 0.0
 func has_embers() -> bool: return fuel_s <= 0.0 and ember_s > 0.0
 func needs_starter() -> bool: return fuel_s <= 0.0 and ember_s <= 0.0
+## Open to the weather (campfires): cold starts roll against wind and snow.
+func exposed() -> bool: return bool(spec.get("wind_exposed", String((spec.get("heat", {}) as Dictionary).get("kind", "room")) != "room"))
 func burn_s(fuel_id: String) -> float: return burn_s_for(type, fuel_id)
 func fits(fuel_id: String) -> bool: return fuel_s + burn_s(fuel_id) <= max_fuel_s() + 0.001
 
@@ -62,8 +64,36 @@ func set_fuel(v: float) -> void:
 func add_fuel(fuel_id: String, n: int = 1) -> void:
 	fuel_s += burn_s(fuel_id) * n; ember_s = 0.0
 
-## The single stoke rule for every fire. {ok: bool, msg: String}
-func stoke(inv: Inventory, fuel_id: String) -> Dictionary:
+## Cold-start odds (TLD): sheltered fires always catch. Outdoors a gusting wind
+## (over 4 m/s, worst at 12) or wet heavy snow can kill the flame; tinder and
+## kindling help; a trunk or wall upwind halves the wind. ctx: outdoors, wind,
+## precip, sheltered, tinder, kindling, base (starter: match .85, bow drill .7).
+static func start_chance(ctx: Dictionary) -> float:
+	if not bool(ctx.get("outdoors", false)): return 1.0
+	var c := float(ctx.get("base", 0.85))
+	if bool(ctx.get("tinder", false)): c += 0.10
+	if bool(ctx.get("kindling", false)): c += 0.05
+	var wind := clampf((float(ctx.get("wind", 0.0)) - 4.0) / 8.0, 0.0, 1.0) * 0.45
+	if bool(ctx.get("sheltered", false)): wind *= 0.5
+	c -= wind
+	if float(ctx.get("precip", 0.0)) > 0.5: c -= 0.10
+	return clampf(c, 0.1, 1.0)
+
+## Rolls a cold start. Uses up one tinder when it was counted. The caller spends
+## the starter (match, drill wear). {ok, chance, msg}
+static func try_start(inv: Inventory, ctx: Dictionary, roll: float = -1.0) -> Dictionary:
+	var ch := start_chance(ctx)
+	if bool(ctx.get("outdoors", false)) and bool(ctx.get("tinder", false)) and inv != null: inv.remove("tinder")
+	if roll < 0.0: roll = randf()
+	if roll < ch: return {"ok": true, "chance": ch, "msg": ""}
+	var why := "it will not catch"
+	if float(ctx.get("wind", 0.0)) > 6.0: why = "a gust snuffs it"
+	elif float(ctx.get("precip", 0.0)) > 0.5: why = "wet snow smothers it"
+	return {"ok": false, "chance": ch, "msg": "The flame dies: %s (%d%% chance)." % [why, roundi(ch * 100.0)]}
+
+## The single stoke rule for every fire. {ok: bool, msg: String}. `start_ctx` only
+## matters for a cold start of an exposed fire (see start_chance).
+func stoke(inv: Inventory, fuel_id: String, start_ctx: Dictionary = {}, roll: float = -1.0) -> Dictionary:
 	var b := burn_s(fuel_id)
 	if b <= 0.0: return {"ok": false, "msg": "That will not burn"}
 	if inv.count(fuel_id) < 1: return {"ok": false, "msg": "Need %s" % inv.name_of(fuel_id).to_lower()}
@@ -71,7 +101,10 @@ func stoke(inv: Inventory, fuel_id: String) -> Dictionary:
 	var how := ""
 	if needs_starter():
 		if inv.count("matches") < 1: return {"ok": false, "msg": "Need a match to light the cold %s" % label()}
-		inv.remove("matches"); how = "Struck a match: the %s catches. " % label()
+		inv.remove("matches")
+		var st := try_start(inv, start_ctx if exposed() else {}, roll)
+		if not bool(st.ok): return {"ok": false, "failed_start": true, "msg": String(st.msg) + " Match used, the fuel is still yours."}
+		how = "Struck a match: the %s catches. " % label()
 	elif has_embers():
 		how = "The embers catch. "
 	inv.remove(fuel_id); fuel_s += b; ember_s = 0.0

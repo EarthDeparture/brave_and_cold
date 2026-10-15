@@ -116,8 +116,8 @@ def build():
             if h > 0.05:
                 m.box(sx, y, WALL_TOP + 0.08 + h / 2, 0.07, BOARD - 0.012, h, SIDING2)
     # --- chimney pipe
-    m.pipe(-0.8, 0.55, WALL_TOP, ridge + 0.55, 0.07, IRON)
-    m.pipe(-0.8, 0.55, ridge + 0.5, ridge + 0.62, 0.11, IRON)
+    m.pipe(1.25, -0.85, WALL_TOP, ridge + 0.55, 0.07, IRON)   # above the box stove (gen_stoves.py, hut.gd)
+    m.pipe(1.25, -0.85, ridge + 0.5, ridge + 0.62, 0.11, IRON)
     # --- interior: bunk on back wall, tackle box, bench
     m.box(-HX + 0.55, HY - 0.5, FT + 0.45, 1.0, 0.9, 0.08, WOODL)
     m.box(-HX + 0.55, HY - 0.5, FT + 0.55, 0.95, 0.85, 0.12, FABRIC)

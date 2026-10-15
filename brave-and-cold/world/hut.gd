@@ -23,6 +23,7 @@ var crate_looted := false   # tackle box
 var _walls: Array[Rect2] = []
 var openings: Array[Opening] = []
 var interior: InteriorLighting
+var stove: Stove
 
 
 ## Candidate sites near the road: [{x, z, yaw}]. Terrain-only checks so it can run before the forest is built.
@@ -125,8 +126,12 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float, base_y: float
 	]
 	_build_door()
 	openings.append(Opening.make(self, "window", 0.75, 0.7, Vector3(HX, 1.7, -0.275), 90.0))  # gen_hut.py WIN
+	# Box stove in the front-right corner under the chimney (gen_hut.py pipe at Blender 1.25,-0.85),
+	# facing the room: clear of the door swing (left) and the bunk (back-left).
+	stove = Stove.new(); stove.build(self, "box_stove", Vector3(1.15, FLOOR_LOCAL_Y, 0.85), Vector3(1.25, 4.05, 0.85), -PI / 2)
+	_walls.append(stove.footprint)
 	interior = InteriorLighting.new(); add_child(interior)
-	interior.build(openings, Vector3(0, FLOOR_LOCAL_Y + 1.4, 0), maxf(HX, HZ))
+	interior.build(openings, Vector3(0, FLOOR_LOCAL_Y + 1.4, 0), maxf(HX, HZ), stove.fire, stove.position)
 	return true
 
 
@@ -148,7 +153,7 @@ func _build_door() -> void:
 
 
 func state_dict() -> Dictionary:
-	return {'looted': crate_looted, 'open': door_open, 'broken': door_broken, 'hp': door_hp}
+	return {'looted': crate_looted, 'open': door_open, 'broken': door_broken, 'hp': door_hp, 'fire': stove.fire.to_dict() if stove != null else {}}
 
 
 func restore_state(d: Dictionary) -> void:
@@ -156,6 +161,7 @@ func restore_state(d: Dictionary) -> void:
 	door_broken = bool(d.get('broken', false))
 	door_open = bool(d.get('open', true)) or door_broken
 	door_hp = float(d.get('hp', 60.0))
+	if stove != null and d.has('fire'): stove.fire.restore(d.fire)
 	if _door_pivot != null:
 		_door_pivot.rotation.y = deg_to_rad(120.0 if door_broken else (105.0 if door_open else 0.0))
 

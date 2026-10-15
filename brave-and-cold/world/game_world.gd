@@ -552,6 +552,7 @@ func _process(delta: float) -> void:
 		if is_finite(call_at): clock_delta=(call_at-clock.total_game_s)/clock.time_scale
 	var gs := clock.advance(clock_delta)
 	for cabin:Cabin in cabins:cabin.advance(gs)
+	for sb: Node in _stove_buildings(): (sb.get("stove") as Stove).advance(gs)
 	_advance_rooms(gs)
 	if hud != null:
 		var here := room_at(player.position)
@@ -626,11 +627,15 @@ func _process(delta: float) -> void:
 			FireVisual.set_smoke(cbs.smoke, cbs.fire, weather.wind_dir)
 		for cfs in campfires:
 			FireVisual.set_smoke(cfs.smoke, cfs.fire, weather.wind_dir)
+		for sb: Node in _stove_buildings():
+			FireVisual.set_smoke((sb.get("stove") as Stove).smoke, (sb.get("stove") as Stove).fire, weather.wind_dir)
 	_fire_cue_t += delta
 	if _fire_cue_t > 2.0:
 		_fire_cue_t = 0.0
 		for cf in campfires:
 			cf.fire.cue(noise_bus, cf.global_position, night, 1.0, cf)
+		for sb: Node in _stove_buildings():
+			(sb.get("stove") as Stove).fire.cue(noise_bus, (sb as Node3D).global_position, night, 0.6 * float(sb.call("noise_leak")), sb)
 		if opening != null:
 			opening.fire.cue(noise_bus, opening.chimney_world(), night, LookoutOpening.LIGHT_LEAK, opening)
 	for stn in stores:
@@ -1833,6 +1838,14 @@ func _update_prompt() -> void:
 				it["m"]=_lm;it["d"]=pt.distance_to(player.position);cands.append(it)
 	_chest_cands(cands)
 	_opening_cands(cands, fwd)
+	for sb: Node in _stove_buildings():
+		var st: Stove = sb.get("stove")
+		for it: Dictionary in fire_actions(st.fire, st.top_world(), Callable(), 2.3, 0.9):  # low stove top sits ~1.1 m under the eye
+			if not _aim_ok(it.pos, float(it.r), float(it.tol)):
+				continue
+			it["m"] = _lm
+			it["d"] = st.top_world().distance_to(player.position) + float(it.get("dbias", 0.0))
+			cands.append(it)
 	for cf in campfires:
 		var cfire: Campfire = cf
 		for it: Dictionary in fire_actions(cfire.fire, cfire.global_position + Vector3(0.0, 0.2, 0.0), Callable(), 2.6, 0.9):
@@ -3157,6 +3170,9 @@ func _fire_site() -> Dictionary:
 	for cb in cabins:
 		if cb.contains_xz(player.position.x, player.position.z):
 			return {'ok': false, 'msg': 'Not indoors. Use the stove'}
+	for sb: Node in _stove_buildings():
+		if bool(sb.call("contains_xz", player.position.x, player.position.z)):
+			return {'ok': false, 'msg': 'Not indoors. Use the stove'}
 	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
 	var p := player.position + fwd * 1.6
 	var h: float = terrain.data.get_height(Vector3(p.x, 0, p.z))
@@ -3180,6 +3196,11 @@ func _build_campfire() -> void:
 		_say('Campfire needs 2 firewood (or 1 firewood + 2 kindling)')
 		return
 	if inv.count('matches') >= 1:
+		var st: Dictionary = FireSource.try_start(inv, fire_start_ctx(site['pos'], int(plan['kindling']) > 0))
+		if not bool(st.ok):
+			inv.remove('matches')
+			_say(String(st.msg) + ' Match used, the wood is still in your pack.')
+			return
 		_place_campfire(site['pos'], plan, true)
 	elif inv.count('bow_drill') >= 1 and inv.count('tinder') >= 1:
 		_act_begin({'text': 'Bow drill fire', 'label': 'Bow drill', 'hold': 12.0, 'kcal': 40.0, 'act': func() -> void: _drill_fire()})
@@ -3193,7 +3214,10 @@ func _drill_fire() -> void:
 	if not site['ok'] or plan.is_empty() or inv.count('bow_drill') < 1 or not inv.remove('tinder'):
 		_say('Cannot make a fire here')
 		return
-	if randf() < drill_chance:
+	var dctx := fire_start_ctx(site['pos'], int(plan['kindling']) > 0)
+	dctx['base'] = drill_chance; dctx['tinder'] = false  # tinder is the drill's requirement, already spent
+	var dch := FireSource.start_chance(dctx) if drill_chance > 0.0 and drill_chance < 1.0 else drill_chance  # 0 / 1 = dev-forced outcome
+	if randf() < dch:
 		inv.wear('bow_drill', 0.08)
 		_place_campfire(site['pos'], plan, false)
 	else:
@@ -3239,7 +3263,20 @@ func _near_fire() -> bool:
 	for cb in cabins:
 		if cb.is_lit() and cb.contains_xz(player.position.x, player.position.z):
 			return true
+	for sb: Node in _stove_buildings():
+		if (sb.get("stove") as Stove).fire.is_lit() and bool(sb.call("contains_xz", player.position.x, player.position.z)):
+			return true
 	return false
+
+
+## Huts and stores carry a placed Stove (fire standard F5).
+func _stove_buildings() -> Array:
+	var out: Array = []
+	for h in huts:
+		if h.get("stove") != null: out.append(h)
+	for s in stores:
+		if s.get("stove") != null: out.append(s)
+	return out
 
 
 # ---- crafting jobs (timed, interruptible; started from the Gear screen Craft tab)
@@ -3343,10 +3380,10 @@ func _build_rooms(saved: Array) -> void:
 		rooms.append({"climate": RoomClimate.new(6.0, c.fire, 30.0), "building": c, "inside": func(p: Vector3) -> bool: return c.contains_xz(p.x, p.z)})
 	for st in stores:
 		var s: Node3D = st
-		rooms.append({"climate": RoomClimate.new(5.0), "building": s, "inside": func(p: Vector3) -> bool: return s.contains_xz(p.x, p.z)})
+		rooms.append({"climate": RoomClimate.new(5.0, s.get("stove").fire if s.get("stove") != null else null, 24.0), "building": s, "inside": func(p: Vector3) -> bool: return s.contains_xz(p.x, p.z)})
 	for hb in huts:
 		var h: Node3D = hb
-		rooms.append({"climate": RoomClimate.new(4.0), "building": h, "inside": func(p: Vector3) -> bool: return h.contains_xz(p.x, p.z)})
+		rooms.append({"climate": RoomClimate.new(4.0, h.get("stove").fire if h.get("stove") != null else null, 34.0), "building": h, "inside": func(p: Vector3) -> bool: return h.contains_xz(p.x, p.z)})
 	if collapse != null and collapse.clinic != null:
 		var cl: Node3D = collapse.clinic
 		rooms.append({"climate": RoomClimate.new(5.0), "building": cl, "inside": func(p: Vector3) -> bool: return cl.contains_xz(p.x, p.z)})
@@ -3841,6 +3878,18 @@ func _run_vmtest() -> void:
 		aim_override = true
 		player.aim_k = 1.0
 
+## Cold-start conditions at an outdoor fire (FireSource.start_chance): wind and
+## snow now, shelter upwind (a trunk or wall within 2.5 m), tinder carried.
+func fire_start_ctx(point: Vector3, kindling := false) -> Dictionary:
+	return {"outdoors": true, "wind": weather.wind if weather != null else 0.0, "precip": weather.precip if weather != null else 0.0,
+		"sheltered": _upwind_sheltered(point), "tinder": inv != null and inv.count("tinder") > 0, "kindling": kindling}
+
+func _upwind_sheltered(point: Vector3) -> bool:
+	if weather == null: return false
+	var up := Vector3(-weather.wind_dir.x, 0.0, -weather.wind_dir.y).normalized()
+	if forest != null and not (forest.nearest_tree(point, up, 2.5, true) as Dictionary).is_empty(): return true
+	return HitZones.building_block(_building_list(), point + Vector3(0, 0.5, 0), up, 2.5) < 2.4
+
 ## The one interaction list for every FireSource: the lookout stove, cabin stoves,
 ## campfires and any future stove. Stoke with each carried fuel (longest first,
 ## mouse wheel picks), kettle, pans, drying rack. Entries carry a "tag".
@@ -3856,9 +3905,15 @@ func fire_actions(src: FireSource, point: Vector3, refresh: Callable = Callable(
 		out.append(_fire_entry(point, r, tol, "stoke", "%s • %s • no fuel carried" % [lbl.capitalize(), src.status()], 0.0, 0.0, func() -> void: _say("Carry firewood, planks, kindling or sticks to burn")))
 	for i in options.size():
 		var id: String = options[i]
-		var text := "%s • %s +%s • %s" % [verb, inv.name_of(id).to_lower(), FireSource.duration(src.burn_s(id)), "needs a match" if src.needs_starter() else src.status()]
+		var tail := src.status()
+		if src.needs_starter():
+			tail = "needs a match"
+			if src.exposed() and point.distance_to(player.position) < r + 1.0:
+				var ch := FireSource.start_chance(fire_start_ctx(point, id == "kindling"))
+				if ch < 0.995: tail += " • %d%% to catch" % roundi(ch * 100.0)
+		var text := "%s • %s +%s • %s" % [verb, inv.name_of(id).to_lower(), FireSource.duration(src.burn_s(id)), tail]
 		out.append(_fire_entry(point, r, tol, "stoke", text, src.hold_s(), 0.001 * i, func() -> void:
-			var res: Dictionary = src.stoke(inv, id)
+			var res: Dictionary = src.stoke(inv, id, fire_start_ctx(point, id == "kindling") if src.needs_starter() and src.exposed() else {})
 			_say(String(res.msg))
 			if bool(res.ok):
 				audio.play_at("rustle", point, -8, 1, 3, 18)

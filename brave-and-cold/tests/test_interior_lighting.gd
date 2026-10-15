@@ -44,6 +44,8 @@ func run() -> void:
 	var cold: float = cb.interior._fire_fill.light_energy
 	cb.stove_fuel_s = 3600; cb.interior.update(0.0, 0.0, 0.0)
 	check(cold == 0.0 and cb.interior._fire_fill.light_energy > 0.4, "the stove's FireSource glow lights the room at night")
-	check(store.interior._fire_fill == null, "a building without a stove has no fire bounce")
+	check(store.interior._fire_fill != null and (w.huts as Array).all(func(h: Hut) -> bool: return h.interior._fire_fill != null), "the store pot-belly and hut box stoves bounce firelight too (F5)")
+	var clinic = w.collapse.clinic if w.collapse != null else null
+	check(clinic == null or clinic.interior._fire_fill == null, "a building without a stove has no fire bounce")
 	w.queue_free(); await process_frame; await process_frame; SaveGame.pending = {}
 	print("INTERIOR_LIGHTING_TEST checks=", checks, " failures=", failures); quit(1 if failures else 0)
