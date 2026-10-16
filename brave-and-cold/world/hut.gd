@@ -114,6 +114,11 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float, base_y: float
 	mat.vertex_color_use_as_albedo = true
 	mat.roughness = 0.95
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.albedo_texture = Cabin._grain_tex()   # same weathering grain as the cabins
+	mat.uv1_triplanar = true
+	mat.uv1_scale = Vector3(3.2, 0.35, 0.6)   # vertical streaks on the siding, floor streaks run along the boards
+	mat.albedo_color = Color(1.12, 1.12, 1.12)
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	for mi in model.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).material_override = mat
 	var t := WALL_T

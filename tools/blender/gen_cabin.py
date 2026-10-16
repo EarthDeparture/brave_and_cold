@@ -138,7 +138,7 @@ def build_cabin():
     # floor planks (interior)
     for i in range(12):
         y = -2.3 + i * 0.4 + 0.2
-        m.box(0, y, FLOOR_TOP - 0.03, 5.8, 0.38, 0.06, WOOD_LIGHT, top=WOOD_LIGHT, j=0.12)
+        m.box(0, y, FLOOR_TOP - 0.015, 5.8, 0.38, 0.06, WOOD_LIGHT, top=WOOD_LIGHT, j=0.12)
     # baseboards: dark skirting along the inside foot of the walls hides the floor/wall seam (no light slit at the base)
     m.box(0, HY - 0.22, FLOOR_TOP + 0.06, 2 * HX - 0.3, 0.12, 0.14, WOOD_DARK)
     for sx in (-HX + 0.22, HX - 0.22):
@@ -255,6 +255,10 @@ def build_cabin():
     # snow drift piles at foundation
     m.box(0, -HY - 0.2, FLOOR_TOP - 0.1, 5.8, 0.5, 0.35, SNOW, top=SNOW, j=0.02)
     m.box(HX + 0.3, 0.5, FLOOR_TOP - 0.1, 0.5, 4.4, 0.35, SNOW, top=SNOW, j=0.02)
+    # dark subfloor just under the plank tops: the plank gaps show shadowed boards, not the
+    # stone foundation (whose top is flush at FLOOR_TOP and read as blue lines). Added last so
+    # the colour jitter rng sequence of everything above is unchanged.
+    m.box(0, 0, FLOOR_TOP - 0.0025, 5.8, 4.8, 0.015, (0.07, 0.05, 0.04), top=(0.07, 0.05, 0.04), j=0.0)
     furniture = [table.finish("Furn_table"), stools[0].finish("Furn_stool_a"), stools[1].finish("Furn_stool_b")]
     return m.finish("cabin"), furniture
 
