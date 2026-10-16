@@ -1,0 +1,16 @@
+{
+    "_doc": "Winter greenhouse crops (phase F). grow_h = game hours of full-rate growth (warm, lit, watered). seed = item used to plant (consumed one per plot; packets hold several sowings). yield = [min, max] of the harvest item.",
+    "crops": {
+        "potato": {"name": "potatoes", "seed": "potato", "grow_h": 60.0, "harvest": "potato", "yield": [3, 4], "color": [0.22, 0.36, 0.16]},
+        "carrot": {"name": "carrots", "seed": "carrot_seeds", "grow_h": 48.0, "harvest": "carrot", "yield": [2, 3], "color": [0.30, 0.46, 0.18]},
+        "kale": {"name": "kale", "seed": "kale_seeds", "grow_h": 30.0, "harvest": "kale", "yield": [2, 2], "color": [0.18, 0.32, 0.22]}
+    },
+    "rules": {
+        "frost_kill_h": 2.0,
+        "dry_kill_h": 24.0,
+        "water_per_l": 1.2,
+        "dry_per_h": 0.045,
+        "night_growth": 0.0,
+        "glazing": 0.8
+    }
+}

@@ -1023,6 +1023,7 @@ func _build_huts() -> void:
 	colliders.append_array(cabins)
 	colliders.append_array(huts)
 	colliders.append_array(outbuildings)
+	colliders.append_array(greenhouses)
 	colliders.append_array(stores)
 	noise_bus.buildings = colliders
 	for cbx in cabins:
@@ -1128,6 +1129,7 @@ func _loot_store(st: Store, i: int) -> void:
 var hamlet_plan: Array = []   # [{x, z, yaw}] planned BEFORE the forest so trees keep out of it
 var hamlet_extra: Array = []  # [{kind, x, z, yaw}] woodshed / outhouse
 var outbuildings: Array = []
+var greenhouses: Array[Greenhouse] = []   # phase F winter greenhouse (hamlet extra)
 
 
 ## Terrain-only hamlet planning (needs no forest). 3-5 cabins 35-90 m off the road, > 400 m from the map centre (where the start cabin lives).
@@ -1174,10 +1176,10 @@ func _plan_hamlet(water: Image) -> void:
 
 func _plan_extras(c: Vector2, nrm: Vector2, d: Vector2, rp: Vector2, spots: Array, water: Image) -> Array:
 	var out: Array = []
-	var want := ['woodshed', 'outhouse']
+	var want := ['woodshed', 'outhouse', 'greenhouse']
 	var offs := [Vector2(-3, 24), Vector2(24, -4), Vector2(-26, 0), Vector2(2, -27), Vector2(-24, 22), Vector2(26, 18)]
 	for k in want:
-		var he := Outbuilding.half_extents(k)
+		var he := Vector2(Greenhouse.HX + 0.2, Greenhouse.HZ + 0.2) if k == 'greenhouse' else Outbuilding.half_extents(k)
 		for o in offs:
 			var q: Vector2 = c + nrm * o.x + d * o.y
 			if road.is_near(q.x, q.y, 8.0) or not _flat_ok(q.x, q.y, water):
@@ -1233,6 +1235,13 @@ func _build_hamlet(_home: Vector2) -> void:
 			cb.queue_free()
 	outbuildings = []
 	for he in hamlet_extra:
+		if String(he['kind']) == 'greenhouse':
+			var gh := Greenhouse.new(); add_child(gh)
+			if gh.setup(terrain, float(he['x']), float(he['z']), float(he['yaw'])):
+				greenhouses.append(gh); print('GREENHOUSE at ', Vector2(float(he['x']), float(he['z'])))
+			else:
+				gh.queue_free()
+			continue
 		var ob := Outbuilding.new()
 		add_child(ob)
 		if ob.setup(terrain, String(he['kind']), float(he['x']), float(he['z']), float(he['yaw'])):
@@ -1247,7 +1256,7 @@ func _loot_hamlet_crate(cb: Cabin) -> void:
 	cb.crate_looted = true
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(absf(cb.position.x) * 31.0 + absf(cb.position.z) * 17.0)
-	var table := [['matches', 3, 22], ['beans', 2, 20], ['ammo', 5, 12], ['bandage', 1, 14], ['rag', 2, 14], ['antiseptic', 1, 8], ['antibiotics', 1, 5], ['nails', 20, 9], ['plank', 3, 8], ['flare', 1, 7], ['sweater', 1, 4], ['toque', 1, 4], ['knife', 1, 3], ['hammer', 1, 3], ['cooking_pot', 1, 5]]
+	var table := [['matches', 3, 22], ['beans', 2, 20], ['ammo', 5, 12], ['bandage', 1, 14], ['rag', 2, 14], ['antiseptic', 1, 8], ['antibiotics', 1, 5], ['nails', 20, 9], ['plank', 3, 8], ['flare', 1, 7], ['sweater', 1, 4], ['toque', 1, 4], ['knife', 1, 3], ['hammer', 1, 3], ['cooking_pot', 1, 5], ['carrot_seeds', 3, 6], ['kale_seeds', 3, 6], ['potato', 2, 6]]
 	var total := 0
 	for e in table:
 		total += int(e[2])
@@ -1839,6 +1848,12 @@ func _update_prompt() -> void:
 				it["m"]=_lm;it["d"]=pt.distance_to(player.position);cands.append(it)
 	_chest_cands(cands)
 	_forage_cands(cands)
+	for g: Greenhouse in greenhouses:
+		if g.global_position.distance_to(player.position) > 7.0:
+			continue
+		for it: Dictionary in g.actions(inv, _say):
+			if _aim_ok(it.pos, float(it.r), float(it.tol)):
+				it["m"] = _lm; it["d"] = (it.pos as Vector3).distance_to(player.position); cands.append(it)
 	_opening_cands(cands, fwd)
 	for sb: Node in _stove_buildings():
 		var st: Stove = sb.get("stove")
@@ -3347,6 +3362,7 @@ func _stove_buildings() -> Array:
 		if h.get("stove") != null: out.append(h)
 	for s in stores:
 		if s.get("stove") != null: out.append(s)
+	out.append_array(greenhouses)
 	return out
 
 
@@ -3458,6 +3474,10 @@ func _build_rooms(saved: Array) -> void:
 	if collapse != null and collapse.clinic != null:
 		var cl: Node3D = collapse.clinic
 		rooms.append({"climate": RoomClimate.new(5.0), "building": cl, "inside": func(p: Vector3) -> bool: return cl.contains_xz(p.x, p.z)})
+	for gb in greenhouses:
+		var g: Greenhouse = gb
+		var gc := RoomClimate.new(2.0, g.stove.fire, 30.0); gc.solar_c = 12.0; g.room = gc
+		rooms.append({"climate": gc, "building": g, "inside": func(p: Vector3) -> bool: return g.contains_xz(p.x, p.z)})
 	if opening != null and fire_lookout != null:
 		rooms.append({"climate": RoomClimate.new(4.0, opening.fire, 32.0), "building": fire_lookout, "inside": func(p: Vector3) -> bool: return fire_lookout.contains_room(p)})
 	_rooms_unsettled.clear()
@@ -3469,12 +3489,18 @@ func _build_rooms(saved: Array) -> void:
 
 func _advance_rooms(gs: float) -> void:
 	var outside := clock.ambient_c()
+	var day := 1.0 - sky_rig.gameplay_night_factor if sky_rig != null else 0.0
+	for g: Greenhouse in greenhouses:
+		g.light = Farming.light_factor(day, weather.overcast if weather != null else 0.0)
+		if g.room != null: g.room.sun = g.light
 	for c: RoomClimate in _rooms_unsettled: c.settle(outside)
 	_rooms_unsettled.clear()
 	for r: Dictionary in rooms:
 		var c: RoomClimate = r.climate
 		c.leak = RoomClimate.leak_of(r.building)
 		c.advance(gs, outside)
+	for g: Greenhouse in greenhouses:
+		g.advance(gs, g.room.room_c if g.room != null else outside)
 
 func room_at(p: Vector3) -> RoomClimate:
 	for r: Dictionary in rooms:
@@ -3709,6 +3735,7 @@ func _save_data() -> Dictionary:
 		'holes': ice_holes.map(func(h: IceHole) -> Dictionary: return h.to_dict()),
 		'chests': chests.map(func(c: StorageChest) -> Dictionary: return c.to_dict()),
 		'stores': stores.map(func(s: Store) -> Dictionary: return s.state_dict()),
+		'greenhouses': greenhouses.map(func(g: Greenhouse) -> Dictionary: return g.state_dict()),
 		'sheds': outbuildings.map(func(o: Outbuilding) -> int: return o.wood_left),
 		'fires': fires,
 		'wolves': _alive_list(wolves),
@@ -3868,6 +3895,9 @@ func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 	var hsv: Array = sv.get('huts', [])
 	for hi in range(mini(hsv.size(), huts.size())):
 		huts[hi].restore_state(hsv[hi])
+	var gsv: Array = sv.get('greenhouses', [])
+	for gi in range(mini(gsv.size(), greenhouses.size())):
+		greenhouses[gi].restore_state(gsv[gi])
 	var ssv: Array = sv.get('stores', [])
 	for sj in range(mini(ssv.size(), stores.size())):
 		stores[sj].restore_state(ssv[sj])

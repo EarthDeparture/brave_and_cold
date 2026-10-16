@@ -12,13 +12,15 @@ var insulation_c := 6.0   # still air + walls, stove out, door shut
 var fire_c := 24.0        # extra degrees a roaring stove holds at steady state
 var fire: FireSource
 var leak := 0.0           # 0 sealed .. 1 wide open (set by the owner each update)
+var solar_c := 0.0        # degrees full sun adds through glazing (greenhouse)
+var sun := 0.0            # 0..1 sun on the glazing now (set by the owner each update)
 
 func _init(p_insulation := 6.0, p_fire: FireSource = null, p_fire_c := 24.0) -> void:
 	insulation_c = p_insulation; fire = p_fire; fire_c = p_fire_c
 
 func target_c(outside_c: float) -> float:
 	var heat := fire.glow() * fire_c if fire != null else 0.0
-	return outside_c + insulation_c * (1.0 - 0.8 * leak) + heat * (1.0 - 0.6 * leak)
+	return outside_c + insulation_c * (1.0 - 0.8 * leak) + heat * (1.0 - 0.6 * leak) + solar_c * sun * (1.0 - 0.5 * leak)
 
 ## Start at steady state (new game / legacy save) so a crew-lit stove is already warm.
 func settle(outside_c: float) -> void:

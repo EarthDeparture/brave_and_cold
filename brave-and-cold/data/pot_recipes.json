@@ -10,6 +10,8 @@
         {"id": "tea_birch", "name": "Birch bark tea", "inputs": {"birch_bark": 2, "water": 1}, "cook_min": 10},
         {"id": "tea_reishi", "name": "Reishi tea", "inputs": {"reishi": 1, "water": 1}, "cook_min": 15},
         {"id": "meat_stew", "name": "Meat stew", "inputs": {"red_meat": 1, "water": 1}, "cook_min": 45},
-        {"id": "fish_stew", "name": "Fish stew", "inputs": {"fish": 1, "water": 1}, "cook_min": 35}
+        {"id": "fish_stew", "name": "Fish stew", "inputs": {"fish": 1, "water": 1}, "cook_min": 35},
+        {"id": "garden_stew", "name": "Garden stew", "inputs": {"red_meat": 1, "potato": 1, "carrot": 1, "water": 1}, "cook_min": 50},
+        {"id": "veg_soup", "name": "Vegetable soup", "inputs": {"potato": 1, "carrot": 1, "kale": 1, "water": 1}, "cook_min": 30}
     ]
 }

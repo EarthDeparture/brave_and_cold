@@ -12,7 +12,7 @@ func freeze(n: Node) -> void:
 	n.set_process(false); n.set_physics_process(false)
 	for child: Node in n.get_children(): freeze(child)
 func run() -> void:
-	check(PotCooking.recipes().size() == 5 and PotCooking.outputs().all(func(id: String) -> bool: return Inventory.ITEMS.has(id)), "5 pot recipes, every output is an item")
+	check(PotCooking.recipes().size() == 7 and PotCooking.outputs().all(func(id: String) -> bool: return Inventory.ITEMS.has(id)), "7 pot recipes (3 teas, 4 stews/soups), every output is an item")
 	var inv := Inventory.new(BodyTemperature.new())
 	inv.add("rose_hips", 2); inv.add("clean_water", 1)
 	var fire := FireSource.new("campfire")
