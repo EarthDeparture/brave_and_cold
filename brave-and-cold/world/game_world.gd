@@ -391,6 +391,9 @@ func _ready() -> void:
 		town_life=TownLife.new();add_child(town_life);town_life.build(self,sv.get("town_life",{}),loading and not sv.has("town_life"))
 	_build_rooms(sv.get("rooms", []))
 	_build_forage(sv.get("forage", []))
+	_build_warrens()
+	for sd: Variant in sv.get("snares", []):
+		if sd is Dictionary: _add_snare(Vector3(float(sd.x), float(sd.y), float(sd.z)), float(sd.yaw), sd)
 	pause_menu = PauseMenu.new()
 	add_child(pause_menu)
 	dev = DevMenu.new()
@@ -669,6 +672,15 @@ func _process(delta: float) -> void:
 	_hold_attack()
 	_bullets_update(delta)
 	player.injury.update(gs, delta)
+	_advance_small_game(gs)
+	# N6 frostbite: head / hands / feet against the wind-chilled air; warm = heated room, fire or mild air
+	var fb_before := frostbite.count()
+	var fb_warm := fw > 80.0 or (room_at(player.position) != null and air_c() > 0.0) or body.feels_like > -5.0
+	for fm: String in frostbite.advance(gs, body.feels_like, fb_warm, inv, body.wetness):
+		_say(fm)
+	if frostbite.count() > fb_before and not player.dead:
+		player.hurt(Frostbite.CAP_LOSS * (frostbite.count() - fb_before), "Frostbite")
+	player.health = minf(player.health, frostbite.max_condition())
 	var sd := needs.damage_per_s()
 	if sd > 0.0 and not player.dead:
 		player.hurt(sd * delta, 'Died of thirst' if needs.water <= 0.0 else 'Starved to death')
@@ -1130,6 +1142,11 @@ var hamlet_plan: Array = []   # [{x, z, yaw}] planned BEFORE the forest so trees
 var hamlet_extra: Array = []  # [{kind, x, z, yaw}] woodshed / outhouse
 var outbuildings: Array = []
 var greenhouses: Array[Greenhouse] = []   # phase F winter greenhouse (hamlet extra)
+var frostbite := Frostbite.new()           # N6 per-region cold injury
+var warrens: Array[Vector3] = []          # rabbit warrens (seeded)
+var rabbits: Array = []
+var snares: Array[Snare] = []
+var _rabbit_acc := 0.0
 
 
 ## Terrain-only hamlet planning (needs no forest). 3-5 cabins 35-90 m off the road, > 400 m from the map centre (where the start cabin lives).
@@ -1848,6 +1865,7 @@ func _update_prompt() -> void:
 				it["m"]=_lm;it["d"]=pt.distance_to(player.position);cands.append(it)
 	_chest_cands(cands)
 	_forage_cands(cands)
+	_snare_cands(cands)
 	for g: Greenhouse in greenhouses:
 		if g.global_position.distance_to(player.position) > 7.0:
 			continue
@@ -2724,6 +2742,87 @@ func harvest_forage(fn: ForageNode) -> void:
 	_say("Collected %d %s" % [n, inv.name_of(String(sp.item)).to_lower()])
 
 
+## Small game: seeded warrens off the road, two hares each; a lost hare is replaced
+## (one per warren per game hour) only while the player is far away.
+func _build_warrens() -> void:
+	if road == null or road.points.size() < 60 or terrain == null:
+		return
+	var rng := RandomNumberGenerator.new(); rng.seed = 9031
+	var tries := 0
+	while warrens.size() < 10 and tries < 500:
+		tries += 1
+		var rp: Vector2 = road.points[rng.randi_range(20, road.points.size() - 21)]
+		var a := rng.randf() * TAU
+		var p := rp + Vector2(cos(a), sin(a)) * rng.randf_range(18.0, 70.0)
+		if road.is_near(p.x, p.y, 8.0) or road._is_wet(p.x, p.y) or not _flat_enough(p, 0.8):
+			continue
+		if colliders.any(func(b: Node3D) -> bool: return Vector2(b.global_position.x, b.global_position.z).distance_to(p) < 15.0):
+			continue
+		if warrens.any(func(w: Vector3) -> bool: return Vector2(w.x, w.z).distance_to(p) < 60.0):
+			continue
+		warrens.append(_ground(p.x, p.y))
+	for i in warrens.size():
+		for k in 2:
+			_add_rabbit(i, 100 * i + k)
+
+func _add_rabbit(warren_i: int, seed_value: int) -> void:
+	var w: Vector3 = warrens[warren_i]
+	var r := Rabbit.new(); add_child(r)
+	r.global_position = _ground(w.x + randf_range(-3, 3), w.z + randf_range(-3, 3))
+	r.setup(terrain, snow, player, forest, noise_bus, w, seed_value)
+	r.set_meta("warren", warren_i)
+	rabbits.append(r)
+
+func _advance_small_game(gs: float) -> void:
+	rabbits = rabbits.filter(func(r: Variant) -> bool: return is_instance_valid(r) and not (r as Rabbit).is_dead())
+	_rabbit_acc += gs
+	if _rabbit_acc >= 3600.0:
+		_rabbit_acc = 0.0
+		for i in warrens.size():
+			var have := rabbits.filter(func(r: Rabbit) -> bool: return int(r.get_meta("warren", -1)) == i).size()
+			if have < 2 and warrens[i].distance_to(player.position) > 90.0:
+				_add_rabbit(i, randi())
+	for s: Snare in snares:
+		s.advance(gs, nearest_warren(s.position))
+
+func nearest_warren(p: Vector3) -> float:
+	var best := INF
+	for w: Vector3 in warrens:
+		best = minf(best, Vector2(w.x - p.x, w.z - p.z).length())
+	return best
+
+func _add_snare(pos: Vector3, yaw: float, saved: Dictionary = {}) -> Snare:
+	var s := Snare.new(); add_child(s); s.setup(pos, yaw, snares.size() * 7 + 3)
+	if not saved.is_empty():
+		s.condition = float(saved.get("cond", 1.0)); s._acc = float(saved.get("acc", 0.0)); s.set_caught(bool(saved.get("caught", false)))
+	snares.append(s)
+	return s
+
+func _snare_cands(cands: Array) -> void:
+	for s: Snare in snares:
+		if not is_instance_valid(s):
+			continue
+		var sp := s.point()
+		if sp.distance_to(player.position) > 3.0 or not _aim_ok(sp, 2.4, 0.6):
+			continue
+		if s.caught:
+			cands.append({"m": _lm, "d": sp.distance_to(player.position), "text": "Take rabbit from the snare", "hold": 1.5, "act": func() -> void: _snare_take(s)})
+		else:
+			cands.append({"m": _lm, "d": sp.distance_to(player.position), "text": "Snare set (%d%%) • take it down" % int(s.condition * 100.0), "hold": 1.5, "act": func() -> void: _snare_remove(s)})
+
+func _snare_take(s: Snare) -> void:
+	_say(s.take(inv))
+	if s.condition <= 0.0:
+		_give_or_drop("stick", 2, s.point()); snares.erase(s); s.queue_free()
+
+func _snare_remove(s: Snare) -> void:
+	_give_or_drop("stick", 2, s.point())
+	if s.condition >= 0.5:
+		_give_or_drop("cordage", 1, s.point())
+	snares.erase(s); s.queue_free()
+	_say("Took down the snare")
+
+
 ## Where a chest would go: 1.4 m ahead on the surface you stand on, not on top of another chest.
 func _chest_site() -> Dictionary:
 	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
@@ -3426,7 +3525,10 @@ func _craft_update(delta: float) -> void:
 	for id in r['out'].keys():
 		_give_or_drop(String(id), int(r['out'][id]), player.position)
 		parts.append('%d %s' % [int(r['out'][id]), inv.name_of(String(id))])
-	if r.has('place'):
+	if r.has('place') and String(r['place']) == 'snare':
+		_add_snare(csite['pos'], float(csite['yaw']))
+		parts.append('a set snare' + ('' if nearest_warren(csite['pos']) < 40.0 else ' (no rabbit sign nearby)'))
+	elif r.has('place'):
 		_add_chest(csite['pos'], float(csite['yaw']))
 		parts.append('a storage chest')
 	audio.play_at("rustle", player.position, -6.0, 1.0, 4.0, 40.0)
@@ -3736,6 +3838,8 @@ func _save_data() -> Dictionary:
 		'chests': chests.map(func(c: StorageChest) -> Dictionary: return c.to_dict()),
 		'stores': stores.map(func(s: Store) -> Dictionary: return s.state_dict()),
 		'greenhouses': greenhouses.map(func(g: Greenhouse) -> Dictionary: return g.state_dict()),
+		'frostbite': frostbite.to_dict(),
+		'snares': snares.filter(func(s: Snare) -> bool: return is_instance_valid(s)).map(func(s: Snare) -> Dictionary: return s.to_dict()),
 		'sheds': outbuildings.map(func(o: Outbuilding) -> int: return o.wood_left),
 		'fires': fires,
 		'wolves': _alive_list(wolves),
@@ -3895,6 +3999,7 @@ func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 	var hsv: Array = sv.get('huts', [])
 	for hi in range(mini(hsv.size(), huts.size())):
 		huts[hi].restore_state(hsv[hi])
+	frostbite.restore(sv.get('frostbite', {}))
 	var gsv: Array = sv.get('greenhouses', [])
 	for gi in range(mini(gsv.size(), greenhouses.size())):
 		greenhouses[gi].restore_state(gsv[gi])

@@ -3,7 +3,7 @@ extends RefCounted
 ## Cook first; slice and dry four portions beside the burning lookout stove.
 const CAP:=4
 const DRY_S:=7200.0
-const RECIPES:={"venison_cooked":"venison_dried","wolf_meat_cooked":"wolf_meat_dried","bear_meat_cooked":"bear_meat_dried","trout_cooked":"trout_dried","whitefish_cooked":"whitefish_dried","pike_cooked":"pike_dried"}
+const RECIPES:={"venison_cooked":"venison_dried","wolf_meat_cooked":"wolf_meat_dried","bear_meat_cooked":"bear_meat_dried","trout_cooked":"trout_dried","whitefish_cooked":"whitefish_dried","pike_cooked":"pike_dried","rabbit_cooked":"rabbit_dried"}
 var portions:Array=[]
 
 func reason(inv:Inventory) -> String:

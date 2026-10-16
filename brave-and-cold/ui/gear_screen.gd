@@ -642,6 +642,14 @@ func _draw_condition() -> void:
 	_bar(Vector2(x, 508), w, "Food", needs.calories / 1500.0, "%d kcal" % int(needs.calories))
 	_bar(Vector2(x, 536), w, "Water", needs.water / 70.0, "%d%%" % int(needs.water))
 	_bar(Vector2(x, 564), w, "Temperature", (body.core - 32.0) / 4.5, "%.1f C" % body.core)
+	var fb: Frostbite = world.get("frostbite") if world != null else null
+	var fb_line := ""
+	if fb != null and fb.worst() != "" and float(fb.risk[fb.worst()]) >= 1.0:
+		fb_line = "Frostbite risk: %s %d%%" % [Frostbite.LABEL[fb.worst()], int(fb.risk[fb.worst()])]
+	if fb != null and fb.count() > 0:
+		fb_line += ("  " if fb_line != "" else "") + "Frostbitten: " + ", ".join(fb.bitten.keys().filter(func(k: String) -> bool: return bool(fb.bitten[k])).map(func(k: String) -> String: return String(Frostbite.LABEL[k])))
+	if fb_line != "":
+		DZ.text(_c, fb_line, Vector2(390, 584), 12, DZ.WARN)
 	DZ.text(_c,player.injury.recovery_status(needs,body.core),Vector2(140,584),12,DZ.WARN if player.injury.bleeding() else DZ.DIM)
 	DZ.text(_c, "WORN", Vector2(140, 604), 16, DZ.DIM)
 	var worn := inv.worn_list()

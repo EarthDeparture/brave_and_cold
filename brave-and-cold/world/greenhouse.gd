@@ -31,6 +31,7 @@ var _walls: Array[Rect2] = []
 var _door: Node3D
 var _plants: Array = []   # Node3D per plot
 var _soil: MeshInstance3D
+var _door_rect := Rect2(-DOOR_HALF, HZ - 0.04, 2 * DOOR_HALF, 0.08)   # HitZones.building_block reads it
 var room: RoomClimate
 
 func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
