@@ -58,6 +58,7 @@ func _ready() -> void:
 	create_tween().tween_property(_black, "modulate:a", 0.0, 1.6).set_trans(Tween.TRANS_SINE)
 	_main.modulate.a = 0.0
 	create_tween().tween_property(_main, "modulate:a", 1.0, 1.4).set_delay(0.7)
+	MenuStyle.quiet_until_ms = Time.get_ticks_msec() + 700  # no tick for the opening auto-focus
 	_wind = AudioStreamPlayer.new(); _wind.stream = Sfx.get_stream("wind"); _wind.volume_db = -40.0; add_child(_wind); _wind.play()
 	create_tween().tween_property(_wind, "volume_db", -16.0, 2.5)
 	if not _items.is_empty(): _items[0].grab_focus.call_deferred()
@@ -279,7 +280,7 @@ func _build_loading() -> void:
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("ui_cancel") and not _starting and (_controls.visible or _confirm.visible):
-		_show_main(); get_viewport().set_input_as_handled()
+		MenuStyle.sound(self, "back"); _show_main(); get_viewport().set_input_as_handled()
 
 func _focus_first(page: Control) -> void:
 	for c in page.get_children():
@@ -315,6 +316,7 @@ func _continue() -> void:
 func _start() -> void:
 	if _starting: return
 	_starting = true
+	MenuStyle.sound(self, "start")
 	_main.visible = false; _confirm.visible = false; _controls.visible = false
 	_loading.visible = true
 	var tw := create_tween().set_parallel(true)

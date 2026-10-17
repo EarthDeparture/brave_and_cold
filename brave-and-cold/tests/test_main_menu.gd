@@ -35,6 +35,19 @@ func run() -> void:
 	for b in m._controls.find_children("*", "Button", true, false): back_b = b
 	check(back_b != null and vis.encloses(back_b.get_global_rect()), "Controls Back fits on screen (%s in %s)" % [str(back_b.get_global_rect() if back_b else null), str(vis)])
 	check(MenuStyle.bundled(), "bundled OFL fonts present")
+	# UI sounds: hover once per focus move, throttled; press plays a click; Back plays back.
+	MenuStyle.quiet_until_ms = 0; MenuStyle.played.clear()
+	m._show_main()
+	var items: Array = m._items
+	MenuStyle.played.clear()
+	await create_timer(0.25).timeout
+	items[1].grab_focus()
+	items[2].grab_focus()   # within 80 ms: throttled
+	check(MenuStyle.played.count("hover") == 1, "hover ticks once for a fast sweep (%s)" % str(MenuStyle.played))
+	await create_timer(0.12).timeout
+	items[3].grab_focus()
+	check(MenuStyle.played.count("hover") == 2, "hover ticks again after the gap")
+	for k in MenuStyle.UI_SOUNDS: check(ResourceLoader.exists(MenuStyle.UI_SOUNDS[k][0]), "ui sound asset: " + k)
 	var tf := MenuStyle.title_font() as FontVariation
 	check(tf != null and tf.base_font is FontFile, "title uses the bundled font file, not a system font")
 	check(FileAccess.file_exists("res://assets/fonts/Cormorant_Garamond/OFL.txt") and FileAccess.file_exists("res://assets/fonts/Barlow_Semi_Condensed/OFL.txt"), "font licences ship beside the fonts")

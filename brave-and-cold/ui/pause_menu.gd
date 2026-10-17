@@ -58,6 +58,7 @@ func _unhandled_input(e: InputEvent) -> void:
 
 func open() -> void:
 	visible = true
+	MenuStyle.quiet_until_ms = Time.get_ticks_msec() + 150  # opening focus grab is not a hover
 	if _save_btn != null:
 		_save_btn.text = "SAVE GAME"
 	_box.visible = true

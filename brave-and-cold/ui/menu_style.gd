@@ -20,6 +20,46 @@ const OCHRE := Color(0.80, 0.64, 0.36)
 const HEAD := Color(0.92, 0.91, 0.87)
 static var _cache := {}
 
+## Menu UI sounds (tools/audio/make_ui_sounds.py derives them from project foley).
+const UI_SOUNDS := {
+	"hover": ["res://assets/audio/ui/ui_hover.wav", -21.0],
+	"click": ["res://assets/audio/ui/ui_click.wav", -13.0],
+	"back": ["res://assets/audio/ui/ui_back.wav", -13.0],
+	"start": ["res://assets/audio/ui/ui_start.wav", -9.0],
+}
+const HOVER_GAP_MS := 80      # a fast mouse sweep must not machine-gun ticks
+const AFTER_PRESS_MS := 160   # the focus grab that follows a press is not a hover
+static var _players := {}
+static var _last_ms := {}
+static var quiet_until_ms := 0
+static var played: Array[String] = []   # test hook: kinds actually played, in order
+
+## Plays a menu sound on a shared player under the tree root (survives scene changes,
+## keeps playing while the game is paused). Hover is throttled and muted right after a press.
+static func sound(from: Node, kind: String) -> void:
+	if not UI_SOUNDS.has(kind) or from == null or not from.is_inside_tree(): return
+	var now := Time.get_ticks_msec()
+	if now < quiet_until_ms: return
+	if kind == "hover":
+		if now - int(_last_ms.get("hover", -100000)) < HOVER_GAP_MS: return
+		for k in ["click", "back", "start"]:
+			if now - int(_last_ms.get(k, -100000)) < AFTER_PRESS_MS: return
+	_last_ms[kind] = now
+	var p: AudioStreamPlayer = _players.get(kind)
+	var fresh := false
+	if p == null or not is_instance_valid(p):
+		var path: String = UI_SOUNDS[kind][0]
+		if not ResourceLoader.exists(path): return
+		p = AudioStreamPlayer.new(); p.name = "UiSound_" + kind
+		p.stream = load(path); p.volume_db = UI_SOUNDS[kind][1]
+		p.process_mode = Node.PROCESS_MODE_ALWAYS; p.max_polyphony = 3
+		from.get_tree().root.add_child.call_deferred(p)
+		_players[kind] = p; fresh = true
+	p.pitch_scale = randf_range(0.94, 1.06) if kind == "hover" else 1.0
+	if fresh: p.play.call_deferred()
+	else: p.play()
+	played.append(kind)
+
 static func font(file: String, names: Array, weight: int, spacing: int) -> Font:
 	var key := "%s|%s|%d|%d" % [file, ",".join(names), weight, spacing]
 	if _cache.has(key): return _cache[key]
@@ -79,6 +119,9 @@ static func item(s: String, act: Callable, size: int = 26) -> Button:
 		b.add_theme_color_override("font_focus_color", BRIGHT if v else TEXT)
 	b.mouse_entered.connect(func() -> void: b.grab_focus())
 	b.focus_entered.connect(on.bind(true)); b.focus_exited.connect(on.bind(false))
+	b.focus_entered.connect(func() -> void: sound(b, "hover"))
+	var back := b.text in ["BACK", "RESUME"]
+	b.pressed.connect(func() -> void: sound(b, "back" if back else "click"))
 	b.pressed.connect(act)
 	return b
 
