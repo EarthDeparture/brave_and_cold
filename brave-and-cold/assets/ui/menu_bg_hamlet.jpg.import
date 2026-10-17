@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b5yas4cb1pflk"
-path="res://.godot/imported/menu_bg.png-7dfca77845a51b62413435f3d8844d30.ctex"
+uid="uid://b16snp0iosfr2"
+path="res://.godot/imported/menu_bg_hamlet.jpg-75216949558db7be2b8a746ad3ef0849.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/menu_bg.png"
-dest_files=["res://.godot/imported/menu_bg.png-7dfca77845a51b62413435f3d8844d30.ctex"]
+source_file="res://assets/ui/menu_bg_hamlet.jpg"
+dest_files=["res://.godot/imported/menu_bg_hamlet.jpg-75216949558db7be2b8a746ad3ef0849.ctex"]
 
 [params]
 
