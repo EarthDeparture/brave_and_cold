@@ -53,10 +53,23 @@ var route_detail_enabled := false
 var environment_detail_enabled := false
 
 
+## M5 staged loading: report a stage to the menu's LoadingOverlay and give the main loop one
+## frame to draw it. Without an overlay (headless tests, tools) this neither waits nor
+## changes frame timing. Never called after the HUD exists: _process runs once hud != null.
+var _load_t0 := 0
+func _stage(f: float, text: String) -> void:
+	if _load_t0 == 0: _load_t0 = Time.get_ticks_msec()
+	print("LOAD_STAGE %.2f %s %d ms" % [f, text, Time.get_ticks_msec() - _load_t0])
+	if LoadingOverlay.current == null: return
+	LoadingOverlay.report(f, text)
+	await get_tree().process_frame
+
+
 func _ready() -> void:
 	Settings.load_all()
 	var opts := _args()
 	environment_detail_enabled = opts.get("detail","winter") != "baseline" and opts.get("atmosphere","winter") != "baseline"
+	await _stage(0.02, "Raising the valley")
 	_build_environment()
 	terrain = Terrain3D.new()
 	terrain.name = "Terrain3D"
@@ -65,11 +78,15 @@ func _ready() -> void:
 		terrain.assets = load('res://data/terrain/terrain_environment_assets.tres' if environment_detail_enabled else 'res://data/terrain/terrain_winter_assets.tres')
 	terrain.data_directory = MAP
 	add_child(terrain)
+	# Staged loading yields frames before the player camera exists; Terrain3D would log
+	# "Cannot find the active camera" and stop its physics process. Hold it until setup.
+	terrain.set_physics_process(false)
 	terrain.material.auto_shader = false
 	terrain.material.set_shader_param("blend_sharpness", 0.1)
 	terrain.material.set_shader_param("enable_macro_variation", true)
 	terrain.material.set_shader_param("macro_variation1", Color(0.88, 0.93, 1.0))
 	terrain.material.set_shader_param("macro_variation2", Color(1.0, 0.97, 0.98))
+	await _stage(0.09, "Laying the roads")
 	road = RoadNet.new()
 	road.grading_enabled = opts.get("road_grade","smooth") != "baseline"
 	route_detail_enabled=environment_detail_enabled and opts.get("route_detail","winter")!="baseline"
@@ -97,6 +114,7 @@ func _ready() -> void:
 			var hp := Vector2(float(hs['x']), float(hs['z']))
 			var hyaw := deg_to_rad(float(hs['yaw']))
 			trailnet.add_trail(_road_edge_toward(hp), hp + Vector2(sin(hyaw), cos(hyaw)) * 1.8, 11)
+	await _stage(0.17, "Growing the timber")
 	if opts.get("trees", "1") == "1":
 		forest = ForestScatter.new()
 		forest.detail_enabled = environment_detail_enabled
@@ -122,6 +140,7 @@ func _ready() -> void:
 			plants = PlantField.new()
 			add_child(plants)
 			plants.build(terrain, forest.exclude)
+	await _stage(0.48, "Freezing the lakes")
 	ice.activate_shoreline()
 	if plants != null: print("PLANTS under ice suppressed=", plants.suppress_under_ice(ice))
 	road.build_mesh(terrain)
@@ -136,6 +155,7 @@ func _ready() -> void:
 		if environment_detail_enabled:
 			ice_material.set_shader_parameter('ice_fields', preload('res://assets/environment_detail/textures/ice_fields.png'))
 		ice_material.set_shader_parameter('surface_noise', preload('res://assets/textures/atmosphere/cloud_fields.png'))
+	await _stage(0.66, "Drifting the snow")
 	snow.build("res://data/maps/valley_b")
 	clock.hour = float(opts.get("hour", 16.5))
 	sky_rig = SkyRig.new() if opts.get("atmosphere", "winter") == "baseline" else preload("res://world/atmosphere_rig.gd").new()
@@ -155,6 +175,7 @@ func _ready() -> void:
 	player = Player.new()
 	add_child(player)
 	player.setup(terrain, snow, body, noise_bus)
+	terrain.set_physics_process(true)
 	snowfall = SnowFall.new()
 	add_child(snowfall)
 	snowfall.follow = player
@@ -217,6 +238,7 @@ func _ready() -> void:
 	if loading:
 		sp = Vector2(float(sv['player']['x']), float(sv['player']['z']))
 	player.place(sp.x, sp.y)
+	await _stage(0.82, "Building the hamlet")
 	_place_cabin(home)
 	_build_hamlet(home)
 	_build_store()
@@ -229,6 +251,7 @@ func _ready() -> void:
 			plants.suppress_near(cb.global_position.x, cb.global_position.z, 9.0)
 		for hu in huts:
 			plants.suppress_near(hu.global_position.x, hu.global_position.z, 7.0)
+	await _stage(0.87, "Waking the dead")
 	pop = Population.new()
 	add_child(pop)
 	pop.terrain = terrain
@@ -425,6 +448,8 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if (out_path == "" and walk_secs == 0.0) else Input.MOUSE_MODE_VISIBLE
 	# Gear must be ready for Tab before the first gameplay process frame.
 	_ensure_gear()
+	print("LOAD_STAGE 1.00 ready %d ms" % (Time.get_ticks_msec() - _load_t0))
+	LoadingOverlay.report(1.0, "")
 
 
 func _args() -> Dictionary:

@@ -31,6 +31,9 @@ var _options: OptionsPanel
 var _controls: Control
 var _confirm: Control
 var _loading: Control
+var _load_fill: ColorRect
+var _load_stage: Label
+const LOAD_BAR_W := 420.0
 var _black: ColorRect
 var _wind: AudioStreamPlayer
 var _starting := false
@@ -40,8 +43,10 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	var base := ColorRect.new(); base.color = Color(0.02, 0.025, 0.035); base.set_anchors_preset(Control.PRESET_FULL_RECT); add_child(base)
+	base.set_meta("loading_keep", true)
 	_add_backdrops()
 	_add_grade()
+	get_child(get_child_count() - 1).set_meta("loading_keep", true)   # the grade rect
 	_add_snow(140, Vector2(1.2, 2.6), Vector2(40, 80), 0.45, 14.0)    # far, small, slow
 	_add_snow(36, Vector2(4.0, 8.0), Vector2(90, 160), 0.30, 8.0)     # near, big, soft
 	_build_main()
@@ -71,7 +76,9 @@ func _ready() -> void:
 				if b.begins_with("menubg="): _show_backdrop(int(b.substr(7)), true)
 			if page == "controls": _show_controls()
 			elif page == "confirm": _confirm.visible = true; _main.visible = false
-			elif page == "loading": _main.visible = false; _loading.visible = true
+			elif page == "loading":
+				_main.visible = false; _loading.visible = true
+				_load_stage.text = "GROWING THE TIMBER"; _load_fill.size.x = LOAD_BAR_W * 0.42
 			elif page == "options": _show_options()
 			await get_tree().create_timer(1.2).timeout
 			get_viewport().get_texture().get_image().save_png(a.substr(9))
@@ -166,6 +173,21 @@ func _add_snow(amount: int, size: Vector2, speed: Vector2, alpha: float, life: f
 ## Body face (bundled Barlow Regular); names are only the missing-file fallback.
 static func _font(names: Array, weight: int, spacing: int) -> Font: return MenuStyle.font(MenuStyle.BODY_FILE, names, weight, spacing)
 static func _title_font() -> Font: return MenuStyle.title_font()
+
+const LOGO := "res://assets/ui/logo.png"
+## Weathered painted wordmark (tools/ui/make_logo.py); typeset text if the file is missing.
+func _title() -> Control:
+	if ResourceLoader.exists(LOGO):
+		var tex := load(LOGO) as Texture2D
+		if tex != null:
+			var r := TextureRect.new(); r.name = "Logo"; r.texture = tex
+			r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+			r.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+			var w := 600.0
+			r.custom_minimum_size = Vector2(w, w * float(tex.get_height()) / float(tex.get_width()))
+			r.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			return r
+	return _text("BRAVE AND COLD", _title_font(), 54, Color(0.92, 0.91, 0.87))
 static func _menu_font() -> Font: return MenuStyle.item_font()
 func _text(s: String, font: Font, size: int, col: Color) -> Label: return MenuStyle.text(s, font, size, col)
 
@@ -181,7 +203,7 @@ func _build_main() -> void:
 	_column(_main)
 	_main.add_theme_constant_override("separation", 6)
 	add_child(_main)
-	_main.add_child(_text("BRAVE AND COLD", _title_font(), 54, Color(0.92, 0.91, 0.87)))
+	_main.add_child(_title())
 	var rule := ColorRect.new(); rule.color = Color(OCHRE, 0.75); rule.custom_minimum_size = Vector2(250, 2)
 	rule.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN; _main.add_child(rule)
 	var tag := _text("SURVIVE THE COLD  ·  SURVIVE THE DEAD", _font(["Bahnschrift", "Segoe UI", "Arial"], 300, 4), 15, MUTED)
@@ -274,6 +296,14 @@ func _build_loading() -> void:
 	box.add_theme_constant_override("separation", 10)
 	box.add_child(_text("ENTERING THE VALLEY", _menu_font(), 22, BRIGHT))
 	box.add_child(_text(TIPS[randi() % TIPS.size()], _menu_font(), 17, MUTED))
+	# M5 progress: thin track + ochre fill + the current build stage, driven by LoadingOverlay
+	var gap := Control.new(); gap.custom_minimum_size = Vector2(0, 6); box.add_child(gap)
+	var track := ColorRect.new(); track.color = Color(1, 1, 1, 0.14)
+	track.custom_minimum_size = Vector2(LOAD_BAR_W, 2); track.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_load_fill = ColorRect.new(); _load_fill.color = Color(OCHRE, 0.9); _load_fill.size = Vector2(0, 2)
+	track.add_child(_load_fill); box.add_child(track)
+	_load_stage = _text("", _font(["Bahnschrift", "Segoe UI", "Arial"], 300, 3), 13, Color(MUTED, 0.85))
+	box.add_child(_load_stage)
 	box.visible = false
 	add_child(box)
 	_loading = box
@@ -319,9 +349,18 @@ func _start() -> void:
 	MenuStyle.sound(self, "start")
 	_main.visible = false; _confirm.visible = false; _controls.visible = false
 	_loading.visible = true
+	_load_stage.text = "READING THE MAP"
 	var tw := create_tween().set_parallel(true)
 	tw.tween_property(_wind, "volume_db", -40.0, 0.9)
 	await get_tree().process_frame
+	await get_tree().process_frame
+	# Hand the loading look to a root-level overlay so it outlives this scene, then load.
+	var keep: Array = []
+	for c in get_children():
+		if c.has_meta("loading_keep") or c is CPUParticles2D or c == _loading or (not _layers.is_empty() and c == _layers[_cur]):
+			keep.append(c)
+	LoadingOverlay.adopt(get_tree(), keep, _load_fill, LOAD_BAR_W, _load_stage, null if _layers.is_empty() else _layers[_cur])
+	LoadingOverlay.report(0.01, "Reading the map")
 	await get_tree().process_frame
 	get_tree().change_scene_to_file(GAME)
 

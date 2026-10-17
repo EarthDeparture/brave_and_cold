@@ -35,6 +35,8 @@ func run() -> void:
 	for b in m._controls.find_children("*", "Button", true, false): back_b = b
 	check(back_b != null and vis.encloses(back_b.get_global_rect()), "Controls Back fits on screen (%s in %s)" % [str(back_b.get_global_rect() if back_b else null), str(vis)])
 	check(MenuStyle.bundled(), "bundled OFL fonts present")
+	var logo := m._main.find_child("Logo", true, false) as TextureRect
+	check(logo != null and logo.texture != null and logo.get_global_rect().size.x > 400.0, "painted logo replaces the typeset title")
 	# UI sounds: hover once per focus move, throttled; press plays a click; Back plays back.
 	MenuStyle.quiet_until_ms = 0; MenuStyle.played.clear()
 	m._show_main()
