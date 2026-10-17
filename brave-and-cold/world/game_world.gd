@@ -624,6 +624,8 @@ func _process(delta: float) -> void:
 			_say('Autosaved')
 	for cb in cabins:
 		cb.set_night(night)
+	if fire_lookout != null:
+		fire_lookout.set_night(night, opening != null and opening.fire.is_lit(), player.cam.global_position)
 	if Engine.get_process_frames() % 6 == 0:
 		for il: Node in get_tree().get_nodes_in_group("interior_lighting"):
 			(il as InteriorLighting).update(1.0 - night, weather.overcast, weather.precip)

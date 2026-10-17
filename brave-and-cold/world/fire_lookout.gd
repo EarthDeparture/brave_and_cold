@@ -44,6 +44,10 @@ var site: Dictionary = {}
 var access_ribbon:WalkRibbon3D
 var model: Node3D
 var geometry: Dictionary = {}
+var _glass_mats: Array[BaseMaterial3D] = []
+var _window_fill: OmniLight3D
+var window_glow := 0.0   # last applied glow (tests / captures)
+const WINDOW_GLOW := Color(1.0, 0.64, 0.36)
 
 
 func build(site_data: Dictionary, with_model: bool = true) -> void:
@@ -76,6 +80,13 @@ func build(site_data: Dictionary, with_model: bool = true) -> void:
 		lamp.omni_range = 4.0
 		lamp.shadow_enabled = false
 		add_child(lamp)
+		# Wide warm fill near the ceiling: lights the cab walls so the windows read as
+		# lit squares from the valley at dusk (only on while the eye is outside the cab).
+		_window_fill = OmniLight3D.new(); _window_fill.name = "LookoutWindowFill"
+		_window_fill.position = Vector3(0.0, DECK_Y + 2.1, 0.0)
+		_window_fill.light_color = Color(1.0, 0.72, 0.45); _window_fill.light_energy = 0.0
+		_window_fill.omni_range = 4.6; _window_fill.shadow_enabled = false
+		add_child(_window_fill)
 		if detail_enabled:
 			var panel:Node3D=(load("res://assets/route_detail/field_power_panel.glb") as PackedScene).instantiate()
 			panel.name="TechnicianPowerPanel"
@@ -102,11 +113,25 @@ func _enable_model_vertex_colors() -> void:
 			material.vertex_color_use_as_albedo = true
 			material.vertex_color_is_srgb = false
 			mesh.set_surface_override_material(surface, material)
+			if material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
+				material.emission_enabled = true; material.emission = WINDOW_GLOW
+				material.emission_energy_multiplier = 0.0
+				_glass_mats.append(material)
 			if detail_enabled and mesh.name in ["lookout_boards", "lookout_timber", "lookout_interior", "lookout_trim", "lookout_door"]:
 				var wood := ShaderMaterial.new()
 				wood.shader = preload("res://world/shaders/winter_timber.gdshader")
 				wood.set_shader_parameter("grain", preload("res://assets/environment_detail/textures/timber_alb.png"))
 				mesh.set_surface_override_material(surface, wood)
+
+
+## Warm cab windows from outside at dusk / night: desk lamp always, stronger with the
+## stove lit. Zero while `eye` is inside the cab so the view out stays clear glass.
+func set_night(night: float, fire_lit: bool, eye: Vector3) -> void:
+	var k := 0.0 if contains_room(eye) else clampf(night, 0.0, 1.0) * (0.6 + (0.4 if fire_lit else 0.0))
+	if is_equal_approx(k, window_glow): return
+	window_glow = k
+	for m in _glass_mats: m.emission_energy_multiplier = 1.8 * k
+	if _window_fill != null: _window_fill.light_energy = 1.1 * k
 
 
 ## Height-aware floor query, in world space. Missing means leave existing terrain alone.

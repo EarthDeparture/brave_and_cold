@@ -24,6 +24,7 @@ func setup_time(hour: float, state: int) -> void:
 	if w.sky_rig.has_method("apply_shelter"): w.sky_rig.apply_shelter(0.0)
 	var night: float = w.sky_rig.gameplay_night_factor
 	for cb: Cabin in w.cabins: cb.set_night(night)
+	if w.fire_lookout != null: w.fire_lookout.set_night(night, true, Vector3(0, -1000, 0))
 	for il: Node in get_nodes_in_group("interior_lighting"): (il as InteriorLighting).update(1.0 - night, w.weather.overcast, w.weather.precip)
 
 func light_fires() -> void:
@@ -89,5 +90,8 @@ func run() -> void:
 			await shot("hamlet_%s" % hs, e3, aim(e3, cb.to_global(Vector3(4.0, 3.0, -6.0)), 4.0), 64.0, hr, Weather.S.FLURRY)
 		var a := 3 * TAU / 4.0 + 0.4
 		var e := Vector3(tp.x + cos(a) * 46.0, 0, tp.z + sin(a) * 46.0); e.y = ground(e.x, e.z) + 1.6
+		# A dry grass tuft sat dead centre in the foreground of this framing: plants off for it.
+		if w.plants != null: w.plants.visible = false
 		await shot("lookout_%s" % hs, e, aim(e, tp + Vector3(0, 12.0, 0), 19.0), 58.0, hr, Weather.S.CLEAR)
+		if w.plants != null: w.plants.visible = true
 	quit(0)
