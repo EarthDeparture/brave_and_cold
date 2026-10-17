@@ -16,13 +16,21 @@ const SHADOW := Color(0, 0, 0, 0.9)
 static var _font: Font
 
 
+## In-game UI face: bundled Barlow Semi Condensed SemiBold (OFL), same family as the menus,
+## so HUD text no longer depends on Tahoma being installed. System font only if the file is gone.
+const FONT_FILE := "res://assets/fonts/Barlow_Semi_Condensed/BarlowSemiCondensed-SemiBold.ttf"
+
 static func font() -> Font:
 	if _font == null:
-		var f := SystemFont.new()
-		f.font_names = PackedStringArray(["Tahoma", "Verdana", "Segoe UI", "Arial"])
-		f.font_weight = 700
-		f.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
-		_font = f
+		if ResourceLoader.exists(FONT_FILE):
+			_font = load(FONT_FILE) as Font
+		if _font == null:
+			push_warning("DZ: bundled UI font missing, using system fallback")
+			var f := SystemFont.new()
+			f.font_names = PackedStringArray(["Tahoma", "Verdana", "Segoe UI", "Arial"])
+			f.font_weight = 700
+			f.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+			_font = f
 	return _font
 
 

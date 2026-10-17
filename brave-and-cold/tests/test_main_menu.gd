@@ -9,6 +9,8 @@ func check(ok: bool, label: String) -> void:
 	checks += 1; print(("PASS " if ok else "FAIL ") + label)
 	if not ok: failures += 1
 func run() -> void:
+	# Headless root is 1152x1152; force the project's 16:9 base so layout checks mean something.
+	root.size = Vector2i(1152, 648)
 	var m: Control = (load("res://ui/main_menu.tscn") as PackedScene).instantiate()
 	root.add_child(m)
 	for i in 5: await process_frame
@@ -27,6 +29,15 @@ func run() -> void:
 	m._show_controls()
 	check(m._controls.visible and not m._main.visible, "Controls page opens")
 	check(m.BINDS.size() >= 12, "controls list the real bindings (%d)" % m.BINDS.size())
+	await process_frame; await process_frame
+	var vis := Rect2(Vector2.ZERO, Vector2(1152, 648))
+	var back_b: Button = null
+	for b in m._controls.find_children("*", "Button", true, false): back_b = b
+	check(back_b != null and vis.encloses(back_b.get_global_rect()), "Controls Back fits on screen (%s in %s)" % [str(back_b.get_global_rect() if back_b else null), str(vis)])
+	check(MenuStyle.bundled(), "bundled OFL fonts present")
+	var tf := MenuStyle.title_font() as FontVariation
+	check(tf != null and tf.base_font is FontFile, "title uses the bundled font file, not a system font")
+	check(FileAccess.file_exists("res://assets/fonts/Cormorant_Garamond/OFL.txt") and FileAccess.file_exists("res://assets/fonts/Barlow_Semi_Condensed/OFL.txt"), "font licences ship beside the fonts")
 	m._show_main()
 	check(m._main.visible and not m._controls.visible, "and returns")
 	m._show_options()

@@ -162,7 +162,8 @@ func _add_snow(amount: int, size: Vector2, speed: Vector2, alpha: float, life: f
 
 # --- type -------------------------------------------------------------------
 
-static func _font(names: Array, weight: int, spacing: int) -> Font: return MenuStyle.font(names, weight, spacing)
+## Body face (bundled Barlow Regular); names are only the missing-file fallback.
+static func _font(names: Array, weight: int, spacing: int) -> Font: return MenuStyle.font(MenuStyle.BODY_FILE, names, weight, spacing)
 static func _title_font() -> Font: return MenuStyle.title_font()
 static func _menu_font() -> Font: return MenuStyle.item_font()
 func _text(s: String, font: Font, size: int, col: Color) -> Label: return MenuStyle.text(s, font, size, col)
@@ -246,7 +247,7 @@ const BINDS := [
 func _build_controls() -> void:
 	var box := _page("CONTROLS")
 	var grid := GridContainer.new(); grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 34); grid.add_theme_constant_override("v_separation", 7)
+	grid.add_theme_constant_override("h_separation", 34); grid.add_theme_constant_override("v_separation", 2)  # Barlow lines are taller
 	for row: Array in BINDS:
 		grid.add_child(_text(String(row[0]).to_upper(), _menu_font(), 18, BRIGHT))
 		grid.add_child(_text(String(row[1]), _font(["Bahnschrift", "Segoe UI", "Arial"], 300, 1), 18, TEXT))

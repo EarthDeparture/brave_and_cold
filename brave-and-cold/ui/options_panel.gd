@@ -50,6 +50,8 @@ func _init() -> void:
 	var note := MenuStyle.text("Graphics changes to shadows and ambient occlusion apply on the next load.", MenuStyle.body_font(), 14, MenuStyle.MUTED)
 	var gap2 := Control.new(); gap2.custom_minimum_size = Vector2(0, 8); add_child(gap2)
 	add_child(note)
+	# OFL attribution (fonts ship with their OFL.txt; this names them in-game too).
+	add_child(MenuStyle.text(MenuStyle.CREDITS, MenuStyle.body_font(), 12, Color(MenuStyle.MUTED, 0.75)))
 	var gap3 := Control.new(); gap3.custom_minimum_size = Vector2(0, 18); add_child(gap3)
 	add_child(MenuStyle.item("Back", _back))
 	visibility_changed.connect(func() -> void:

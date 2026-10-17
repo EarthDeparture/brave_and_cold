@@ -3,7 +3,16 @@ extends RefCounted
 ## Shared look of the title screen, options and pause pages (TLD-style): letter-spaced
 ## serif headings, a condensed sans for items, plain text buttons with an ochre tick on
 ## hover/focus, soft shadows instead of hard outlines, thin muted sliders.
-## Fonts are SystemFont fallbacks (nothing bundled): Constantia/Georgia, Bahnschrift/Segoe UI.
+## Fonts are bundled OFL families (assets/fonts, licences beside them): Cormorant Garamond
+## for headings, Barlow Semi Condensed for items/body. SystemFont is only a fallback if a
+## file goes missing, so the look no longer depends on the player's machine.
+const FONT_DIR := "res://assets/fonts/"
+const TITLE_FILE := FONT_DIR + "Cormorant_Garamond/static/CormorantGaramond-SemiBold.ttf"
+## Barlow runs lighter than Bahnschrift at the same nominal weight: Medium for items,
+## Regular for body (Light thinned out to grey over bright sky in the A/B).
+const ITEM_FILE := FONT_DIR + "Barlow_Semi_Condensed/BarlowSemiCondensed-Medium.ttf"
+const BODY_FILE := FONT_DIR + "Barlow_Semi_Condensed/BarlowSemiCondensed-Regular.ttf"
+const CREDITS := "Fonts: Cormorant Garamond, Barlow Semi Condensed (SIL Open Font License 1.1)"
 const TEXT := Color(0.86, 0.86, 0.82)
 const BRIGHT := Color(1.0, 0.97, 0.90)
 const MUTED := Color(0.62, 0.63, 0.60)
@@ -11,18 +20,29 @@ const OCHRE := Color(0.80, 0.64, 0.36)
 const HEAD := Color(0.92, 0.91, 0.87)
 static var _cache := {}
 
-static func font(names: Array, weight: int, spacing: int) -> Font:
-	var key := "%s|%d|%d" % [",".join(names), weight, spacing]
+static func font(file: String, names: Array, weight: int, spacing: int) -> Font:
+	var key := "%s|%s|%d|%d" % [file, ",".join(names), weight, spacing]
 	if _cache.has(key): return _cache[key]
-	var sf := SystemFont.new(); sf.font_names = PackedStringArray(names); sf.font_weight = weight
-	sf.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
-	var fv := FontVariation.new(); fv.base_font = sf; fv.spacing_glyph = spacing
+	var base: Font = load(file) as Font if ResourceLoader.exists(file) else null
+	if base == null:
+		push_warning("MenuStyle: bundled font missing, using system fallback: " + file)
+		var sf := SystemFont.new(); sf.font_names = PackedStringArray(names); sf.font_weight = weight
+		sf.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+		base = sf
+	var fv := FontVariation.new(); fv.base_font = base; fv.spacing_glyph = spacing
 	_cache[key] = fv
 	return fv
 
-static func title_font() -> Font: return font(["Constantia", "Georgia", "Cambria", "Times New Roman", "serif"], 400, 9)
-static func item_font() -> Font: return font(["Bahnschrift", "Segoe UI", "Arial Narrow", "Arial", "sans-serif"], 400, 3)
-static func body_font() -> Font: return font(["Bahnschrift", "Segoe UI", "Arial", "sans-serif"], 300, 1)
+static func bundled() -> bool:
+	for f in [TITLE_FILE, ITEM_FILE, BODY_FILE]:
+		if not ResourceLoader.exists(f): return false
+	return true
+
+## Cormorant has a small x-height next to Constantia; SemiBold keeps the strokes from
+## going hairline at 54 px over a bright sky.
+static func title_font() -> Font: return font(TITLE_FILE, ["Constantia", "Georgia", "serif"], 600, 8)
+static func item_font() -> Font: return font(ITEM_FILE, ["Bahnschrift", "Segoe UI", "Arial", "sans-serif"], 400, 3)
+static func body_font() -> Font: return font(BODY_FILE, ["Bahnschrift", "Segoe UI", "Arial", "sans-serif"], 300, 1)
 
 static func text(s: String, f: Font, size: int, col: Color) -> Label:
 	var l := Label.new(); l.text = s
