@@ -184,7 +184,7 @@ func _title() -> Control:
 			var r := TextureRect.new(); r.name = "Logo"; r.texture = tex
 			r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
 			r.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-			var w := 600.0
+			var w := 680.0  # emblem + wordmark lockup
 			r.custom_minimum_size = Vector2(w, w * float(tex.get_height()) / float(tex.get_width()))
 			r.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			return r
