@@ -14,6 +14,9 @@ var edge_count := 0
 var patch_count := 0
 
 
+## Optional build progress (0..1) coroutine; see ForestScatter.progress.
+var progress: Callable
+
 func build(map_dir: String = "res://data/maps/valley_b", field: IceField = null) -> void:
 	if field == null:
 		field = IceField.new()
@@ -25,6 +28,8 @@ func build(map_dir: String = "res://data/maps/valley_b", field: IceField = null)
 
 	var levels: Dictionary[Vector2i, float] = {}
 	for y in range(0, n - 1, STRIDE):
+		if progress.is_valid() and (y / STRIDE) % 64 == 0:
+			await progress.call(0.6 * float(y) / float(n))
 		for x in range(0, n - 1, STRIDE):
 			var nx := mini(x + STRIDE, n - 1)
 			var ny := mini(y + STRIDE, n - 1)

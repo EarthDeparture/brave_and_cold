@@ -34,6 +34,10 @@ var _mat: Material
 var _half := 0
 var felled: Dictionary = {}  # "ix,iz" -> true (trees cut down by the player)
 var chop_hp: Dictionary = {}  # tree key -> remaining hits
+## Optional build progress (0..1), a coroutine the build awaits every few rows so the
+## loading overlay can draw. Unset (tests, tools): build runs straight through, unchanged.
+## Yielding never touches the RNG, so tree identities (felled-tree saves) are identical.
+var progress: Callable
 
 
 static func tree_key(x: float, z: float) -> String:
@@ -264,6 +268,8 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 	var buckets := {}
 	var gx := int(size_m / SPACING)
 	for iy in range(gx):
+		if progress.is_valid() and iy % 16 == 0:
+			await progress.call(0.85 * float(iy) / float(gx))
 		for ix in range(gx):
 			var px := int((ix + rng.randf()) * SPACING)
 			var py := int((iy + rng.randf()) * SPACING)
@@ -310,7 +316,11 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 
 	_meshes = meshes
 	_near_insts.clear(); _far_insts.clear(); _shadow_proxies.clear()
+	var built_chunks := 0
 	for key in buckets:
+		built_chunks += 1
+		if progress.is_valid() and built_chunks % 48 == 0:
+			await progress.call(0.85 + 0.15 * float(built_chunks) / float(buckets.size()))
 		var per_variant: Array = buckets[key]
 		for vi in range(variant_count):
 			var xf: Array = per_variant[vi]

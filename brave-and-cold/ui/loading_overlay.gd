@@ -8,6 +8,9 @@ extends CanvasLayer
 ## pull the world's preloaded assets into menu start-up.)
 
 const TIMEOUT_S := 240.0
+## Share of the bar for loading the world scene itself (threaded, before game_world._ready);
+## the world's own 0..1 build stages map onto the rest. Measured: scene ~3.9 s of ~17 s headless.
+const WORLD_BASE := 0.2
 
 var bar: ColorRect            # fill, width driven by progress
 var bar_w := 420.0
@@ -49,7 +52,7 @@ static func adopt(tree: SceneTree, nodes: Array, fill: ColorRect, fill_w: float,
 
 ## Called by the world build. Safe with no overlay (tests, autostart without the menu).
 static func report(f: float, text: String) -> void:
-	if current != null and is_instance_valid(current): current.set_progress(f, text)
+	if current != null and is_instance_valid(current): current.set_progress(WORLD_BASE + f * (1.0 - WORLD_BASE), text)
 
 
 func set_progress(f: float, text: String) -> void:

@@ -439,8 +439,7 @@ func _draw_all() -> void:
 	DZ.text(_c, "GEAR", Vector2(140, 122), 34, DZ.TEXT)
 	DZ.text(_c,watch_text(),Vector2(520,106),22,DZ.TEXT)
 	if world.opening!=null:DZ.text(_c,world.opening.state.walkie_status(),Vector2(520,137),15,DZ.ACCENT if world.opening.state.walkie_ready() else DZ.WARN)
-	DZ.text(_c,"Fatigue %d%% • %s   /   Clothing %d%% wet%s"%[roundi(needs.fatigue),needs.fatigue_state(),roundi(body.wetness*100)," • "+drying_text() if body.wetness>.005 else ""],Vector2(520,163),14,DZ.WARN if needs.fatigue>=65 else DZ.DIM)
-	DZ.text(_c, "Tab / Esc: close     click: select     double-click: use     right-click: options     drag: move, wear, drop", Vector2(140, 812), 15, DZ.DIM)
+	DZ.text(_c, "Tab / Esc: close     click: select     double-click: use     right-click: options     drag: move, wear, drop", Vector2(140, 824), 15, DZ.DIM)
 	_draw_equipment()
 	_draw_condition()
 	_draw_pack()
@@ -642,33 +641,43 @@ func _draw_condition() -> void:
 	_bar(Vector2(x, 508), w, "Food", needs.calories / 1500.0, "%d kcal" % int(needs.calories))
 	_bar(Vector2(x, 536), w, "Water", needs.water / 70.0, "%d%%" % int(needs.water))
 	_bar(Vector2(x, 564), w, "Temperature", (body.core - 32.0) / 4.5, "%.1f C" % body.core)
+	var fstate := String(needs.fatigue_state())
+	var fword := fstate.get_slice(" ", 0)   # "Rested" / "Tired" / "Exhausted" / "Awake"
+	var fadvice := fstate.substr(fword.length()).strip_edges().lstrip("•· ").strip_edges()
+	_bar(Vector2(x, 592), w, "Fatigue", 1.0 - needs.fatigue / 100.0, fword)
 	var fb: Frostbite = world.get("frostbite") if world != null else null
 	var fb_line := ""
 	if fb != null and fb.worst() != "" and float(fb.risk[fb.worst()]) >= 1.0:
 		fb_line = "Frostbite risk: %s %d%%" % [Frostbite.LABEL[fb.worst()], int(fb.risk[fb.worst()])]
 	if fb != null and fb.count() > 0:
 		fb_line += ("  " if fb_line != "" else "") + "Frostbitten: " + ", ".join(fb.bitten.keys().filter(func(k: String) -> bool: return bool(fb.bitten[k])).map(func(k: String) -> String: return String(Frostbite.LABEL[k])))
+	# status lines get their own rows (they used to share y=584 with frostbite at x=390, and sat 20 px over WORN)
+	var status: String = player.injury.recovery_status(needs, body.core)
+	DZ.text(_c, status, Vector2(140, 616), 12, DZ.WARN if player.injury.bleeding() else DZ.DIM)
+	if needs.fatigue >= 65 and fadvice != "":
+		DZ.text(_c, fadvice.left(1).to_upper() + fadvice.substr(1), Vector2(140 + DZ.text_w(status, 12) + (16 if status != "" else 0), 616), 12, DZ.WARN)
 	if fb_line != "":
-		DZ.text(_c, fb_line, Vector2(390, 584), 12, DZ.WARN)
-	DZ.text(_c,player.injury.recovery_status(needs,body.core),Vector2(140,584),12,DZ.WARN if player.injury.bleeding() else DZ.DIM)
-	DZ.text(_c, "WORN", Vector2(140, 604), 16, DZ.DIM)
+		DZ.text(_c, fb_line, Vector2(140, 632), 12, DZ.WARN)
+	DZ.text(_c, "WORN", Vector2(140, 662), 16, DZ.DIM)
+	var wet := "Dry" if body.wetness <= .005 else "%d%% wet  •  %s" % [roundi(body.wetness * 100), drying_text()]
+	DZ.text(_c, wet, Vector2(204, 662), 13, DZ.WARN if body.wetness > .3 else DZ.DIM)
 	var worn := inv.worn_list()
 	if worn.is_empty():
-		DZ.text(_c, "Nothing over your base layer", Vector2(140, 630), 15, DZ.TEXT)
+		DZ.text(_c, "Nothing over your base layer", Vector2(140, 686), 15, DZ.TEXT)
 	else:
 		var l1: Array = []
 		var l2: Array = []
 		for k in worn.size():
 			(l1 if k < 2 else l2).append(inv.name_of(String(worn[k])))
-		DZ.text(_c, ", ".join(l1), Vector2(140, 630), 15, DZ.TEXT)
+		DZ.text(_c, ", ".join(l1), Vector2(140, 686), 15, DZ.TEXT)
 		if not l2.is_empty():
-			DZ.text(_c, ", ".join(l2), Vector2(140, 650), 15, DZ.TEXT)
+			DZ.text(_c, ", ".join(l2), Vector2(140, 706), 15, DZ.TEXT)
 	var wt: float = body.warmth
 	var wp: float = body.windproof
 	var wa: float = body.waterproof
-	_bar(Vector2(x, 686), w, "Warmth", wt, "%d%%" % int(wt * 100))
-	_bar(Vector2(x, 714), w, "Windproof", wp, "%d%%" % int(wp * 100))
-	_bar(Vector2(x, 742), w, "Waterproof", wa, "%d%%" % int(wa * 100))
+	_bar(Vector2(x, 738), w, "Warmth", wt, "%d%%" % int(wt * 100))
+	_bar(Vector2(x, 764), w, "Windproof", wp, "%d%%" % int(wp * 100))
+	_bar(Vector2(x, 790), w, "Waterproof", wa, "%d%%" % int(wa * 100))
 
 
 func _draw_pack() -> void:

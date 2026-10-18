@@ -84,10 +84,11 @@ func _ready() -> void:
 			get_viewport().get_texture().get_image().save_png(a.substr(9))
 			print("MENU_SHOT")
 			get_tree().quit()
-		elif a == "autostart":
-			_new_game_now()
-		elif a == "autocontinue":
-			_continue()
+		elif a == "autostart" or a == "autocontinue":
+			# Scripted start: skip the menu's 1.6 s fade-in, or the first loading frame is black.
+			_black.modulate.a = 0.0; _black.visible = false
+			if a == "autostart": _new_game_now()
+			else: _continue()
 
 # --- backdrop ---------------------------------------------------------------
 
@@ -360,8 +361,26 @@ func _start() -> void:
 		if c.has_meta("loading_keep") or c is CPUParticles2D or c == _loading or (not _layers.is_empty() and c == _layers[_cur]):
 			keep.append(c)
 	LoadingOverlay.adopt(get_tree(), keep, _load_fill, LOAD_BAR_W, _load_stage, null if _layers.is_empty() else _layers[_cur])
-	LoadingOverlay.report(0.01, "Reading the map")
-	await get_tree().process_frame
+	LoadingOverlay.current.set_progress(0.01, "Reading the map")
+	# The world scene's script and its preloads take seconds to load (3.9 s headless):
+	# load them on a worker thread so the overlay keeps drawing, then switch scenes.
+	var t0 := Time.get_ticks_msec()
+	if ResourceLoader.load_threaded_request(GAME) == OK:
+		var prog: Array = []
+		while true:
+			var st := ResourceLoader.load_threaded_get_status(GAME, prog)
+			if st != ResourceLoader.THREAD_LOAD_IN_PROGRESS: break
+			# Godot reports this load in a couple of coarse steps; ease on elapsed time too
+			# (approaches 90% of the slice over ~3 s) so the bar never stalls, then take the max.
+			var real := float(prog[0]) if not prog.is_empty() else 0.0
+			var eased := 0.9 * (1.0 - exp(-float(Time.get_ticks_msec() - t0) / 1500.0))
+			LoadingOverlay.current.set_progress(lerpf(0.01, LoadingOverlay.WORLD_BASE, maxf(real, eased)), "Reading the map")
+			await get_tree().process_frame
+		var packed := ResourceLoader.load_threaded_get(GAME) as PackedScene
+		print("LOAD_STAGE scene %d ms" % (Time.get_ticks_msec() - t0))
+		if packed != null:
+			get_tree().change_scene_to_packed(packed)
+			return
 	get_tree().change_scene_to_file(GAME)
 
 func _quit() -> void:

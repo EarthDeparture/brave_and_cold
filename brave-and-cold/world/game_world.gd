@@ -57,12 +57,32 @@ var environment_detail_enabled := false
 ## frame to draw it. Without an overlay (headless tests, tools) this neither waits nor
 ## changes frame timing. Never called after the HUD exists: _process runs once hud != null.
 var _load_t0 := 0
+var built := false   # _ready finished (with the overlay, _ready yields; `hud` exists before this)
 func _stage(f: float, text: String) -> void:
 	if _load_t0 == 0: _load_t0 = Time.get_ticks_msec()
 	print("LOAD_STAGE %.2f %s %d ms" % [f, text, Time.get_ticks_msec() - _load_t0])
 	if LoadingOverlay.current == null: return
 	LoadingOverlay.report(f, text)
+	await _yield_frame()
+
+
+## One drawn frame for the overlay with the whole world held still: wolves, zombies,
+## terrain, the HUD and this node's own _process skip it, so a yield in the middle of
+## setup can never let a half-built world act (or take input).
+func _yield_frame() -> void:
+	var pm := process_mode
+	process_mode = Node.PROCESS_MODE_DISABLED
 	await get_tree().process_frame
+	process_mode = pm
+
+
+## Maps a sub-build's local 0..1 onto [a, b] of the overall bar (same stage label).
+## Returns an empty Callable without an overlay, so builders run straight through.
+func _sub_progress(a: float, b: float, text: String) -> Callable:
+	if LoadingOverlay.current == null: return Callable()
+	return func(f: float) -> void:
+		LoadingOverlay.report(lerpf(a, b, clampf(f, 0.0, 1.0)), text)
+		await _yield_frame()
 
 
 func _ready() -> void:
@@ -135,19 +155,28 @@ func _ready() -> void:
 				if absf(x - float(he2['x'])) < 5.0 and absf(z - float(he2['z'])) < 5.0:
 					return true
 			return road.is_near(x, z) or trailnet.is_near(x, z)
-		forest.build(terrain)
+		forest.progress = _sub_progress(0.17, 0.41, "Growing the timber")
+		await forest.build(terrain)
+		forest.progress = Callable()
 		if opts.get('plants', '1') == '1':
+			await _stage(0.41, "Scattering brush")
 			plants = PlantField.new()
 			add_child(plants)
-			plants.build(terrain, forest.exclude)
+			plants.progress = _sub_progress(0.41, 0.48, "Scattering brush")
+			await plants.build(terrain, forest.exclude)
+			plants.progress = Callable()
 	await _stage(0.48, "Freezing the lakes")
 	ice.activate_shoreline()
 	if plants != null: print("PLANTS under ice suppressed=", plants.suppress_under_ice(ice))
+	await _stage(0.49, "Ploughing the roads")
 	road.build_mesh(terrain)
 	road.build_props(terrain)
+	await _stage(0.52, "Icing the rivers")
 	var w := WaterSurfaces.new()
 	add_child(w)
-	w.build("res://data/maps/valley_b", ice)
+	w.progress = _sub_progress(0.52, 0.66, "Icing the rivers")
+	await w.build("res://data/maps/valley_b", ice)
+	w.progress = Callable()
 	if opts.get('atmosphere', 'winter') != 'baseline':
 		var ice_material := w.surface.material_override as ShaderMaterial
 		ice_material.set_shader_parameter('winter_surface', true)
@@ -157,6 +186,7 @@ func _ready() -> void:
 		ice_material.set_shader_parameter('surface_noise', preload('res://assets/textures/atmosphere/cloud_fields.png'))
 	await _stage(0.66, "Drifting the snow")
 	snow.build("res://data/maps/valley_b")
+	await _stage(0.74, "Lighting the sky")
 	clock.hour = float(opts.get("hour", 16.5))
 	sky_rig = SkyRig.new() if opts.get("atmosphere", "winter") == "baseline" else preload("res://world/atmosphere_rig.gd").new()
 	add_child(sky_rig)
@@ -238,7 +268,7 @@ func _ready() -> void:
 	if loading:
 		sp = Vector2(float(sv['player']['x']), float(sv['player']['z']))
 	player.place(sp.x, sp.y)
-	await _stage(0.82, "Building the hamlet")
+	await _stage(0.81, "Building the hamlet")
 	_place_cabin(home)
 	_build_hamlet(home)
 	_build_store()
@@ -251,7 +281,7 @@ func _ready() -> void:
 			plants.suppress_near(cb.global_position.x, cb.global_position.z, 9.0)
 		for hu in huts:
 			plants.suppress_near(hu.global_position.x, hu.global_position.z, 7.0)
-	await _stage(0.87, "Waking the dead")
+	await _stage(0.86, "Waking the dead")
 	pop = Population.new()
 	add_child(pop)
 	pop.terrain = terrain
@@ -369,6 +399,7 @@ func _ready() -> void:
 		_lay_trail(int(opts["trail"]))
 	if loading:
 		_apply_save(sv, opts)
+	await _stage(0.93, "Settling in")
 	hud = Hud.new()
 	add_child(hud)
 	hud.setup(player, body, snow, clock)
@@ -388,6 +419,7 @@ func _ready() -> void:
 	audio.detail_enabled = environment_detail_enabled
 	audio.setup(player, self, wind)
 	audio.weather = weather
+	await _stage(0.95, "Opening the lookout")
 	if opening_state.enabled and fire_lookout != null:
 		opening = LookoutOpening.new(); add_child(opening)
 		opening.build(self,opening_state,sv.get("opening",{}).get("home",{}))
@@ -408,6 +440,7 @@ func _ready() -> void:
 			if not camera_override:
 				player.position = fire_lookout.to_global(Vector3(0,FireLookout.DECK_Y+player.eye_h,.3))
 				player.yaw = fire_lookout.rotation.y; player.pitch = -.08
+	await _stage(0.97, "Waking the town")
 	reading=ReadingModal.new();add_child(reading)
 	collapse=FirstWeekCollapse.new();add_child(collapse);collapse.build(self,clinic_plan,sv.get("collapse",{}))
 	if opening_state.enabled and opts.get("town_life","1")!="0":
@@ -449,6 +482,7 @@ func _ready() -> void:
 	# Gear must be ready for Tab before the first gameplay process frame.
 	_ensure_gear()
 	print("LOAD_STAGE 1.00 ready %d ms" % (Time.get_ticks_msec() - _load_t0))
+	built = true
 	LoadingOverlay.report(1.0, "")
 
 

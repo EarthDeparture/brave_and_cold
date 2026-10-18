@@ -17,6 +17,11 @@ func run() -> void:
 	w.hud.say("Font check: the quick brown fox. Temperature -14 C. 62% to catch.")
 	for i in 20: await process_frame
 	root.get_texture().get_image().save_png("res://shots/hud_fonts/%s_hud.png" % tag); print("HUDFONT hud")
+	if tag.contains("worst"):   # longest status strings: tired, soaked, frost-nipped
+		w.needs.fatigue = 88.0; w.body.wetness = 0.62
+		var fb = w.get("frostbite")
+		if fb != null:
+			for k in fb.risk.keys(): fb.risk[k] = 60.0
 	w.gear.open()
 	for i in 20: await process_frame
 	root.get_texture().get_image().save_png("res://shots/hud_fonts/%s_gear.png" % tag); print("HUDFONT gear")

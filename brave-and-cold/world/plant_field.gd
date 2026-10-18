@@ -44,6 +44,9 @@ static func _near_water(w: Image, px: int, py: int, d: int) -> bool:
 	return false
 
 
+## Optional build progress (0..1) coroutine, awaited between rows; see ForestScatter.progress.
+var progress: Callable
+
 func build(t: Terrain3D, exclude: Callable, map_dir := "res://data/maps/valley_b") -> void:
 	terrain = t
 	var meta = JSON.parse_string(FileAccess.get_file_as_string(map_dir + "/meta.json"))
@@ -69,6 +72,8 @@ func build(t: Terrain3D, exclude: Callable, map_dir := "res://data/maps/valley_b
 		counts[kind] = 0
 		var step: int = int(kd["step"])
 		for iy in range(0, size_m - step, step):
+			if progress.is_valid() and (iy / step) % 32 == 0:
+				await progress.call((float(ki) + float(iy) / float(size_m)) / float(kinds.size()))
 			for ix in range(0, size_m - step, step):
 				var px := ix + rng.randi_range(0, step - 1)
 				var py := iy + rng.randi_range(0, step - 1)
