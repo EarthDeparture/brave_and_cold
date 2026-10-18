@@ -34,12 +34,12 @@ const ITEMS := {
 	"flare": {"name": "Road Flare", "kind": "tool", "stack": 3, "desc": "Burns red for 60 seconds. Predators keep well away from it."},
 	"axe": {"name": "Hatchet", "kind": "tool", "stack": 1, "desc": "Melee weapon. Loud. Zombies take two good hits."},
 	"rifle": {"name": "Hunting Rifle", "kind": "weapon", "stack": 1, "desc": "Bolt-action hunting rifle. Loud: everything for a kilometre hears it."},
-	"timber_bolt_carbine": {"name": "Timber Bolt Carbine", "kind": "weapon", "stack": 1, "weight": 3.6, "desc": "Green-camo bolt carbine with a short scout scope. Five rounds, slow and sure. Loud: everything for a kilometre hears it."},
-	"ranger_box_rifle": {"name": "Ranger Hunting Rifle", "kind": "weapon", "stack": 1, "weight": 3.9, "desc": "Amber-stocked hunting rifle under a long red scope. Four heavy rounds. Loud: everything for a kilometre hears it."},
-	"frontier_vented_rifle": {"name": "Frontier Vented Rifle", "kind": "weapon", "stack": 1, "weight": 4.3, "desc": "Self-loading rifle with a vented shroud. Ten rounds, quick follow-ups. Loud: everything for a kilometre hears it."},
-	"ridge_scout_rifle": {"name": "Ridge Marksman Rifle", "kind": "weapon", "stack": 1, "weight": 4.6, "desc": "Long-receiver marksman rifle with a big scope. Accurate at range. Loud: everything for a kilometre hears it."},
-	"brush_lever_rifle": {"name": "Brush Lever Rifle", "kind": "weapon", "stack": 1, "weight": 3.3, "desc": "Thumbhole lever gun with a block sight. Six rounds, loaded one at a time. Loud: everything for a kilometre hears it."},
-	"north_service_rifle": {"name": "North Service Rifle", "kind": "weapon", "stack": 1, "weight": 4.1, "desc": "Lime-stocked service rifle with a red-dot tube. Ten rounds. Loud: everything for a kilometre hears it."},
+	"timber_bolt_carbine": {"name": "Timber Scout Carbine", "kind": "weapon", "stack": 1, "weight": 3.6, "desc": "Short camo-dipped bolt carbine with a forward 2x scout scope. Quick to the shoulder; five rounds. Loud: everything for a kilometre hears it."},
+	"ranger_box_rifle": {"name": "Ranger Hunting Rifle", "kind": "weapon", "stack": 1, "weight": 3.6, "desc": "Walnut bolt-action deer rifle under a 4x scope. Four heavy rounds; the hunter's choice. Loud: everything for a kilometre hears it."},
+	"frontier_vented_rifle": {"name": "Frontier Semi Carbine", "kind": "weapon", "stack": 1, "weight": 3.9, "desc": "SKS-type self-loader in red hardwood with a red-dot tube on the cover rail. Five rounds, quick follow-ups. Loud: everything for a kilometre hears it."},
+	"ridge_scout_rifle": {"name": "Ridge Varmint Rifle", "kind": "weapon", "stack": 1, "weight": 4.8, "desc": "Heavy stainless barrel in grey laminate under a 3-9x scope with holdover marks. Threaded muzzle; no iron sights. Loud: everything for a kilometre hears it."},
+	"brush_lever_rifle": {"name": "Brush Lever Carbine", "kind": "weapon", "stack": 1, "weight": 3.3, "desc": "Walnut lever carbine with a tube magazine and buckhorn sights. Six rounds fed one at a time. Loud: everything for a kilometre hears it."},
+	"north_service_rifle": {"name": "North Service Rifle", "kind": "weapon", "stack": 1, "weight": 4.1, "desc": "Surplus military bolt rifle in old birch. Ten rounds, a fast bolt and an aperture sight; takes a clamp-on scout mount. Loud: everything for a kilometre hears it."},
 	"compact_patrol_rifle": {"name": "Compact Rimfire Carbine", "kind": "weapon", "stack": 1, "weight": 2.5, "desc": "Light .22 rimfire carbine with a micro reflex sight and a barrel-clamp light. Ten quiet rounds, weak hits: aim for the head."},
 	"reflex_micro": {"name": "Micro Reflex Sight", "kind": "attachment", "stack": 1, "weight": 0.12, "desc": "Small open red-dot sight on a rail clamp. Fits rifles with a scope rail."},
 	"reddot_tube": {"name": "Red-Dot Tube Sight", "kind": "attachment", "stack": 1, "weight": 0.21, "desc": "One-inch red-dot tube on a riser. Fits rifles with a scope rail."},
@@ -47,7 +47,15 @@ const ITEMS := {
 	"light_clamp": {"name": "Barrel-Clamp Hunting Light", "kind": "attachment", "stack": 1, "weight": 0.18, "desc": "Night hunting light that clamps to a rifle barrel. Lights 30 m ahead, and shows you to everything else."},
 	"light_taped": {"name": "Taped Flashlight", "kind": "attachment", "stack": 1, "weight": 0.32, "desc": "A household flashlight taped to a barrel. Fits anything; dimmer, wider, a little off the bore."},
 	"cell_batteries": {"name": "Batteries", "kind": "misc", "stack": 8, "weight": 0.05, "desc": "A pair of AA cells. Refill a weapon light (hold it to your body first in deep cold)."},
-	"expedition_rifle": {"name": "Expedition Long Rifle", "kind": "weapon", "stack": 1, "weight": 5.6, "desc": "Grey-camo heavy rifle with a large optic. Five devastating, very loud rounds. Loud: everything for a kilometre hears it."},
+	"expedition_rifle": {"name": "Expedition Magnum", "kind": "weapon", "stack": 1, "weight": 4.2, "desc": "Black synthetic magnum with a ported brake and a 4-12x scope. Four devastating rounds. Loud: everything for a kilometre hears it."},
+	"scope_3_9x": {"name": "3-9x Variable Scope", "kind": "attachment", "stack": 1, "weight": 0.48, "desc": "3-9x40 hunting scope with holdover marks. Needs a rail or scope bases; a screwdriver to fit."},
+	"scope_4_12x": {"name": "4-12x Long-Range Scope", "kind": "attachment", "stack": 1, "weight": 0.62, "desc": "4-12x50 on high rings. Fits drilled scope bases only; a screwdriver to fit."},
+	"scope_scout_2x": {"name": "2x Scout Scope", "kind": "attachment", "stack": 1, "weight": 0.28, "desc": "Long-eye-relief 2x for a forward scout rail. Both eyes open."},
+	"scout_mount_clamp": {"name": "Clamp-On Scout Mount", "kind": "attachment", "stack": 1, "weight": 0.16, "desc": "Short rail that clamps over a surplus barrel. Lets the service rifle take a scout scope or a red dot."},
+	"muzzle_moderator": {"name": "Sound Moderator", "kind": "attachment", "stack": 1, "weight": 0.30, "desc": "Factory moderator for a threaded muzzle. Takes the crack off a .22; a big rifle is still loud."},
+	"flashlight": {"name": "Flashlight", "kind": "tool", "stack": 1, "weight": 0.25, "desc": "Two-cell household flashlight. [L] with the rifle lowered. Tape it to a barrel in Craft."},
+	"duct_tape": {"name": "Duct Tape", "kind": "misc", "stack": 3, "weight": 0.15, "desc": "Half a roll of grey tape. Holds a flashlight to a barrel, more or less."},
+	"screwdriver": {"name": "Screwdriver Set", "kind": "tool", "stack": 1, "weight": 0.2, "desc": "Small drivers and hex keys. Needed to fit scope rings and mounts away from a workbench."},
 	"ammo": {"name": "Rifle Rounds", "kind": "ammo", "stack": 10, "desc": "Soft-point hunting rounds."},
 	"beans": {"name": "Canned Beans", "kind": "food", "stack": 4, "kcal": 650.0, "desc": "Tinned beans. Safe to eat cold."},
 	"venison_raw": {"shelf_h": 30.0, "name": "Raw Venison", "kind": "food", "stack": 4, "kcal": 900.0, "raw": true, "cooked": "venison_cooked", "desc": "Uncooked portion. Cook before eating; cooking removes water without adding calories."},
@@ -144,6 +152,10 @@ var active_rifle := ""              # rifle in the equipment slot (others ride i
 var loaded: Dictionary = {}         # rifle id -> rounds in its magazine / tube (taken from "ammo")
 var fitted: Dictionary = {}         # v3 rifle id -> {optic, light, light_h}; missing = factory fit (RifleDB.fitted)
 var light_on := false               # weapon light switched on (only shines while that rifle is raised)
+var light_charge: Dictionary = {}   # weapon light id -> battery hours left while it rides in the pack
+var zero: Dictionary = {}           # v3 rifle id -> [x, y] mrad point-of-impact offset (0 = zeroed at a bench)
+var torch_on := false               # handheld flashlight (rifle lowered)
+var torch_h := 6.0                  # its battery hours left
 var body: BodyTemperature
 var needs: Needs
 
@@ -322,24 +334,46 @@ func _equipped_rifle(cnt: Dictionary) -> String:
 
 
 ## Rounds ready in the equipped rifle (never more than the loose "ammo" actually carried).
-## Fit or remove a v3 rifle attachment (slot "optic" | "light"). The old one goes to the pack;
-## the new one must be carried and must fit. Returns "" or the reason it can't be done.
-func fit_attachment(rid: String, slot: String, aid: String) -> String:
+## Fit or remove a v3 rifle attachment (slot "mount" | "optic" | "light" | "muzzle"). The old one goes
+## to the pack; the new one must be carried and must fit. Removing an adapter mount also takes
+## off the optic riding on it. Returns "" or the reason it can't be done.
+func fit_attachment(rid: String, slot: String, aid: String, bench := false) -> String:
 	if not RifleDB.is_v3(rid): return "This rifle takes no attachments"
 	var f: Dictionary = (fitted.get(rid, RifleDB.factory(rid)) as Dictionary).duplicate()
 	if aid != "":
 		if count(aid) < 1: return "You don't have it"
 		if String(RifleDB.attachment(aid).get("kind", "")) != slot: return "Wrong slot"
-		if not RifleDB.fits(rid, aid): return "It doesn't fit this rifle"
+		if not RifleDB.fits(rid, aid, f): return RifleDB.fit_reason(rid, aid)
 	var old := String(f.get(slot, ""))
 	if old == aid: return ""
 	if aid != "": remove(aid)
 	if old != "": add(old)
 	f[slot] = aid
 	if slot == "light":
-		f["light_h"] = float(RifleDB.attachment(aid).get("light", {}).get("battery_h", 0.0)) if aid != "" else 0.0
+		if old != "": light_charge[old] = float(f.get("light_h", 0.0))
+		f["light_h"] = float(light_charge.get(aid, RifleDB.attachment(aid).get("light", {}).get("battery_h", 0.0))) if aid != "" else 0.0
+		if aid != "": light_charge.erase(aid)
+	if slot == "mount":
+		var o := String(f.get("optic", ""))
+		if o != "" and not RifleDB.fits(rid, o, f):
+			add(o); f["optic"] = ""
+	if slot in ["optic", "mount"]:
+		# A sight moved in the field loses its zero (re-zero at a bench); bench work keeps it.
+		zero[rid] = [0.0, 0.0] if bench or String(f.get("optic", "")) == "" else _field_zero()
 	fitted[rid] = f
 	return ""
+
+
+## Point-of-impact shift after fitting a sight by hand: 1.5-4 mrad (5-14 MOA) in a random direction.
+func _field_zero() -> Array:
+	var a := randf() * TAU; var m := randf_range(1.5, 4.0)
+	return [cos(a) * m, sin(a) * m]
+
+
+## Current zero error of a rifle in mrad (Vector2; x right, y up).
+func zero_of(rid: String) -> Vector2:
+	var z: Array = zero.get(rid, [0.0, 0.0])
+	return Vector2(float(z[0]), float(z[1]))
 
 
 func rifle_loaded() -> int:

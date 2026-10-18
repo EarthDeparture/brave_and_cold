@@ -289,6 +289,10 @@ func _entries(id: String, from: String, n: int, node: Node = null) -> Array:
 		"weapon":
 			var up: bool = world.rifle_up
 			out.append({"label": "Lower rifle" if up else "Raise rifle", "act": func() -> void: world.gear_hands(not up)})
+			if RifleDB.is_v3(id):
+				out.append({"label": "Gunsmith...", "act": func() -> void: world.open_gunsmith(id, false)})
+		"attachment":
+			out.append({"label": "Fit to a rifle...", "act": func() -> void: world.open_gunsmith(inv.rifle_id(), false)})
 	if FieldMaintenance.repairable(id) and inv.condition(id)<.98:
 		out.append({"label":"Maintain at lookout desk","act":func()->void:world.gear_maintain(id)})
 	if inv.count(id) - (1 if from == "pack" and inv.is_worn(id) else 0) >= 1 or from == "equip":

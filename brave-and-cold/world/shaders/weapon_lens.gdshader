@@ -22,10 +22,11 @@ void fragment() {
 	float halo = exp(-(ang * ang) / (glow_mrad * glow_mrad)) * 0.28;
 	float d = (core + halo) * dot_on;
 	float fres = pow(1.0 - clamp(abs(dot(NORMAL, VIEW)), 0.0, 1.0), 4.0);
-	ALBEDO = mix(tint.rgb, vec3(0.02, 0.03, 0.04), dark);
+	ALBEDO = mix(tint.rgb, vec3(0.015, 0.018, 0.03), dark);
+	EMISSION = vec3(0.0);
 	ROUGHNESS = 0.04;
 	METALLIC = 0.0;
-	SPECULAR = 0.7;
+	SPECULAR = mix(0.7, 0.22, dark);                 // coated scope glass reads dark, not mirror-white
 	EMISSION = dot_color * d * 7.0 * brightness;
 	ALPHA = clamp(mix(tint.a, 0.88, dark) + fres * 0.30 + core * dot_on, 0.0, 1.0);
 }

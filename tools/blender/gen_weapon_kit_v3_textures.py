@@ -88,11 +88,14 @@ def camo(seed):
 def laminate(seed):
     """Grey/brown stacked veneer: thin stripes that wander, seen on the stock sides."""
     yy, xx = np.mgrid[:N, :N].astype(np.float32) / N
-    warp = noise(300, 90, seed) * 0.015
-    layer = np.floor((yy + warp) * 90) % 3
-    cols = [c(112, 110, 104), c(78, 74, 68), c(96, 84, 70)]
-    img = np.stack(cols)[layer.astype(int)]
-    img = gaussian_filter(img, sigma=(0.8, 0.8, 0), mode='wrap')
+    # layers wander as contours (the stock surface cuts the veneer stack obliquely), random tone per layer
+    warp = noise(300, 90, seed) * 0.010 + noise(4, 1, seed + 7) * 0.07 + noise(9, 2, seed + 9) * 0.02
+    idx = np.floor((yy + warp) * 64)
+    h = np.modf(np.abs(np.sin(idx * 12.9898 + seed) * 43758.5453))[0]
+    lo, hi = c(70, 72, 70), c(118, 116, 108)
+    img = lo[None, None, :] + (hi - lo)[None, None, :] * (0.25 + 0.6 * h)[..., None]
+    img *= (1 + 0.04 * np.sin(idx * 2.1))[..., None]
+    img = gaussian_filter(img, sigma=(1.1, 1.1, 0), mode='wrap')
     img *= (1 + 0.05 * noise(5, 1, seed + 1))[..., None]
     return img
 
@@ -114,6 +117,9 @@ TILES = {
     'sling_canvas': lambda: wood(30, c(92, 84, 60), c(70, 64, 46), c(108, 100, 74), 40, figure=0.1, pores=0.3),
     'tape_grey': lambda: metal(31, c(120, 122, 120), streak=0.03, speck=0.05, mottle=0.05),
     'lamp_lens': lambda: metal(32, c(220, 220, 205), streak=0.0, speck=0.0, mottle=0.02),
+    'hardwood_red': lambda: wood(33, c(120, 66, 38), c(84, 42, 24), c(146, 86, 52), 22, figure=0.15),   # SKS-type surplus hardwood
+    'stainless': lambda: metal(34, c(118, 120, 122), streak=0.14, speck=0.01, mottle=0.02),            # bead-blasted / brushed
+    'case_colour': lambda: metal(35, c(64, 58, 54), streak=0.03, speck=0.03, mottle=0.16),             # lever receiver, faded case colour
 }
 
 for k, f in TILES.items():

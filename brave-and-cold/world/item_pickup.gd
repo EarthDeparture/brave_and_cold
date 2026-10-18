@@ -52,8 +52,12 @@ func _build_visual() -> void:
 		return
 	if Inventory.is_rifle(id):
 		# The real rifle art, lying on its left side (no animation player needed on the ground).
-		var gun: Node3D = (load("res://assets/weapons/north_ridge/" + id + ".glb") as PackedScene).instantiate()
-		add_child(gun); gun.rotation = Vector3(0, randf() * TAU, PI * .5); gun.position = Vector3(0, .025, 0)
+		var gun: Node3D
+		if RifleDB.is_v3(id):
+			var wp := WeaponPresentation.new(); add_child(wp); wp.set_weapon(id); gun = wp   # modular v3 art + its fit
+		else:
+			gun = (load("res://assets/weapons/north_ridge/" + id + ".glb") as PackedScene).instantiate(); add_child(gun)
+		gun.rotation = Vector3(0, randf() * TAU, PI * .5); gun.position = Vector3(0, .025, 0)
 		return
 	var m := MeshInstance3D.new()
 	var bm := BoxMesh.new()

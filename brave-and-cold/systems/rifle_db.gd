@@ -35,6 +35,13 @@ static func value(id: String, key: String, fallback: float) -> float:
 	return float(spec(id).get(key, fallback))
 
 
+## Action type: bolt | semi | lever (drives the viewmodel cycle and the reload style).
+static func action(id: String) -> String:
+	var a := String(spec(id).get("action", ""))
+	if a != "": return a
+	return {"timber_bolt_carbine": "bolt", "brush_lever_rifle": "lever"}.get(id, "semi")
+
+
 ## Hip view the magnifications are measured against (Player.HIP_FOV, vertical degrees).
 const HIP_FOV := 70.0
 static var _zoom_cache: Dictionary = {}
@@ -65,11 +72,14 @@ static func is_v3(id: String) -> bool:
 	return bool(spec(id).get("v3", false))
 
 
-## What a v3 rifle is found with: {optic, light, light_h (battery hours left)}.
+const SLOTS := ["mount", "optic", "light", "muzzle"]   # fit order: an adapter mount carries the optic
+
+
+## What a v3 rifle is found with: {mount, optic, light, muzzle, light_h (battery hours left)}.
 static func factory(id: String) -> Dictionary:
 	var f: Dictionary = spec(id).get("factory", {})
 	var lid := String(f.get("light", ""))
-	return {"optic": String(f.get("optic", "")), "light": lid,
+	return {"mount": String(f.get("mount", "")), "optic": String(f.get("optic", "")), "light": lid, "muzzle": String(f.get("muzzle", "")),
 			"light_h": float(attachment(lid).get("light", {}).get("battery_h", 0.0)) if lid != "" else 0.0}
 
 
@@ -80,20 +90,60 @@ static func fitted(id: String) -> Dictionary:
 	return factory(id)
 
 
-## Can attachment `aid` go on rifle `id`? Optics need the rifle's optic mount; "any" fits all.
-static func fits(id: String, aid: String) -> bool:
+## The rifle's mount for a slot, after adapters: a fitted clamp-on scout mount gives an optic mount.
+static func mount_for(id: String, slot: String, f: Dictionary = {}) -> String:
+	var mounts: Dictionary = spec(id).get("mounts", {})
+	if slot == "optic":
+		var fit := f if not f.is_empty() else fitted(id)
+		var gives := String(attachment(String(fit.get("mount", ""))).get("gives", ""))
+		if gives != "": return gives
+	return String(mounts.get(slot, "none"))
+
+
+## Can attachment `aid` go on rifle `id`? Its mount (string or list) must include the rifle's
+## mount for that slot ("any" fits all). `f` = the fit to check against (default: current).
+static func fits(id: String, aid: String, f: Dictionary = {}) -> bool:
 	var a := attachment(aid)
 	if a.is_empty() or not is_v3(id): return false
-	var need := String(a.get("mount", ""))
-	var mounts: Dictionary = spec(id).get("mounts", {})
-	if need == "any": return true
-	return String(mounts.get(String(a.get("kind", "")), "")) == need
+	var need = a.get("mount", "")
+	var have := mount_for(id, String(a.get("kind", "")), f)
+	if need is String:
+		return need == "any" or (need == have and have != "none")
+	return have != "none" and (need as Array).has(have)
+
+
+## Why `aid` can't go on `id` (for the gunsmith screen), or "".
+static func fit_reason(id: String, aid: String) -> String:
+	if fits(id, aid): return ""
+	var a := attachment(aid)
+	var have := mount_for(id, String(a.get("kind", "")))
+	match String(a.get("kind", "")):
+		"optic": return "No scope mount on this rifle" if have == "none" else "Needs %s, this rifle has %s" % [_mount_words(a.get("mount", "")), _mount_words(have)]
+		"muzzle": return "The barrel isn't threaded"
+		"light": return "No room on this barrel for a clamp" if have == "none" else "Doesn't fit this barrel"
+		"mount": return "Only fits a surplus barrel"
+	return "Doesn't fit"
+
+
+static func _mount_words(m) -> String:
+	var words := {"rail": "a rail", "bases": "scope bases", "scout": "a scout rail", "barrel": "a barrel clamp", "thread": "a threaded muzzle", "none": "none"}
+	if m is Array: return " or ".join((m as Array).map(func(x): return String(words.get(String(x), String(x)))))
+	return String(words.get(String(m), String(m)))
+
+
+## Fitted muzzle device stats ({} = bare muzzle): noise_mult, spread_mult.
+static func muzzle(id: String) -> Dictionary:
+	var a := attachment(String(fitted(id).get("muzzle", "")))
+	if not a.has("muzzle"): return {}
+	var m: Dictionary = (a["muzzle"] as Dictionary).duplicate()
+	if bool(spec(id).get("rimfire", false)) and m.has("rimfire_noise_mult"): m["noise_mult"] = m["rimfire_noise_mult"]
+	return m
 
 
 ## Signature of the fit (art rebuild + zoom cache key).
 static func fit_sig(id: String) -> String:
 	var f := fitted(id)
-	return "%s|%s|%s" % [id, String(f.get("optic", "")), String(f.get("light", ""))]
+	return "%s|%s|%s|%s|%s" % [id, String(f.get("mount", "")), String(f.get("optic", "")), String(f.get("light", "")), String(f.get("muzzle", ""))]
 
 
 static func optic(id: String) -> Dictionary:

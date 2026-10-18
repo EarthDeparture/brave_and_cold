@@ -22,6 +22,8 @@ from mathutils import Vector
 
 HERE = Path(__file__).resolve().parent
 _codex = (HERE / 'gen_north_ridge_weapons.py').read_text(encoding='utf-8')
+_codex = _codex.replace("rot=(0,0,-1.05)", "rot=(0,0,BOLT['lift'])").replace("(0,0,.079)", "(0,0,BOLT['travel'])")
+BOLT = {'lift': 1.05, 'travel': .079}
 exec(_codex[:_codex.index('\nSPECS=[')])   # node/socket/mesh/tube_z/wire/casing/clip/make_clips + field-kit helpers
 
 OUT = ROOT / 'tools/blender/generated/weapon_kit_v3'
@@ -38,11 +40,13 @@ PROPS = {
     'steel_bright': (.30, .85, 'metal'), 'synthetic_black': (.72, 0, 'synthetic'), 'camo_dip': (.70, 0, 'synthetic'),
     'rubber': (.85, 0, 'synthetic'), 'brass': (.32, .9, 'metal'), 'glass': (.05, .2, 'glass'),
     'sling_canvas': (.9, 0, 'fabric'), 'tape_grey': (.6, 0, 'fabric'), 'lamp_lens': (.05, 0, 'glass'),
+    'hardwood_red': (.60, 0, 'wood'), 'stainless': (.42, .8, 'metal'), 'case_colour': (.40, .7, 'metal'),
 }
 UV_M = 1 / 0.24   # one tile per 24 cm: grain scale reads as real wood at viewmodel distance
 
 
 def material(key):
+    key = {'steel': 'steel_bright'}.get(key, key)   # v2 helpers (casing tip) use steel
     if key in M: return M[key]
     m = bpy.data.materials.new('W3_' + key); m.use_nodes = True
     bs = m.node_tree.nodes.get('Principled BSDF')
@@ -218,7 +222,7 @@ def export_v3(kind):
     assert tri < 40000, (current.name, tri)
     bpy.ops.object.select_all(action='DESELECT'); current.select_set(True)
     for o in current.children_recursive: o.select_set(True)
-    sub = {'rifle': '', 'optic': 'optics/', 'light': 'lights/', 'muzzle': 'muzzle/'}[kind]
+    sub = {'rifle': '', 'optic': 'optics/', 'light': 'lights/', 'muzzle': 'muzzle/', 'mount': 'mounts/'}[kind]
     (ENGINE / sub).mkdir(parents=True, exist_ok=True)
     path = ENGINE / sub / (current.name + '.glb')
     rest = {o: o.matrix_basis.copy() for o in [current] + list(current.children_recursive)}
@@ -303,6 +307,7 @@ def compact_patrol_rifle():
     lathe_d('Barrel', [(.140, .0098), (.150, .0098), (.155, .0094), (.40, .0086), (m - .004, .0080), (m, .0072), (m, .0001)], 'blued', n=28)
     loft('BarrelBand', [(-.4245, .0852, .0418, .0212, 2.4), (-.4355, .0850, .0424, .0210, 2.4)], 'blued', n=26, sub=1)
     socket('LightMount', (0, .075, -.36))
+    socket('MuzzleThread', (0, .075, -m))   # threaded .22 muzzle (moderator)
     # iron sights: folding leaf rear (U notch bottom at .1000) and bead front (bead top .1000): 25 mm over the bore
     plate('RearSightBase', [(-.255, .0838), (-.285, .0838), (-.285, .0880), (-.255, .0880)], -.0055, .0055, 'blued')
     plate('RearLeafL', [(-.266, .0870), (-.272, .0870), (-.272, .1030), (-.266, .1030)], -.0062, -.0017, 'blued', edge=.0005)
@@ -381,7 +386,7 @@ def optic_scope_4x():
 def light_barrel_clamp():
     """Hunting light on a barrel clamp at 3 o'clock: alloy body, bezel, tail switch, clamp ring."""
     x = .0255; cy = 0.0
-    ring_d('ClampRing', -.006, .0090, .0125, .012, 'alloy_black', cy=0.0)
+    ring_d('ClampRing', -.006, .0102, .0135, .012, 'alloy_black', cy=0.0)   # rubber-shimmed: fits .0085-.010 barrels
     box('ClampArm', (.0160, 0.0, .000), (.0110, .0100, .0120), 'alloy_black', .0012)
     cylinder('ClampScrew', (.016, -.0060, .000), (.016, -.0110, .000), .0024, 'steel_bright', 12)
     lathe_d('LightBody', [(-.060, .0115), (-.054, .0120), (.020, .0120), (.026, .0145), (.040, .0150), (.040, .0001)], 'alloy_black', cy=cy, x=x, n=28)
@@ -403,21 +408,25 @@ def light_taped():
     socket('Mount', (0, 0, 0)); socket('Beam', (0, y, -.071))
 
 
+# ---------------------------------------------------------------- W2 rifles, optics, mounts, muzzles
+exec((HERE / 'gen_weapon_kit_v3_rifles.py').read_text(encoding='utf-8'))
+
 # ---------------------------------------------------------------- build
-RIFLES = [('compact_patrol_rifle', 'semi', compact_patrol_rifle, 'Compact .22 rimfire carbine, birch stock, alloy receiver with rail, iron sights')]
+RIFLES = [('compact_patrol_rifle', 'semi', compact_patrol_rifle, 'Compact .22 rimfire carbine, birch stock, alloy receiver with rail, iron sights', None)] + RIFLES_W2
 OPTICS = [('reflex_micro', optic_reflex_micro, 'Open micro reflex sight on a rail clamp'),
           ('reddot_tube', optic_reddot_tube, '1-inch red-dot tube on a riser mount'),
-          ('scope_4x', optic_scope_4x, '4x hunting scope on rings and bases')]
+          ('scope_4x', optic_scope_4x, '4x hunting scope on rings and bases')] + OPTICS_W2
 LIGHTS = [('light_clamp', light_barrel_clamp, 'Hunting light on a barrel clamp'),
           ('light_taped', light_taped, 'Household flashlight taped under the barrel')]
 
-for name, mode, build, description in RIFLES:
+for name, mode, build, description, bolt_spec in RIFLES:
     if ONLY and name not in ONLY: continue
+    BOLT.clear(); BOLT.update(bolt_spec or {'lift': 1.05, 'travel': .079})
     start(name, description, [.05, .2, MUZ3[name] + .36])
     current['forward_axis'] = '-Z'; current['origin'] = 'trigger-hand reference'
     current['reload_style'] = 'individual_round' if mode == 'lever' else 'detachable_magazine'
     parts = build(); make_clips(parts, mode); export_v3('rifle')
-for kind, table in (('optic', OPTICS), ('light', LIGHTS)):
+for kind, table in (('optic', OPTICS), ('light', LIGHTS), ('mount', MOUNTS_W2), ('muzzle', MUZZLES_W2)):
     for name, build, description in table:
         if ONLY and name not in ONLY: continue
         start(name, description, [.05, .05, .2]); build(); export_v3(kind)

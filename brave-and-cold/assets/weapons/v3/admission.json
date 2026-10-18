@@ -2,39 +2,117 @@
   "workflow": "Local Blender 5.2 weapon kit v3 (tools/blender/gen_weapon_kit_v3.py); exact byte copy",
   "files": {
     "assets/weapons/v3/rifles/compact_patrol_rifle.glb": {
-      "sha256": "dc1a8fdec519ff87c160652496a84eca2ff7d74bf76ead1d6677bbb8e2127657",
+      "sha256": "80436fa05971c883aff9f68b2a89a706ba5a5ba00936117df519a40b5cb2c539",
       "kind": "rifle",
-      "triangles": 7120,
+      "triangles": 7328,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/rifles/north_service_rifle.glb": {
+      "sha256": "5add5c0b92c91b322edc1b0b518a9c3da40eb9eb734ce0497773416843507790",
+      "kind": "rifle",
+      "triangles": 7704,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/rifles/frontier_vented_rifle.glb": {
+      "sha256": "0f9eb4aa51b06696fb37520b8a79c2f93deeb4fb975018488471dd03a207fc10",
+      "kind": "rifle",
+      "triangles": 7036,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/rifles/ranger_box_rifle.glb": {
+      "sha256": "9285f631b2cf1f8d5e8371ae69dba4cf3c126771842aac2b1cad9a4d7434c7b0",
+      "kind": "rifle",
+      "triangles": 6992,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/rifles/timber_bolt_carbine.glb": {
+      "sha256": "8799a5c54739b1b05006359a8c4516f5ac18a04c32a0c1b51c369fe0e0c097e8",
+      "kind": "rifle",
+      "triangles": 8072,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/rifles/brush_lever_rifle.glb": {
+      "sha256": "ce15971b8854f01574b09dd6b4cc5b0a4be52bb9f6abe49321538015a31c35d1",
+      "kind": "rifle",
+      "triangles": 5296,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/rifles/ridge_scout_rifle.glb": {
+      "sha256": "17b4c3edb1958bc949144164dbfd5de003d256b173a7ffaf01fd67652c957338",
+      "kind": "rifle",
+      "triangles": 6668,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/rifles/expedition_rifle.glb": {
+      "sha256": "a12bb49cc5251555e709ca47405cbb8fabe8619efff76a4cf58e7d7c8950bf9c",
+      "kind": "rifle",
+      "triangles": 8208,
       "provenance": "Original project Blender geometry and generated textures"
     },
     "assets/weapons/v3/optics/reflex_micro.glb": {
-      "sha256": "a90bd472cebadb17ef6e42f2fdeaa6924c61d5313926fe7a98181f958e60734c",
+      "sha256": "36b88ca26baae72048d359737c7f5fc30affdf72e394899fb6b8a0f6bcae2a8f",
       "kind": "optic",
       "triangles": 914,
       "provenance": "Original project Blender geometry and generated textures"
     },
     "assets/weapons/v3/optics/reddot_tube.glb": {
-      "sha256": "c7bc9d1325f777a2e9ccce68a04703427fff661ff69b1537cce8d2eba7db542e",
+      "sha256": "3fbf257eeb9c3a4f1b4876a5a677c748b9365a67c49957b14deeeccf4723a6ae",
       "kind": "optic",
       "triangles": 1876,
       "provenance": "Original project Blender geometry and generated textures"
     },
     "assets/weapons/v3/optics/scope_4x.glb": {
-      "sha256": "70a29fb2fe303f5dfab104dca77de865d88cc67ea0a1f880aba38deb356b0e31",
+      "sha256": "725afbb0e61eb95b71462c52ee8c8b11bc44e669a3bcf45bcc8e1d4cc892088f",
       "kind": "optic",
       "triangles": 2012,
       "provenance": "Original project Blender geometry and generated textures"
     },
+    "assets/weapons/v3/optics/scope_3_9x.glb": {
+      "sha256": "cd0216c8c20988baf561ce452b57aadf2d81385d50a5e768997ea8599ce8dae9",
+      "kind": "optic",
+      "triangles": 3440,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/optics/scope_4_12x.glb": {
+      "sha256": "aeb6dc279095c6f29ba597a14c394e486830750e3b622db1c6151668641ffeca",
+      "kind": "optic",
+      "triangles": 3580,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/optics/scope_scout_2x.glb": {
+      "sha256": "106157cf8d5ed0d24d31bd17c5be736fdc1ff60d7ee509a65bdad2d6e101a5be",
+      "kind": "optic",
+      "triangles": 1788,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
     "assets/weapons/v3/lights/light_clamp.glb": {
-      "sha256": "65acc839b3b679778b201aa50b5782a9f88aaadb3eef8668ee474e1fa33db944",
+      "sha256": "c5a2bc84b48dd6f48a98e535b923400841a92fc2a074a50e5481a9dfb0513944",
       "kind": "light",
       "triangles": 874,
       "provenance": "Original project Blender geometry and generated textures"
     },
     "assets/weapons/v3/lights/light_taped.glb": {
-      "sha256": "730da143b3b53744448e6ee50fdab22c10d1952a2ea9ae11023c5ebec0d4a817",
+      "sha256": "b3236d2e9daeec5cca7b8f9e6a2da1d10eed3e102c8e0ac51cd56392ef2e6ce5",
       "kind": "light",
       "triangles": 886,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/mounts/scout_mount_clamp.glb": {
+      "sha256": "346608c4cf2a2dddb30eec72e89224bd78ef91742dae9729f45b21790f8d0480",
+      "kind": "mount",
+      "triangles": 1152,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/muzzle/muzzle_moderator.glb": {
+      "sha256": "f51dca33ad27759e901630a30e29353ed040ec5e2dcf70b38caf7dc610d5fb73",
+      "kind": "muzzle",
+      "triangles": 432,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/muzzle/muzzle_brake.glb": {
+      "sha256": "aef07014e4cc7a6a64abe8bcae98e94e757e6d76cef1a09abb4ab2c2e6faecd6",
+      "kind": "muzzle",
+      "triangles": 1144,
       "provenance": "Original project Blender geometry and generated textures"
     }
   }

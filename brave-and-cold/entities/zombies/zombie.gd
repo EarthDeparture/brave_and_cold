@@ -23,6 +23,7 @@ const VAULT_S := 1.4
 const CORPSE_LIFE_S := 300.0
 
 static var night_factor := 0.0
+static var player_lit := false     # player's flashlight / weapon light on: seen from far, even at night
 static var ambient_c := 0.0       # cold stiffens them: slower below -24 C, idle ones freeze solid below -32 C
 static var _mats: Array[StandardMaterial3D] = []     # shared tints (batching) instead of one material per zombie
 static var _scw_frame := -1
@@ -282,7 +283,7 @@ func _can_see_player() -> bool:
 	var to := player.position - global_position
 	to.y = 0.0
 	var d := to.length()
-	var rng_m := SIGHT_RANGE * (0.55 if player.crouching else 1.0) * (1.0 - 0.45 * night_factor) * (0.5 if crawling else 1.0)
+	var rng_m := SIGHT_RANGE * (0.55 if player.crouching else 1.0) * (2.5 if player_lit else (1.0 - 0.45 * night_factor)) * (0.5 if crawling else 1.0)
 	if d > rng_m:
 		return false
 	var fwd := Vector3(-sin(rotation.y), 0.0, -cos(rotation.y))

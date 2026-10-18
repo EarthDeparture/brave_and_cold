@@ -220,12 +220,14 @@ func _draw_weapon(sz: Vector2, k: float) -> void:
 		DZ.text(_ui, line, Vector2(right - 680.0 * k, y), int(21.0 * k), DZ.TEXT, HORIZONTAL_ALIGNMENT_RIGHT, 680.0 * k)
 		y -= 26.0 * k
 	var q := ""
+	if inv.count("flashlight") > 0 and not rifle_up:
+		q += "[L] Flashlight %s %d%%    " % ["on" if inv.torch_on and inv.torch_h > 0.0 else "off", int(round(100.0 * inv.torch_h / 6.0))]
 	if inv.count("flare") > 0:
 		q += "[V] Flare x%d    " % inv.count("flare")
 	if inv.count("matches") > 0 and inv.count("wood") > 0:
 		q += "[B] Campfire"
 	if q != "":
-		DZ.text(_ui, q.strip_edges(), Vector2(right - 400.0 * k, y), int(14.0 * k), DZ.DIM, HORIZONTAL_ALIGNMENT_RIGHT, 400.0 * k)
+		DZ.text(_ui, q.strip_edges(), Vector2(right - 560.0 * k, y), int(14.0 * k), DZ.DIM, HORIZONTAL_ALIGNMENT_RIGHT, 560.0 * k)
 
 
 func _draw_monitor(sz: Vector2, k: float) -> void:

@@ -1,33 +1,13 @@
 {
-  "_note": "Weapon attachments (weapon kit v3). kind optic|light. mount: what the attachment needs on the rifle (rifles.json mounts). optic.type scope = black-tube scope picture (model hidden when fully aimed) | tube_dot / reflex = model stays, the dot is drawn in the lens (collimated, parallax-free) | iron. mag = true magnification vs the 70 deg hip view. light: range_m, angle_deg (full cone), energy, battery_h at 20 C (cold shortens it), offset_mrad = beam off the bore (taped lights are not aligned).",
-  "reflex_micro": {
-    "kind": "optic", "name": "Micro Reflex Sight", "mount": "rail", "weight": 0.12,
-    "glb": "res://assets/weapons/v3/optics/reflex_micro.glb",
-    "desc": "Small open red-dot sight on a rail clamp. Both eyes open, quick on close targets.",
-    "optic": {"type": "reflex", "mag": [1.15], "reticle": "dot", "label": "micro reflex sight", "dot_mrad": 4.5}
-  },
-  "reddot_tube": {
-    "kind": "optic", "name": "Red-Dot Tube Sight", "mount": "rail", "weight": 0.21,
-    "glb": "res://assets/weapons/v3/optics/reddot_tube.glb",
-    "desc": "One-inch red-dot tube on a riser. Parallax-free; the dot sits where the bore points.",
-    "optic": {"type": "tube_dot", "mag": [1.2], "reticle": "dot", "label": "red-dot tube", "dot_mrad": 3.5}
-  },
-  "scope_4x": {
-    "kind": "optic", "name": "4x Hunting Scope", "mount": "rail", "weight": 0.40,
-    "glb": "res://assets/weapons/v3/optics/scope_4x.glb",
-    "desc": "Fixed 4x hunting scope on rings and bases. Duplex reticle.",
-    "optic": {"type": "scope", "mag": [4.0], "reticle": "duplex", "label": "4x hunting scope"}
-  },
-  "light_clamp": {
-    "kind": "light", "name": "Barrel-Clamp Hunting Light", "mount": "barrel", "weight": 0.18,
-    "glb": "res://assets/weapons/v3/lights/light_clamp.glb",
-    "desc": "Night hunting light on a barrel clamp. Aligned with the bore. Runs on two cells.",
-    "light": {"range_m": 34.0, "angle_deg": 18.0, "energy": 7.0, "battery_h": 6.0, "offset_mrad": 0.0}
-  },
-  "light_taped": {
-    "kind": "light", "name": "Taped Flashlight", "mount": "any", "weight": 0.32,
-    "glb": "res://assets/weapons/v3/lights/light_taped.glb",
-    "desc": "A household flashlight taped under the barrel. Wider, dimmer, not quite on the bore.",
-    "light": {"range_m": 26.0, "angle_deg": 26.0, "energy": 4.5, "battery_h": 5.0, "offset_mrad": 12.0}
-  }
+  "_note": "Weapon attachments (weapon kit v3). kind optic|light. mount: what the attachment needs on the rifle (rifles.json mounts). optic.type scope = black-tube scope picture (model hidden when fully aimed) | tube_dot / reflex = model stays, the dot is drawn in the lens (collimated, parallax-free) | iron. mag = true magnification vs the 70 deg hip view. light: range_m, angle_deg (full cone), energy, battery_h at 20 C (cold shortens it), offset_mrad = beam off the bore (taped lights are not aligned). mount may be a list (any listed rifle mount fits). kind mount = adapter (gives = the optic mount it provides). kind muzzle = thread devices. fit_min = game minutes to fit/remove; tools = items needed (workbench counts as all tools).",
+  "reflex_micro": {"kind": "optic", "name": "Micro Reflex Sight", "mount": ["rail", "scout"], "weight": 0.12, "glb": "res://assets/weapons/v3/optics/reflex_micro.glb", "desc": "Small open red-dot sight on a rail clamp. Both eyes open, quick on close targets.", "optic": {"type": "reflex", "mag": [1.15], "reticle": "dot", "label": "micro reflex sight", "dot_mrad": 4.5}, "fit_min": 5, "tools": []},
+  "reddot_tube": {"kind": "optic", "name": "Red-Dot Tube Sight", "mount": ["rail", "scout", "bases"], "weight": 0.21, "glb": "res://assets/weapons/v3/optics/reddot_tube.glb", "desc": "One-inch red-dot tube on a riser. Parallax-free; the dot sits where the bore points.", "optic": {"type": "tube_dot", "mag": [1.2], "reticle": "dot", "label": "red-dot tube", "dot_mrad": 3.5}, "fit_min": 5, "tools": []},
+  "scope_4x": {"kind": "optic", "name": "4x Hunting Scope", "mount": ["rail", "bases"], "weight": 0.4, "glb": "res://assets/weapons/v3/optics/scope_4x.glb", "desc": "Fixed 4x hunting scope on rings and bases. Duplex reticle.", "optic": {"type": "scope", "mag": [4.0], "reticle": "duplex", "label": "4x hunting scope"}, "fit_min": 20, "tools": ["screwdriver"]},
+  "scope_3_9x": {"kind": "optic", "name": "3-9x Variable Scope", "mount": ["rail", "bases"], "weight": 0.48, "fit_min": 20, "tools": ["screwdriver"], "glb": "res://assets/weapons/v3/optics/scope_3_9x.glb", "desc": "3-9x40 hunting scope with first-plane holdover marks for 200/300/400 m.", "optic": {"type": "scope", "mag": [3.0, 9.0], "reticle": "bdc", "label": "3-9x variable scope"}},
+  "scope_4_12x": {"kind": "optic", "name": "4-12x Long-Range Scope", "mount": ["bases"], "weight": 0.62, "fit_min": 20, "tools": ["screwdriver"], "glb": "res://assets/weapons/v3/optics/scope_4_12x.glb", "desc": "4-12x50 with an adjustable objective on high rings. Heavy; needs drilled bases.", "optic": {"type": "scope", "mag": [4.0, 12.0], "reticle": "bdc", "label": "4-12x long-range scope"}},
+  "scope_scout_2x": {"kind": "optic", "name": "2x Scout Scope", "mount": ["scout"], "weight": 0.28, "fit_min": 5, "tools": [], "glb": "res://assets/weapons/v3/optics/scope_scout_2x.glb", "desc": "Long-eye-relief 2x scope for a forward scout rail. Both eyes open.", "optic": {"type": "scope", "mag": [2.0], "reticle": "duplex", "label": "2x scout scope"}},
+  "scout_mount_clamp": {"kind": "mount", "name": "Clamp-On Scout Mount", "mount": ["scout_clamp"], "gives": "scout", "weight": 0.16, "fit_min": 15, "tools": ["screwdriver"], "glb": "res://assets/weapons/v3/mounts/scout_mount_clamp.glb", "desc": "A short rail that clamps over the chamber end of a surplus barrel. No drilling, no gunsmith."},
+  "light_clamp": {"kind": "light", "name": "Barrel-Clamp Hunting Light", "mount": ["barrel"], "weight": 0.18, "glb": "res://assets/weapons/v3/lights/light_clamp.glb", "desc": "Night hunting light on a barrel clamp. Aligned with the bore. Runs on two cells.", "light": {"range_m": 34.0, "angle_deg": 18.0, "energy": 7.0, "battery_h": 6.0, "offset_mrad": 0.0}, "fit_min": 1, "tools": []},
+  "light_taped": {"kind": "light", "name": "Taped Flashlight", "mount": "any", "weight": 0.32, "glb": "res://assets/weapons/v3/lights/light_taped.glb", "desc": "A household flashlight taped under the barrel. Wider, dimmer, not quite on the bore.", "light": {"range_m": 26.0, "angle_deg": 26.0, "energy": 4.5, "battery_h": 5.0, "offset_mrad": 12.0}, "fit_min": 4, "tools": []},
+  "muzzle_moderator": {"kind": "muzzle", "name": "Sound Moderator", "mount": ["thread"], "weight": 0.3, "fit_min": 2, "tools": [], "glb": "res://assets/weapons/v3/muzzle/muzzle_moderator.glb", "desc": "A factory moderator for a threaded muzzle. Takes the crack off a .22; a big rifle is still loud.", "muzzle": {"noise_mult": 0.62, "rimfire_noise_mult": 0.3, "spread_mult": 0.97, "length_m": 0.176}}
 }

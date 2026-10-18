@@ -9,7 +9,7 @@ const LENS := preload("res://world/shaders/weapon_lens.gdshader")
 # kit v3 material keys -> (shader family, roughness, metallic); see gen_weapon_kit_v3.py PROPS
 const FAMILY := {
 	"walnut": [0, .62, 0.0], "birch": [0, .66, 0.0], "birch_dark": [0, .64, 0.0], "laminate": [0, .55, 0.0],
-	"blued": [1, .38, .75], "parkerized": [1, .62, .55], "alloy_black": [1, .55, .2], "steel_bright": [1, .30, .85],
+	"blued": [1, .38, .75], "parkerized": [1, .62, .55], "alloy_black": [1, .55, .2], "stainless": [1, .42, .8], "case_colour": [1, .40, .7], "hardwood_red": [0, .60, 0.0], "steel_bright": [1, .30, .85],
 	"brass": [1, .32, .9], "synthetic_black": [2, .72, 0.0], "camo_dip": [2, .70, 0.0], "rubber": [2, .85, 0.0],
 	"sling_canvas": [3, .9, 0.0], "tape_grey": [3, .6, 0.0], "lamp_lens": [2, .1, 0.0]}
 var weapon_id := ""
@@ -25,6 +25,8 @@ var lens: MeshInstance3D          # kit v2: amber sight glass (opaque)
 var _lens_glass: StandardMaterial3D
 var optic_node: Node3D            # kit v3 fitted optic
 var light_node: Node3D            # kit v3 fitted light
+var mount_node: Node3D            # kit v3 adapter (clamp-on scout rail)
+var muzzle_node: Node3D           # kit v3 muzzle device
 var lamp: SpotLight3D
 var dot_mats: Array[ShaderMaterial] = []
 var _eye_y := NAN
@@ -32,8 +34,11 @@ var _iron_y := NAN
 
 func _init() -> void:
 	contact_profiles = JSON.parse_string(FileAccess.get_file_as_string("res://assets/weapons/north_ridge/contact_profiles.json"))
+## Kit v3 rifles share one hand-contact profile: their HandL/HandR sockets are placed on the wood by
+## the generator (palm under the fore-end, wrist at the grip), not tuned per gun afterwards.
+const V3_CONTACT := {"hold_right": [-0.0005, 0.003, 0], "hold_left": [-0.0035, -0.017, 0], "magazine_left": [0.012, -0.0211, 0.0016]}
 func contact_offset(state: String, side: String) -> Vector3:
-	var value: Array = contact_profiles.get(weapon_id,{}).get(state+"_"+side,[0,0,0])
+	var value: Array = (V3_CONTACT if RifleDB.is_v3(weapon_id) else contact_profiles.get(weapon_id,{})).get(state+"_"+side,[0,0,0])
 	return Vector3(value[0],value[1],value[2])
 func is_v3() -> bool: return RifleDB.is_v3(weapon_id)
 func set_weapon(id: String) -> void:
@@ -42,7 +47,7 @@ func set_weapon(id: String) -> void:
 	if weapon_id == id and fit_sig == sig: return
 	if model != null: remove_child(model); model.free()
 	weapon_id = id; fit_sig = sig
-	optic_node = null; light_node = null; lamp = null; dot_mats.clear(); _eye_y = NAN; _iron_y = NAN; lens = null
+	optic_node = null; light_node = null; mount_node = null; muzzle_node = null; lamp = null; dot_mats.clear(); _eye_y = NAN; _iron_y = NAN; lens = null
 	var path := ("res://assets/weapons/v3/rifles/%s.glb" if RifleDB.is_v3(id) else "res://assets/weapons/north_ridge/%s.glb") % id
 	model = (load(path) as PackedScene).instantiate()
 	add_child(model)
@@ -51,7 +56,7 @@ func set_weapon(id: String) -> void:
 	rest.clear(); sockets.clear()
 	if not RifleDB.is_v3(id):
 		lens = model.find_child(id + "__Sheet_lens_orange", true, false) as MeshInstance3D
-	for name: String in ["HandR","HandL","BoltHand","MagazineHand","Muzzle","Aim","TriggerFinger","LoadingGate","Scope","OpticMount","IronAim","LightMount"]:
+	for name: String in ["HandR","HandL","BoltHand","MagazineHand","Muzzle","Aim","TriggerFinger","LoadingGate","Scope","OpticMount","IronAim","LightMount","ScoutMount","MuzzleThread"]:
 		var target := model.find_child(id+"__Socket_"+name,true,false) as Node3D
 		if target != null: sockets[name] = target
 	if RifleDB.is_v3(id): _build_v3()
@@ -73,8 +78,18 @@ func _build_v3() -> void:
 	var f := RifleDB.fitted(weapon_id)
 	if sockets.has("IronAim"): _iron_y = _local_chain(sockets["IronAim"]).origin.y
 	var oid := String(f.get("optic", ""))
-	if oid != "" and sockets.has("OpticMount"):
-		optic_node = _attach(String(RifleDB.attachment(oid).get("glb", "")), sockets["OpticMount"])
+	var optic_sock: Node3D = sockets.get("OpticMount")
+	var mid := String(f.get("mount", ""))
+	if mid != "" and sockets.has("ScoutMount"):
+		mount_node = _attach(String(RifleDB.attachment(mid).get("glb", "")), sockets["ScoutMount"])
+		if mount_node != null: optic_sock = mount_node.find_child("*Socket_OpticMount", true, false) as Node3D
+	var zid := String(f.get("muzzle", ""))
+	if zid != "" and sockets.has("MuzzleThread"):
+		muzzle_node = _attach(String(RifleDB.attachment(zid).get("glb", "")), sockets["MuzzleThread"])
+		var mz := muzzle_node.find_child("*Socket_Muzzle", true, false) as Node3D if muzzle_node != null else null
+		if mz != null: sockets["Muzzle"] = mz   # flash and smoke leave the end of the can
+	if oid != "" and optic_sock != null:
+		optic_node = _attach(String(RifleDB.attachment(oid).get("glb", "")), optic_sock)
 		var eye := optic_node.find_child("*Socket_Eye", true, false) as Node3D if optic_node != null else null
 		if eye != null: _eye_y = _local_chain(eye).origin.y
 		var o := RifleDB.optic(weapon_id)
@@ -204,5 +219,5 @@ func aim_height() -> float:
 		if not is_nan(_iron_y): return _iron_y
 	if not sockets.has("Aim"): return .127
 	return (rest[sockets["Aim"]] as Transform3D).origin.y
-func is_bolt_action() -> bool: return weapon_id == "timber_bolt_carbine"
-func is_lever_action() -> bool: return weapon_id == "brush_lever_rifle"
+func is_bolt_action() -> bool: return RifleDB.action(weapon_id) == "bolt"
+func is_lever_action() -> bool: return RifleDB.action(weapon_id) == "lever"

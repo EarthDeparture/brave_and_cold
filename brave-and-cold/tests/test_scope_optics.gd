@@ -28,7 +28,8 @@ func run() -> void:
 	var r := RifleDB.magnifications("ridge_scout_rifle")
 	check(r.size() == 3 and is_equal_approx(r[0], 3.0) and is_equal_approx(r[2], 9.0) and absf(r[1] - sqrt(27.0)) < .001, "3-9x scope steps 3x, 5.2x, 9x")
 	var scoped := RifleDB.ids().filter(func(id: String) -> bool: return RifleDB.is_scoped(id))
-	check(scoped.size() == 6 and not RifleDB.is_scoped("compact_patrol_rifle") and not RifleDB.is_scoped("brush_lever_rifle"), "both reflex rifles keep the model in view; six optics use the tube picture")
+	check(scoped.size() == 4 and not RifleDB.is_scoped("compact_patrol_rifle") and not RifleDB.is_scoped("brush_lever_rifle") and not RifleDB.is_scoped("frontier_vented_rifle") and not RifleDB.is_scoped("north_service_rifle"),
+		"four factory scopes use the tube picture; reflex, red-dot tube and iron rifles keep the model in view")
 	var gw: Dictionary = (load("res://world/game_world.gd") as Script).get_script_constant_map()
 	check(is_equal_approx(gw.MUZZLE_V, ScopeOverlay.MUZZLE_V) and is_equal_approx(gw.ZERO_M, ScopeOverlay.ZERO_M) and is_equal_approx(gw.GRAV, ScopeOverlay.GRAV), "BDC reticle uses the projectile model's own constants")
 	# Integrate the real launch (zeroing lift) and compare holdover at 300 m.
@@ -115,7 +116,10 @@ func run() -> void:
 	check(w.viewmodel.scoped_view and w.hud.scope.visible, "v3 4x scope fitted: tube picture replaces the model")
 	w.inv.fitted[rid] = RifleDB.factory(rid).duplicate(); await frames(20)
 	sling(w, "brush_lever_rifle"); await frames(60)
-	check(not w.viewmodel.scoped_view and w.hud.scope.visible and absf(w.player.cam.fov - RifleDB.fov_for(1.25)) < .4, "wooden box reflex: 1.25x, model stays, dot overlay")
+	check(not w.viewmodel.scoped_view and not w.hud.scope.visible and w.hud.optic_kind == "iron" and absf(w.viewmodel._rifle.aim_height() - .1040) < .002,
+		"lever carbine: buckhorn irons, model stays, eye on the sight line")
+	sling(w, "frontier_vented_rifle"); await frames(60)
+	check(not w.viewmodel.scoped_view and w.hud.optic_kind == "tube_dot" and w.viewmodel._rifle.dot_mats.size() == 1, "frontier: red-dot tube on the cover rail, dot in the lens")
 	w.aim_override = false; await frames(40)
 	check(w.viewmodel._rifle.lens == null or w.viewmodel._rifle.lens.material_override == null, "lowered rifle restores the painted lens")
 	w.aim_override = false

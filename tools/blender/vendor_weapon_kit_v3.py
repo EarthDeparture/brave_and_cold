@@ -11,7 +11,7 @@ catalog = json.loads((SRC / 'manifest.json').read_text())
 receipt = {'workflow': 'Local Blender 5.2 weapon kit v3 (tools/blender/gen_weapon_kit_v3.py); exact byte copy', 'files': {}}
 for name, asset in catalog['assets'].items():
     src = SRC / asset['glb']; assert sha(src) == asset['glb_sha256'], name
-    sub = {'rifle': 'rifles', 'optic': 'optics', 'light': 'lights', 'muzzle': 'muzzle'}[asset['kind']]
+    sub = {'rifle': 'rifles', 'optic': 'optics', 'light': 'lights', 'muzzle': 'muzzle', 'mount': 'mounts'}[asset['kind']]
     (DEST / sub).mkdir(parents=True, exist_ok=True)
     dest = DEST / sub / src.name; shutil.copy2(src, dest); assert sha(dest) == sha(src)
     receipt['files'][dest.relative_to(GAME).as_posix()] = {'sha256': sha(dest), 'kind': asset['kind'], 'triangles': asset['triangles'],

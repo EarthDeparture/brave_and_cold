@@ -1146,8 +1146,10 @@ func _loot_store(st: Store, i: int) -> void:
 	rng.seed = int(absf(st.position.x) * 13.0 + absf(st.position.z) * 7.0) + i * 101
 	var tables := [
 		[['beans', 3, 30], ['matches', 3, 20], ['flare', 1, 8], ['rag', 2, 10], ['bandage', 1, 8]],
-		[['ammo', 8, 25], ['bandage', 2, 16], ['antiseptic', 1, 12], ['antibiotics', 1, 8], ['matches', 2, 14], ['knife', 1, 5], ['tackle', 1, 10], ['compact_patrol_rifle', 1, 2], ['frontier_vented_rifle', 1, 2]],
-		[['sweater', 1, 12], ['toque', 1, 12], ['hammer', 1, 8], ['nails', 30, 14], ['plank', 6, 14], ['rag', 3, 12], ['axe', 1, 3]],
+		[['ammo', 8, 25], ['bandage', 2, 16], ['antiseptic', 1, 12], ['antibiotics', 1, 8], ['matches', 2, 14], ['knife', 1, 5], ['tackle', 1, 10], ['compact_patrol_rifle', 1, 2], ['frontier_vented_rifle', 1, 2],
+		 ['cell_batteries', 2, 10], ['flashlight', 1, 5], ['reflex_micro', 1, 2], ['scope_3_9x', 1, 1], ['light_clamp', 1, 2], ['muzzle_moderator', 1, 1]],
+		[['sweater', 1, 12], ['toque', 1, 12], ['hammer', 1, 8], ['nails', 30, 14], ['plank', 6, 14], ['rag', 3, 12], ['axe', 1, 3],
+		 ['duct_tape', 2, 10], ['screwdriver', 1, 6], ['scout_mount_clamp', 1, 2], ['cell_batteries', 2, 6]],
 	]
 	var table: Array = tables[i]
 	var total := 0
@@ -1301,7 +1303,8 @@ func _loot_hamlet_crate(cb: Cabin) -> void:
 	cb.crate_looted = true
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(absf(cb.position.x) * 31.0 + absf(cb.position.z) * 17.0)
-	var table := [['matches', 3, 22], ['beans', 2, 20], ['ammo', 5, 12], ['bandage', 1, 14], ['rag', 2, 14], ['antiseptic', 1, 8], ['antibiotics', 1, 5], ['nails', 20, 9], ['plank', 3, 8], ['flare', 1, 7], ['sweater', 1, 4], ['toque', 1, 4], ['knife', 1, 3], ['hammer', 1, 3], ['cooking_pot', 1, 5], ['carrot_seeds', 3, 6], ['kale_seeds', 3, 6], ['potato', 2, 6]]
+	var table := [['matches', 3, 22], ['beans', 2, 20], ['ammo', 5, 12], ['bandage', 1, 14], ['rag', 2, 14], ['antiseptic', 1, 8], ['antibiotics', 1, 5], ['nails', 20, 9], ['plank', 3, 8], ['flare', 1, 7], ['sweater', 1, 4], ['toque', 1, 4], ['knife', 1, 3], ['hammer', 1, 3], ['cooking_pot', 1, 5], ['carrot_seeds', 3, 6], ['kale_seeds', 3, 6], ['potato', 2, 6],
+				 ['cell_batteries', 2, 6], ['flashlight', 1, 4], ['duct_tape', 1, 5], ['screwdriver', 1, 3]]
 	var total := 0
 	for e in table:
 		total += int(e[2])
@@ -1891,6 +1894,10 @@ func _update_prompt() -> void:
 			var pt:Vector3=it.pos
 			if _aim_ok(pt,float(it.get("r",2.1)),float(it.get("tol",.8))) and HitZones.building_block(_building_list(),player.position,(pt-player.position).normalized(),player.position.distance_to(pt))>=player.position.distance_to(pt)-.15:
 				it["m"]=_lm;it["d"]=pt.distance_to(player.position);cands.append(it)
+	var wb := _workbench_point()
+	if wb != Vector3.INF and _aim_ok(wb, 2.2, .9):
+		cands.append({"pos": wb, "r": 2.2, "m": _lm, "d": wb.distance_to(player.position), "text": "Gunsmith at the workbench",
+					  "act": func() -> void: open_gunsmith(inv.rifle_id(), true)})
 	_chest_cands(cands)
 	_forage_cands(cands)
 	_snare_cands(cands)
@@ -2032,8 +2039,10 @@ const LIGHT_LURE_EVERY_S := 0.5
 var _light_lure_t := 0.0
 func _toggle_weapon_light() -> void:
 	var rid := inv.rifle_id()
-	if rid == '' or RifleDB.light(rid).is_empty():
-		_say('No light on this rifle'); return
+	if not rifle_up or rid == '':
+		_toggle_torch(); return
+	if RifleDB.light(rid).is_empty():
+		_say('No light on this rifle. Lower it to use a flashlight' if inv.count('flashlight') > 0 else 'No light on this rifle'); return
 	var f: Dictionary = RifleDB.fitted(rid).duplicate()
 	if float(f.get('light_h', 0.0)) <= 0.0:
 		if inv.count('cell_batteries') > 0:
@@ -2045,6 +2054,49 @@ func _toggle_weapon_light() -> void:
 	inv.fitted[rid] = f
 	inv.light_on = not inv.light_on
 	_say('Light on' if inv.light_on else 'Light off')
+
+## ---- Handheld flashlight (W3): rifle lowered, one hand. Same battery rules and lure as weapon lights.
+const TORCH := {"range_m": 28.0, "angle_deg": 24.0, "energy": 5.0, "battery_h": 6.0}
+var _torch: SpotLight3D
+func _toggle_torch() -> void:
+	if inv.count('flashlight') < 1:
+		_say('No light to switch on'); return
+	if inv.torch_h <= 0.0:
+		if inv.count('cell_batteries') > 0:
+			inv.remove('cell_batteries'); inv.torch_h = float(TORCH.battery_h); inv.torch_on = true; _say('Fresh batteries in the flashlight')
+		else:
+			_say('The flashlight is dead. You need batteries')
+		return
+	inv.torch_on = not inv.torch_on
+	_say('Flashlight on' if inv.torch_on else 'Flashlight off')
+
+func torch_shining() -> bool:
+	return inv != null and inv.torch_on and inv.torch_h > 0.0 and inv.count('flashlight') > 0 and not rifle_up and player != null and not player.dead
+
+func _update_torch(delta: float) -> void:
+	var on := torch_shining()
+	if on and _torch == null and player != null:
+		_torch = SpotLight3D.new(); _torch.name = 'HandTorch'
+		_torch.spot_range = float(TORCH.range_m); _torch.spot_angle = float(TORCH.angle_deg) * 0.5
+		_torch.spot_angle_attenuation = 1.6; _torch.light_energy = float(TORCH.energy); _torch.light_color = Color(1.0, 0.93, 0.80)
+		_torch.shadow_enabled = true; _torch.shadow_bias = 0.06; _torch.light_specular = 0.35
+		_torch.position = Vector3(0.20, -0.22, -0.15); _torch.rotation = Vector3(0.05, 0.10, 0.0)   # held low and right, aimed at the view centre
+		player.cam.add_child(_torch)
+	if _torch != null: _torch.visible = on
+	if not on: return
+	var cold := 1.0 + 0.67 * clampf(-air_c() / 20.0, 0.0, 1.0)
+	inv.torch_h = maxf(0.0, inv.torch_h - delta * clock.time_scale / 3600.0 * cold)
+	if inv.torch_h <= 0.0:
+		inv.torch_on = false; _say('The flashlight dims and dies'); return
+	_light_lure(float(TORCH.range_m), delta)
+
+func _light_lure(reach: float, delta: float) -> void:
+	_light_lure_t -= delta
+	if _light_lure_t <= 0.0 and noise_bus != null:
+		_light_lure_t = LIGHT_LURE_EVERY_S
+		var fwd := -player.cam.global_transform.basis.z
+		noise_bus.emit_light(player.position + fwd * reach * 0.6, reach * 0.8, player)   # what the beam lights
+		noise_bus.emit_light(player.position, 18.0, player)                              # the lamp itself
 
 func light_shining() -> bool:
 	if inv == null or not inv.light_on or not rifle_up: return false
@@ -2062,13 +2114,7 @@ func _update_weapon_light(rid: String, delta: float) -> void:
 	inv.fitted[rid] = f
 	if float(f['light_h']) <= 0.0:
 		inv.light_on = false; _say('The light dims and dies'); return
-	_light_lure_t -= delta
-	if _light_lure_t <= 0.0 and noise_bus != null:
-		_light_lure_t = LIGHT_LURE_EVERY_S
-		var fwd := -player.cam.global_transform.basis.z
-		var reach := float(RifleDB.light(rid).get('range_m', 30.0))
-		noise_bus.emit_light(player.position + fwd * reach * 0.6, reach * 0.8, player)   # what the beam lights
-		noise_bus.emit_light(player.position, 18.0, player)                              # the lamp itself
+	_light_lure(float(RifleDB.light(rid).get('range_m', 30.0)), delta)
 
 func _update_optic(delta: float) -> void:
 	if hud == null or hud.scope == null or player == null: return
@@ -2077,6 +2123,8 @@ func _update_optic(delta: float) -> void:
 	var o: Dictionary = RifleDB.optic(rid) if rid != '' else {}
 	var kind := String(o.get('type', 'iron'))
 	_update_weapon_light(rid, delta)
+	_update_torch(delta)
+	Zombie.player_lit = light_shining() or torch_shining()   # a lit lamp carries far at night
 	hud.optic_kind = kind if rifle_up else ''
 	var scoped: bool = viewmodel != null and viewmodel.scoped_view
 	if scoped and not _was_scoped: player.scope_settle = 0.6
@@ -3046,11 +3094,15 @@ func _shot_dir() -> Vector3:
 	var deg := lerpf(2.2, 0.12, player.aim_k)
 	deg *= 0.7 if player.crouching else 1.0
 	deg += minf(player._vel.length(), 6.0) * lerpf(0.35, 0.12, player.aim_k)
-	if inv != null and inv.rifle_id() != '': deg *= RifleDB.value(inv.rifle_id(), 'spread', 1.0)
+	var zr := Vector2.ZERO
+	if inv != null and inv.rifle_id() != '':
+		var rid := inv.rifle_id()
+		deg *= RifleDB.value(rid, 'spread', 1.0) * float(RifleDB.muzzle(rid).get('spread_mult', 1.0))
+		if RifleDB.is_v3(rid): zr = inv.zero_of(rid) * 0.001   # sight not zeroed: the bullet lands off the dot / reticle
 	var sp := deg_to_rad(deg)
 	var ang := randf() * TAU
 	var rad := sqrt(randf()) * sp
-	return (cb * Vector3(cos(ang) * rad, sin(ang) * rad, -1.0)).normalized()
+	return (cb * Vector3(cos(ang) * rad + zr.x, sin(ang) * rad + zr.y, -1.0)).normalized()
 
 
 func _zombietest_step(delta: float) -> void:
@@ -3218,7 +3270,7 @@ func _shoot() -> void:
 	_shot_damage = RifleDB.value(rid, 'damage', RIFLE_DAMAGE)
 	_attack_cd = RifleDB.value(rid, 'cycle_s', 1.2)
 	viewmodel.fire()
-	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_GUNSHOT * RifleDB.value(rid, 'noise', 1.0), player)
+	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_GUNSHOT * RifleDB.value(rid, 'noise', 1.0) * float(RifleDB.muzzle(rid).get('noise_mult', 1.0)), player)
 	audio.gunshot()
 	var eye := player.cam.global_position
 	var dir := _shot_dir()
@@ -3908,7 +3960,7 @@ func _save_data() -> Dictionary:
 		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
 		'body': {'core': body.core, 'wet': body.wetness},
 		'needs': {'cal': needs.calories, 'water': needs.water,'fatigue':needs.fatigue},
-		'inv': {'counts': inv.counts, 'worn': inv.jacket(), 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age, 'loaded': inv.loaded, 'active_rifle': inv.active_rifle, 'fitted': inv.fitted, 'light_on': inv.light_on},
+		'inv': {'counts': inv.counts, 'worn': inv.jacket(), 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age, 'loaded': inv.loaded, 'active_rifle': inv.active_rifle, 'fitted': inv.fitted, 'light_on': inv.light_on, 'zero': inv.zero, 'light_charge': inv.light_charge, 'torch_on': inv.torch_on, 'torch_h': inv.torch_h},
 		'cabins': cabs,
 		'huts': huts.map(func(h: Hut) -> Dictionary: return h.state_dict()),
 		'holes': ice_holes.map(func(h: IceHole) -> Dictionary: return h.to_dict()),
@@ -4076,8 +4128,16 @@ func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 	for k in fsv:
 		if Inventory.is_rifle(String(k)) and RifleDB.is_v3(String(k)) and fsv[k] is Dictionary:
 			var fd: Dictionary = fsv[k]
-			inv.fitted[String(k)] = {'optic': String(fd.get('optic', '')), 'light': String(fd.get('light', '')), 'light_h': float(fd.get('light_h', 0.0))}
+			inv.fitted[String(k)] = {'mount': String(fd.get('mount', '')), 'optic': String(fd.get('optic', '')), 'light': String(fd.get('light', '')),
+									 'muzzle': String(fd.get('muzzle', '')), 'light_h': float(fd.get('light_h', 0.0))}
 	inv.light_on = bool(sv['inv'].get('light_on', false))
+	var zsv: Dictionary = sv['inv'].get('zero', {})
+	for k in zsv:
+		if Inventory.is_rifle(String(k)) and zsv[k] is Array and (zsv[k] as Array).size() == 2: inv.zero[String(k)] = [float(zsv[k][0]), float(zsv[k][1])]
+	var csv: Dictionary = sv['inv'].get('light_charge', {})
+	for k in csv: inv.light_charge[String(k)] = float(csv[k])
+	inv.torch_on = bool(sv['inv'].get('torch_on', false))
+	inv.torch_h = float(sv['inv'].get('torch_h', 6.0))
 	rifle_up = bool(sv['inv']['rifle_up']) and inv.count('rifle') > 0
 	var hsv: Array = sv.get('huts', [])
 	for hi in range(mini(hsv.size(), huts.size())):
@@ -4270,6 +4330,81 @@ func _water_action(pot:PreparedWater,point:Vector3,lit:bool)->Dictionary:
 		elif pot.batch>0:_say(pot.status())
 		elif lit:_say(pot.begin(inv))
 		else:_say("Light the fire first")}
+
+# ---- Gunsmith (weapon kit v3): fit / remove sights, mounts, lights and muzzle devices; zero at a bench.
+var gunsmith: GunsmithScreen
+var _wb_point := Vector3.INF
+var _wb_done := false
+func _workbench_point() -> Vector3:
+	if not _wb_done:
+		_wb_done = true
+		var bench := fire_lookout.find_child("TechnicianWorkbench", true, false) as Node3D if fire_lookout != null else null
+		if bench != null:
+			var box := AABB(); var first := true
+			for mi: MeshInstance3D in bench.find_children("*", "MeshInstance3D", true, false):
+				var b := mi.global_transform * mi.get_aabb()
+				box = b if first else box.merge(b); first = false
+			if not first: _wb_point = Vector3(box.get_center().x, box.end.y, box.get_center().z)
+	return _wb_point
+
+func at_workbench() -> bool:
+	var wb := _workbench_point()
+	return wb != Vector3.INF and player.position.distance_to(wb) < 2.6
+
+func open_gunsmith(rid := '', bench := false) -> void:
+	if inv == null: return
+	if rid == '' or not RifleDB.is_v3(rid):
+		for r: String in Inventory.RIFLE_IDS:
+			if inv.count(r) > 0 and RifleDB.is_v3(r): rid = r; break
+	if rid == '':
+		_say('You have no rifle to work on'); return
+	if gear != null and gear.is_open: gear.close()
+	if gunsmith == null:
+		gunsmith = GunsmithScreen.new(); add_child(gunsmith)
+	gunsmith.open_for(self, inv, player, hud, rid, bench or at_workbench())
+
+## Fit (aid) or remove (aid = "") one slot. Checks tools (a bench has them all), then works as a timed action.
+func gunsmith_fit(rid: String, slot: String, aid: String, bench: bool) -> String:
+	var cur := String(RifleDB.fitted(rid).get(slot, ''))
+	var a := RifleDB.attachment(aid if aid != '' else cur)
+	if a.is_empty(): return 'Nothing to do'
+	if aid != '':
+		if inv.count(aid) < 1: return "You don't have it"
+		var why := RifleDB.fit_reason(rid, aid)
+		if why != '': return why
+	if not bench:
+		for t in a.get('tools', []):
+			if inv.count(String(t)) < 1: return 'Needs a %s, or a workbench' % inv.name_of(String(t)).to_lower()
+	var mins := float(a.get('fit_min', 5))
+	var verb := ('Fitting ' if aid != '' else 'Removing ') + String(a.get('name', 'part'))
+	if gunsmith != null: gunsmith.close()
+	_act_begin({"text": verb, "hold": clampf(mins * 0.35, 1.5, 8.0), "auto": true, "work": "reach",
+				"start": func() -> void: audio.play_at("cloth_wrap", player.position, -16, 1, 1, 6),
+				"act": _gunsmith_fit_done.bind(rid, slot, aid, bench)})
+	return ''
+
+func _gunsmith_fit_done(rid: String, slot: String, aid: String, bench: bool) -> void:
+	var why := inv.fit_attachment(rid, slot, aid, bench)
+	if why != '': _say(why)
+	elif slot in ['optic', 'mount'] and aid != '' and not bench: _say('Fitted. Zero it at a workbench: the first shots will be off')
+	else: _say('Done')
+	open_gunsmith(rid, bench)
+
+## Zero the sights: at a bench, three rounds at a target board. Loud.
+func gunsmith_zero(rid: String) -> String:
+	if not at_workbench(): return 'Zero it at a workbench'
+	if inv.count('ammo') < 3: return 'Needs three rounds'
+	if gunsmith != null: gunsmith.close()
+	_act_begin({"text": 'Zeroing ' + inv.name_of(rid), "hold": 8.0, "auto": true, "work": "reach", "act": _gunsmith_zero_done.bind(rid)})
+	return ''
+
+func _gunsmith_zero_done(rid: String) -> void:
+	for i in 3: inv.remove('ammo')
+	if inv.loaded.has(rid): inv.loaded[rid] = mini(int(inv.loaded[rid]), inv.count('ammo'))
+	inv.zero[rid] = [0.0, 0.0]
+	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_GUNSHOT * RifleDB.value(rid, 'noise', 1.0) * float(RifleDB.muzzle(rid).get('noise_mult', 1.0)), player)
+	_say('Zeroed: three shots in a hand-width group')
+	open_gunsmith(rid, true)
 
 func gear_maintain(id:String)->void:
 	if opening==null or player.position.distance_to(opening.home_point(Vector3(.95,.88,-1.35)))>2.6:
