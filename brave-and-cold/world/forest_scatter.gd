@@ -38,6 +38,10 @@ var chop_hp: Dictionary = {}  # tree key -> remaining hits
 ## loading overlay can draw. Unset (tests, tools): build runs straight through, unchanged.
 ## Yielding never touches the RNG, so tree identities (felled-tree saves) are identical.
 var progress: Callable
+## Menu diorama: pre-baked instances {variant_index: PackedFloat32Array (12 floats per
+## Transform3D)} from export_region() of a real game build. When set, build() skips the
+## scatter loop and instances exactly these trees with the same meshes / material / LOD.
+var baked: Dictionary = {}
 
 
 static func tree_key(x: float, z: float) -> String:
@@ -267,7 +271,7 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 	# chunk key -> per-variant transform arrays
 	var buckets := {}
 	var gx := int(size_m / SPACING)
-	for iy in range(gx):
+	for iy in range(gx if baked.is_empty() else 0):
 		if progress.is_valid() and iy % 16 == 0:
 			await progress.call(0.85 * float(iy) / float(gx))
 		for ix in range(gx):
@@ -314,6 +318,8 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 				_trunks[ck] = []
 			(_trunks[ck] as Array).append(Vector3(wx, wz, 0.12 + 0.012 * height_m))
 
+	if not baked.is_empty():
+		_fill_baked(buckets, variant_count)
 	_meshes = meshes
 	_near_insts.clear(); _far_insts.clear(); _shadow_proxies.clear()
 	var built_chunks := 0
@@ -366,6 +372,40 @@ func build(t: Terrain3D, seed_value: int = 1337) -> void:
 		var counts := {}
 		for key: Vector3i in _mms: counts[VARIANTS[key.z]] = int(counts.get(VARIANTS[key.z], 0)) + (_mms[key][0] as MultiMesh).instance_count
 		print("FOREST_DIVERSITY ", counts)
+
+
+func _fill_baked(buckets: Dictionary, variant_count: int) -> void:
+	for vk: Variant in baked.keys():
+		var vi := int(vk)
+		if vi >= variant_count: continue
+		var f: PackedFloat32Array = baked[vk]
+		for i in range(0, f.size() - 11, 12):
+			var xf := Transform3D(Basis(Vector3(f[i], f[i + 1], f[i + 2]), Vector3(f[i + 3], f[i + 4], f[i + 5]), Vector3(f[i + 6], f[i + 7], f[i + 8])), Vector3(f[i + 9], f[i + 10], f[i + 11]))
+			var key := Vector2i(int(floor((xf.origin.x + _half) / _chunk_m)), int(floor((xf.origin.z + _half) / _chunk_m)))
+			if not buckets.has(key):
+				var arrays: Array = []
+				for unused in range(variant_count): arrays.append([])
+				buckets[key] = arrays
+			buckets[key][vi].append(xf)
+			tree_count += 1
+
+
+## Standing trees within `radius` of `center` (xz), per variant, for the menu diorama bake.
+## (Packed arrays are value types: collect in plain Arrays, convert once at the end.)
+func export_region(center: Vector2, radius: float) -> Dictionary:
+	var acc := {}
+	for key: Vector3i in _mms:
+		var mm: MultiMesh = _mms[key][0]
+		for i in range(mm.instance_count):
+			var xf := mm.get_instance_transform(i)
+			if xf.basis.get_scale().y < 0.01: continue   # felled
+			if Vector2(xf.origin.x, xf.origin.z).distance_to(center) > radius: continue
+			if not acc.has(key.z): acc[key.z] = []
+			var b := xf.basis
+			(acc[key.z] as Array).append_array([b.x.x, b.x.y, b.x.z, b.y.x, b.y.y, b.y.z, b.z.x, b.z.y, b.z.z, xf.origin.x, xf.origin.y, xf.origin.z])
+	var out := {}
+	for k in acc: out[k] = PackedFloat32Array(acc[k])
+	return out
 
 
 func _winter_variant(roll: int, habitat: float, elevation: float, slope: float, height: float) -> int:

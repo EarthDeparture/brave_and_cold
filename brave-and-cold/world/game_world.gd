@@ -91,21 +91,13 @@ func _ready() -> void:
 	environment_detail_enabled = opts.get("detail","winter") != "baseline" and opts.get("atmosphere","winter") != "baseline"
 	await _stage(0.02, "Raising the valley")
 	_build_environment()
-	terrain = Terrain3D.new()
-	terrain.name = "Terrain3D"
-	terrain.assets = load("res://data/terrain/terrain_assets.tres")
+	var terrain_assets := "res://data/terrain/terrain_assets.tres"
 	if opts.get('atmosphere', 'winter') != 'baseline':
-		terrain.assets = load('res://data/terrain/terrain_environment_assets.tres' if environment_detail_enabled else 'res://data/terrain/terrain_winter_assets.tres')
-	terrain.data_directory = MAP
-	add_child(terrain)
+		terrain_assets = 'res://data/terrain/terrain_environment_assets.tres' if environment_detail_enabled else 'res://data/terrain/terrain_winter_assets.tres'
+	terrain = WorldEnvironmentBuilder.terrain(self, MAP, terrain_assets)
 	# Staged loading yields frames before the player camera exists; Terrain3D would log
 	# "Cannot find the active camera" and stop its physics process. Hold it until setup.
 	terrain.set_physics_process(false)
-	terrain.material.auto_shader = false
-	terrain.material.set_shader_param("blend_sharpness", 0.1)
-	terrain.material.set_shader_param("enable_macro_variation", true)
-	terrain.material.set_shader_param("macro_variation1", Color(0.88, 0.93, 1.0))
-	terrain.material.set_shader_param("macro_variation2", Color(1.0, 0.97, 0.98))
 	await _stage(0.09, "Laying the roads")
 	road = RoadNet.new()
 	road.grading_enabled = opts.get("road_grade","smooth") != "baseline"
@@ -553,34 +545,9 @@ func _build_fire_lookout(opts: Dictionary) -> void:
 
 
 func _build_environment() -> void:
-	sun = DirectionalLight3D.new()
-	sun.shadow_enabled = true
-	sun.shadow_bias = 0.15
-	sun.shadow_normal_bias = 3.0
-	sun.shadow_blur = 1.5
-	sun.directional_shadow_max_distance = 300.0
-	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
-	add_child(sun)
-	sky_mat = ProceduralSkyMaterial.new()
-	sky_mat.sky_curve = 0.12
-	sky_mat.ground_curve = 0.05
-	sky_mat.sun_angle_max = 8.0
-	var sky := Sky.new()
-	sky.sky_material = sky_mat
-	env = Environment.new()
-	env.background_mode = Environment.BG_SKY
-	env.sky = sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
-	env.ambient_light_sky_contribution = 0.45
-	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.fog_enabled = true
-	env.fog_sky_affect = 0.6
-	env.fog_aerial_perspective = 0.5
-	env.ssao_enabled = false
-	var we := WorldEnvironment.new()
-	we.environment = env
-	add_child(we)
+	# shared with the menu diorama (world/world_environment_builder.gd)
+	var e := WorldEnvironmentBuilder.build(self)
+	sun = e.sun; sky_mat = e.sky_mat; env = e.env
 
 
 var _indoor_k := 0.0            # 0 outside .. 1 inside a cabin (smoothed)

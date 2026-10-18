@@ -37,13 +37,23 @@ const LOAD_BAR_W := 420.0
 var _black: ColorRect
 var _wind: AudioStreamPlayer
 var _starting := false
+# M6 live backdrop: stills first, then the real 3D scene (MenuDiorama) fades in when built.
+var _base: ColorRect
+var _still_timer: Timer
+var _diorama: MenuDiorama
+var _live := false
+const LIVE_DELAY_S := 2.4      # build after the fade-in, not during it (terrain load hitches)
+const LIVE_FADE_S := 4.0
+const LOOKOUT_STILL := 1       # BACKDROPS index of the same shot as the diorama camera
+const LIVE_IDLE_MS := 800      # the terrain load is one ~0.6 s hitch: wait for a quiet moment
+var _last_input_ms := 0
 
 func _ready() -> void:
 	Settings.load_all()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	var base := ColorRect.new(); base.color = Color(0.02, 0.025, 0.035); base.set_anchors_preset(Control.PRESET_FULL_RECT); add_child(base)
-	base.set_meta("loading_keep", true)
+	base.set_meta("loading_keep", true); _base = base
 	_add_backdrops()
 	_add_grade()
 	get_child(get_child_count() - 1).set_meta("loading_keep", true)   # the grade rect
@@ -80,6 +90,10 @@ func _ready() -> void:
 				_main.visible = false; _loading.visible = true
 				_load_stage.text = "GROWING THE TIMBER"; _load_fill.size.x = LOAD_BAR_W * 0.42
 			elif page == "options": _show_options()
+			if "menulive" in OS.get_cmdline_user_args():
+				await _go_live_now()
+				await get_tree().create_timer(LIVE_FADE_S + 1.0).timeout
+				print("MENU_LIVE fps=%d" % Engine.get_frames_per_second())
 			await get_tree().create_timer(1.2).timeout
 			get_viewport().get_texture().get_image().save_png(a.substr(9))
 			print("MENU_SHOT")
@@ -89,6 +103,45 @@ func _ready() -> void:
 			_black.modulate.a = 0.0; _black.visible = false
 			if a == "autostart": _new_game_now()
 			else: _continue()
+	if not _starting and not Array(OS.get_cmdline_user_args()).any(func(x: String) -> bool: return x.begins_with("menushot=")):
+		_maybe_live()
+
+
+## The live scene is skipped headless (tests), with "-- menustill", or without a bake.
+func _live_allowed() -> bool:
+	return DisplayServer.get_name() != "headless" and MenuDiorama.available() \
+		and not ("menustill" in OS.get_cmdline_user_args())
+
+
+func _maybe_live() -> void:
+	if not _live_allowed(): return
+	await get_tree().create_timer(LIVE_DELAY_S).timeout
+	# don't freeze the menu under a moving mouse / key press: wait for ~0.8 s of no input
+	while is_inside_tree() and not _starting and Time.get_ticks_msec() - _last_input_ms < LIVE_IDLE_MS:
+		await get_tree().create_timer(0.2).timeout
+	if _starting or not is_inside_tree(): return
+	await _go_live_now()
+
+
+func _input(e: InputEvent) -> void:
+	if e is InputEventMouseMotion or e is InputEventKey or e is InputEventMouseButton or e is InputEventJoypadButton:
+		_last_input_ms = Time.get_ticks_msec()
+
+
+func _go_live_now() -> void:
+	if _diorama != null: return
+	_diorama = MenuDiorama.new()
+	add_child(_diorama)
+	await _diorama.build()
+	if _starting or not _diorama.ready_ok: return
+	_live = true
+	if _still_timer != null: _still_timer.stop()
+	# the 3D scene renders under the canvas: drop the opaque base, fade the still away
+	_base.visible = false
+	for i in _layers.size():
+		if i != _cur: _layers[i].modulate.a = 0.0
+	if not _layers.is_empty():
+		create_tween().tween_property(_layers[_cur], "modulate:a", 0.0, LIVE_FADE_S).set_trans(Tween.TRANS_SINE)
 
 # --- backdrop ---------------------------------------------------------------
 
@@ -106,7 +159,7 @@ func _add_backdrops() -> void:
 	_layers[_cur].modulate.a = 1.0
 	_drift(_layers[_cur])
 	if _layers.size() > 1:
-		var t := Timer.new(); t.wait_time = HOLD_S; t.autostart = true; add_child(t)
+		var t := Timer.new(); t.wait_time = HOLD_S; t.autostart = true; add_child(t); _still_timer = t
 		t.timeout.connect(func() -> void: _show_backdrop((_cur + 1) % _layers.size()))
 
 func _show_backdrop(i: int, instant := false) -> void:
@@ -348,6 +401,15 @@ func _start() -> void:
 	if _starting: return
 	_starting = true
 	MenuStyle.sound(self, "start")
+	if _live and _layers.size() > LOOKOUT_STILL:
+		# The loading screen keeps the still: the lookout still is the same shot as the live
+		# camera, so cross back to it (0.4 s) and drop the 3D scene before the world loads.
+		for l in _layers: l.create_tween().kill()
+		_cur = LOOKOUT_STILL
+		_layers[_cur].scale = Vector2.ONE; _base.visible = true
+		var back := create_tween(); back.tween_property(_layers[_cur], "modulate:a", 1.0, 0.4)
+		await back.finished
+		_diorama.queue_free(); _diorama = null; _live = false
 	_main.visible = false; _confirm.visible = false; _controls.visible = false
 	_loading.visible = true
 	_load_stage.text = "READING THE MAP"
