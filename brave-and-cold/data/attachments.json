@@ -1,0 +1,33 @@
+{
+  "_note": "Weapon attachments (weapon kit v3). kind optic|light. mount: what the attachment needs on the rifle (rifles.json mounts). optic.type scope = black-tube scope picture (model hidden when fully aimed) | tube_dot / reflex = model stays, the dot is drawn in the lens (collimated, parallax-free) | iron. mag = true magnification vs the 70 deg hip view. light: range_m, angle_deg (full cone), energy, battery_h at 20 C (cold shortens it), offset_mrad = beam off the bore (taped lights are not aligned).",
+  "reflex_micro": {
+    "kind": "optic", "name": "Micro Reflex Sight", "mount": "rail", "weight": 0.12,
+    "glb": "res://assets/weapons/v3/optics/reflex_micro.glb",
+    "desc": "Small open red-dot sight on a rail clamp. Both eyes open, quick on close targets.",
+    "optic": {"type": "reflex", "mag": [1.15], "reticle": "dot", "label": "micro reflex sight", "dot_mrad": 4.5}
+  },
+  "reddot_tube": {
+    "kind": "optic", "name": "Red-Dot Tube Sight", "mount": "rail", "weight": 0.21,
+    "glb": "res://assets/weapons/v3/optics/reddot_tube.glb",
+    "desc": "One-inch red-dot tube on a riser. Parallax-free; the dot sits where the bore points.",
+    "optic": {"type": "tube_dot", "mag": [1.2], "reticle": "dot", "label": "red-dot tube", "dot_mrad": 3.5}
+  },
+  "scope_4x": {
+    "kind": "optic", "name": "4x Hunting Scope", "mount": "rail", "weight": 0.40,
+    "glb": "res://assets/weapons/v3/optics/scope_4x.glb",
+    "desc": "Fixed 4x hunting scope on rings and bases. Duplex reticle.",
+    "optic": {"type": "scope", "mag": [4.0], "reticle": "duplex", "label": "4x hunting scope"}
+  },
+  "light_clamp": {
+    "kind": "light", "name": "Barrel-Clamp Hunting Light", "mount": "barrel", "weight": 0.18,
+    "glb": "res://assets/weapons/v3/lights/light_clamp.glb",
+    "desc": "Night hunting light on a barrel clamp. Aligned with the bore. Runs on two cells.",
+    "light": {"range_m": 34.0, "angle_deg": 18.0, "energy": 7.0, "battery_h": 6.0, "offset_mrad": 0.0}
+  },
+  "light_taped": {
+    "kind": "light", "name": "Taped Flashlight", "mount": "any", "weight": 0.32,
+    "glb": "res://assets/weapons/v3/lights/light_taped.glb",
+    "desc": "A household flashlight taped under the barrel. Wider, dimmer, not quite on the bore.",
+    "light": {"range_m": 26.0, "angle_deg": 26.0, "energy": 4.5, "battery_h": 5.0, "offset_mrad": 12.0}
+  }
+}

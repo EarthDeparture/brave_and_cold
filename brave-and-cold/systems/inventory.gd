@@ -40,7 +40,13 @@ const ITEMS := {
 	"ridge_scout_rifle": {"name": "Ridge Marksman Rifle", "kind": "weapon", "stack": 1, "weight": 4.6, "desc": "Long-receiver marksman rifle with a big scope. Accurate at range. Loud: everything for a kilometre hears it."},
 	"brush_lever_rifle": {"name": "Brush Lever Rifle", "kind": "weapon", "stack": 1, "weight": 3.3, "desc": "Thumbhole lever gun with a block sight. Six rounds, loaded one at a time. Loud: everything for a kilometre hears it."},
 	"north_service_rifle": {"name": "North Service Rifle", "kind": "weapon", "stack": 1, "weight": 4.1, "desc": "Lime-stocked service rifle with a red-dot tube. Ten rounds. Loud: everything for a kilometre hears it."},
-	"compact_patrol_rifle": {"name": "Compact Patrol Carbine", "kind": "weapon", "stack": 1, "weight": 3.0, "desc": "Folding-stock carbine. Twenty light rounds, short reach. Loud: everything for a kilometre hears it."},
+	"compact_patrol_rifle": {"name": "Compact Rimfire Carbine", "kind": "weapon", "stack": 1, "weight": 2.5, "desc": "Light .22 rimfire carbine with a micro reflex sight and a barrel-clamp light. Ten quiet rounds, weak hits: aim for the head."},
+	"reflex_micro": {"name": "Micro Reflex Sight", "kind": "attachment", "stack": 1, "weight": 0.12, "desc": "Small open red-dot sight on a rail clamp. Fits rifles with a scope rail."},
+	"reddot_tube": {"name": "Red-Dot Tube Sight", "kind": "attachment", "stack": 1, "weight": 0.21, "desc": "One-inch red-dot tube on a riser. Fits rifles with a scope rail."},
+	"scope_4x": {"name": "4x Hunting Scope", "kind": "attachment", "stack": 1, "weight": 0.40, "desc": "Fixed 4x hunting scope on rings. Fits rifles with a scope rail."},
+	"light_clamp": {"name": "Barrel-Clamp Hunting Light", "kind": "attachment", "stack": 1, "weight": 0.18, "desc": "Night hunting light that clamps to a rifle barrel. Lights 30 m ahead, and shows you to everything else."},
+	"light_taped": {"name": "Taped Flashlight", "kind": "attachment", "stack": 1, "weight": 0.32, "desc": "A household flashlight taped to a barrel. Fits anything; dimmer, wider, a little off the bore."},
+	"cell_batteries": {"name": "Batteries", "kind": "misc", "stack": 8, "weight": 0.05, "desc": "A pair of AA cells. Refill a weapon light (hold it to your body first in deep cold)."},
 	"expedition_rifle": {"name": "Expedition Long Rifle", "kind": "weapon", "stack": 1, "weight": 5.6, "desc": "Grey-camo heavy rifle with a large optic. Five devastating, very loud rounds. Loud: everything for a kilometre hears it."},
 	"ammo": {"name": "Rifle Rounds", "kind": "ammo", "stack": 10, "desc": "Soft-point hunting rounds."},
 	"beans": {"name": "Canned Beans", "kind": "food", "stack": 4, "kcal": 650.0, "desc": "Tinned beans. Safe to eat cold."},
@@ -108,7 +114,7 @@ const ITEMS := {
 ## God mode (set by GameWorld every frame from Player.god): ammo, flares and matches are never used up, nothing wears.
 static var infinite := false
 const INFINITE_IDS := ["ammo", "flare", "matches"]
-const KIND_ORDER := ["weapon", "tool", "ammo", "clothing", "food", "fuel", "misc"]
+const KIND_ORDER := ["weapon", "attachment", "tool", "ammo", "clothing", "food", "fuel", "misc"]
 const CAPACITY := 24          # backpack cells
 const EQUIP_ITEMS := ["rifle", "axe"]   # live in equipment slots, not backpack cells
 ## Eight real rifles (rifle sheet art). "rifle" stays a legacy alias: count("rifle") = rifles carried,
@@ -136,6 +142,8 @@ var age: Dictionary = {}           # perishable id -> average age of the stack, 
 var extra: Dictionary = {}          # slot (head/top/jacket/legs/hands/feet) -> id
 var active_rifle := ""              # rifle in the equipment slot (others ride in the pack)
 var loaded: Dictionary = {}         # rifle id -> rounds in its magazine / tube (taken from "ammo")
+var fitted: Dictionary = {}         # v3 rifle id -> {optic, light, light_h}; missing = factory fit (RifleDB.fitted)
+var light_on := false               # weapon light switched on (only shines while that rifle is raised)
 var body: BodyTemperature
 var needs: Needs
 
@@ -314,6 +322,26 @@ func _equipped_rifle(cnt: Dictionary) -> String:
 
 
 ## Rounds ready in the equipped rifle (never more than the loose "ammo" actually carried).
+## Fit or remove a v3 rifle attachment (slot "optic" | "light"). The old one goes to the pack;
+## the new one must be carried and must fit. Returns "" or the reason it can't be done.
+func fit_attachment(rid: String, slot: String, aid: String) -> String:
+	if not RifleDB.is_v3(rid): return "This rifle takes no attachments"
+	var f: Dictionary = (fitted.get(rid, RifleDB.factory(rid)) as Dictionary).duplicate()
+	if aid != "":
+		if count(aid) < 1: return "You don't have it"
+		if String(RifleDB.attachment(aid).get("kind", "")) != slot: return "Wrong slot"
+		if not RifleDB.fits(rid, aid): return "It doesn't fit this rifle"
+	var old := String(f.get(slot, ""))
+	if old == aid: return ""
+	if aid != "": remove(aid)
+	if old != "": add(old)
+	f[slot] = aid
+	if slot == "light":
+		f["light_h"] = float(RifleDB.attachment(aid).get("light", {}).get("battery_h", 0.0)) if aid != "" else 0.0
+	fitted[rid] = f
+	return ""
+
+
 func rifle_loaded() -> int:
 	var r := rifle_id()
 	return mini(int(loaded.get(r, 0)), count("ammo")) if r != "" else 0
@@ -342,6 +370,7 @@ func add(id: String, n: int = 1) -> void:
 	if n<=0:return
 	if id == "rifle": id = DEFAULT_RIFLE
 	if is_rifle(id) and not loaded.has(id): loaded[id] = RifleDB.mag(id)   # found rifles come loaded
+	if is_rifle(id) and RifleDB.is_v3(id) and not fitted.has(id): fitted[id] = RifleDB.factory(id)   # with their factory sight/light
 	if shelf_s(id) > 0.0:
 		var old := count(id)
 		age[id] = float(age.get(id, 0.0)) * float(old) / float(old + n)   # new items are fresh: stack age averages down

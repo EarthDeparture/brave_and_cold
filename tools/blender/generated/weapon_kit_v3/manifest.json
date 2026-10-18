@@ -1,0 +1,326 @@
+{
+  "name": "Weapon Kit v3",
+  "version": "3.0.0",
+  "units": "metres",
+  "forward_axis": "-Z",
+  "generator_sha256": "b00941b7419a2ac176835725db3fd85c221d793683420bfaeaa36fa458812f1b",
+  "assets": {
+    "compact_patrol_rifle": {
+      "kind": "rifle",
+      "description": "Compact .22 rimfire carbine, birch stock, alloy receiver with rail, iron sights",
+      "dimensions_m": [
+        0.058000000193715096,
+        0.15632006153464317,
+        0.9740000069141388
+      ],
+      "bounds_min": [
+        -0.021199999377131462,
+        -0.053320061415433884,
+        -0.625
+      ],
+      "bounds_max": [
+        0.03680000081658363,
+        0.10300000011920929,
+        0.3490000069141388
+      ],
+      "triangles": 7120,
+      "mesh_nodes": 15,
+      "glb": "godot/compact_patrol_rifle.glb",
+      "glb_sha256": "dc1a8fdec519ff87c160652496a84eca2ff7d74bf76ead1d6677bbb8e2127657",
+      "nodes": [
+        "compact_patrol_rifle__Pivot_Bolt",
+        "compact_patrol_rifle__Pivot_BoltHandle",
+        "compact_patrol_rifle__Pivot_ChargingHandle",
+        "compact_patrol_rifle__Socket_BoltHand",
+        "compact_patrol_rifle__Pivot_Magazine",
+        "compact_patrol_rifle__Socket_MagazineHand",
+        "compact_patrol_rifle__Pivot_MagazineRelease",
+        "compact_patrol_rifle__Pivot_Safety",
+        "compact_patrol_rifle__Pivot_SpentCase",
+        "compact_patrol_rifle__Pivot_Trigger",
+        "compact_patrol_rifle__Socket_Aim",
+        "compact_patrol_rifle__Socket_Ejection",
+        "compact_patrol_rifle__Socket_HandL",
+        "compact_patrol_rifle__Socket_HandR",
+        "compact_patrol_rifle__Socket_IronAim",
+        "compact_patrol_rifle__Socket_LightMount",
+        "compact_patrol_rifle__Socket_MagazineInsert",
+        "compact_patrol_rifle__Socket_Muzzle",
+        "compact_patrol_rifle__Socket_OpticMount",
+        "compact_patrol_rifle__Socket_TriggerFinger"
+      ],
+      "animations": {
+        "idle": {
+          "duration_s": 1.2,
+          "events": [],
+          "animated_nodes": [
+            "compact_patrol_rifle"
+          ]
+        },
+        "fire": {
+          "duration_s": 0.3,
+          "events": [
+            {
+              "time_s": 0.0,
+              "event": "muzzle_effect"
+            },
+            {
+              "time_s": 0.03333333333333333,
+              "event": "shot_recoil"
+            },
+            {
+              "time_s": 0.06666666666666667,
+              "event": "case_eject"
+            }
+          ],
+          "animated_nodes": [
+            "compact_patrol_rifle",
+            "compact_patrol_rifle__Pivot_Trigger",
+            "compact_patrol_rifle__Pivot_Bolt",
+            "compact_patrol_rifle__Pivot_ChargingHandle",
+            "compact_patrol_rifle__Pivot_SpentCase"
+          ]
+        },
+        "cycle": {
+          "duration_s": 0.9,
+          "events": [
+            {
+              "time_s": 0.16666666666666666,
+              "event": "case_eject"
+            },
+            {
+              "time_s": 0.7666666666666667,
+              "event": "action_closed"
+            }
+          ],
+          "animated_nodes": [
+            "compact_patrol_rifle__Pivot_Bolt",
+            "compact_patrol_rifle__Pivot_ChargingHandle",
+            "compact_patrol_rifle__Pivot_SpentCase"
+          ]
+        },
+        "reload_tactical": {
+          "duration_s": 2.4,
+          "events": [
+            {
+              "time_s": 0.6666666666666666,
+              "event": "magazine_removed"
+            },
+            {
+              "time_s": 1.2,
+              "event": "magazine_exchange_out_of_view"
+            },
+            {
+              "time_s": 1.8333333333333333,
+              "event": "magazine_seated"
+            },
+            {
+              "time_s": 2.4,
+              "event": "reload_complete"
+            }
+          ],
+          "animated_nodes": [
+            "compact_patrol_rifle__Pivot_Magazine",
+            "compact_patrol_rifle__Pivot_MagazineRelease",
+            "compact_patrol_rifle__Socket_HandL"
+          ]
+        },
+        "reload_empty": {
+          "duration_s": 3.0,
+          "events": [
+            {
+              "time_s": 0.6666666666666666,
+              "event": "magazine_removed"
+            },
+            {
+              "time_s": 1.2,
+              "event": "magazine_exchange_out_of_view"
+            },
+            {
+              "time_s": 1.8333333333333333,
+              "event": "magazine_seated"
+            },
+            {
+              "time_s": 2.6333333333333333,
+              "event": "action_closed"
+            },
+            {
+              "time_s": 3.0,
+              "event": "reload_complete"
+            }
+          ],
+          "animated_nodes": [
+            "compact_patrol_rifle__Pivot_Magazine",
+            "compact_patrol_rifle__Pivot_MagazineRelease",
+            "compact_patrol_rifle__Socket_HandL",
+            "compact_patrol_rifle__Pivot_Bolt",
+            "compact_patrol_rifle__Pivot_ChargingHandle",
+            "compact_patrol_rifle__Socket_HandR"
+          ]
+        },
+        "inspect": {
+          "duration_s": 2.0,
+          "events": [],
+          "animated_nodes": [
+            "compact_patrol_rifle"
+          ]
+        },
+        "equip": {
+          "duration_s": 0.5333333333333333,
+          "events": [],
+          "animated_nodes": [
+            "compact_patrol_rifle"
+          ]
+        },
+        "unequip": {
+          "duration_s": 0.5333333333333333,
+          "events": [],
+          "animated_nodes": [
+            "compact_patrol_rifle"
+          ]
+        }
+      }
+    },
+    "reflex_micro": {
+      "kind": "optic",
+      "description": "Open micro reflex sight on a rail clamp",
+      "dimensions_m": [
+        0.028800000436604023,
+        0.042500000447034836,
+        0.04299999959766865
+      ],
+      "bounds_min": [
+        -0.012799999676644802,
+        -4.336808689942018e-19,
+        -0.020999999716877937
+      ],
+      "bounds_max": [
+        0.01600000075995922,
+        0.042500000447034836,
+        0.02199999988079071
+      ],
+      "triangles": 914,
+      "mesh_nodes": 5,
+      "glb": "godot/optics/reflex_micro.glb",
+      "glb_sha256": "a90bd472cebadb17ef6e42f2fdeaa6924c61d5313926fe7a98181f958e60734c",
+      "nodes": [
+        "reflex_micro__Socket_Eye",
+        "reflex_micro__Socket_Mount"
+      ],
+      "animations": {}
+    },
+    "reddot_tube": {
+      "kind": "optic",
+      "description": "1-inch red-dot tube on a riser mount",
+      "dimensions_m": [
+        0.04500000178813934,
+        0.052000001072883606,
+        0.08799999952316284
+      ],
+      "bounds_min": [
+        -0.023000000044703484,
+        3.469446951953614e-18,
+        -0.04800000041723251
+      ],
+      "bounds_max": [
+        0.02200000174343586,
+        0.052000001072883606,
+        0.03999999910593033
+      ],
+      "triangles": 1876,
+      "mesh_nodes": 4,
+      "glb": "godot/optics/reddot_tube.glb",
+      "glb_sha256": "c7bc9d1325f777a2e9ccce68a04703427fff661ff69b1537cce8d2eba7db542e",
+      "nodes": [
+        "reddot_tube__Socket_Eye",
+        "reddot_tube__Socket_Mount"
+      ],
+      "animations": {}
+    },
+    "scope_4x": {
+      "kind": "optic",
+      "description": "4x hunting scope on rings and bases",
+      "dimensions_m": [
+        0.056300001218914986,
+        0.07129999995231628,
+        0.2720000073313713
+      ],
+      "bounds_min": [
+        -0.023000000044703484,
+        0.0,
+        -0.15000000596046448
+      ],
+      "bounds_max": [
+        0.0333000011742115,
+        0.07129999995231628,
+        0.12200000137090683
+      ],
+      "triangles": 2012,
+      "mesh_nodes": 4,
+      "glb": "godot/optics/scope_4x.glb",
+      "glb_sha256": "70a29fb2fe303f5dfab104dca77de865d88cc67ea0a1f880aba38deb356b0e31",
+      "nodes": [
+        "scope_4x__Socket_Eye",
+        "scope_4x__Socket_Mount",
+        "scope_4x__Socket_Scope"
+      ],
+      "animations": {}
+    },
+    "light_clamp": {
+      "kind": "light",
+      "description": "Hunting light on a barrel clamp",
+      "dimensions_m": [
+        0.05300000123679638,
+        0.029999999329447746,
+        0.1080000028014183
+      ],
+      "bounds_min": [
+        -0.01250000111758709,
+        -0.014999999664723873,
+        -0.03999999910593033
+      ],
+      "bounds_max": [
+        0.04050000011920929,
+        0.014999999664723873,
+        0.06800000369548798
+      ],
+      "triangles": 874,
+      "mesh_nodes": 4,
+      "glb": "godot/lights/light_clamp.glb",
+      "glb_sha256": "65acc839b3b679778b201aa50b5782a9f88aaadb3eef8668ee474e1fa33db944",
+      "nodes": [
+        "light_clamp__Socket_Beam",
+        "light_clamp__Socket_Mount"
+      ],
+      "animations": {}
+    },
+    "light_taped": {
+      "kind": "light",
+      "description": "Household flashlight taped under the barrel",
+      "dimensions_m": [
+        0.03500000014901161,
+        0.05549999885261059,
+        0.16600000113248825
+      ],
+      "bounds_min": [
+        -0.017500000074505806,
+        -0.04349999874830246,
+        -0.07000000029802322
+      ],
+      "bounds_max": [
+        0.017500000074505806,
+        0.012000000104308128,
+        0.09600000083446503
+      ],
+      "triangles": 886,
+      "mesh_nodes": 4,
+      "glb": "godot/lights/light_taped.glb",
+      "glb_sha256": "730da143b3b53744448e6ee50fdab22c10d1952a2ea9ae11023c5ebec0d4a817",
+      "nodes": [
+        "light_taped__Socket_Beam",
+        "light_taped__Socket_Mount"
+      ],
+      "animations": {}
+    }
+  }
+}

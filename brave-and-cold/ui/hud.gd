@@ -209,10 +209,15 @@ func _draw_weapon(sz: Vector2, k: float) -> void:
 		var rid := inv.rifle_id()
 		line = "%s    %d / %d" % [inv.name_of(rid).to_upper(), inv.rifle_loaded(), maxi(0, inv.count("ammo") - inv.rifle_loaded())]
 		if inv.rifle_loaded() == 0 and inv.count("ammo") > 0: line += "    [R] RELOAD"
+		var lt := RifleDB.light(rid)
+		if not lt.is_empty():
+			var lh := float(RifleDB.fitted(rid).get("light_h", 0.0))
+			var pct := int(round(100.0 * lh / maxf(0.01, float(lt.get("battery_h", 1.0)))))
+			line += "    [L] LIGHT %s %d%%" % ["ON" if inv.light_on and lh > 0.0 else "OFF", pct]
 	elif inv.count("axe") > 0:
 		line = "HATCHET"
 	if line != "":
-		DZ.text(_ui, line, Vector2(right - 400.0 * k, y), int(21.0 * k), DZ.TEXT, HORIZONTAL_ALIGNMENT_RIGHT, 400.0 * k)
+		DZ.text(_ui, line, Vector2(right - 680.0 * k, y), int(21.0 * k), DZ.TEXT, HORIZONTAL_ALIGNMENT_RIGHT, 680.0 * k)
 		y -= 26.0 * k
 	var q := ""
 	if inv.count("flare") > 0:
@@ -304,6 +309,8 @@ func _draw_hitmarker(c: Vector2, k: float) -> void:
 func _draw_aim_overlay(sz: Vector2, c: Vector2, ak: float) -> void:
 	if scoped or optic_kind == "reflex":
 		return   # ScopeOverlay (GPU) draws the optic picture and reticle
+	if inv != null and RifleDB.is_v3(inv.rifle_id()):
+		return   # v3 rifles: real modelled irons / collimated dot, no fake vignette or centre dot
 	# smooth dark vignette (clear centre -> black edge), like looking down the rifle
 	var r0 := sz.y * 0.42
 	var r1 := sz.y * 0.62

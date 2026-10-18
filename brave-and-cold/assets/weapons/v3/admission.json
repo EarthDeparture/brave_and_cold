@@ -1,0 +1,41 @@
+{
+  "workflow": "Local Blender 5.2 weapon kit v3 (tools/blender/gen_weapon_kit_v3.py); exact byte copy",
+  "files": {
+    "assets/weapons/v3/rifles/compact_patrol_rifle.glb": {
+      "sha256": "dc1a8fdec519ff87c160652496a84eca2ff7d74bf76ead1d6677bbb8e2127657",
+      "kind": "rifle",
+      "triangles": 7120,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/optics/reflex_micro.glb": {
+      "sha256": "a90bd472cebadb17ef6e42f2fdeaa6924c61d5313926fe7a98181f958e60734c",
+      "kind": "optic",
+      "triangles": 914,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/optics/reddot_tube.glb": {
+      "sha256": "c7bc9d1325f777a2e9ccce68a04703427fff661ff69b1537cce8d2eba7db542e",
+      "kind": "optic",
+      "triangles": 1876,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/optics/scope_4x.glb": {
+      "sha256": "70a29fb2fe303f5dfab104dca77de865d88cc67ea0a1f880aba38deb356b0e31",
+      "kind": "optic",
+      "triangles": 2012,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/lights/light_clamp.glb": {
+      "sha256": "65acc839b3b679778b201aa50b5782a9f88aaadb3eef8668ee474e1fa33db944",
+      "kind": "light",
+      "triangles": 874,
+      "provenance": "Original project Blender geometry and generated textures"
+    },
+    "assets/weapons/v3/lights/light_taped.glb": {
+      "sha256": "730da143b3b53744448e6ee50fdab22c10d1952a2ea9ae11023c5ebec0d4a817",
+      "kind": "light",
+      "triangles": 886,
+      "provenance": "Original project Blender geometry and generated textures"
+    }
+  }
+}

@@ -91,9 +91,29 @@ func run() -> void:
 				w.pop.clock += Population.SCOPE_PIN_S + 1; w.pop._despawn_step()
 				check(not w.pop.active.has(z), "unwatched promoted actor parks back into the virtual population")
 	# ---- other sight types
-	sling(w, "compact_patrol_rifle"); w.aim_override = true; await frames(60)
-	check(not w.viewmodel.scoped_view and w.hud.optic_kind == "reflex" and w.hud.scope.visible and int(w.hud.scope.mat.get_shader_parameter("mode")) == 1, "reflex sight: model stays, overlay draws only the dot")
-	check(w.viewmodel._rifle.lens != null, "reflex lens mesh found for the future see-through pass")
+	# kit v3 compact: modular optics, the dot lives in the lens (collimated), no HUD overlay
+	var rid := "compact_patrol_rifle"
+	sling(w, rid); w.inv.fitted[rid] = {"optic": "reflex_micro", "light": "light_clamp", "light_h": 5.0}
+	w.aim_override = true; await frames(60)
+	var rp = w.viewmodel._rifle
+	check(not w.viewmodel.scoped_view and w.hud.optic_kind == "reflex" and not w.hud.scope.visible and rp.dot_mats.size() == 1,
+		"v3 micro reflex: model stays, no overlay, one collimated dot lens")
+	var cam_fwd: Vector3 = -w.player.cam.global_basis.z
+	var ax: Vector3 = rp.dot_mats[0].get_shader_parameter("axis_world") if rp.dot_mats.size() > 0 else Vector3.ZERO
+	check(ax.angle_to(cam_fwd) * 1000.0 < 2.0, "aimed: dot axis on the camera axis (%.2f mrad)" % (ax.angle_to(cam_fwd) * 1000.0))
+	await frames(30)   # aim FOV eases at 90 deg/s from the previous 9x scope
+	check(absf(w.player.cam.fov - RifleDB.fov_for(1.15)) < .4, "micro reflex: 1.15x (fov %.2f want %.2f, zooms %s)" % [w.player.cam.fov, RifleDB.fov_for(1.15), str(w.player.aim_fovs)])
+	w.inv.fitted[rid] = {"optic": "reddot_tube", "light": "light_clamp", "light_h": 5.0}; await frames(40)
+	rp = w.viewmodel._rifle
+	check(not w.viewmodel.scoped_view and w.hud.optic_kind == "tube_dot" and not w.hud.scope.visible and rp.dot_mats.size() == 1,
+		"v3 red-dot tube: see-through tube, no overlay, dot in the lens")
+	w.inv.fitted[rid] = {"optic": "", "light": "light_taped", "light_h": 5.0}; await frames(40)
+	rp = w.viewmodel._rifle
+	check(w.hud.optic_kind == "iron" and not w.hud.scope.visible and rp.dot_mats.is_empty() and absf(rp.aim_height() - .100) < .002,
+		"v3 irons: optic off, eye on the iron sight line (%.4f)" % rp.aim_height())
+	w.inv.fitted[rid] = {"optic": "scope_4x", "light": "", "light_h": 0.0}; await frames(60)
+	check(w.viewmodel.scoped_view and w.hud.scope.visible, "v3 4x scope fitted: tube picture replaces the model")
+	w.inv.fitted[rid] = RifleDB.factory(rid).duplicate(); await frames(20)
 	sling(w, "brush_lever_rifle"); await frames(60)
 	check(not w.viewmodel.scoped_view and w.hud.scope.visible and absf(w.player.cam.fov - RifleDB.fov_for(1.25)) < .4, "wooden box reflex: 1.25x, model stays, dot overlay")
 	w.aim_override = false; await frames(40)

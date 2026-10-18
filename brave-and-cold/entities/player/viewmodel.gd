@@ -49,6 +49,7 @@ var _rifle: WeaponPresentation
 var _bolt: Node3D
 var weapon_id := "timber_bolt_carbine"
 var scoped_view := false
+var light_on := false   # weapon light switched on (GameWorld: L key, battery)
 var _weapon_clip := ""
 var _weapon_clip_t := 0.0
 var _guard_k := 0.0
@@ -318,10 +319,12 @@ func _process(delta: float) -> void:
 	_sl_l.visible = shown != "" and shown != "axe"
 	# Looking through optics: the HUD draws the scope picture, the model and hands step aside.
 	scoped_view = shown == "rifle" and not working and RifleDB.is_scoped(weapon_id) and player.aim_k > .92 and _weapon_clip == ""
-	# Reflex boxes are solid in the art kit: a clear lens shows the box interior. Kept opaque until
-	# the sheet generator builds hollow sight frames (see scope plan). _rifle.set_lens_see_through(...)
+	# Kit v3 reflex / red-dot tubes stay visible: their lens shader draws the collimated dot.
+	# Scoped: the model's meshes step aside, the node stays (a fitted light keeps shining).
+	_rifle.set_meshes_visible(not scoped_view)
+	_rifle.set_lamp(light_on and shown == "rifle" and not working)
 	if scoped_view:
-		_rifle.visible = false; _right.visible = false; _left.visible = false; _sl_r.visible = false; _sl_l.visible = false
+		_right.visible = false; _left.visible = false; _sl_r.visible = false; _sl_l.visible = false
 	if working:
 		# Keep normal arm reach, without moving the player toward distant targets.
 		_pose_work(base)
@@ -416,7 +419,7 @@ func _bolt_weapon_basis() -> Basis:
 	return Basis(x,z.cross(x),z)
 
 func _pose_rifle(base: Transform3D) -> void:
-	if _rifle.weapon_id != weapon_id: equip_weapon(weapon_id)
+	if _rifle.weapon_id != weapon_id or (_rifle.is_v3() and _rifle.fit_sig != RifleDB.fit_sig(weapon_id)): equip_weapon(weapon_id)
 	var ak := player.aim_k
 	var kick := 0.0
 	if _fire_t >= 0:
@@ -431,13 +434,22 @@ func _pose_rifle(base: Transform3D) -> void:
 	# Socket_Aim belongs to the complete imported model, including inspect tilt.
 	_rifle.sample(clip,time)
 	var mag := tan(deg_to_rad(Player.AIM_FOV*.5))/tan(deg_to_rad(player.cam.fov*.5))
-	var aimed := Vector3(0,-_rifle.aim_height(),-.18-.12-.17*clampf(mag-1,0,1.8))
-	var rpos := Vector3(.10,-.17,-.42).lerp(aimed,ak)
-	var rb := Basis(Vector3.UP,deg_to_rad(24*(1-ak)))
+	# v3: cheek on the comb, eye ~22 cm behind the trigger (v2 art sat 30 cm out, stock ahead of the eye)
+	var aimed := Vector3(0,-_rifle.aim_height(),(-.22 if _rifle.is_v3() else -.30)-.17*clampf(mag-1,0,1.8))
+	var hip := Vector3(.14,-.20,-.40) if _rifle.is_v3() else Vector3(.10,-.17,-.42)
+	var rpos := hip.lerp(aimed,ak)
+	var rb := Basis(Vector3.UP,deg_to_rad((8.0 if _rifle.is_v3() else 24.0)*(1-ak)))
 	var butt := rpos+Vector3(0,0,.38)
 	var recoil := _about(butt,Basis(Vector3.RIGHT,deg_to_rad(lerpf(7,4,ak)*kick)))
 	var w := base*recoil*Transform3D(rb,rpos)
 	_rifle.transform = w
+	if _rifle.is_v3():
+		# collimated dot: along the bore, settling onto the shot line (camera axis) as the rifle comes up
+		var gun_fwd := -(global_transform * w).basis.z.normalized()
+		var cam_fwd := -player.cam.global_transform.basis.z.normalized()
+		var h := fposmod(game_clock.hour, 24.0) if game_clock != null else 12.0
+		var night := 1.0 - clampf(minf(h - 5.5, 19.5 - h) / 1.5, 0.0, 1.0)
+		_rifle.update_sight(gun_fwd.lerp(cam_fwd, ak * ak).normalized(), night)
 	var right_offset := Vector3(.024,.054,.0585) if not _rifle.is_pistol_grip() else Vector3(.057,-.037,.050)
 	var trigger := _rifle.resting_socket_transform("HandR")*Transform3D(_right_weapon_basis(),right_offset)
 	var support := _rifle.resting_socket_transform("HandL")*Transform3D(Basis(Vector3.FORWARD,Vector3.DOWN,Vector3.LEFT),Vector3(-.042,-.035,.030))

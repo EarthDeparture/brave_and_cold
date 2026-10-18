@@ -2026,16 +2026,63 @@ func _update_prompt() -> void:
 # ---- Optics: GPU scope picture, scope-in settle, long-range targets in the scope cone.
 var _was_scoped := false
 var _scope_promote_t := 0.0
+## ---- Weapon light (kit v3 attachments): L toggles, batteries drain faster in the cold, and a
+## lit beam is a light lure for zombies ahead of you (NoiseBus.emit_light) as well as a beacon.
+const LIGHT_LURE_EVERY_S := 0.5
+var _light_lure_t := 0.0
+func _toggle_weapon_light() -> void:
+	var rid := inv.rifle_id()
+	if rid == '' or RifleDB.light(rid).is_empty():
+		_say('No light on this rifle'); return
+	var f: Dictionary = RifleDB.fitted(rid).duplicate()
+	if float(f.get('light_h', 0.0)) <= 0.0:
+		if inv.count('cell_batteries') > 0:
+			inv.remove('cell_batteries'); f['light_h'] = float(RifleDB.light(rid).get('battery_h', 6.0)); inv.fitted[rid] = f
+			inv.light_on = true; _say('Fresh batteries in the light')
+		else:
+			_say('The light is dead. You need batteries')
+		return
+	inv.fitted[rid] = f
+	inv.light_on = not inv.light_on
+	_say('Light on' if inv.light_on else 'Light off')
+
+func light_shining() -> bool:
+	if inv == null or not inv.light_on or not rifle_up: return false
+	var rid := inv.rifle_id()
+	return rid != '' and not RifleDB.light(rid).is_empty() and float(RifleDB.fitted(rid).get('light_h', 0.0)) > 0.0
+
+func _update_weapon_light(rid: String, delta: float) -> void:
+	var on := light_shining()
+	if viewmodel != null: viewmodel.light_on = on
+	if not on: return
+	# battery: game hours at the clock's rate; 20 C nominal, -20 C gives ~60 % of the run time
+	var f: Dictionary = inv.fitted.get(rid, RifleDB.fitted(rid))
+	var cold := 1.0 + 0.67 * clampf(-air_c() / 20.0, 0.0, 1.0)
+	f['light_h'] = maxf(0.0, float(f.get('light_h', 0.0)) - delta * clock.time_scale / 3600.0 * cold)
+	inv.fitted[rid] = f
+	if float(f['light_h']) <= 0.0:
+		inv.light_on = false; _say('The light dims and dies'); return
+	_light_lure_t -= delta
+	if _light_lure_t <= 0.0 and noise_bus != null:
+		_light_lure_t = LIGHT_LURE_EVERY_S
+		var fwd := -player.cam.global_transform.basis.z
+		var reach := float(RifleDB.light(rid).get('range_m', 30.0))
+		noise_bus.emit_light(player.position + fwd * reach * 0.6, reach * 0.8, player)   # what the beam lights
+		noise_bus.emit_light(player.position, 18.0, player)                              # the lamp itself
+
 func _update_optic(delta: float) -> void:
 	if hud == null or hud.scope == null or player == null: return
+	RifleDB.inv = inv   # v3 rifles read their fitted attachments from the live inventory
 	var rid := inv.rifle_id() if inv != null else ''
 	var o: Dictionary = RifleDB.optic(rid) if rid != '' else {}
 	var kind := String(o.get('type', 'iron'))
+	_update_weapon_light(rid, delta)
 	hud.optic_kind = kind if rifle_up else ''
 	var scoped: bool = viewmodel != null and viewmodel.scoped_view
 	if scoped and not _was_scoped: player.scope_settle = 0.6
 	_was_scoped = scoped
-	var on := scoped or (kind == 'reflex' and rifle_up and player.aim_k > 0.9)
+	# kit v3 reflex / red-dot tubes draw their dot in the lens; only kit v2 reflex art needs the overlay dot
+	var on := scoped or (kind == 'reflex' and not RifleDB.is_v3(rid) and rifle_up and player.aim_k > 0.9)
 	var mag := tan(deg_to_rad(Player.HIP_FOV) * 0.5) / tan(deg_to_rad(player.cam.fov) * 0.5)
 	hud.scope.update_view(on, kind, String(o.get('reticle', 'none')), mag, player.cam.fov, player.sway, delta)
 	if forest != null: forest.set_view_scale(clampf(mag / 1.6, 1.0, 3.0) if scoped else 1.0)
@@ -2367,6 +2414,8 @@ func _unhandled_input(e: InputEvent) -> void:
 		_act_begin(_cur)
 	elif e.keycode == KEY_V and inv != null:
 		_throw_flare()
+	elif e.keycode == KEY_L and inv != null:
+		_toggle_weapon_light()
 	elif e.keycode == KEY_B and inv != null:
 		_build_campfire()
 	elif e.keycode == KEY_X and inv != null and inv.count('rifle') > 0:
@@ -3859,7 +3908,7 @@ func _save_data() -> Dictionary:
 		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
 		'body': {'core': body.core, 'wet': body.wetness},
 		'needs': {'cal': needs.calories, 'water': needs.water,'fatigue':needs.fatigue},
-		'inv': {'counts': inv.counts, 'worn': inv.jacket(), 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age, 'loaded': inv.loaded, 'active_rifle': inv.active_rifle},
+		'inv': {'counts': inv.counts, 'worn': inv.jacket(), 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age, 'loaded': inv.loaded, 'active_rifle': inv.active_rifle, 'fitted': inv.fitted, 'light_on': inv.light_on},
 		'cabins': cabs,
 		'huts': huts.map(func(h: Hut) -> Dictionary: return h.state_dict()),
 		'holes': ice_holes.map(func(h: IceHole) -> Dictionary: return h.to_dict()),
@@ -4023,6 +4072,12 @@ func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 	for k in sv['inv'].get('loaded', {}):
 		if Inventory.is_rifle(String(k)): inv.loaded[String(k)] = int(sv['inv']['loaded'][k])
 	inv.active_rifle = String(sv['inv'].get('active_rifle', ''))
+	var fsv: Dictionary = sv['inv'].get('fitted', {})
+	for k in fsv:
+		if Inventory.is_rifle(String(k)) and RifleDB.is_v3(String(k)) and fsv[k] is Dictionary:
+			var fd: Dictionary = fsv[k]
+			inv.fitted[String(k)] = {'optic': String(fd.get('optic', '')), 'light': String(fd.get('light', '')), 'light_h': float(fd.get('light_h', 0.0))}
+	inv.light_on = bool(sv['inv'].get('light_on', false))
 	rifle_up = bool(sv['inv']['rifle_up']) and inv.count('rifle') > 0
 	var hsv: Array = sv.get('huts', [])
 	for hi in range(mini(hsv.size(), huts.size())):
