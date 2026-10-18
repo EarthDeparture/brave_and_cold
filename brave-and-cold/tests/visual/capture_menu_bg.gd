@@ -39,7 +39,7 @@ func light_fires() -> void:
 		if w.opening.stove_smoke != null: FireVisual.set_smoke(w.opening.stove_smoke, w.opening.fire, wind)
 
 func shot(id: String, eye: Vector3, target: Vector3, fov: float, hour: float, state: int) -> void:
-	if only != "" and only != id: return
+	if only != "" and only != id and not (only == "glow_all" and id.begins_with("glow_")): return
 	setup_time(hour, state)
 	light_fires()
 	var cam: Camera3D = w.player.cam
@@ -76,6 +76,14 @@ func run() -> void:
 	w.snowfall.use_fixed_seed = true; w.snowfall.seed = 42; w.snowfall.fixed_fps = 60
 	var t: FireLookout = w.fire_lookout
 	var tp := t.global_position
+	# Window-glow review shots (not menu candidates): on the deck outside the glass, and ~24 m out.
+	if only.begins_with("glow_"):
+		var deck := t.to_global(Vector3(3.35, FireLookout.DECK_Y + 1.62, 0.9))
+		await shot("glow_deck", deck, t.to_global(Vector3(0.0, FireLookout.DECK_Y + 1.5, -0.6)), 70.0, 18.6, Weather.S.CLEAR)
+		var a2 := 3 * TAU / 4.0 + 0.9
+		var mid := Vector3(tp.x + cos(a2) * 24.0, 0, tp.z + sin(a2) * 24.0); mid.y = ground(mid.x, mid.z) + 1.6
+		await shot("glow_mid", mid, tp + Vector3(0, FireLookout.DECK_Y + 1.2, 0), 50.0, 18.6, Weather.S.CLEAR)
+		quit(0); return
 	# Subjects sit in the right third (shift the aim left) so the menu column on the left reads over dark.
 	for hr in [17.95, 18.3]:
 		var hs := "%02d" % int(round(fmod(hr, 1.0) * 100.0))

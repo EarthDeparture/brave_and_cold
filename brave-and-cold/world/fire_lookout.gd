@@ -44,9 +44,10 @@ var site: Dictionary = {}
 var access_ribbon:WalkRibbon3D
 var model: Node3D
 var geometry: Dictionary = {}
-var _glass_mats: Array[BaseMaterial3D] = []
+var _glass_mats: Array[ShaderMaterial] = []
 var _window_fill: OmniLight3D
 var window_glow := 0.0   # last applied glow (tests / captures)
+var _fire_k := 0.0
 const WINDOW_GLOW := Color(1.0, 0.64, 0.36)
 
 
@@ -114,9 +115,13 @@ func _enable_model_vertex_colors() -> void:
 			material.vertex_color_is_srgb = false
 			mesh.set_surface_override_material(surface, material)
 			if material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
-				material.emission_enabled = true; material.emission = WINDOW_GLOW
-				material.emission_energy_multiplier = 0.0
-				_glass_mats.append(material)
+				# Glass: same look, plus a per-pane, lamp-pooled, stove-flickered night glow
+				# that fades out up close (world/shaders/lookout_glass.gdshader).
+				var glass := ShaderMaterial.new()
+				glass.shader = preload("res://world/shaders/lookout_glass.gdshader")
+				glass.set_shader_parameter("glow_color", WINDOW_GLOW)
+				mesh.set_surface_override_material(surface, glass)
+				_glass_mats.append(glass)
 			if detail_enabled and mesh.name in ["lookout_boards", "lookout_timber", "lookout_interior", "lookout_trim", "lookout_door"]:
 				var wood := ShaderMaterial.new()
 				wood.shader = preload("res://world/shaders/winter_timber.gdshader")
@@ -128,9 +133,11 @@ func _enable_model_vertex_colors() -> void:
 ## stove lit. Zero while `eye` is inside the cab so the view out stays clear glass.
 func set_night(night: float, fire_lit: bool, eye: Vector3) -> void:
 	var k := 0.0 if contains_room(eye) else clampf(night, 0.0, 1.0) * (0.6 + (0.4 if fire_lit else 0.0))
-	if is_equal_approx(k, window_glow): return
-	window_glow = k
-	for m in _glass_mats: m.emission_energy_multiplier = 1.8 * k
+	var fk := 1.0 if fire_lit else 0.0
+	if is_equal_approx(k, window_glow) and is_equal_approx(fk, _fire_k): return
+	window_glow = k; _fire_k = fk
+	for m in _glass_mats:
+		m.set_shader_parameter("glow", k); m.set_shader_parameter("fire", fk * k)
 	if _window_fill != null: _window_fill.light_energy = 1.1 * k
 
 
