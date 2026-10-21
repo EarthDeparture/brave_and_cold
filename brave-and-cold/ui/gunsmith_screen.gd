@@ -35,6 +35,10 @@ var _dist := 1.30
 var _drag := false
 var _drag_from := Vector2.ZERO
 var _msg := ""
+var _scroll := 0.0          # slot column scroll (wheel over the column)
+var _content_h := 0.0
+var _tab_cmp := ""          # rifle tab under the mouse: compared with the selected rifle
+const SLOT_R := Rect2(918, 150, 556, 620)
 var _preview: Dictionary = {}   # {fit, label, loses_zero}: the change under the mouse, for the stat compare
 var _msg_t := 0.0
 var _prev_mouse := Input.MOUSE_MODE_CAPTURED
@@ -128,6 +132,8 @@ func _on_gui(e: InputEvent) -> void:
 		return
 	if not (e is InputEventMouseButton): return
 	_mouse = _to_v(e.position)
+	if e.pressed and SLOT_R.has_point(_mouse) and e.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		_scroll = clampf(_scroll + (-42.0 if e.button_index == MOUSE_BUTTON_WHEEL_UP else 42.0), 0.0, maxf(0.0, _content_h - (SLOT_R.end.y - 182.0))); return
 	if e.pressed and VIEW_R.has_point(_mouse) and e.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
 		_dist = clampf(_dist * (0.9 if e.button_index == MOUSE_BUTTON_WHEEL_UP else 1.11), 0.35, 2.2); return
 	if e.button_index != MOUSE_BUTTON_LEFT: return
@@ -181,8 +187,12 @@ func _part_button(r: Rect2, aid: String, label: String, note: String, act: Calla
 	_c.draw_rect(r, DZ.ACCENT if (hv and enabled) else (DZ.EDGE if enabled else Color(0.25, 0.26, 0.23)), false, 1.5)
 	DZ.item_icon(_c, aid, Rect2(r.position + Vector2(4, 3), Vector2(r.size.y * 1.6 - 6, r.size.y - 6)), 1.0 if enabled else 0.45)
 	var tx := r.position.x + r.size.y * 1.6 + 6
-	DZ.text(_c, label, Vector2(tx, r.position.y + r.size.y * 0.5 + 6), 17, (DZ.ACCENT if hv else DZ.TEXT) if enabled else DZ.DIM)
-	DZ.text(_c, note, Vector2(r.position.x, r.position.y + r.size.y * 0.5 + 6), 15, DZ.DIM if enabled else DZ.WARN, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 10)
+	if enabled or note.length() < 22:
+		DZ.text(_c, label, Vector2(tx, r.position.y + r.size.y * 0.5 + 6), 17, (DZ.ACCENT if hv else DZ.TEXT) if enabled else DZ.DIM)
+		DZ.text(_c, note, Vector2(r.position.x, r.position.y + r.size.y * 0.5 + 6), 15, DZ.DIM if enabled else DZ.WARN, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 10)
+	else:   # a long reason goes under the name instead of over it
+		DZ.text(_c, label, Vector2(tx, r.position.y + 16), 16, DZ.DIM)
+		DZ.text(_c, note, Vector2(tx, r.position.y + 32), 13, DZ.WARN)
 	if enabled: _hits.append({"r": r, "act": act})
 	return hv
 
@@ -199,6 +209,7 @@ func _draw_all() -> void:
 		Vector2(140, 146), 17, DZ.GOOD if bench else DZ.DIM)
 	# rifles carried (v3); "x2" when two of the same are in the pack
 	var x := 930.0
+	_tab_cmp = ""
 	for r: String in Inventory.RIFLE_IDS:
 		var n := inv.count(r)
 		if n < 1 or not RifleDB.is_v3(r): continue
@@ -209,7 +220,8 @@ func _draw_all() -> void:
 		var nm := String(RifleDB.spec(r).get("name", r)).split(" ")[0] + ("  x%d" % n if n > 1 else "")
 		DZ.text(_c, nm, rr.position + Vector2(0, 24), 17, DZ.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 132)
 		var pick := r
-		_hits.append({"r": rr, "act": func() -> void: rid = pick; _rebuild_gun()})
+		_hits.append({"r": rr, "act": func() -> void: rid = pick; _scroll = 0.0; _rebuild_gun()})
+		if rr.has_point(_mouse) and r != rid: _tab_cmp = r
 		x += 138.0
 		if x > 1340: break
 	_c.draw_rect(VIEW_R, DZ.EDGE, false, 1.5)
@@ -258,7 +270,37 @@ func _delta(v: float, fmt: String, lower_good: bool) -> Array:
 	return [("  " + fmt) % [("+" if v > 0 else ""), v], DZ.GOOD if good else DZ.WARN]
 
 
+## Hovering another rifle's tab: the two rifles side by side (each with what is fitted to it now).
+func _draw_compare(p: Vector2) -> void:
+	var o := _tab_cmp
+	var a := _stats(RifleDB.fitted(rid)); var b := _stats_for(o)
+	DZ.text(_c, "%s  vs  %s" % [String(RifleDB.spec(rid).get("name", rid)).to_upper(), String(RifleDB.spec(o).get("name", o)).to_upper()], Vector2(p.x, p.y - 8), 16, DZ.ACCENT)
+	var rows := [
+		["Sight", String(a["sight"]), String(b["sight"]), 0.0],
+		["Weight", "%.2f kg" % a["weight"], "%.2f kg" % b["weight"], float(b["weight"]) - float(a["weight"])],
+		["Damage", "%d" % roundi(RifleDB.value(rid, "damage", 100.0)), "%d" % roundi(RifleDB.value(o, "damage", 100.0)), -(RifleDB.value(o, "damage", 100.0) - RifleDB.value(rid, "damage", 100.0))],
+		["Rounds", "%d (%s)" % [RifleDB.mag(rid), RifleDB.action(rid)], "%d (%s)" % [RifleDB.mag(o), RifleDB.action(o)], -float(RifleDB.mag(o) - RifleDB.mag(rid))],
+		["Report", "%d %%" % roundi(float(a["noise"]) * 100.0), "%d %%" % roundi(float(b["noise"]) * 100.0), float(b["noise"]) - float(a["noise"])],
+		["Spread", "x%.2f" % a["spread"], "x%.2f" % b["spread"], float(b["spread"]) - float(a["spread"])],
+	]
+	var y := p.y + 18.0
+	for r in rows:
+		DZ.text(_c, String(r[0]).to_upper(), Vector2(p.x, y), 15, DZ.DIM)
+		DZ.text(_c, String(r[1]), Vector2(p.x + 100, y), 17, DZ.TEXT)
+		var d: float = r[3]
+		DZ.text(_c, String(r[2]), Vector2(p.x + 330, y), 17, DZ.TEXT if absf(d) < 0.005 else (DZ.GOOD if d < 0 else DZ.WARN))
+		y += 26.0
+
+
+func _stats_for(other: String) -> Dictionary:
+	var keep := rid; rid = other
+	var s := _stats(RifleDB.fitted(other))
+	rid = keep
+	return s
+
+
 func _draw_stats(p: Vector2) -> void:
+	if _tab_cmp != "": _draw_compare(p); return
 	var f := RifleDB.fitted(rid)
 	var cur := _stats(f)
 	var pv: Dictionary = {}
@@ -317,27 +359,32 @@ func _preview_fit(slot: String, aid: String) -> Dictionary:
 	return f
 
 
+func _vis_y(y: float, h: float) -> bool: return y >= SLOT_R.position.y + 8.0 and y + h <= SLOT_R.end.y
+
+
 func _draw_slots(p: Vector2) -> void:
 	var mounts: Dictionary = RifleDB.spec(rid).get("mounts", {})
 	var f := RifleDB.fitted(rid)
-	var y := p.y
+	var y := p.y - _scroll
 	for slot: String in RifleDB.SLOTS:
 		var have := RifleDB.mount_for(rid, slot)
 		if slot == "mount" and String(mounts.get("mount", "none")) == "none": continue
 		var cur := String(f.get(slot, ""))
-		DZ.text(_c, SLOT_LABEL[slot], Vector2(p.x, y), 18, DZ.DIM)
-		var takes := "takes " + RifleDB._mount_words(have) if have != "none" else ("takes nothing" if slot != "light" else "taped light only")
-		DZ.text(_c, takes, Vector2(p.x, y), 15, DZ.DIM, HORIZONTAL_ALIGNMENT_RIGHT, 530)
+		if _vis_y(y - 16.0, 16.0):
+			DZ.text(_c, SLOT_LABEL[slot], Vector2(p.x, y), 18, DZ.DIM)
+			var takes := "takes " + RifleDB._mount_words(have) if have != "none" else ("takes nothing" if slot != "light" else "taped light only")
+			DZ.text(_c, takes, Vector2(p.x, y), 15, DZ.DIM, HORIZONTAL_ALIGNMENT_RIGHT, 530)
 		y += 10.0
 		var row := Rect2(Vector2(p.x, y), Vector2(530, 46))
-		_c.draw_rect(row, Color(0.07, 0.08, 0.07, 0.9)); _c.draw_rect(row, DZ.EDGE, false, 1.0)
-		if cur != "":
-			DZ.item_icon(_c, cur, Rect2(row.position + Vector2(5, 4), Vector2(61, 38)))
-		var label := String(RifleDB.attachment(cur).get("name", cur)) if cur != "" else (String(RifleDB.optic_for(rid, {}).get("label", "iron sights")) if slot == "optic" else "empty")
-		DZ.text(_c, label, row.position + Vector2(76 if cur != "" else 12, 29), 18, DZ.TEXT if cur != "" else DZ.DIM)
-		if cur != "":
-			if _button(Rect2(row.position + Vector2(420, 8), Vector2(102, 30)), "REMOVE", func() -> void: _fit(slot, ""), true, 15):
-				_preview = {"fit": _preview_fit(slot, ""), "label": "remove the " + String(RifleDB.attachment(cur).get("name", cur)).to_lower(), "loses_zero": false}
+		if _vis_y(row.position.y, row.size.y):
+			_c.draw_rect(row, Color(0.07, 0.08, 0.07, 0.9)); _c.draw_rect(row, DZ.EDGE, false, 1.0)
+			if cur != "":
+				DZ.item_icon(_c, cur, Rect2(row.position + Vector2(5, 4), Vector2(61, 38)))
+			var label := String(RifleDB.attachment(cur).get("name", cur)) if cur != "" else (String(RifleDB.optic_for(rid, {}).get("label", "iron sights")) if slot == "optic" else "empty")
+			DZ.text(_c, label, row.position + Vector2(76 if cur != "" else 12, 29), 18, DZ.TEXT if cur != "" else DZ.DIM)
+			if cur != "":
+				if _button(Rect2(row.position + Vector2(420, 8), Vector2(102, 30)), "REMOVE", func() -> void: _fit(slot, ""), true, 15):
+					_preview = {"fit": _preview_fit(slot, ""), "label": "remove the " + String(RifleDB.attachment(cur).get("name", cur)).to_lower(), "loses_zero": false}
 		y += 50.0
 		# what in the pack could go here
 		for aid: String in RifleDB.attachments():
@@ -353,11 +400,18 @@ func _draw_slots(p: Vector2) -> void:
 			var note := (("%d min" % int(a.get("fit_min", 5))) if tool_note == "" else tool_note) if ok else RifleDB.fit_reason(rid, aid)
 			var pick := aid
 			var can := ok and tool_note == ""
-			if _part_button(r, aid, ("Fit " if ok else "") + String(a.get("name", aid)), note, func() -> void: _fit(slot, pick), can) and ok:
-				_preview = {"fit": _preview_fit(slot, aid), "label": "fit the " + String(a.get("name", aid)).to_lower(),
-					"loses_zero": not bench and slot in ["optic", "mount"]}
+			if _vis_y(r.position.y, r.size.y):
+				if _part_button(r, aid, ("Fit " if ok else "") + String(a.get("name", aid)), note, func() -> void: _fit(slot, pick), can) and ok:
+					_preview = {"fit": _preview_fit(slot, aid), "label": "fit the " + String(a.get("name", aid)).to_lower(),
+						"loses_zero": not bench and slot in ["optic", "mount"]}
 			y += 42.0
-			if y > 760: break
 		y += 22.0
-		if y > 760:
-			DZ.text(_c, "more parts in the pack...", Vector2(p.x, 790), 15, DZ.DIM); break
+	_content_h = y + _scroll - p.y
+	var room := SLOT_R.end.y - p.y
+	if _content_h > room:   # scroll bar + hint
+		var bar := Rect2(Vector2(1466, SLOT_R.position.y + 30), Vector2(4, SLOT_R.size.y - 40))
+		_c.draw_rect(bar, Color(0.2, 0.21, 0.19, 0.8))
+		var k := room / _content_h
+		var off := (_scroll / maxf(1.0, _content_h - room)) * bar.size.y * (1.0 - k)
+		_c.draw_rect(Rect2(bar.position + Vector2(0, off), Vector2(4, bar.size.y * k)), DZ.ACCENT)
+		if _scroll < _content_h - room - 1.0: DZ.text(_c, "wheel: more parts below", Vector2(p.x, SLOT_R.end.y + 18), 14, DZ.DIM)

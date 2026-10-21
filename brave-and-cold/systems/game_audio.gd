@@ -98,6 +98,7 @@ func _process(delta: float) -> void:
 		_lp.cutoff_hz = lerpf(_lp.cutoff_hz, cutoff, clampf(delta * 3.0, 0.0, 1.0))
 	if detail_enabled: _detail_ambience(delta, ws)
 	_creatures(delta)
+	_hearing(delta)
 
 
 func _on_step(tier: int, radius: float) -> void:
@@ -133,13 +134,149 @@ func _surface_step(material:String)->AudioStream:
 	return streams[pick]
 
 
-func gunshot() -> void:
+# ------------------------------------------------------------ rifle reports (weapons W7)
+# Layers from tools/audio/gen_gunshots.py: blast (open per report class, or moderated), the bullet's supersonic
+# crack (only added on top of a MODERATED supersonic shot - an open blast already contains it), the environment
+# tail (outdoor echo / cabin), and the action foley. All files peak at -1 dBFS; the mix lives here (dB, relative to
+# the open hunting rifle). Real figures at the shooter's ear: .22 ~140 dB, rifle 155-165, moderated .22 subsonic
+# ~117, moderated centrefire ~135-140 plus a crack the can cannot stop. Compressed for a game, order preserved.
+const WEAP_DIR := "res://assets/audio/weapons/"
+const SHOT_BASE_DB := -2.0
+const REPORT_DB := {   # blast gain by class (rms-matched: see tools/audio/gunshot_report.txt)
+	"rimfire": -4.0, "intermediate": 0.0, "medium": 0.0, "magnum_brake": -0.7,
+	"sup_rimfire": -27.0, "sup_centre": -20.5,
+}
+const CRACK_DB := -10.0                 # supersonic crack over a moderated blast
+const TAIL_DB := {"out": -3.0, "in": -6.0}
+const TAIL_SUP_DB := -20.0              # a moderated blast excites ~20 dB less echo
+const TAIL_CRACK_DB := -12.0            # what you hear echo back from a moderated supersonic shot: the crack
+const MECH_DB := -14.0
+const POP_DB := 4.0                     # first-round pop: a cold can full of air burns it, louder and brighter
+const POP_REST_S := 90.0
+var _wcache: Dictionary = {}
+var _last_var: Dictionary = {}
+var _last_sup_shot: Dictionary = {}     # rifle id -> ticks (ms) of its last moderated shot
+var last_report: Dictionary = {}        # what the last shot played (tests / debug)
+
+
+func weapon_stream(name: String) -> AudioStream:
+	if _wcache.has(name): return _wcache[name]
+	var path := WEAP_DIR + name + ".wav"
+	var s: AudioStream = null
+	if ResourceLoader.exists(path): s = load(path)
+	elif FileAccess.file_exists(path): s = AudioStreamWAV.load_from_file(path)
+	_wcache[name] = s
+	return s
+
+
+func _variant(base: String, n: int) -> String:
+	var v := _rng.randi_range(0, n - 1)
+	if n > 1 and v == int(_last_var.get(base, -1)): v = (v + 1) % n
+	_last_var[base] = v
+	return "%s_%d" % [base, v]
+
+
+func _play2d(name: String, db: float, pitch := 1.0, delay := 0.0) -> AudioStreamPlayer:
+	var s := weapon_stream(name)
+	if s == null: return null
 	var p := AudioStreamPlayer.new()
-	p.stream = Sfx.get_stream("gunshot")
-	p.volume_db = -2.0
+	p.stream = s; p.volume_db = db; p.pitch_scale = pitch
 	p.finished.connect(p.queue_free)
 	add_child(p)
-	p.play()
+	if delay > 0.0: get_tree().create_timer(delay).timeout.connect(func() -> void: if is_instance_valid(p): p.play())
+	else: p.play()
+	return p
+
+
+## The player's own shot. `rid` picks the report class; a fitted moderator swaps the blast, drops the echo and
+## (supersonic rounds) adds the crack; indoors a cabin slap replaces the outdoor echo. Unmoderated shots dull your
+## hearing for a moment (`deafen`), more so under a roof.
+func gunshot(rid := "") -> void:
+	var cls := RifleDB.report_class(rid) if rid != "" else "medium"
+	var sup := rid != "" and RifleDB.moderated(rid)
+	var supersonic := RifleDB.supersonic(rid) if rid != "" else true
+	var indoor := player != null and player.is_sheltered()
+	var pitch := _rng.randf_range(0.97, 1.03)
+	var blast := ("sup_rimfire" if cls == "rimfire" else "sup_centre") if sup else cls
+	var db: float = SHOT_BASE_DB + float(REPORT_DB.get(blast, 0.0))
+	var pop := false
+	if sup:
+		var now := Time.get_ticks_msec()
+		pop = now - int(_last_sup_shot.get(rid, -1000000)) > int(POP_REST_S * 1000.0)
+		_last_sup_shot[rid] = now
+		if pop: db += POP_DB; pitch *= 1.03
+	var bname := _variant("blast_" + blast, 3)
+	if weapon_stream(bname) == null:   # kit not generated: the old procedural shot
+		var p := AudioStreamPlayer.new(); p.stream = Sfx.get_stream("gunshot"); p.volume_db = -2.0
+		p.finished.connect(p.queue_free); add_child(p); p.play()
+		last_report = {"blast": "procedural"}; return
+	_play2d(bname, db, pitch)
+	var layers := [bname]
+	if sup and supersonic:
+		var cn := _variant("crack", 3); _play2d(cn, SHOT_BASE_DB + CRACK_DB, _rng.randf_range(0.98, 1.02)); layers.append(cn)
+	var tail_db: float = SHOT_BASE_DB + float(TAIL_DB["in" if indoor else "out"])
+	if indoor:
+		_play2d("tail_in", tail_db + (TAIL_SUP_DB if sup else 0.0), pitch); layers.append("tail_in")
+	elif sup:
+		if supersonic: _play2d("tail_crack_out", SHOT_BASE_DB + TAIL_CRACK_DB, 1.0, 0.0); layers.append("tail_crack_out")
+		var tn := _variant("tail_out", 2); _play2d(tn, tail_db + TAIL_SUP_DB - (8.0 if cls == "rimfire" else 0.0), pitch); layers.append(tn)
+	else:
+		var tn2 := _variant("tail_out", 2); _play2d(tn2, tail_db + (-6.0 if cls == "rimfire" else 0.0), pitch); layers.append(tn2)
+	if RifleDB.action(rid) == "semi": _play2d("semi_clack", SHOT_BASE_DB + MECH_DB - 2.0, _rng.randf_range(0.95, 1.05), 0.012); layers.append("semi_clack")
+	if not sup: deafen((1.6 if indoor else 1.0) * (0.55 if cls == "rimfire" else 1.0) * (1.25 if cls == "magnum_brake" else 1.0))
+	last_report = {"rid": rid, "class": cls, "blast": blast, "moderated": sup, "supersonic": supersonic, "indoor": indoor, "pop": pop, "db": db, "layers": layers}
+
+
+## Action foley from the viewmodel's cycle (bolt_up/back/fwd/down, lever_open/close).
+func mech(event: String) -> void:
+	_play2d(event, SHOT_BASE_DB + MECH_DB, _rng.randf_range(0.96, 1.04))
+
+
+# ------------------------------------------------------------ hearing (temporary threshold shift)
+# A bare muzzle blast next to your head dulls everything for a second or two and leaves a faint ring; under a roof
+# it is worse. A moderated shot does not. Low-pass on the Master bus + a quiet 5.6 kHz ring tone.
+var hearing_dose := 0.0                 # 0..1.5, decays
+var _hear_lp: AudioEffectLowPassFilter
+var _ring: AudioStreamPlayer
+const HEAR_RECOVER_S := 1.6
+
+
+func deafen(amount: float) -> void:
+	hearing_dose = minf(1.5, hearing_dose + 0.7 * amount)
+
+
+func _hearing(delta: float) -> void:
+	if _hear_lp == null:
+		for i in AudioServer.get_bus_effect_count(0):   # one per session, not one per world
+			if AudioServer.get_bus_effect(0, i) is AudioEffectLowPassFilter: _hear_lp = AudioServer.get_bus_effect(0, i)
+		if _hear_lp == null:
+			_hear_lp = AudioEffectLowPassFilter.new(); AudioServer.add_bus_effect(0, _hear_lp)
+		_hear_lp.cutoff_hz = 20500.0
+	hearing_dose = maxf(0.0, hearing_dose - delta / HEAR_RECOVER_S * (0.6 + 0.4 * hearing_dose))
+	var k := clampf(hearing_dose, 0.0, 1.0)
+	_hear_lp.cutoff_hz = lerpf(20500.0, 1100.0, pow(k, 0.7))
+	if k > 0.05:
+		if _ring == null:
+			_ring = AudioStreamPlayer.new(); _ring.stream = _ring_stream(); add_child(_ring); _ring.play()
+		_ring.volume_db = lerpf(-60.0, -30.0, k)
+	elif _ring != null:
+		_ring.queue_free(); _ring = null
+
+
+func _exit_tree() -> void:
+	if _hear_lp != null: _hear_lp.cutoff_hz = 20500.0   # never leave the menu muffled
+
+
+func _ring_stream() -> AudioStreamWAV:
+	var rate := 22050; var n := rate   # one second, looped
+	var d := PackedByteArray(); d.resize(n * 2)
+	for i in n:
+		var t := float(i) / rate
+		var v := sin(TAU * 5600.0 * t) * 0.8 + sin(TAU * 5600.0 * 1.0021 * t) * 0.2   # slow beating, like the real thing
+		d.encode_s16(i * 2, int(v * 12000.0))
+	var w := AudioStreamWAV.new(); w.format = AudioStreamWAV.FORMAT_16_BITS; w.mix_rate = rate; w.data = d
+	w.loop_mode = AudioStreamWAV.LOOP_FORWARD; w.loop_end = n
+	return w
 
 
 func play_at(id: String, pos: Vector3, db: float = 0.0, pitch: float = 1.0, unit: float = 12.0, maxd: float = 260.0) -> void:

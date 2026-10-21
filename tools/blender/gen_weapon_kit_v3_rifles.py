@@ -98,7 +98,10 @@ def round_receiver(front_z, rear_z, r=.0165, key='blued'):
 def bolt_parts(rear_z, style='sporter', key='blued'):
     """Bolt (slides +Z) with shroud, safety tab and a handle on the bolt axis (lifts about +Z)."""
     bolt = node('Bolt', (0, .075, rear_z - .040))
-    lathe_d('BoltBody', [(-rear_z + .004, .0092), (-rear_z + .125, .0092)], 'steel_bright', n=20, parent=bolt)
+    lathe_d('BoltBody', [(-rear_z + .004, .0092), (-rear_z + .125, .0092)], 'steel_bright', n=24, parent=bolt)   # jewelled (A mask)
+    # extractor claw down the right side and the two gas-escape holes: what you see when the bolt is drawn back
+    box('Extractor', (.0090, .0745, rear_z - .112), (.0026, .0040, .036), 'steel_bright', .0004, bolt)
+    for dz in (-.090, -.078): cylinder('GasHole', (.0086, .0790, rear_z + dz), (.0096, .0790, rear_z + dz), .0013, 'synthetic_black', 8, bolt)
     lathe_d('BoltShroud', [(-rear_z - .032, .0035), (-rear_z - .028, .0082), (-rear_z - .008, .0108), (-rear_z + .002, .0112)], key, n=24, parent=bolt)
     box('ShroudSafety', (.0100, .0835, rear_z + .016), (.0040, .0035, .010), key, .0006, bolt)
     z0 = rear_z - .016
@@ -190,12 +193,19 @@ def _scope(cy, eye_d, eye_r, tube_r, obj_d, obj_r, ring_ds, key='blued', bases=T
     """Hunting scope on rings: eyepiece at eye_d (<0, toward the eye), objective at obj_d."""
     for d in ring_ds:
         if bases:
-            box('ScopeBase', (0, .0040, d), (.0160, .0080, .0180), key, .0010)
-            for dz in (-.0055, .0055): screw('BaseScrew', (0, .0080, d + dz), 'y', .0019, 'steel_bright', sign=1)
-        loft('RingStand', [(d - .0060, cy - tube_r + .002, .0075, .0064, 3.4), (d + .0060, cy - tube_r + .002, .0075, .0064, 3.4)], key, n=20, sub=1)
+            # two-piece base: a saddle shaped to the receiver with rounded ends, a Weaver cross-slot, two
+            # 6-48 screws standing in counterbores (bigger heads than W6: they vanished at play distance)
+            loft('ScopeBase', [(d - .0105, .0072, .0004, .0042, 2.2), (d - .0080, .0080, .0000, .0080, 3.6),
+                               (d + .0080, .0080, .0000, .0080, 3.6), (d + .0105, .0072, .0004, .0042, 2.2)], key, n=20, sub=2)
+            box('BaseSlot', (0, .0081, d), (.0168, .0014, .0030), 'synthetic_black', .0002)
+            for dz in (-.0060, .0060): screw('BaseScrew', (0, .0081, d + dz), 'y', .0024, 'steel_bright', sign=1)
+        # ring neck: a rounded post from the base clamp up into the ring's lower half (W6's was a square block)
+        loft('RingStand', [(d - .0058, cy - tube_r + .003, .0072, .0047, 2.0), (d, cy - tube_r + .003, .0072, .0050, 2.0),
+                           (d + .0058, cy - tube_r + .003, .0072, .0047, 2.0)], key, n=20, sub=2)
         ring_d('ScopeRing', -d - .0060, tube_r, tube_r + .0024, .012, key, cy=cy)
         for sx in (-1, 1): box('RingSplit', (sx * (tube_r + .0016), cy + .0004, d), (.0030, .0005, .0122), 'synthetic_black', .0001)
-        for sx in (-1, 1): cylinder('RingScrew', (sx * (tube_r + .0024), cy - .0010, d - .003), (sx * (tube_r + .0040), cy - .0010, d - .003), .0016, 'steel_bright', 8)
+        for sx in (-1, 1):   # cap screws, both sides, slotted
+            for dz in (-.0032, .0032): screw('RingScrew', (sx * (tube_r + .0030), cy + .0012, d + dz), 'x', .0018, 'steel_bright', sign=sx)
     ep = eye_d; ob = obj_d
     body = [(ep + .004, eye_r - .0010), (ep + .010, eye_r), (ep + .044, eye_r - .0006), (ep + .066, tube_r), (ob - .070, tube_r),
             (ob - .036, obj_r - .0010), (ob - .004, obj_r), (ob, obj_r), (ob, obj_r - .0018), (ob - .020, obj_r - .0022)]

@@ -55,6 +55,27 @@ void fragment() {
 	else { worn = base * 1.15; }
 	vec3 c = mix(base, worn, clamp(w + rub * (family == 1 ? 0.6 : 0.3), 0.0, 1.0));
 	c *= mix(0.55, 1.0, open);                 // grime in recesses
+	// B = handling polish (bolt knob, trigger, muzzle, grip and fore-end where the hands go)
+	float pol = clamp(COLOR.b * has_mask * wear * 1.3, 0.0, 1.0);
+	if (pol > 0.001) {
+		float pn = smoothstep(0.15, 0.85, pol + (n - 0.5) * 0.5);
+		if (family == 1) { c = mix(c, bare_metal * 0.72, pn * 0.55); rough = mix(rough, 0.38, pol * 0.6); metal = mix(metal, 0.70, pn * 0.5); }   // thinned bluing, grey steel - not chrome
+		else if (family == 0) { c *= mix(1.0, 0.80, pol); rough = mix(rough, 0.40, pol); }   // hand oil: darker, satin
+		else { rough = mix(rough, 0.38, pol); c *= 1.0 + 0.08 * pol; }
+	}
+	// A < 0.5: engine-turned (jewelled) bolt body - overlapping brushed spots around the bolt
+	if (family == 1 && has_mask > 0.5 && COLOR.a < 0.5) {
+		float th = atan(vpos.x, vpos.y);
+		vec2 q = vec2(th * 0.0092, vpos.z) / 0.0042;
+		q.x += 0.5 * mod(floor(q.y), 2.0);
+		vec2 l = fract(q) - 0.5;
+		float d = length(l);
+		float swirl = 0.5 + 0.5 * sin(d * 46.0 + atan(l.y, l.x) * 2.0);
+		float spot = 1.0 - smoothstep(0.42, 0.52, d);
+		c = bare_metal * mix(0.78, 1.05 + 0.15 * swirl, spot);
+		rough = mix(0.32, 0.18 + 0.14 * (1.0 - swirl), spot);
+		metal = 0.95;
+	}
 	if (family == 0) {
 		float pm = max(panel(chk_a), panel(chk_b));
 		if (pm > 0.0) {

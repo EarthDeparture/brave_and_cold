@@ -10,6 +10,17 @@ var grips: Dictionary = {}
 var mirrored := false
 var detail_enabled := false
 var rest_positions: Array[Vector3] = []
+const SKIN_WARM := Color(0.80, 0.66, 0.57)
+const SKIN_COLD := Color(0.90, 0.50, 0.46)   # cold hands: red knuckles and fingers (blood held back, then flushing)
+const SKIN_NUMB := Color(0.70, 0.66, 0.72)   # near frostbite: waxy, blue-grey
+var _skin: Array[StandardMaterial3D] = []
+var cold_k := 0.0
+## 0 = warm .. 0.6 = cold red .. 1 = numb (frostbite risk high).
+func set_cold(k: float) -> void:
+	if absf(k - cold_k) < 0.02: return
+	cold_k = k
+	var c := SKIN_WARM.lerp(SKIN_COLD, clampf(k / 0.6, 0.0, 1.0)) if k <= 0.6 else SKIN_COLD.lerp(SKIN_NUMB, clampf((k - 0.6) / 0.4, 0.0, 1.0))
+	for m in _skin: m.albedo_color = c
 func _ready() -> void:
 	var asset := ASSET.instantiate(); add_child(asset)
 	var arm := asset.find_child("LeftHandRig" if mirrored else "HandRig",true,false)
@@ -25,10 +36,13 @@ func _ready() -> void:
 			mat.cull_mode = BaseMaterial3D.CULL_BACK
 			if mesh == bare:
 				# snow light washed the skin to white plastic: weathered, a touch darker and matte
-				# (blue snow ambient on a pale texture read grey-blue: warmer tint + a little red light through the skin)
-				mat.albedo_color = Color(0.84, 0.64, 0.52)
+				# (blue snow ambient on a pale texture read grey-blue: warmer tint, light scattering under the skin,
+				# and a little red light through thin fingers)
+				mat.albedo_color = SKIN_WARM
 				mat.roughness = 0.72; mat.metallic_specular = 0.3
 				mat.backlight_enabled = true; mat.backlight = Color(0.32, 0.10, 0.06)
+				mat.subsurf_scatter_enabled = true; mat.subsurf_scatter_skin_mode = true; mat.subsurf_scatter_strength = 0.35
+				_skin.append(mat)
 			mesh.set_surface_override_material(i,mat)
 	var player := asset.find_child("AnimationPlayer",true,false) as AnimationPlayer
 	player.stop()
@@ -50,8 +64,16 @@ func _ready() -> void:
 	unused.queue_free()
 	assert(skeleton.get_bone_count() == 17 and grips.has("Relaxed") and grips.has("Magazine"))
 	set_gloved(false); pose("Relaxed")
-func set_gloved(worn: bool) -> void:
+## `tint` colours the leather shell. Its texture is a pale neutral grey, so untinted it rendered as a white
+## rubber glove in the snow light (it was the "pale plastic hand" of W6, not the skin).
+func set_gloved(worn: bool, tint := Color(0.52, 0.38, 0.26)) -> void:
 	bare.visible = not worn; nails.visible = not worn; glove.visible = worn
+	if worn and tint != _glove_tint:
+		_glove_tint = tint
+		for i in glove.mesh.get_surface_count():
+			var m := glove.get_surface_override_material(i) as StandardMaterial3D
+			if m != null: m.albedo_color = tint; m.metallic_specular = 0.3; m.roughness = 0.86
+var _glove_tint := Color(1, 1, 1)
 func pose(grip: String, second := "", blend := 0.0, release := 0.0) -> void:
 	assert(grips.has(grip) and (second == "" or grips.has(second)),"Unknown anatomical grip")
 	var first: Array = grips[grip]

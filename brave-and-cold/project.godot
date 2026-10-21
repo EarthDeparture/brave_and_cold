@@ -77,3 +77,18 @@ sprint={
 [rendering]
 
 rendering_device/driver.windows="d3d12"
+
+[shader_globals]
+
+player_lamp_pos={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+player_lamp_dir={
+"type": "vec4",
+"value": Vector4(0, 0, -1, 1)
+}
+player_lamp_range={
+"type": "float",
+"value": 0.0
+}

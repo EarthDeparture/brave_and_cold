@@ -32,6 +32,9 @@ var _bottle:Node3D
 var watch_override:=false # deterministic render/test fixture
 var _watch_k:=0.0
 var mode := "fists"  # fists | axe | rifle
+const GLOVES := ["hide_mitts", "wolf_mitts", "work_gloves"]
+const GLOVE_TINT := {"hide_mitts": Color(0.58, 0.42, 0.27), "wolf_mitts": Color(0.50, 0.47, 0.44), "work_gloves": Color(0.46, 0.33, 0.22)}
+var hand_cold := 0.0    # GameWorld: 0 warm .. 1 numb (hand frostbite risk + air) -> bare skin colour
 var glove_item := ""  # Existing inventory hands slot; bare when no mitts are worn.
 var _right: SurvivorHandRig
 var _left: SurvivorHandRig
@@ -53,6 +56,7 @@ var light_on := false   # weapon light switched on (GameWorld: L key, battery)
 var torch_on := false   # handheld flashlight in the left hand (GameWorld: L with the rifle lowered)
 var torch_beam: Node3D  # lamp face of the held flashlight (GameWorld parents its SpotLight here)
 var _torch: Node3D
+var _torch_spill: OmniLight3D
 const TORCH_GLB := "res://assets/weapons/v3/lights/flashlight_hand.glb"
 var _weapon_clip := ""
 var _weapon_clip_t := 0.0
@@ -177,9 +181,17 @@ func swing(has_axe: bool, speed := 1.0) -> void:
 	if not has_axe: _combat_hold = .8
 
 
+var flash_mult := 1.0   # GameWorld: 0 with a moderator, 1.4 with a muzzle brake
+signal mech(event: String)   # action foley (bolt / lever) at fixed points of the cycle clip -> GameAudio.mech
+var _cycle_prev := -1.0
+## Fractions of the 0..0.9 cycle clip where each part moves (probed on the v3 clips: ranger bolt back .18-.36, forward .62-.76; lever open .0-.30, closes ~.86).
+const BOLT_EVENTS := [[0.04, "bolt_up"], [0.22, "bolt_back"], [0.62, "bolt_fwd"], [0.79, "bolt_down"]]
+const LEVER_EVENTS := [[0.03, "lever_open"], [0.80, "lever_close"]]
+
 func fire() -> void:
 	_kick = 1.0
 	_fire_t = 0.0
+	_cycle_prev = -1.0
 
 
 func dry() -> void:
@@ -244,8 +256,10 @@ func _process(delta: float) -> void:
 		visible = true
 		_cur = ''
 		_equip = 0.0
-	_right.set_gloved(glove_item in ["hide_mitts", "wolf_mitts"])
-	_left.set_gloved(glove_item in ["hide_mitts", "wolf_mitts"])
+	var gt: Color = GLOVE_TINT.get(glove_item, Color(0.52, 0.38, 0.26))
+	_right.set_gloved(glove_item in GLOVES, gt)
+	_left.set_gloved(glove_item in GLOVES, gt)
+	_right.set_cold(hand_cold); _left.set_cold(hand_cold)
 	# equip / mode switching: lower the old thing, raise the new
 	if mode != _cur:
 		cancel_weapon_clip()
@@ -299,7 +313,7 @@ func _process(delta: float) -> void:
 	off += Vector3(0.0, -0.06 * _push, _push)
 	_flash.light_energy = 0.0
 	if _fire_t >= 0.0 and _fire_t < 0.09 and _kick > 0.5:
-		_flash.light_energy = 7.0 * (1.0 - _fire_t / 0.09)
+		_flash.light_energy = 7.0 * flash_mult * (1.0 - _fire_t / 0.09)
 	var e := _sstep(_equip)
 	off.y -= (1.0 - e) * 0.5
 	off += Vector3(0.025, -0.045, 0.0) * _sprint_k
@@ -356,7 +370,12 @@ func _pose_torch(base: Transform3D) -> void:
 		var wp := WeaponPresentation.new(); wp._apply_materials(_torch); wp.free()
 		for mi: MeshInstance3D in _torch.find_children("*", "MeshInstance3D", true, false): mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		torch_beam = _torch.find_child("*Socket_Beam", true, false) as Node3D
-	var fist := Vector3(-.135, -.205, -.43)
+		# spill: a real torch leaks light out of the bezel and off the reflector rim onto the hand and sleeve
+		_torch_spill = OmniLight3D.new(); _torch_spill.omni_range = 0.55; _torch_spill.light_energy = 0.22
+		_torch_spill.light_color = Color(1.0, 0.93, 0.80); _torch_spill.shadow_enabled = false; _torch_spill.light_specular = 0.2
+		(torch_beam if torch_beam != null else _torch).add_child(_torch_spill); _torch_spill.position = Vector3(0, 0, 0.05)
+	if _torch_spill != null: _torch_spill.visible = torch_on
+	var fist := Vector3(-.135, -.185, -.43)   # 2 cm higher than W6: the fist read too low at night
 	var beam := Vector3(.10, .045, -1.0).normalized()
 	var x := (Basis(Vector3.RIGHT, deg_to_rad(-35.0)) * beam).normalized()
 	var y := (Vector3.RIGHT - x * x.dot(Vector3.RIGHT)).normalized()
@@ -461,6 +480,9 @@ func _pose_rifle(base: Transform3D) -> void:
 		if _fire_t < .30: clip = "fire"; time = _fire_t
 		elif _rifle.is_bolt_action() or _rifle.is_lever_action():
 			clip = "cycle"; cycle = clampf((_fire_t-.30)/.75*.9,0,.9); time = cycle
+			for ev in (LEVER_EVENTS if _rifle.is_lever_action() else BOLT_EVENTS):
+				if _cycle_prev < float(ev[0]) and cycle >= float(ev[0]): mech.emit(String(ev[1]))
+			_cycle_prev = cycle
 	# Socket_Aim belongs to the complete imported model, including inspect tilt.
 	_rifle.sample(clip,time)
 	var mag := tan(deg_to_rad(Player.AIM_FOV*.5))/tan(deg_to_rad(player.cam.fov*.5))

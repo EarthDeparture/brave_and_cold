@@ -127,6 +127,6 @@ func run() -> void:
 	check(units(op,"wood")==0 and units(op,"beans")==4 and op.pantry.count("beans")==34,"fresh loading derives bounded visuals from authoritative saved counts")
 	var exact:=0
 	for pick:ItemPickup in get_nodes_in_group("pickups"):
-		if not Inventory.is_rifle(pick.id):exact+=pick.n
+		if not Inventory.is_rifle(pick.id) and pick.id!="work_gloves":exact+=pick.n   # world-placed loot (rifles, the cabin gloves) is not a drop
 	check(exact==1009,"pickup save/load preserves large quantities and original unit models")
 	w.queue_free();await process_frame;print("SURVIVAL_PROPS_TEST failures=",failures);quit(1 if failures else 0)

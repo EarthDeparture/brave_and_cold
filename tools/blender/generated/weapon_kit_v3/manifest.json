@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "units": "metres",
   "forward_axis": "-Z",
-  "generator_sha256": "01e82bf966edf7f8e4aeeeafdd97c0d470681535a133483dc48965d467e53c2c",
+  "generator_sha256": "0b315d95f77e2cea09ff5bfef81ddf8c04863ef4452247fe60bf7c5d623c0ab0",
   "assets": {
     "compact_patrol_rifle": {
       "kind": "rifle",
@@ -26,7 +26,7 @@
       "triangles": 7328,
       "mesh_nodes": 15,
       "glb": "godot/compact_patrol_rifle.glb",
-      "glb_sha256": "0597d50b0ebe1bd17615bd0d350f852468afb7cc818c6a0ffcb01a1e99145498",
+      "glb_sha256": "0ce7d9b37befceec27dd3692427ebd27786e161b34efb2e6a10424030eafbe87",
       "nodes": [
         "compact_patrol_rifle__Pivot_Bolt",
         "compact_patrol_rifle__Pivot_BoltHandle",
@@ -200,10 +200,10 @@
         0.11649999767541885,
         0.3499999940395355
       ],
-      "triangles": 8464,
-      "mesh_nodes": 11,
+      "triangles": 8644,
+      "mesh_nodes": 12,
       "glb": "godot/north_service_rifle.glb",
-      "glb_sha256": "f6ec44aa8f8d83e35b95e0ba079df6769d5868e9999ee800c6919afb234c1431",
+      "glb_sha256": "e377f823095a24e80baf2427cbd8d3058ef67681caad6fc710afdef7f29d74f2",
       "nodes": [
         "north_service_rifle__Pivot_Bolt",
         "north_service_rifle__Pivot_BoltHandle",
@@ -373,7 +373,7 @@
       "triangles": 7188,
       "mesh_nodes": 11,
       "glb": "godot/frontier_vented_rifle.glb",
-      "glb_sha256": "3acc6e50d6c67a8220c7c7305b370f60323beda6af4070d26fc1df996c7e8d59",
+      "glb_sha256": "f1f50f57ac69cbe96a680046dc2ff5b7e7a42fcf0183e3adf4cbaf349302ec0e",
       "nodes": [
         "frontier_vented_rifle__Pivot_Bolt",
         "frontier_vented_rifle__Pivot_BoltHandle",
@@ -545,10 +545,10 @@
         0.10090000182390213,
         0.3659999966621399
       ],
-      "triangles": 7448,
-      "mesh_nodes": 13,
+      "triangles": 7628,
+      "mesh_nodes": 14,
       "glb": "godot/ranger_box_rifle.glb",
-      "glb_sha256": "34b1e51097686fb15c721459da30b8ed0a270340c382b55b33e84551264d365f",
+      "glb_sha256": "b42a6e930da4e92c5ebfacc9f84ca070e05c151a8b7880f9ebfb841019a0734d",
       "nodes": [
         "ranger_box_rifle__Pivot_Bolt",
         "ranger_box_rifle__Pivot_BoltHandle",
@@ -715,10 +715,10 @@
         0.11599999666213989,
         0.3580000102519989
       ],
-      "triangles": 8528,
-      "mesh_nodes": 13,
+      "triangles": 8708,
+      "mesh_nodes": 14,
       "glb": "godot/timber_bolt_carbine.glb",
-      "glb_sha256": "01040a962b9e11595abac5184a55f7747b94d2247f3d70a2b4a2464e18b6fe2d",
+      "glb_sha256": "627f7cc04367b8e16f87646bd7dcec8a1a5fc689fb5442af2495de22694779ac",
       "nodes": [
         "timber_bolt_carbine__Pivot_Bolt",
         "timber_bolt_carbine__Pivot_BoltHandle",
@@ -888,7 +888,7 @@
       "triangles": 5296,
       "mesh_nodes": 13,
       "glb": "godot/brush_lever_rifle.glb",
-      "glb_sha256": "735c402b31860c7ca521357048f78c39be338d2a7de1afe98aab3405101b8258",
+      "glb_sha256": "7f6405fa75cd7cd6d828226c46fc0cb8b2bdf485256b16522cabfbe1702cc95d",
       "nodes": [
         "brush_lever_rifle__Pivot_Bolt",
         "brush_lever_rifle__Pivot_BoltHandle",
@@ -1033,10 +1033,10 @@
         0.09210000187158585,
         0.36800000071525574
       ],
-      "triangles": 7124,
-      "mesh_nodes": 12,
+      "triangles": 7304,
+      "mesh_nodes": 13,
       "glb": "godot/ridge_scout_rifle.glb",
-      "glb_sha256": "834299ec3ecb193fecdcfb1e386d6285a67f93f428246b8c417ca8f5e4299667",
+      "glb_sha256": "9a655ea6a2de82020d5c60145819d0f37b8095e024e717fbd5d6846b068e444b",
       "nodes": [
         "ridge_scout_rifle__Pivot_Bolt",
         "ridge_scout_rifle__Pivot_BoltHandle",
@@ -1204,10 +1204,10 @@
         0.10329999774694443,
         0.36399999260902405
       ],
-      "triangles": 8664,
-      "mesh_nodes": 13,
+      "triangles": 8844,
+      "mesh_nodes": 14,
       "glb": "godot/expedition_rifle.glb",
-      "glb_sha256": "1b1a76b2d0e52ba35dd688d5a817741e430e095c61dbafeaeef336e0d4134a39",
+      "glb_sha256": "b1f7f87ddea880f30d3c4b950079ae966e3a16996d5feae1dad38bb7c0af2c2d",
       "nodes": [
         "expedition_rifle__Pivot_Bolt",
         "expedition_rifle__Pivot_BoltHandle",
@@ -1377,7 +1377,7 @@
       "triangles": 914,
       "mesh_nodes": 5,
       "glb": "godot/optics/reflex_micro.glb",
-      "glb_sha256": "f29d908da7ba42881236dad9bcf12a9692c7b38a2ae59297549e4dfd5cbbbd9d",
+      "glb_sha256": "8d8bc4e4a9c2b721a2c12d09e2a4da907451cf4e172817255892e3731cd53db9",
       "nodes": [
         "reflex_micro__Socket_Eye",
         "reflex_micro__Socket_Mount"
@@ -1405,7 +1405,7 @@
       "triangles": 1876,
       "mesh_nodes": 4,
       "glb": "godot/optics/reddot_tube.glb",
-      "glb_sha256": "dc54b51319b44727ca7ad8217f25eeabad835f88eeb98fbe0b61b5a4375329e1",
+      "glb_sha256": "5740a48aa9bf5bb7fc3bdfdce175e5474004573cf76e656fe243437f874b2c63",
       "nodes": [
         "reddot_tube__Socket_Eye",
         "reddot_tube__Socket_Mount"
@@ -1433,7 +1433,7 @@
       "triangles": 4800,
       "mesh_nodes": 4,
       "glb": "godot/optics/scope_4x.glb",
-      "glb_sha256": "f93d5fe9cac39e3729e2204be49d6259e780da26ec23bdecd1779707ca6e2738",
+      "glb_sha256": "c422ddc5567abf88585688e978d9f871d12092754d7c381cc760d114cfbf59d6",
       "nodes": [
         "scope_4x__Socket_Eye",
         "scope_4x__Socket_Mount",
@@ -1446,12 +1446,12 @@
       "description": "3-9x40 variable hunting scope on rings and bases",
       "dimensions_m": [
         0.05380000174045563,
-        0.06980000436306,
+        0.06985000436179689,
         0.3149999976158142
       ],
       "bounds_min": [
         -0.024000000208616257,
-        0.0,
+        -4.999999873689376e-05,
         -0.17499999701976776
       ],
       "bounds_max": [
@@ -1459,10 +1459,10 @@
         0.06980000436306,
         0.14000000059604645
       ],
-      "triangles": 7064,
+      "triangles": 8960,
       "mesh_nodes": 6,
       "glb": "godot/optics/scope_3_9x.glb",
-      "glb_sha256": "5295a9267839b56e5eb634c88da1832f87011347761ae57fa1fe2d7a5441699d",
+      "glb_sha256": "0adf98fad4fe7dc2b630e9243eef431c06679144bed84d4f685c0348f2e3b12d",
       "nodes": [
         "scope_3_9x__Socket_Eye",
         "scope_3_9x__Socket_Mount",
@@ -1475,12 +1475,12 @@
       "description": "4-12x50 adjustable-objective scope on high rings",
       "dimensions_m": [
         0.05940000154078007,
-        0.07580000162124634,
+        0.07585000161998323,
         0.3449999988079071
       ],
       "bounds_min": [
         -0.029600000008940697,
-        0.0,
+        -4.999999873689376e-05,
         -0.20000000298023224
       ],
       "bounds_max": [
@@ -1488,10 +1488,10 @@
         0.07580000162124634,
         0.14499999582767487
       ],
-      "triangles": 7204,
+      "triangles": 9100,
       "mesh_nodes": 6,
       "glb": "godot/optics/scope_4_12x.glb",
-      "glb_sha256": "e4bec4c1844e4486395842c3c96b627c58615ddcd35777614fc0e726b538fdbe",
+      "glb_sha256": "5f9242e1f3a6b0ce98305290ae4bac9c006a32601e7b3850190a1a6c2b136076",
       "nodes": [
         "scope_4_12x__Socket_Eye",
         "scope_4_12x__Socket_Mount",
@@ -1520,7 +1520,7 @@
       "triangles": 4468,
       "mesh_nodes": 4,
       "glb": "godot/optics/scope_scout_2x.glb",
-      "glb_sha256": "08038d9e25be006474cf7f9941430d280913e470f0c5225808b97f9eb7f2cefa",
+      "glb_sha256": "c7b7e919ce6e4414aa5fb3c5dc566630cf207ec6dae0128366c8d9656706df85",
       "nodes": [
         "scope_scout_2x__Socket_Eye",
         "scope_scout_2x__Socket_Mount",
@@ -1549,7 +1549,7 @@
       "triangles": 874,
       "mesh_nodes": 4,
       "glb": "godot/lights/light_clamp.glb",
-      "glb_sha256": "547d0da06173858b1e5741b58cd9890d0573a51efb7358e56ce056c05ee0c513",
+      "glb_sha256": "ba9003580abcf439d18e05d3fed1f5b7089c4b24051684d44242d98d5a2304cf",
       "nodes": [
         "light_clamp__Socket_Beam",
         "light_clamp__Socket_Mount"
@@ -1577,7 +1577,7 @@
       "triangles": 886,
       "mesh_nodes": 4,
       "glb": "godot/lights/light_taped.glb",
-      "glb_sha256": "a4681fc392aa23375b7e8a4c6dbe2bb358a0a1c4471fb80ec07b8ff8454e3388",
+      "glb_sha256": "3e8d10b2f369081ae1be8638a37de698ce6c0eed58a98379425d837b430e4952",
       "nodes": [
         "light_taped__Socket_Beam",
         "light_taped__Socket_Mount"
@@ -1605,7 +1605,7 @@
       "triangles": 1222,
       "mesh_nodes": 5,
       "glb": "godot/lights/flashlight_hand.glb",
-      "glb_sha256": "c6379a0dff305e66821fbf16e6e56bcbd4e7f3865474f1197d8706f8349cd899",
+      "glb_sha256": "c28d14e7fea3ab629696dfb5b2adba5dd219fe4154d8273ad7809633bb7c1184",
       "nodes": [
         "flashlight_hand__Socket_Beam",
         "flashlight_hand__Socket_Grip",
@@ -1634,7 +1634,7 @@
       "triangles": 1152,
       "mesh_nodes": 4,
       "glb": "godot/mounts/scout_mount_clamp.glb",
-      "glb_sha256": "8b8785eaf23ab1fb52717bfe9dda1abed5d28fe23263e436a70d997af3c249ad",
+      "glb_sha256": "f96510cc2660037d020ba6e1f06a673158f844e69f6ce9876492a19918c8a813",
       "nodes": [
         "scout_mount_clamp__Socket_Mount",
         "scout_mount_clamp__Socket_OpticMount"
@@ -1690,7 +1690,7 @@
       "triangles": 1144,
       "mesh_nodes": 2,
       "glb": "godot/muzzle/muzzle_brake.glb",
-      "glb_sha256": "a70cd9c9db0a603f4496bbfd21f49920d828530e1efe745b3086cdd188f6fa44",
+      "glb_sha256": "2bb12fbe1cf1656864cd806182cb2f7e76a4107f4e660074b6ecd5a412ceb636",
       "nodes": [
         "muzzle_brake__Socket_Mount",
         "muzzle_brake__Socket_Muzzle"

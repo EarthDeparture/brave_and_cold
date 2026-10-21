@@ -1,6 +1,7 @@
 {
-  "_note": "Per-rifle handling. Art: assets/weapons/v3 (weapon kit v3, modular). All fire the shared 'ammo' item. damage is per hit before zone multiplier (old single rifle = 100). cycle_s = time before the next shot. spread = multiplier on the shared hip/aim cone. noise = multiplier on NoiseBus.RADIUS_GUNSHOT. optic = sight on the receiver: type scope (black tube picture, model hidden) | tube_dot (wide tube, red dot) | reflex (model stays, red dot) | iron (model stays); mag = fixed [m] or variable [min, max] true magnification vs the 70 deg hip view; the mouse wheel steps only variable scopes; reticle = duplex | bdc (first-focal-plane holdover for 200/300/400 m from the real ballistics) | dot | none. mag = rounds before a reload. reload = magazine | single. v3 rifles (weapon kit v3, modular): 'v3': true, 'mounts' = what the rifle can take (optic rail|bases|scout|none, light barrel|none), 'factory' = attachments it is found with, 'irons' = the built-in sight used when no optic is fitted. Their sight comes from the fitted optic in data/attachments.json (RifleDB.optic), not from an 'optic' block. action = bolt | semi | lever (drives the viewmodel cycle). mounts.mount = adapter slot (scout_clamp), mounts.muzzle = thread | none. rimfire: moderators work better. checkering = cut panels on wood [[z0, z1, y_max], ...] (grip / fore-end sides, model space).",
+  "_note": "Per-rifle handling. Art: assets/weapons/v3 (weapon kit v3, modular). All fire the shared 'ammo' item. damage is per hit before zone multiplier (old single rifle = 100). cycle_s = time before the next shot. spread = multiplier on the shared hip/aim cone. noise = multiplier on NoiseBus.RADIUS_GUNSHOT. optic = sight on the receiver: type scope (black tube picture, model hidden) | tube_dot (wide tube, red dot) | reflex (model stays, red dot) | iron (model stays); mag = fixed [m] or variable [min, max] true magnification vs the 70 deg hip view; the mouse wheel steps only variable scopes; reticle = duplex | bdc (first-focal-plane holdover for 200/300/400 m from the real ballistics) | dot | none. mag = rounds before a reload. reload = magazine | single. v3 rifles (weapon kit v3, modular): 'v3': true, 'mounts' = what the rifle can take (optic rail|bases|scout|none, light barrel|none), 'factory' = attachments it is found with, 'irons' = the built-in sight used when no optic is fitted. Their sight comes from the fitted optic in data/attachments.json (RifleDB.optic), not from an 'optic' block. action = bolt | semi | lever (drives the viewmodel cycle). mounts.mount = adapter slot (scout_clamp), mounts.muzzle = thread | none. rimfire: moderators work better. report = gunshot audio class (rimfire | intermediate | medium | magnum_brake, tools/audio/gen_gunshots.py); supersonic defaults to not rimfire (the .22s fire subsonic standard-velocity rounds). checkering = cut panels on wood [[z0, z1, y_max], ...] (grip / fore-end sides, model space).",
   "timber_bolt_carbine": {
+    "report": "medium",
     "name": "Timber Scout Carbine",
     "action": "bolt",
     "mag": 5,
@@ -32,6 +33,7 @@
     "v3": true
   },
   "ranger_box_rifle": {
+    "report": "medium",
     "name": "Ranger Hunting Rifle",
     "action": "bolt",
     "mag": 4,
@@ -75,6 +77,7 @@
     ]
   },
   "frontier_vented_rifle": {
+    "report": "intermediate",
     "name": "Frontier Semi Carbine",
     "action": "semi",
     "mag": 5,
@@ -106,6 +109,7 @@
     "v3": true
   },
   "ridge_scout_rifle": {
+    "report": "medium",
     "name": "Ridge Varmint Rifle",
     "action": "bolt",
     "mag": 5,
@@ -137,6 +141,7 @@
     "v3": true
   },
   "brush_lever_rifle": {
+    "report": "medium",
     "name": "Brush Lever Carbine",
     "action": "lever",
     "mag": 6,
@@ -180,6 +185,7 @@
     ]
   },
   "north_service_rifle": {
+    "report": "medium",
     "name": "North Service Rifle",
     "action": "bolt",
     "mag": 10,
@@ -212,6 +218,7 @@
     "v3": true
   },
   "compact_patrol_rifle": {
+    "report": "rimfire",
     "name": "Compact Rimfire Carbine",
     "desc": "Light .22 rimfire carbine with a birch stock, a micro reflex sight and a barrel-clamp light. Ten quiet rounds; aim for the head.",
     "weight": 2.5,
@@ -244,6 +251,7 @@
     "rimfire": true
   },
   "expedition_rifle": {
+    "report": "magnum_brake",
     "name": "Expedition Magnum",
     "action": "bolt",
     "mag": 4,

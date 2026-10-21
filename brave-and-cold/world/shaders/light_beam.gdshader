@@ -24,7 +24,7 @@ void fragment() {
 	float scene = -vp.z / vp.w;
 	float here = -VERTEX.z;
 	float soft = clamp((scene - here) / 1.5, 0.0, 1.0);          // hidden behind / fading into what it lights
-	float near = smoothstep(0.15, 1.2, here);                      // no smear across the lens
+	float near = smoothstep(0.25, 0.8, here);                      // no smear across the lens
 	float fall = pow(1.0 - along, 1.6) * smoothstep(0.0, 0.05, along);
 	float a = intensity * fall * soft * near * 0.075;
 	ALBEDO = tint * a;

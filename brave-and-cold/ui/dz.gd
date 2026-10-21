@@ -93,6 +93,7 @@ static func item_color(id: String) -> Color:
 		"hide_cap": return Color(0.62, 0.45, 0.26)
 		"wolf_hat": return Color(0.58, 0.58, 0.60)
 		"hide_mitts": return Color(0.62, 0.45, 0.26)
+		"work_gloves": return Color(0.40, 0.29, 0.19)
 		"wolf_mitts": return Color(0.58, 0.58, 0.60)
 		"hide_boots": return Color(0.55, 0.38, 0.22)
 		"hide_leggings": return Color(0.60, 0.43, 0.25)
@@ -309,7 +310,7 @@ static func item_icon(ci: CanvasItem, id: String, r: Rect2, dim: float = 1.0) ->
 			ci.draw_rect(Rect2(c + Vector2(-u * 0.8, u * 0.1), Vector2(u * 1.6, u * 0.4)), lite)
 			if id != "hide_cap":
 				ci.draw_circle(c + Vector2(0, -u * 0.7), u * 0.2, dark)
-		"hide_mitts", "wolf_mitts":
+		"hide_mitts", "wolf_mitts", "work_gloves":
 			_quad(ci, c + Vector2(0, u * 0.15), u * 0.9, u * 1.2, 0.0, col)
 			ci.draw_circle(c + Vector2(-u * 0.5, -u * 0.15), u * 0.28, col)
 			_quad(ci, c + Vector2(0, u * 0.85), u * 1.0, u * 0.3, 0.0, lite)

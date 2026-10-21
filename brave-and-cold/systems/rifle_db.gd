@@ -144,6 +144,18 @@ static func muzzle_for(id: String, f: Dictionary) -> Dictionary:
 	return m
 
 
+## Report class for the gunshot audio (rifles.json "report"): rimfire | intermediate | medium | magnum_brake.
+static func report_class(id: String) -> String:
+	return String(spec(id).get("report", "rimfire" if bool(spec(id).get("rimfire", false)) else "medium"))
+
+## A fitted sound moderator.
+static func moderated(id: String) -> bool:
+	return is_v3(id) and String(attachment(String(fitted(id).get("muzzle", ""))).get("kind", "")) == "muzzle" and muzzle(id).has("noise_mult") and float(muzzle(id).get("noise_mult", 1.0)) < 0.99
+
+## Bullet faster than sound (cracks along its path). The .22s run standard-velocity, subsonic ammunition.
+static func supersonic(id: String) -> bool:
+	return bool(spec(id).get("supersonic", not bool(spec(id).get("rimfire", false))))
+
 ## Signature of the fit (art rebuild + zoom cache key).
 static func fit_sig(id: String) -> String:
 	var f := fitted(id)

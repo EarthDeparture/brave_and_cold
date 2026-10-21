@@ -274,8 +274,11 @@ func _process(delta: float) -> void:
 				var to_me := (global_position + Vector3.UP * 0.5 - player.cam.global_position).normalized()
 				if look.dot(to_me) > 0.975:
 					_dazzle_t += delta
-					want_speed = WALK_SPEED * (0.6 if _dazzle_t < 1.5 else 1.4)
-					_target = pp + Vector3(sin(_state_t * 1.7), 0, cos(_state_t * 1.7)) * 4.0
+					# side-steps out of the beam at its range, then circles in (wolves are wary of a light, not scared off)
+					var away := global_position - pp; away.y = 0.0; away = away.normalized() if away.length() > 0.01 else Vector3.FORWARD
+					var perp := Vector3(-away.z, 0.0, away.x) * (1.0 if sin(_state_t * 0.8 + float(get_instance_id() % 7)) >= 0.0 else -1.0)
+					want_speed = WALK_SPEED * (1.0 if _dazzle_t < 1.5 else 1.6)
+					_target = global_position + perp * 3.0 - away * (0.0 if _dazzle_t < 1.5 else 1.2)
 				else:
 					_dazzle_t = maxf(0.0, _dazzle_t - delta)
 			if dist < BITE_RANGE and absf(pp.y - global_position.y - 1.0) < 2.5:

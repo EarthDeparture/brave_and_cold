@@ -26,6 +26,7 @@ var snow := SnowField.new()
 var noise_bus := NoiseBus.new()
 var player: Player
 var hud: Hud
+var lens_flare: LensFlare
 var reading: ReadingModal
 var forest: ForestScatter
 var plants: PlantField
@@ -395,6 +396,8 @@ func _ready() -> void:
 	hud = Hud.new()
 	add_child(hud)
 	hud.setup(player, body, snow, clock)
+	if not opts.has('nohud'):
+		lens_flare = LensFlare.new(); lens_flare.world = self; add_child(lens_flare)
 	hud.weather = weather
 	hud.visible = not opts.has('nohud')
 	gear = GearScreen.new()
@@ -410,6 +413,7 @@ func _ready() -> void:
 	add_child(audio)
 	audio.detail_enabled = environment_detail_enabled
 	audio.setup(player, self, wind)
+	if viewmodel != null: viewmodel.mech.connect(audio.mech)   # bolt / lever foley
 	audio.weather = weather
 	await _stage(0.95, "Opening the lookout")
 	if opening_state.enabled and fire_lookout != null:
@@ -2121,10 +2125,24 @@ func _update_beams() -> void:
 	var nodes: Array = []
 	if _torch != null: nodes.append(_torch)
 	if viewmodel != null and viewmodel._rifle != null and viewmodel._rifle.lamp != null: nodes.append(viewmodel._rifle.lamp)
+	# the lit lamp for the snow shader (flakes in the cone light up)
+	var lamp: SpotLight3D = null
+	for n: Node in nodes:
+		var sl := n as SpotLight3D
+		if sl != null and sl.visible and sl.light_energy > 0.05 and sl.is_visible_in_tree(): lamp = sl; break
+	if lamp != null:
+		var lp := lamp.global_position; var ld := -lamp.global_basis.z.normalized()
+		RenderingServer.global_shader_parameter_set("player_lamp_pos", Vector4(lp.x, lp.y, lp.z, clampf(lamp.light_energy / 6.0, 0.2, 1.4)))
+		RenderingServer.global_shader_parameter_set("player_lamp_dir", Vector4(ld.x, ld.y, ld.z, cos(deg_to_rad(lamp.spot_angle))))
+		RenderingServer.global_shader_parameter_set("player_lamp_range", lamp.spot_range)
+	elif _lamp_global_on:
+		RenderingServer.global_shader_parameter_set("player_lamp_pos", Vector4.ZERO)
+	_lamp_global_on = lamp != null
 	for n: Node in nodes:
 		var b := n.get_node_or_null("BeamShaft") as MeshInstance3D
 		if b != null: (b.material_override as ShaderMaterial).set_shader_parameter("intensity", k)
 
+var _lamp_global_on := true
 ## Knocks shift a scope's zero: a struggle, a heavy hit while carrying it (drops are handled in drop_item).
 var _was_struggling := false
 var _last_hp := -1.0
@@ -3307,6 +3325,8 @@ func _place_rifle_caches() -> void:
 		var pickup:=ItemPickup.spawn(self, String(s[0]), 1, s[1] as Vector3)
 		if pickup.id=="north_service_rifle" and not stores.is_empty():(stores[0] as Store).support_rifle(pickup)
 	print('RIFLE_CACHES ', spots.map(func(s: Array) -> String: return String(s[0])))
+	if cabins.size() > 1:   # leather work gloves on a cabin floor (W7): hands you can keep a trigger finger in
+		ItemPickup.spawn(self, 'work_gloves', 1, cabins[1].to_global(Vector3(1.4, Cabin.FLOOR_LOCAL_Y + .01, -.6)))
 
 
 func _shoot() -> void:
@@ -3326,11 +3346,13 @@ func _shoot() -> void:
 	if not player.god: inv.set_loaded(ld - 1)
 	_shot_damage = RifleDB.value(rid, 'damage', RIFLE_DAMAGE)
 	_attack_cd = RifleDB.value(rid, 'cycle_s', 1.2)
+	viewmodel.flash_mult = _flash_mult(rid)
 	viewmodel.fire()
 	noise_bus.emit_noise(player.position, NoiseBus.RADIUS_GUNSHOT * RifleDB.value(rid, 'noise', 1.0) * float(RifleDB.muzzle(rid).get('noise_mult', 1.0)), player)
-	audio.gunshot()
+	audio.gunshot(rid)
 	var eye := player.cam.global_position
 	var dir := _shot_dir()
+	_bullet_crack = RifleDB.moderated(rid) and RifleDB.supersonic(rid)
 	player.pitch += lerpf(0.022, 0.014, player.aim_k) * RifleDB.value(rid, 'recoil', 1.0)  # recoil kick, player pulls it back down
 	player.yaw += randf_range(-0.004, 0.004)
 	_spawn_bullet(eye, dir)
@@ -3346,12 +3368,29 @@ var bullets: Array = []
 var instant_bullets: bool = "autostart" in OS.get_cmdline_user_args()
 
 
+## Muzzle flash strength: a moderator traps it, a brake throws it sideways (bigger, brighter).
+func _flash_mult(rid: String) -> float:
+	if RifleDB.moderated(rid): return 0.0
+	return 1.4 if RifleDB.report_class(rid) == 'magnum_brake' else 1.0
+
+## A moderated SUPERSONIC bullet still cracks along its path (the can only quiets the muzzle). Zombies near the
+## path hear the crack and go to look THERE: the real misdirection of a suppressed rifle. (An open shot's blast
+## carries 150 m and points straight back at you, so it gets no crack events.)
+const CRACK_EVERY_M := 25.0
+const CRACK_R := 20.0
+const CRACK_TO_M := 160.0
+const IMPACT_R := 10.0
+var _bullet_crack := false
+var crack_log: Array = []   # tests: where the last bullet cracked
+
 func _spawn_bullet(eye: Vector3, dir: Vector3) -> void:
 	var d := dir
 	var rt := dir.cross(Vector3.UP)
 	if rt.length() > 0.01:
 		d = dir.rotated(rt.normalized(), 0.5 * GRAV * ZERO_M / (MUZZLE_V * MUZZLE_V))
-	var b := {'p': eye, 'v': d * MUZZLE_V, 'dist': 0.0, 't': 0.0}
+	var b := {'p': eye, 'v': d * MUZZLE_V, 'dist': 0.0, 't': 0.0, 'crack': _bullet_crack, 'next_crack': CRACK_EVERY_M}
+	crack_log = []
+	_bullet_crack = false
 	if instant_bullets:
 		var res := {}
 		while res.is_empty():
@@ -3374,6 +3413,11 @@ func _step_bullet(b: Dictionary, dt: float) -> Dictionary:
 	b['p'] = p0 + seg
 	b['dist'] = d0 + sl
 	b['t'] = float(b['t']) + dt
+	while bool(b.get('crack', false)) and float(b['dist']) >= float(b['next_crack']) and float(b['next_crack']) <= CRACK_TO_M:
+		var cp: Vector3 = p0 + (seg / sl) * (float(b['next_crack']) - d0)
+		if noise_bus != null: noise_bus.emit_noise(cp, CRACK_R, null)
+		crack_log.append(cp)
+		b['next_crack'] = float(b['next_crack']) + CRACK_EVERY_M
 	if not r.is_empty():
 		r['pos'] = p0 + (seg / sl) * float(r.get('t', 0.0))
 		r['t'] = d0 + float(r.get('t', 0.0))
@@ -3413,7 +3457,10 @@ func _bullet_result(r: Dictionary) -> void:
 	elif r.has('world'):
 		if r.has('pos'):
 			var ip: Vector3 = r['pos']
-			_impact_fx('snow' if ip.y - _ground_y(ip.x, ip.z) < 0.6 else 'wood', ip)
+			var soft := ip.y - _ground_y(ip.x, ip.z) < 0.6
+			_impact_fx('snow' if soft else 'wood', ip)
+			if audio != null: audio.play_at('thud' if soft else 'chop', ip, -10.0 if soft else -4.0, randf_range(1.25, 1.45) if soft else randf_range(1.05, 1.2), 6.0, 120.0)
+			if noise_bus != null: noise_bus.emit_noise(ip, IMPACT_R * (0.6 if soft else 1.0), null)   # the thwack where it lands
 		_say('Bang. Hit the terrain')
 		last_shot = {'hit': false, 'world': true, 't': r['t']}
 	else:
@@ -4257,6 +4304,7 @@ func _update_viewmodel() -> void:
 	player.needs=needs
 	viewmodel.game_clock=clock
 	viewmodel.glove_item = String(inv.extra.get('hands', '')) if inv != null else ''
+	viewmodel.hand_cold = clampf(float(frostbite.risk.get('hands', 0.0)) / 100.0 * 1.4 + maxf(0.0, -(body.feels_like if body != null else 0.0) - 4.0) / 30.0 * 0.45, 0.0, 1.0)
 	if inv != null:
 		if rifle_up and inv.count('rifle') > 0:
 			m = 'rifle'
@@ -4460,6 +4508,8 @@ func gunsmith_zero(rid: String) -> String:
 	return ''
 
 func _gunsmith_zero_done(rid: String) -> void:
+	for i in 3:   # three real shots from the bench, spaced like aimed fire
+		get_tree().create_timer(0.15 + 1.6 * i).timeout.connect(func() -> void: if audio != null: audio.gunshot(rid))
 	for i in 3: inv.remove('ammo')
 	if inv.loaded.has(rid): inv.loaded[rid] = mini(int(inv.loaded[rid]), inv.count('ammo'))
 	inv.zero[rid] = [0.0, 0.0]

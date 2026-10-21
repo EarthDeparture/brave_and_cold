@@ -111,6 +111,7 @@ const ITEMS := {
 	"hide_cap": {"name": "Hide Cap", "kind": "clothing", "stack": 1, "slot": "head", "warmth": 0.06, "windproof": 0.05, "waterproof": 0.02, "desc": "Crude leather cap."},
 	"wolf_hat": {"name": "Wolf Fur Hat", "kind": "clothing", "stack": 1, "slot": "head", "warmth": 0.10, "windproof": 0.10, "waterproof": 0.05, "desc": "Fur hat with ear flaps. Keeps the wind off your skull."},
 	"hide_mitts": {"name": "Hide Mitts", "kind": "clothing", "stack": 1, "slot": "hands", "warmth": 0.06, "windproof": 0.10, "waterproof": 0.05, "desc": "Rough leather mitts."},
+	"work_gloves": {"name": "Leather Work Gloves", "kind": "clothing", "stack": 1, "slot": "hands", "warmth": 0.04, "windproof": 0.06, "waterproof": 0.02, "desc": "Lined leather work gloves. Fingers free for a trigger and a match."},
 	"wolf_mitts": {"name": "Wolf Fur Mitts", "kind": "clothing", "stack": 1, "slot": "hands", "warmth": 0.10, "windproof": 0.12, "waterproof": 0.05, "desc": "Fur-lined mitts. Hands stay alive."},
 	"hide_boots": {"name": "Hide Boots", "kind": "clothing", "stack": 1, "slot": "feet", "warmth": 0.08, "windproof": 0.10, "waterproof": 0.10, "desc": "Laced leather boots. Not pretty, dry-ish."},
 	"hide_leggings": {"name": "Hide Leggings", "kind": "clothing", "stack": 1, "slot": "legs", "warmth": 0.10, "windproof": 0.10, "waterproof": 0.05, "desc": "Leather leggings tied at the knee."},

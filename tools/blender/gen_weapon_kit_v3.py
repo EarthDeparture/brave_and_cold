@@ -173,6 +173,26 @@ def rect_lens(name, d, w, h, cy, key='glass', tilt=0.0, parent=None):
 
 
 # ---------------------------------------------------------------- wear mask (vertex colours)
+def _ramp(x, a, b): return max(0.0, min(1.0, (x - a) / (b - a))) if b != a else 0.0
+
+
+def polish(name, z, y, zmin):
+    """B channel: where hands, slings and holsters rub a rifle smooth (bluing thinned to white metal,
+    wood darkened and oiled). Game coords: z forward-negative from the trigger hand reference."""
+    if 'BoltKnob' in name: return 0.60
+    if 'BoltHandleArm' in name: return 0.55
+    if 'TriggerBlade' in name: return 0.75
+    if 'TriggerGuardBow' in name: return 0.30 + 0.40 * _ramp(-z, -0.01, 0.03)
+    if name.startswith('Barrel') or 'Barrel.' in name: return 0.85 * (1.0 - _ramp(z - zmin, 0.0, 0.045))     # muzzle: sling + door frames
+    if name.startswith('Stock'):
+        grip = _ramp(z, 0.015, 0.035) * (1.0 - _ramp(z, 0.11, 0.14)) * (1.0 - _ramp(y, 0.065, 0.080))
+        comb = _ramp(z, 0.13, 0.16) * (1.0 - _ramp(z, 0.28, 0.32)) * _ramp(y, 0.070, 0.090)
+        return max(0.55 * grip, 0.35 * comb)
+    if name.startswith('ForeEnd') or name.startswith('Handguard'):
+        return 0.5 * _ramp(z, -0.42, -0.38) * (1.0 - _ramp(z, -0.24, -0.20))
+    return 0.0
+
+
 def wear_colors(o):
     """R = convexity (edge wear), G = 1 - cavity (open = 1). Local-space, transform-safe."""
     me = o.data
@@ -189,10 +209,14 @@ def wear_colors(o):
         conv[v.index] = acc / len(v.link_edges)
     bm.free()
     attr = me.color_attributes.new('Col', 'BYTE_COLOR', 'POINT')
+    mw = o.matrix_world
+    gz = [-(mw @ v.co).y for v in me.vertices]; gy = [(mw @ v.co).z for v in me.vertices]   # game z (forward -), game y
+    zmin = min(gz) if gz else 0.0
+    jewel = 0.0 if 'BoltBody' in o.name else 1.0
     for i, v in enumerate(me.vertices):
         c = conv.get(i, 0.0)
         wear = max(0.0, min(1.0, (c - 0.06) * 3.5)); open_ = 1.0 - max(0.0, min(1.0, (-c - 0.06) * 3.5))
-        attr.data[i].color = (wear, open_, 0.0, 1.0)
+        attr.data[i].color = (wear, open_, polish(o.name, gz[i], gy[i], zmin), jewel)
     me.color_attributes.active_color = attr
 
 
