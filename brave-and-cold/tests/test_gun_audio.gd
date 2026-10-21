@@ -82,5 +82,28 @@ func run() -> void:
 	var t0 := Time.get_ticks_msec()
 	while Time.get_ticks_msec() - t0 < 2500 and evs.size() < 4: await process_frame
 	check(evs == ["bolt_up", "bolt_back", "bolt_fwd", "bolt_down"], "bolt cycle foley in order (%s)" % str(evs))
+	# W8: reload foley (bolt rifle empty reload, then a self-loader), dry click
+	await frames(30); evs.clear()
+	w.viewmodel.play_weapon_clip("reload_empty")
+	t0 = Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 3600 and w.viewmodel._weapon_clip != "": await process_frame
+	check(evs == ["mag_release", "mag_out", "mag_in", "mag_seat", "bolt_up", "bolt_back", "bolt_fwd", "bolt_down"], "bolt rifle empty reload foley in order (%s)" % str(evs))
+	evs.clear()
+	w.inv.use("compact_patrol_rifle"); w.rifle_up = true; await frames(40)
+	w.viewmodel.play_weapon_clip("reload_empty")
+	t0 = Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 3600 and w.viewmodel._weapon_clip != "": await process_frame
+	check(evs.has("charge_back") and evs.has("bolt_release") and not evs.has("bolt_up"), "self-loader works its charging handle, not a bolt handle (%s)" % str(evs))
+	evs.clear(); w.viewmodel.dry()
+	check(evs == ["dry_click"] and a.weapon_stream("dry_click") != null, "dry fire clicks")
+	# W8: buses - the hearing dip lives on World; menu sounds stay on Master
+	check(AudioServer.get_bus_index("World") > 0 and a._hear_lp != null, "World bus carries the hearing low-pass")
+	var master_lp := false
+	for i in AudioServer.get_bus_effect_count(0): master_lp = master_lp or AudioServer.get_bus_effect(0, i) is AudioEffectLowPassFilter
+	check(not master_lp, "Master has no hearing filter (menu clicks never muffled)")
+	var wp := AudioStreamPlayer3D.new(); w.add_child(wp)
+	var up := AudioStreamPlayer.new(); up.name = "UiSound_test"; root.add_child(up)
+	check(wp.bus == "World" and up.bus == "Master", "in-world players go to World, UI sounds stay on Master")
+	wp.queue_free(); up.queue_free()
 	w.queue_free(); await process_frame; await process_frame
 	print("GUN_AUDIO_TEST checks=", checks, " failures=", failures); quit(1 if failures else 0)

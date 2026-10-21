@@ -2138,6 +2138,10 @@ func _update_beams() -> void:
 	elif _lamp_global_on:
 		RenderingServer.global_shader_parameter_set("player_lamp_pos", Vector4.ZERO)
 	_lamp_global_on = lamp != null
+	if snowfall != null and weather != null:   # dense flakes in the beam (only when snowing, dark, outside)
+		var night: float = sky_rig.gameplay_night_factor if sky_rig != null else 0.0
+		var bk := weather.precip * clampf((night - 0.25) * 2.0, 0.0, 1.0) * (1.0 - _indoor_k) if lamp != null else 0.0   # storm gloom by day is not dark enough
+		snowfall.set_beam(lamp.global_position if lamp != null else Vector3.ZERO, -lamp.global_basis.z if lamp != null else Vector3.FORWARD, bk)
 	for n: Node in nodes:
 		var b := n.get_node_or_null("BeamShaft") as MeshInstance3D
 		if b != null: (b.material_override as ShaderMaterial).set_shader_parameter("intensity", k)

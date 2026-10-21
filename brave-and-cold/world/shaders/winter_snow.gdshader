@@ -22,11 +22,12 @@ void vertex() {
 		float fall = pow(clamp(1.0 - d / player_lamp_range, 0.0, 1.0), 2.0) / (1.0 + 0.05 * d * d);
 		lamp_lit = player_lamp_pos.w * cone * fall;
 	}
-	// a lit flake glints: it reads bigger than a dark one of the same size
-	float grow = 1.0 + 1.4 * clamp(lamp_lit * 2.5, 0.0, 1.0);
+	// a lit flake glints a little bigger, and falling fast through the beam it smears into a short streak
+	// (exposure blur) instead of reading as a round bokeh disc
+	float lk = clamp(lamp_lit * 2.5, 0.0, 1.0);
 	mat4 facing = mat4(
-		INV_VIEW_MATRIX[0]*length(MODEL_MATRIX[0].xyz)*grow,
-		INV_VIEW_MATRIX[1]*length(MODEL_MATRIX[1].xyz)*grow,
+		INV_VIEW_MATRIX[0]*length(MODEL_MATRIX[0].xyz)*(1.0 + 0.25 * lk),
+		INV_VIEW_MATRIX[1]*length(MODEL_MATRIX[1].xyz)*(1.0 + 1.3 * lk),
 		INV_VIEW_MATRIX[2]*length(MODEL_MATRIX[2].xyz),
 		MODEL_MATRIX[3]);
 	MODELVIEW_MATRIX = VIEW_MATRIX * facing;
@@ -48,7 +49,7 @@ void fragment() {
 	float lit = lamp_lit;
 	// flakes a metre or two away in the beam are the brightest thing in it: let them come close when lit
 	float cam_d = length(flake_position-CAMERA_POSITION_WORLD);
-	float fade_k = mix(near_fade, smoothstep(0.22, 0.7, cam_d), clamp(lit * 3.0, 0.0, 1.0));
-	ALBEDO = flake_tint + vec3(1.0, 0.95, 0.85) * lit * 7.0;
-	ALPHA = clamp(disc * fade_k * (0.70 + 0.30 * min(lit * 2.0, 1.0)), 0.0, 1.0);
+	float fade_k = mix(near_fade, smoothstep(0.35, 1.3, cam_d), clamp(lit * 3.0, 0.0, 1.0));
+	ALBEDO = flake_tint + vec3(1.0, 0.95, 0.85) * lit * 4.5;
+	ALPHA = clamp(disc * fade_k * (0.70 - 0.15 * min(lit * 2.0, 1.0)), 0.0, 1.0);   // lit near flakes are soft, out of focus
 }

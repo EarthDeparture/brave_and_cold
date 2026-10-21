@@ -35,6 +35,7 @@ var _dist := 1.30
 var _drag := false
 var _drag_from := Vector2.ZERO
 var _msg := ""
+var action_open := false    # inspect with the bolt drawn back / lever open (extractor, jewelled bolt, chamber)
 var _scroll := 0.0          # slot column scroll (wheel over the column)
 var _content_h := 0.0
 var _tab_cmp := ""          # rifle tab under the mouse: compared with the selected rifle
@@ -112,10 +113,21 @@ func _process(delta: float) -> void:
 	_cam.position = Vector3(sin(_yaw) * cos(_pitch), -sin(_pitch), cos(_yaw) * cos(_pitch)) * _dist
 	_cam.look_at(Vector3.ZERO, Vector3.UP)
 	if _gun != null and _gun.fit_sig != RifleDB.fit_sig(rid): _rebuild_gun()
+	if _gun != null: _pose_action()
 	_bg.queue_redraw(); _c.queue_redraw()
 
 
 func drag_held() -> bool: return _drag
+
+
+## Bolt rifles and the lever: the cycle clip held at its open point; self-loaders: the empty-reload clip with
+## the charging handle held back.
+func _pose_action() -> void:
+	var clip := "idle"; var t := 0.0
+	if action_open:
+		if RifleDB.action(rid) in ["bolt", "lever"]: clip = "cycle"; t = 0.45
+		else: clip = "reload_empty"; t = 2.2
+	if _gun.animation_player != null and _gun.animation_player.has_animation(clip): _gun.sample(clip, t)
 
 
 func _scale() -> float: return minf(_c.size.x / VW, _c.size.y / VH)
@@ -225,6 +237,7 @@ func _draw_all() -> void:
 		x += 138.0
 		if x > 1340: break
 	_c.draw_rect(VIEW_R, DZ.EDGE, false, 1.5)
+	_button(Rect2(VIEW_R.end - Vector2(176, 44), Vector2(166, 34)), "CLOSE ACTION" if action_open else "OPEN ACTION", func() -> void: action_open = not action_open, true, 15)
 	DZ.text(_c, "drag: turn     wheel: closer", VIEW_R.position + Vector2(10, VIEW_R.size.y - 10), 15, DZ.DIM)
 	_preview = {}
 	_draw_slots(Vector2(934, 182))

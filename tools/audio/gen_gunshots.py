@@ -237,6 +237,16 @@ def mech(src, seed):
     out["lever_open"] = clip(lock, nth_onset(lock, 0), 0.14, 0.95, 200)
     out["lever_close"] = clip(latch, lo, 0.16, 0.82, 120)
     out["semi_clack"] = clip(latch, lo, 0.07, 1.35, 700)                         # bolt carrier slams
+    # reload / handling foley (W8)
+    out["mag_release"] = clip(flick, nth_onset(flick, 2), 0.06, 1.30, 900, 7000)  # latch button
+    out["mag_out"] = clip(screw, nth_onset(screw, 1), 0.14, 0.95, 250, 5500)       # box slides out of the well
+    out["mag_in"] = clip(screw, nth_onset(screw, 3), 0.12, 0.90, 250, 5500)        # box slides in
+    out["mag_seat"] = clip(latch, lo, 0.12, 1.08, 150, 6000)                       # latch catches: firm click
+    out["charge_back"] = clip(screw, nth_onset(screw, 4), 0.16, 0.85, 200, 5000)   # charging handle drawn back
+    out["bolt_release"] = clip(latch, lo, 0.10, 1.20, 300, 7000)                   # carrier slams home
+    out["round_insert"] = clip(lock, nth_onset(lock, 1), 0.10, 1.10, 300, 6500)    # cartridge pushed past the gate
+    out["gate_close"] = clip(flick, nth_onset(flick, 3), 0.06, 1.40, 800, 7000)    # gate spring snaps back
+    out["dry_click"] = clip(flick, nth_onset(flick, 4), 0.05, 1.60, 1200, 8000)    # firing pin on an empty chamber
     return out
 
 

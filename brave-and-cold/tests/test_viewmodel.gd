@@ -168,7 +168,7 @@ func run() -> void:
 		check("Drink grip touches flask without deep overlap "+str(gloved),contacts>100 and overlap<.0035)
 		vm.end_work(false)
 	pose("axe");vm.glove_item="hide_mitts";vm._process(0)
-	check("Mitts select new leather shells and hide nails",vm._right.glove.visible and not vm._right.bare.visible and not vm._right.nails.visible)
+	check("Mitts select the leather mitten shell (W8) and hide nails",vm._right.mitten!=null and vm._right.mitten.visible and not vm._right.glove.visible and not vm._right.bare.visible and not vm._right.nails.visible)
 	vm.glove_item="";vm._process(0)
 	check("Removing mitts restores bare hands and nails",vm._right.bare.visible and vm._right.nails.visible and not vm._right.glove.visible)
 	p.dead=true;vm._process(.1);check("Death hides viewmodel",not vm.visible)

@@ -3,6 +3,7 @@ extends Node
 ## Mixes ambience (wind, muffled when sheltered), footsteps, gunshots, hits and creature voices.
 
 const AMBIENT_BUS := "Ambient"
+const WORLD_BUS := "World"   # everything heard in the world (hearing loss applies); menu/UI sounds stay on Master
 
 var detail_enabled := false
 var _detail_rng := RandomNumberGenerator.new()
@@ -43,16 +44,21 @@ func setup(p: Player, w: Node, wind: float) -> void:
 	wind_speed = wind
 	_rng.randomize()
 	_detail_rng.seed = 8173
+	_ensure_world_bus()
+	get_tree().node_added.connect(_on_node_added)
+	for cls in ["AudioStreamPlayer", "AudioStreamPlayer2D", "AudioStreamPlayer3D"]:   # built before audio setup
+		for n in get_tree().root.find_children("*", cls, true, false): _on_node_added(n)
 	if AudioServer.get_bus_index(AMBIENT_BUS) == -1:
 		AudioServer.add_bus()
 		var idx := AudioServer.bus_count - 1
 		AudioServer.set_bus_name(idx, AMBIENT_BUS)
-		AudioServer.set_bus_send(idx, "Master")
+		AudioServer.set_bus_send(idx, WORLD_BUS)
 		_lp = AudioEffectLowPassFilter.new()
 		_lp.cutoff_hz = 20000.0
 		AudioServer.add_bus_effect(idx, _lp)
 	else:
 		_lp = AudioServer.get_bus_effect(AudioServer.get_bus_index(AMBIENT_BUS), 0) as AudioEffectLowPassFilter
+		AudioServer.set_bus_send(AudioServer.get_bus_index(AMBIENT_BUS), WORLD_BUS)
 	_wind = AudioStreamPlayer.new()
 	_wind.stream = Sfx.get_stream("wind")
 	_wind.bus = AMBIENT_BUS
@@ -228,8 +234,11 @@ func gunshot(rid := "") -> void:
 
 
 ## Action foley from the viewmodel's cycle (bolt_up/back/fwd/down, lever_open/close).
+const MECH_TRIM := {"dry_click": 8.0, "gate_close": 4.0, "mag_release": -2.0, "bolt_release": 2.0}
+var last_mech := ""
 func mech(event: String) -> void:
-	_play2d(event, SHOT_BASE_DB + MECH_DB, _rng.randf_range(0.96, 1.04))
+	last_mech = event
+	_play2d(event, SHOT_BASE_DB + MECH_DB + float(MECH_TRIM.get(event, 0.0)), _rng.randf_range(0.96, 1.04))
 
 
 # ------------------------------------------------------------ hearing (temporary threshold shift)
@@ -241,23 +250,43 @@ var _ring: AudioStreamPlayer
 const HEAR_RECOVER_S := 1.6
 
 
+## World bus right after Master (a bus may only send toward Master), holding the hearing low-pass.
+static func _ensure_world_bus() -> void:
+	if AudioServer.get_bus_index(WORLD_BUS) != -1: return
+	AudioServer.add_bus(1)
+	AudioServer.set_bus_name(1, WORLD_BUS)
+	AudioServer.set_bus_send(1, "Master")
+
+
+## Any in-world player that lands on Master goes to the World bus (radio, fires, creatures, foley), so a
+## gunshot's hearing dip dulls the world but never the menu clicks (those are named UiSound_*).
+func _on_node_added(n: Node) -> void:
+	if n is AudioStreamPlayer or n is AudioStreamPlayer3D or n is AudioStreamPlayer2D:
+		if String(n.name).begins_with("UiSound_"): return
+		if String(n.get("bus")) == "Master": n.set("bus", WORLD_BUS)
+
+
 func deafen(amount: float) -> void:
 	hearing_dose = minf(1.5, hearing_dose + 0.7 * amount)
 
 
 func _hearing(delta: float) -> void:
 	if _hear_lp == null:
-		for i in AudioServer.get_bus_effect_count(0):   # one per session, not one per world
-			if AudioServer.get_bus_effect(0, i) is AudioEffectLowPassFilter: _hear_lp = AudioServer.get_bus_effect(0, i)
+		_ensure_world_bus()
+		var wb := AudioServer.get_bus_index(WORLD_BUS)
+		for i in AudioServer.get_bus_effect_count(wb):   # one per session, not one per world
+			if AudioServer.get_bus_effect(wb, i) is AudioEffectLowPassFilter: _hear_lp = AudioServer.get_bus_effect(wb, i)
 		if _hear_lp == null:
-			_hear_lp = AudioEffectLowPassFilter.new(); AudioServer.add_bus_effect(0, _hear_lp)
+			_hear_lp = AudioEffectLowPassFilter.new(); AudioServer.add_bus_effect(wb, _hear_lp)
 		_hear_lp.cutoff_hz = 20500.0
 	hearing_dose = maxf(0.0, hearing_dose - delta / HEAR_RECOVER_S * (0.6 + 0.4 * hearing_dose))
 	var k := clampf(hearing_dose, 0.0, 1.0)
 	_hear_lp.cutoff_hz = lerpf(20500.0, 1100.0, pow(k, 0.7))
 	if k > 0.05:
 		if _ring == null:
-			_ring = AudioStreamPlayer.new(); _ring.stream = _ring_stream(); add_child(_ring); _ring.play()
+			_ring = AudioStreamPlayer.new(); _ring.stream = _ring_stream(); add_child(_ring)
+			_ring.bus = "Master"   # the ring is inside your ear: not dulled by the dip it belongs to
+			_ring.play()
 		_ring.volume_db = lerpf(-60.0, -30.0, k)
 	elif _ring != null:
 		_ring.queue_free(); _ring = null
@@ -265,6 +294,7 @@ func _hearing(delta: float) -> void:
 
 func _exit_tree() -> void:
 	if _hear_lp != null: _hear_lp.cutoff_hz = 20500.0   # never leave the menu muffled
+	if get_tree() != null and get_tree().node_added.is_connected(_on_node_added): get_tree().node_added.disconnect(_on_node_added)
 
 
 func _ring_stream() -> AudioStreamWAV:

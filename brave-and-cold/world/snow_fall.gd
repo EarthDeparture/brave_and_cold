@@ -147,6 +147,41 @@ func enable_winter_presentation() -> void:
 	quad.material = _winter_material
 	draw_pass_1 = quad
 
+## W8: extra flakes right in front of the player's lamp. The main box is ~0.8 flakes/m3 spread over 26 m, so
+## a beam caught only a few; real snowfall in a torch is a dense sparkling cone 0.5-7 m out. World-aligned box
+## around the beam's first 7 m; the shared flake shader lights the ones inside the cone (the rest stay dark at
+## night). Roof collision and shelter masks apply as for the main snowfall. k = precip x darkness, 0 = off.
+var beam: GPUParticles3D
+var _beam_pm: ParticleProcessMaterial
+const BEAM_AMOUNT := 900
+func set_beam(lamp_pos: Vector3, lamp_dir: Vector3, k: float) -> void:
+	if _winter_material == null: return
+	if beam == null:
+		if k <= 0.03: return
+		beam = GPUParticles3D.new(); beam.name = "BeamFlakes"; beam.top_level = true
+		beam.amount = BEAM_AMOUNT; beam.lifetime = 1.4; beam.preprocess = 1.0; beam.local_coords = false
+		beam.visibility_aabb = AABB(Vector3(-8, -8, -8), Vector3(16, 16, 16))
+		beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_beam_pm = ParticleProcessMaterial.new()
+		_beam_pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+		_beam_pm.emission_box_extents = Vector3(3.2, 2.2, 3.2)
+		_beam_pm.direction = Vector3(0, -1, 0); _beam_pm.spread = 8.0
+		_beam_pm.initial_velocity_min = 1.8; _beam_pm.initial_velocity_max = 3.0
+		_beam_pm.turbulence_enabled = true; _beam_pm.turbulence_noise_strength = 0.8; _beam_pm.turbulence_noise_scale = 2.5
+		_beam_pm.turbulence_influence_min = 0.03; _beam_pm.turbulence_influence_max = 0.09
+		_beam_pm.scale_min = 0.35; _beam_pm.scale_max = 0.9
+		_beam_pm.collision_mode = ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT
+		beam.process_material = _beam_pm
+		beam.draw_pass_1 = draw_pass_1
+		add_child(beam)
+	var on := k > 0.03
+	if on and not beam.emitting: beam.restart()
+	beam.emitting = on
+	beam.amount_ratio = clampf(k, 0.05, 1.0)
+	beam.global_position = lamp_pos + lamp_dir.normalized() * 3.6
+	_beam_pm.gravity = _pm.gravity
+
+
 func set_light_tint(color: Color) -> void:
 	if _winter_material != null:
 		_winter_material.set_shader_parameter("flake_tint",color)

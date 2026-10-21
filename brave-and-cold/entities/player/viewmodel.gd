@@ -187,6 +187,16 @@ var _cycle_prev := -1.0
 ## Fractions of the 0..0.9 cycle clip where each part moves (probed on the v3 clips: ranger bolt back .18-.36, forward .62-.76; lever open .0-.30, closes ~.86).
 const BOLT_EVENTS := [[0.04, "bolt_up"], [0.22, "bolt_back"], [0.62, "bolt_fwd"], [0.79, "bolt_down"]]
 const LEVER_EVENTS := [[0.03, "lever_open"], [0.80, "lever_close"]]
+## Reload foley (probed on the v3 clips: magazine out .36-1.04, in 1.28-1.88; empty reloads then work the
+## action 1.92-2.68; lever loading gate .12-.28, round in by .56). [time, event, who: all|bolt|semi|lever]
+const RELOAD_EVENTS := {
+	"reload_tactical": [[0.32, "mag_release", "all"], [0.40, "mag_out", "all"], [1.30, "mag_in", "all"], [1.84, "mag_seat", "all"]],
+	"reload_empty": [[0.32, "mag_release", "all"], [0.40, "mag_out", "all"], [1.30, "mag_in", "all"], [1.84, "mag_seat", "all"],
+		[1.94, "bolt_up", "bolt"], [2.00, "bolt_back", "bolt"], [2.42, "bolt_fwd", "bolt"], [2.74, "bolt_down", "bolt"],
+		[1.94, "charge_back", "semi"], [2.40, "bolt_release", "semi"]],
+	"reload_insert": [[0.10, "round_insert", "lever"], [0.30, "gate_close", "lever"]],
+}
+var _clip_prev := -1.0
 
 func fire() -> void:
 	_kick = 1.0
@@ -195,6 +205,7 @@ func fire() -> void:
 
 
 func dry() -> void:
+	mech.emit("dry_click")
 	_kick = 0.25
 	_fire_t = 0.0
 
@@ -235,7 +246,12 @@ func _process(delta: float) -> void:
 	if _weapon_clip != "":
 		if player.dead or player.ui_open or mode != "rifle" or work_kind != "": cancel_weapon_clip()
 		elif freeze_t < 0:
+			var t0 := _weapon_clip_t if _clip_prev >= 0.0 else -1.0
 			_weapon_clip_t += delta
+			var who := "lever" if _rifle.is_lever_action() else ("bolt" if _rifle.is_bolt_action() else "semi")
+			for ev in RELOAD_EVENTS.get(_weapon_clip, []):
+				if (ev[2] == "all" or ev[2] == who) and t0 < float(ev[0]) and _weapon_clip_t >= float(ev[0]): mech.emit(String(ev[1]))
+			_clip_prev = _weapon_clip_t
 			if _weapon_clip_t >= _rifle.clip_length(_weapon_clip): cancel_weapon_clip()
 	_roll.visible=false;_bottle.visible=false
 	if treatment_pending!="" and not player.ui_open and not player.dead and work_kind=="":
@@ -257,8 +273,9 @@ func _process(delta: float) -> void:
 		_cur = ''
 		_equip = 0.0
 	var gt: Color = GLOVE_TINT.get(glove_item, Color(0.52, 0.38, 0.26))
-	_right.set_gloved(glove_item in GLOVES, gt)
-	_left.set_gloved(glove_item in GLOVES, gt)
+	var mitts := glove_item in ["hide_mitts", "wolf_mitts"]
+	_right.set_gloved(glove_item in GLOVES, gt, mitts)
+	_left.set_gloved(glove_item in GLOVES, gt, mitts)
 	_right.set_cold(hand_cold); _left.set_cold(hand_cold)
 	# equip / mode switching: lower the old thing, raise the new
 	if mode != _cur:
@@ -451,7 +468,7 @@ func weapon_busy() -> bool:
 func play_weapon_clip(clip: String) -> bool:
 	if mode != "rifle" or work_kind != "" or _fire_t >= 0 or player.dead or player.ui_open: return false
 	if _rifle.clip_length(clip) <= 0: return false
-	_weapon_clip = clip; _weapon_clip_t = 0.0
+	_weapon_clip = clip; _weapon_clip_t = 0.0; _clip_prev = 0.0
 	return true
 
 func cancel_weapon_clip() -> void:

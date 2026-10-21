@@ -2,6 +2,8 @@ class_name SurvivorHandRig
 extends Node3D
 ## Approved anatomy, curved nails and leather shells on matching 17-bone rigs.
 const ASSET := preload("res://assets/models/viewmodel/anatomical_hand_rig.glb")
+const MITTENS := "res://assets/models/viewmodel/hand_mittens.glb"   # tools/blender/gen_hand_mittens.py
+var mitten: MeshInstance3D
 var skeleton: Skeleton3D
 var bare: MeshInstance3D
 var glove: MeshInstance3D
@@ -13,14 +15,15 @@ var rest_positions: Array[Vector3] = []
 const SKIN_WARM := Color(0.80, 0.66, 0.57)
 const SKIN_COLD := Color(0.90, 0.50, 0.46)   # cold hands: red knuckles and fingers (blood held back, then flushing)
 const SKIN_NUMB := Color(0.70, 0.66, 0.72)   # near frostbite: waxy, blue-grey
-var _skin: Array[StandardMaterial3D] = []
+const SKIN_SHADER := preload("res://world/shaders/skin.gdshader")
+var _skin: Array[ShaderMaterial] = []
 var cold_k := 0.0
 ## 0 = warm .. 0.6 = cold red .. 1 = numb (frostbite risk high).
 func set_cold(k: float) -> void:
 	if absf(k - cold_k) < 0.02: return
 	cold_k = k
 	var c := SKIN_WARM.lerp(SKIN_COLD, clampf(k / 0.6, 0.0, 1.0)) if k <= 0.6 else SKIN_COLD.lerp(SKIN_NUMB, clampf((k - 0.6) / 0.4, 0.0, 1.0))
-	for m in _skin: m.albedo_color = c
+	for m in _skin: m.set_shader_parameter("tint", c)
 func _ready() -> void:
 	var asset := ASSET.instantiate(); add_child(asset)
 	var arm := asset.find_child("LeftHandRig" if mirrored else "HandRig",true,false)
@@ -38,12 +41,21 @@ func _ready() -> void:
 				# snow light washed the skin to white plastic: weathered, a touch darker and matte
 				# (blue snow ambient on a pale texture read grey-blue: warmer tint, light scattering under the skin,
 				# and a little red light through thin fingers)
-				mat.albedo_color = SKIN_WARM
-				mat.roughness = 0.72; mat.metallic_specular = 0.3
-				mat.backlight_enabled = true; mat.backlight = Color(0.32, 0.10, 0.06)
-				mat.subsurf_scatter_enabled = true; mat.subsurf_scatter_skin_mode = true; mat.subsurf_scatter_strength = 0.35
-				_skin.append(mat)
+				# W8: a skin shader on the same textures, with pores + crease grain + varying roughness
+				var sm := ShaderMaterial.new(); sm.shader = SKIN_SHADER
+				sm.set_shader_parameter("albedo_tex", mat.albedo_texture)
+				sm.set_shader_parameter("normal_tex", mat.normal_texture)
+				sm.set_shader_parameter("normal_scale", mat.normal_scale if mat.normal_enabled else 0.0)
+				if mat.roughness_texture != null:
+					sm.set_shader_parameter("rough_tex", mat.roughness_texture)
+					var ch := [Vector4(1, 0, 0, 0), Vector4(0, 1, 0, 0), Vector4(0, 0, 1, 0), Vector4(0, 0, 0, 1), Vector4(0.3333, 0.3333, 0.3333, 0)]
+					sm.set_shader_parameter("rough_channel", ch[clampi(int(mat.roughness_texture_channel), 0, 4)])
+				sm.set_shader_parameter("tint", SKIN_WARM)
+				mesh.set_surface_override_material(i, sm)
+				_skin.append(sm)
+				continue
 			mesh.set_surface_override_material(i,mat)
+	_attach_mitten()
 	var player := asset.find_child("AnimationPlayer",true,false) as AnimationPlayer
 	player.stop()
 	for name in player.get_animation_list():
@@ -66,8 +78,27 @@ func _ready() -> void:
 	set_gloved(false); pose("Relaxed")
 ## `tint` colours the leather shell. Its texture is a pale neutral grey, so untinted it rendered as a white
 ## rubber glove in the snow light (it was the "pale plastic hand" of W6, not the skin).
-func set_gloved(worn: bool, tint := Color(0.52, 0.38, 0.26)) -> void:
-	bare.visible = not worn; nails.visible = not worn; glove.visible = worn
+## The mitten shell is the leather glove with the four fingers merged into one bag (same skeleton); it is
+## re-parented onto this rig's Skeleton3D and shares the glove's (tinted) material.
+func _attach_mitten() -> void:
+	if not ResourceLoader.exists(MITTENS): return
+	var src := (load(MITTENS) as PackedScene).instantiate()
+	var mi := src.find_child("MittenShellLeft" if mirrored else "MittenShell", true, false) as MeshInstance3D
+	if mi == null: src.free(); return
+	var xf := mi.transform
+	mi.get_parent().remove_child(mi); mi.owner = null
+	skeleton.add_child(mi); mi.transform = xf; mi.skeleton = NodePath("..")
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for i in mi.mesh.get_surface_count(): mi.set_surface_override_material(i, glove.get_surface_override_material(min(i, glove.mesh.get_surface_count() - 1)))
+	mi.visible = false
+	mitten = mi
+	src.free()
+
+
+func set_gloved(worn: bool, tint := Color(0.52, 0.38, 0.26), mitts := false) -> void:
+	var use_mitten := worn and mitts and mitten != null
+	bare.visible = not worn; nails.visible = not worn; glove.visible = worn and not use_mitten
+	if mitten != null: mitten.visible = use_mitten
 	if worn and tint != _glove_tint:
 		_glove_tint = tint
 		for i in glove.mesh.get_surface_count():
@@ -84,7 +115,7 @@ func pose(grip: String, second := "", blend := 0.0, release := 0.0) -> void:
 		skeleton.set_bone_pose_position(i,rest_positions[i])
 		var rotation := (first[i] as Quaternion).slerp(other[i],mix)
 		skeleton.set_bone_pose_rotation(i,rotation.slerp(open[i],relaxed))
-	for mesh in [bare,glove]:
+	for mesh in ([bare, glove, mitten] if mitten != null else [bare, glove]):
 		for i in mesh.mesh.get_blend_shape_count():
 			var name := String(mesh.mesh.get_blend_shape_name(i))
 			var weight := (1.0-mix if name == "corrective_"+grip else 0.0) + (mix if second != "" and name == "corrective_"+second else 0.0)
