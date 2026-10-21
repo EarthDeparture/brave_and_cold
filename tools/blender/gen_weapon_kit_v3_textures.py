@@ -73,15 +73,23 @@ def metal(seed, base, streak=0.05, speck=0.03, mottle=0.04):
 
 def camo(seed):
     """Hunter camo dip (woodland, muted): olive base, brown + dark + khaki blobs, branch strokes."""
-    img = np.ones((N, N, 3), np.float32) * c(96, 92, 66)
-    for k, col, thr, s in [(0, c(72, 58, 40), 0.55, 55), (1, c(40, 38, 30), 0.85, 38), (2, c(142, 132, 100), 0.95, 30)]:
-        m = noise(s, s * 0.6, seed + 10 + k) > thr
-        mm = gaussian_filter(m.astype(np.float32), 1.2, mode='wrap')[..., None]
-        img = img * (1 - mm) + col * mm
-    twig = noise(30, 2.0, seed + 20) > 1.6
-    tw = gaussian_filter(twig.astype(np.float32), 0.8, mode='wrap')[..., None]
-    img = img * (1 - tw * 0.8) + c(34, 30, 24) * tw * 0.8
-    img *= (1 + 0.04 * noise(2, 2, seed + 21))[..., None]
+    # hydro-dipped woodland film: bark streaks, a few soft patches, thin branches, small leaf clusters
+    # (several scales, muted: the old version was a handful of big blobs)
+    img = np.ones((N, N, 3), np.float32) * c(112, 104, 82)
+    bark = noise(2.5, 34, seed)                                   # vertical bark grain
+    img *= (1 + 0.10 * bark)[..., None]
+    for k, col, thr, s, a in [(0, c(84, 70, 50), 0.95, 34, 0.7), (1, c(70, 74, 52), 1.10, 22, 0.6)]:
+        m = gaussian_filter((noise(s, s * 0.7, seed + 10 + k) > thr).astype(np.float32), 2.0, mode='wrap')[..., None] * a
+        img = img * (1 - m) + col * m
+    for k, sc in [(0, 12), (1, 6)]:                                # branches: ridges of noise
+        ridge = 1 - np.abs(noise(sc, sc, seed + 3 + k))
+        ln = gaussian_filter((ridge > (0.965 if k == 0 else 0.955)).astype(np.float32), 0.7, mode='wrap')[..., None]
+        img = img * (1 - ln * 0.75) + c(46, 40, 30) * ln * 0.75
+    for k, col in enumerate([c(78, 82, 50), c(96, 76, 52), c(140, 130, 102), c(58, 54, 40)]):   # leaves
+        n = noise(4.5, 2.8, seed + 30 + k) + 0.6 * noise(14, 14, seed + 40 + k)
+        m = gaussian_filter((n > 1.75).astype(np.float32), 0.9, mode='wrap')[..., None]
+        img = img * (1 - m) + col * m
+    img *= (1 + 0.05 * noise(1.2, 1.2, seed + 21))[..., None]
     return img
 
 

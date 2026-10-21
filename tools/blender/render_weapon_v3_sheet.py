@@ -59,6 +59,24 @@ for loc, e, s in [((1.6, -1.2, 1.6), 600, 2.5), ((-1.4, -.8, .6), 180, 2.5), ((0
     L.rotation_euler = (Vector((0, 0, .05)) - L.location).to_track_quat('-Z', 'Y').to_euler()
 bpy.ops.object.camera_add(); cam = bpy.context.object; scene.camera = cam
 out = KIT / 'previews'; out.mkdir(parents=True, exist_ok=True)
+if '--parts' in sys.argv:
+    # gear / gunsmith icons for loose parts: 3/4 view from the right, transparent, 256x160
+    PD = GAME / 'assets/ui/parts'; PD.mkdir(parents=True, exist_ok=True)
+    parts = {k: v['glb'] for k, v in ATT.items() if not k.startswith('_') and 'glb' in v}
+    parts['flashlight'] = 'res://assets/weapons/v3/lights/flashlight_hand.glb'
+    scene.render.resolution_x, scene.render.resolution_y = 256, 160; scene.render.film_transparent = True
+    scene.view_settings.view_transform = 'Standard'
+    for aid, glb in parts.items():
+        objs = imp(GAME / glb.replace('res://', '')); bpy.context.view_layer.update()
+        pts = [o.matrix_world @ Vector(c) for o in objs if o.type == 'MESH' for c in o.bound_box]
+        lo = Vector([min(p[i] for p in pts) for i in range(3)]); hi = Vector([max(p[i] for p in pts) for i in range(3)]); c = (lo + hi) / 2
+        cam.data.type = 'ORTHO'; d = Vector((1.0, -0.35, 0.45)).normalized() * 2.0
+        cam.location = c + d; cam.rotation_euler = (c - cam.location).to_track_quat('-Z', 'Y').to_euler()
+        cam.data.ortho_scale = max((hi - lo).length * 0.95, 0.05)
+        scene.render.filepath = str(PD / (aid + '.png')); bpy.ops.render.render(write_still=True)
+        for o in objs: bpy.data.objects.remove(o, do_unlink=True)
+        print('W3_PART_ICON', aid, flush=True)
+    raise SystemExit(0)
 for rid, spec in RIFLES.items():
     if rid.startswith('_') or not spec.get('v3') or (ONLY and rid not in ONLY): continue
     fit = dict(spec.get('factory', {})); fit.update(FIT.get(rid, {}))

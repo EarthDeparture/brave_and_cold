@@ -41,12 +41,17 @@ func contact_offset(state: String, side: String) -> Vector3:
 	var value: Array = (V3_CONTACT if RifleDB.is_v3(weapon_id) else contact_profiles.get(weapon_id,{})).get(state+"_"+side,[0,0,0])
 	return Vector3(value[0],value[1],value[2])
 func is_v3() -> bool: return RifleDB.is_v3(weapon_id)
-func set_weapon(id: String) -> void:
+var fit_override: Dictionary = {}   # a specific rifle's fit (ground pickup, gunsmith spare); {} = the player's top rifle
+func _fit() -> Dictionary:
+	return fit_override if not fit_override.is_empty() else RifleDB.fitted(weapon_id)
+func set_weapon(id: String, fit: Dictionary = {}) -> void:
 	assert(id in IDS, "Unknown weapon art: " + id)
-	var sig := RifleDB.fit_sig(id) if RifleDB.is_v3(id) else id
+	var sig := (RifleDB.fit_sig(id) if fit.is_empty() else "%s|%s" % [id, str(fit)]) if RifleDB.is_v3(id) else id
+	fit_override = fit
 	if weapon_id == id and fit_sig == sig: return
 	if model != null: remove_child(model); model.free()
 	weapon_id = id; fit_sig = sig
+	_sections.clear()
 	optic_node = null; light_node = null; mount_node = null; muzzle_node = null; lamp = null; dot_mats.clear(); _eye_y = NAN; _iron_y = NAN; lens = null
 	var path := ("res://assets/weapons/v3/rifles/%s.glb" if RifleDB.is_v3(id) else "res://assets/weapons/north_ridge/%s.glb") % id
 	model = (load(path) as PackedScene).instantiate()
@@ -75,7 +80,7 @@ func set_weapon(id: String) -> void:
 ## v3: shaders on every surface, then the fitted optic and light at their sockets.
 func _build_v3() -> void:
 	_apply_materials(model)
-	var f := RifleDB.fitted(weapon_id)
+	var f := _fit()
 	if sockets.has("IronAim"): _iron_y = _local_chain(sockets["IronAim"]).origin.y
 	var oid := String(f.get("optic", ""))
 	var optic_sock: Node3D = sockets.get("OpticMount")
@@ -92,7 +97,7 @@ func _build_v3() -> void:
 		optic_node = _attach(String(RifleDB.attachment(oid).get("glb", "")), optic_sock)
 		var eye := optic_node.find_child("*Socket_Eye", true, false) as Node3D if optic_node != null else null
 		if eye != null: _eye_y = _local_chain(eye).origin.y
-		var o := RifleDB.optic(weapon_id)
+		var o := RifleDB.optic_for(weapon_id, f)
 		var dotted := String(o.get("type", "")) in ["reflex", "tube_dot"]
 		for mi: MeshInstance3D in optic_node.find_children("*", "MeshInstance3D", true, false):
 			if not String(mi.name).contains("Lens"): continue
@@ -119,6 +124,7 @@ func _build_v3() -> void:
 			lamp.rotation = Vector3(off * 0.6, off, 0.0)   # taped lights point a little off the bore
 			lamp.visible = false
 			beam.add_child(lamp)
+			add_beam(lamp)
 
 func _local_chain(n: Node3D) -> Transform3D:
 	var t := Transform3D.IDENTITY; var c: Node = n
@@ -161,6 +167,10 @@ func _apply_materials(root: Node) -> void:
 			m.set_shader_parameter("albedo_tex", src.albedo_texture)
 			m.set_shader_parameter("family", int(fam[0])); m.set_shader_parameter("roughness_base", float(fam[1])); m.set_shader_parameter("metallic_base", float(fam[2]))
 			if key == "brass" or key == "steel_bright": m.set_shader_parameter("wear", 0.2)
+			if int(fam[0]) == 0 and root == model:
+				var chk: Array = RifleDB.spec(weapon_id).get("checkering", [])
+				if chk.size() > 0: m.set_shader_parameter("chk_a", Vector4(chk[0][0], chk[0][1], chk[0][2], 1.0))
+				if chk.size() > 1: m.set_shader_parameter("chk_b", Vector4(chk[1][0], chk[1][1], chk[1][2], 1.0))
 			if key == "lamp_lens":
 				m = ShaderMaterial.new(); m.shader = LENS; m.set_shader_parameter("tint", Color(1, .97, .9, .9))
 			mi.set_surface_override_material(s, m)
@@ -172,6 +182,30 @@ func update_sight(axis_world: Vector3, night: float) -> void:
 		m.set_shader_parameter("brightness", lerpf(2.4, 0.35, night))   # daylight needs ~2.4x to read over bright snow
 func set_lamp(on: bool) -> void:
 	if lamp != null: lamp.visible = on
+	set_lens_glow(light_node, on)
+
+## Lit lamp lens + the beam shaft (weather-driven intensity is set by GameWorld via beam_k).
+static func set_lens_glow(root: Node, on: bool) -> void:
+	if root == null: return
+	for mi: MeshInstance3D in root.find_children("*LampLens*", "MeshInstance3D", true, false):
+		for s in mi.get_surface_override_material_count():
+			var m := mi.get_surface_override_material(s) as ShaderMaterial
+			if m != null: m.set_shader_parameter("glow", 6.0 if on else 0.0)
+		var mo := mi.material_override as ShaderMaterial
+		if mo != null: mo.set_shader_parameter("glow", 6.0 if on else 0.0)
+
+const BEAM_SHADER := preload("res://world/shaders/light_beam.gdshader")
+## A soft shaft along a SpotLight (only visible in snow / fog / haze; intensity driven each frame).
+static func add_beam(spot: SpotLight3D) -> MeshInstance3D:
+	var L := spot.spot_range * 0.85
+	var cm := CylinderMesh.new(); cm.height = L; cm.top_radius = 0.02; cm.bottom_radius = L * tan(deg_to_rad(spot.spot_angle)) * 0.8
+	cm.radial_segments = 24; cm.rings = 1; cm.cap_top = false; cm.cap_bottom = false
+	var mi := MeshInstance3D.new(); mi.name = "BeamShaft"; mi.mesh = cm
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var m := ShaderMaterial.new(); m.shader = BEAM_SHADER; m.set_shader_parameter("length_m", L); mi.material_override = m
+	mi.rotation = Vector3(PI * 0.5, 0, 0); mi.position = Vector3(0, 0, -L * 0.5)
+	spot.add_child(mi)
+	return mi
 ## Through a scope the model steps aside but a fitted light must keep shining: hide meshes only.
 var _meshes_shown := true
 func set_meshes_visible(on: bool) -> void:
@@ -179,6 +213,43 @@ func set_meshes_visible(on: bool) -> void:
 	_meshes_shown = on
 	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false): mi.visible = on
 func has_lamp() -> bool: return lamp != null
+
+## Socket position in model space at rest (z along the gun).
+func socket_model(name: String) -> Vector3:
+	var s: Node3D = sockets[name]
+	return (_local_chain(s.get_parent() as Node3D) * (rest[s] as Transform3D)).origin if s.get_parent() != model else (rest[s] as Transform3D).origin
+
+## Cross-section of the wood / synthetic (stock, fore-end, handguard) at model z, from the actual mesh:
+## {c: centre (model space), hw, hh}. Used by the hand solver so palms and fingers sit on this gun's wood.
+var _sections: Dictionary = {}
+func section_at(z: float) -> Dictionary:
+	var key := snappedf(z, .005)
+	if _sections.has(key): return _sections[key]
+	var pts: Array[Vector3] = []
+	if model != null:
+		for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+			if mi.mesh == null: continue
+			var chain := _local_chain(mi)
+			for s in mi.mesh.get_surface_count():
+				var mat := mi.mesh.surface_get_material(s) as BaseMaterial3D
+				var mk := String(mat.resource_name).trim_prefix("W3_") if mat != null else ""
+				if int(FAMILY.get(mk, [1])[0]) not in [0, 2] or mk == "rubber": continue
+				var verts: PackedVector3Array = mi.mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]
+				for v in verts:
+					var p := chain * v
+					if absf(p.z - z) < .06: pts.append(p)
+	# loft rings are a few cm apart: take the nearest rings (window grows until one is found)
+	var lo := Vector2(INF, INF); var hi := Vector2(-INF, -INF)
+	for win in [.012, .025, .04, .06]:
+		for p in pts:
+			if absf(p.z - z) > win: continue
+			lo = Vector2(minf(lo.x, p.x), minf(lo.y, p.y)); hi = Vector2(maxf(hi.x, p.x), maxf(hi.y, p.y))
+		if lo.x < INF: break
+	var out := {}
+	if lo.x < INF:
+		out = {"c": Vector3((lo.x + hi.x) * .5, (lo.y + hi.y) * .5, z), "hw": (hi.x - lo.x) * .5, "hh": (hi.y - lo.y) * .5}
+	_sections[key] = out
+	return out
 
 func remember(node: Node) -> void:
 	if node is Node3D: rest[node] = node.transform

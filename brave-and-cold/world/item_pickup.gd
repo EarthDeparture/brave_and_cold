@@ -7,11 +7,13 @@ var n := 1
 var age_s:=0.0
 var support := "" # Only authored placements; ordinary player drops keep their position.
 var cond := -1.0   # worn tools keep their condition on the ground (-1 = pristine); dropping must not repair them
+var states: Array = []   # rifles: each one's own fit / zero / rounds (Inventory.state_of)
 
 
-static func spawn(parent: Node, item_id: String, count: int, pos: Vector3, condition := -1.0,food_age := 0.0) -> ItemPickup:
+static func spawn(parent: Node, item_id: String, count: int, pos: Vector3, condition := -1.0,food_age := 0.0, rifle_states: Array = []) -> ItemPickup:
 	var p := ItemPickup.new()
 	p.id = item_id
+	p.states = rifle_states.duplicate(true)
 	p.n = count
 	p.cond = condition
 	p.age_s=maxf(0,food_age)
@@ -54,7 +56,10 @@ func _build_visual() -> void:
 		# The real rifle art, lying on its left side (no animation player needed on the ground).
 		var gun: Node3D
 		if RifleDB.is_v3(id):
-			var wp := WeaponPresentation.new(); add_child(wp); wp.set_weapon(id); gun = wp   # modular v3 art + its fit
+			var wp := WeaponPresentation.new(); add_child(wp)
+			var st: Dictionary = states[0] if not states.is_empty() and states[0] is Dictionary else {}
+			wp.set_weapon(id, st.get("fit", RifleDB.factory(id)))   # its own fit, not the player's
+			gun = wp
 		else:
 			gun = (load("res://assets/weapons/north_ridge/" + id + ".glb") as PackedScene).instantiate(); add_child(gun)
 		gun.rotation = Vector3(0, randf() * TAU, PI * .5); gun.position = Vector3(0, .025, 0)

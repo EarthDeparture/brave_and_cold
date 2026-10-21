@@ -375,8 +375,9 @@ def optic_scope_4x():
     lathe_d('ScopeBody', [(-.118, .0185), (-.110, .0195), (-.074, .0190), (-.052, .0128), (.060, .0128), (.080, .0128),
                          (.118, .0225), (.150, .0230), (.150, .0212), (.128, .0208)], 'blued', cy=cy, n=32, cap=False)
     lathe_d('EyeBell', [(-.116, .0162), (-.122, .0162), (-.122, .0170), (-.118, .0185)], 'rubber', cy=cy, n=32, cap=False)
-    lathe_d('TurretTop', [(-.010, .0001), (-.010, .0105), (.010, .0105), (.010, .0001)], 'blued', cy=cy + .0128 + .010, n=20)
-    lathe_d('TurretSide', [(-.010, .0001), (-.010, .0105), (.010, .0105), (.010, .0001)], 'blued', cy=cy, x=.0128 + .010, n=20)
+    lathe_d('TurretSaddle', [(-.016, .0158), (.016, .0158)], 'blued', cy=cy, n=36)
+    turret('TurretTop', (0, cy + .0150, 0.0), 'y', 'blued')
+    turret('TurretSide', (.0150, cy, 0.0), 'x', 'blued')
     lens('ScopeEyeLens', -.121, .0160, cy, 'glass')
     lens('ScopeObjLens', .148, .0205, cy, 'glass')
     socket('Mount', (0, 0, 0)); socket('Eye', (0, cy, .120)); socket('Scope', (0, cy, .120))
@@ -417,7 +418,7 @@ OPTICS = [('reflex_micro', optic_reflex_micro, 'Open micro reflex sight on a rai
           ('reddot_tube', optic_reddot_tube, '1-inch red-dot tube on a riser mount'),
           ('scope_4x', optic_scope_4x, '4x hunting scope on rings and bases')] + OPTICS_W2
 LIGHTS = [('light_clamp', light_barrel_clamp, 'Hunting light on a barrel clamp'),
-          ('light_taped', light_taped, 'Household flashlight taped under the barrel')]
+          ('light_taped', light_taped, 'Household flashlight taped under the barrel')] + LIGHTS_W2
 
 for name, mode, build, description, bolt_spec in RIFLES:
     if ONLY and name not in ONLY: continue

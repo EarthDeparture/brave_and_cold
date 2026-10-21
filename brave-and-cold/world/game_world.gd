@@ -1416,6 +1416,7 @@ func drop_item(id: String, n: int) -> void:
 	var nm := inv.name_of(id)
 	var cd := inv.condition(id)
 	var food_age:=float(inv.age.get(id,0))
+	if id == 'rifle': id = inv.rifle_id()
 	if not inv.remove(id, n):
 		return
 	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
@@ -1423,7 +1424,10 @@ func drop_item(id: String, n: int) -> void:
 	var h: float = player.ground_at(p.x, p.z)
 	if is_nan(h):
 		h = player.position.y - player.eye_h
-	ItemPickup.spawn(self, id, n, Vector3(p.x, h, p.z), cd if cd < 0.999 else -1.0,food_age)
+	var st: Array = inv.last_removed_states.duplicate(true) if Inventory.is_rifle(id) else []
+	for s in st:   # a scoped rifle dropped in the snow can knock its sight
+		if s is Dictionary and String((s.get('fit', {}) as Dictionary).get('optic', '')) != '': s['zero'] = _knocked(s.get('zero', [0.0, 0.0]), randf_range(0.2, 0.8))
+	var dropped := ItemPickup.spawn(self, id, n, Vector3(p.x, h, p.z), cd if cd < 0.999 else -1.0,food_age, st)
 	_say('Dropped %s%s' % [nm, ' x%d' % n if n > 1 else ''])
 
 
@@ -1436,7 +1440,8 @@ func take_pickup(node: Node) -> void:
 		return
 	var had := inv.count(p.id)
 	var cur_c := inv.condition(p.id)
-	inv.add_aged(p.id,p.n,p.age_s)
+	if Inventory.is_rifle(p.id): inv.add(p.id, p.n, p.states)   # it keeps its own sight, light, zero, rounds
+	else: inv.add_aged(p.id,p.n,p.age_s)
 	if p.cond >= 0.0 or cur_c < 0.999:
 		inv.cond[p.id] = (cur_c * float(had) + (p.cond if p.cond >= 0.0 else 1.0) * float(p.n)) / float(had + p.n)
 	_say('Picked up %s%s' % [inv.name_of(p.id), ' x%d' % p.n if p.n > 1 else ''])
@@ -2082,7 +2087,14 @@ func _update_torch(delta: float) -> void:
 		_torch.shadow_enabled = true; _torch.shadow_bias = 0.06; _torch.light_specular = 0.35
 		_torch.position = Vector3(0.20, -0.22, -0.15); _torch.rotation = Vector3(0.05, 0.10, 0.0)   # held low and right, aimed at the view centre
 		player.cam.add_child(_torch)
+		WeaponPresentation.add_beam(_torch)
+	if viewmodel != null: viewmodel.torch_on = on
+	# the lamp sits in the held flashlight's head once the hand model exists
+	if _torch != null and viewmodel != null and viewmodel.torch_beam != null and _torch.get_parent() != viewmodel.torch_beam:
+		_torch.get_parent().remove_child(_torch); viewmodel.torch_beam.add_child(_torch)
+		_torch.position = Vector3.ZERO; _torch.rotation = Vector3.ZERO
 	if _torch != null: _torch.visible = on
+	if viewmodel != null and viewmodel._torch != null: WeaponPresentation.set_lens_glow(viewmodel._torch, on)
 	if not on: return
 	var cold := 1.0 + 0.67 * clampf(-air_c() / 20.0, 0.0, 1.0)
 	inv.torch_h = maxf(0.0, inv.torch_h - delta * clock.time_scale / 3600.0 * cold)
@@ -2097,6 +2109,40 @@ func _light_lure(reach: float, delta: float) -> void:
 		var fwd := -player.cam.global_transform.basis.z
 		noise_bus.emit_light(player.position + fwd * reach * 0.6, reach * 0.8, player)   # what the beam lights
 		noise_bus.emit_light(player.position, 18.0, player)                              # the lamp itself
+
+## Light shafts: only something in the air shows a beam - falling snow, fog, night haze.
+func beam_k() -> float:
+	var night: float = sky_rig.gameplay_night_factor if sky_rig != null else 0.0
+	var air := 0.18 + (weather.precip * 1.1 if weather != null else 0.0) + (maxf(0.0, weather.fog_mult - 1.0) * 0.4 if weather != null else 0.0)
+	return clampf(night * air, 0.0, 1.2) * lerpf(1.0, 0.25, _indoor_k)
+
+func _update_beams() -> void:
+	var k := beam_k()
+	var nodes: Array = []
+	if _torch != null: nodes.append(_torch)
+	if viewmodel != null and viewmodel._rifle != null and viewmodel._rifle.lamp != null: nodes.append(viewmodel._rifle.lamp)
+	for n: Node in nodes:
+		var b := n.get_node_or_null("BeamShaft") as MeshInstance3D
+		if b != null: (b.material_override as ShaderMaterial).set_shader_parameter("intensity", k)
+
+## Knocks shift a scope's zero: a struggle, a heavy hit while carrying it (drops are handled in drop_item).
+var _was_struggling := false
+var _last_hp := -1.0
+func _zero_knocks(rid: String) -> void:
+	if player == null or inv == null: return
+	var knock := 0.0
+	if player.struggling and not _was_struggling: knock = randf_range(0.6, 1.6)
+	elif _last_hp >= 0.0 and _last_hp - player.health > 12.0: knock = randf_range(0.3, 1.0)
+	_was_struggling = player.struggling; _last_hp = player.health
+	if knock > 0.0 and rid != '' and RifleDB.is_v3(rid) and String(RifleDB.fitted(rid).get('optic', '')) != '':
+		inv.zero[rid] = _knocked(inv.zero.get(rid, [0.0, 0.0]), knock)
+		_say('The scope took a knock')
+
+static func _knocked(z: Array, m: float) -> Array:
+	var a := randf() * TAU
+	var v := Vector2(float(z[0]), float(z[1])) + Vector2(cos(a), sin(a)) * m
+	v = v.limit_length(6.0)
+	return [v.x, v.y]
 
 func light_shining() -> bool:
 	if inv == null or not inv.light_on or not rifle_up: return false
@@ -2125,6 +2171,9 @@ func _update_optic(delta: float) -> void:
 	_update_weapon_light(rid, delta)
 	_update_torch(delta)
 	Zombie.player_lit = light_shining() or torch_shining()   # a lit lamp carries far at night
+	Wolf.player_lit = Zombie.player_lit
+	_update_beams()
+	_zero_knocks(rid)
 	hud.optic_kind = kind if rifle_up else ''
 	var scoped: bool = viewmodel != null and viewmodel.scoped_view
 	if scoped and not _was_scoped: player.scope_settle = 0.6
@@ -2170,13 +2219,20 @@ func _act_begin(c: Dictionary, repeating := false) -> void:
 	_act_hp = player.health
 	_work_cues = 0
 	if viewmodel != null: viewmodel.begin_work(String(c.get("work", "")), _act_hold, repeating)
+	if float(c.get("game_min", 0.0)) > 0.0:
+		# bench / field work: the hold covers its real game minutes (needs, cold and the clock run on)
+		_ts_restore = clock.time_scale
+		clock.time_scale = maxf(clock.time_scale, float(c["game_min"]) * 60.0 / maxf(_act_hold, 0.1))
 	if c.has("start"):
 		(c["start"] as Callable).call()
 	if float(c.get("noise", 0.0)) > 0.0:
 		noise_bus.emit_noise(player.position, float(c["noise"]), player)
 
 
+var _ts_restore := -1.0
 func _act_cancel(msg := "", completed := false) -> void:
+	if _ts_restore >= 0.0:
+		clock.time_scale = _ts_restore; _ts_restore = -1.0
 	if viewmodel != null: viewmodel.end_work(completed)
 	_act = {}
 	_act_t = 0.0
@@ -3016,6 +3072,7 @@ func chest_put(c: StorageChest, id: String, n: int) -> void:
 	if not inv.remove(id, n):
 		return
 	c.put(id, n, cd, ag)
+	if Inventory.is_rifle(id): c.put_states(id, inv.last_removed_states)
 	_say('Stored %s%s' % [inv.name_of(id), ' x%d' % n if n > 1 else ''])
 
 
@@ -3033,7 +3090,7 @@ func chest_take(c: StorageChest, id: String, n: int) -> void:
 	var cur_a := float(inv.age.get(id, 0.0))
 	var c_c := float(c.cond.get(id, 1.0))
 	var c_a := float(c.age.get(id, 0.0))
-	inv.add(id, n)
+	inv.add(id, n, c.take_states(id, n) if Inventory.is_rifle(id) else [])
 	c.remove(id, n)
 	if c_c < 0.999 or cur_c < 0.999:
 		inv.cond[id] = (cur_c * had + c_c * n) / float(had + n)
@@ -3960,7 +4017,7 @@ func _save_data() -> Dictionary:
 		'player': {'x': player.position.x, 'z': player.position.z, 'yaw': player.yaw, 'pitch': player.pitch, 'hp': player.health, 'stam': player.stamina},
 		'body': {'core': body.core, 'wet': body.wetness},
 		'needs': {'cal': needs.calories, 'water': needs.water,'fatigue':needs.fatigue},
-		'inv': {'counts': inv.counts, 'worn': inv.jacket(), 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age, 'loaded': inv.loaded, 'active_rifle': inv.active_rifle, 'fitted': inv.fitted, 'light_on': inv.light_on, 'zero': inv.zero, 'light_charge': inv.light_charge, 'torch_on': inv.torch_on, 'torch_h': inv.torch_h},
+		'inv': {'counts': inv.counts, 'worn': inv.jacket(), 'extra': inv.extra, 'rifle_up': rifle_up, 'cond': inv.cond, 'age': inv.age, 'loaded': inv.loaded, 'active_rifle': inv.active_rifle, 'fitted': inv.fitted, 'light_on': inv.light_on, 'zero': inv.zero, 'light_charge': inv.light_charge, 'torch_on': inv.torch_on, 'torch_h': inv.torch_h, 'spares': inv.spares},
 		'cabins': cabs,
 		'huts': huts.map(func(h: Hut) -> Dictionary: return h.state_dict()),
 		'holes': ice_holes.map(func(h: IceHole) -> Dictionary: return h.to_dict()),
@@ -4003,7 +4060,7 @@ func _pickup_list() -> Array:
 	for pk in get_tree().get_nodes_in_group('pickups'):
 		var ip := pk as ItemPickup
 		if ip != null and not ip.is_queued_for_deletion():
-			out.append({'id': ip.id, 'n': ip.n, 'x': ip.global_position.x, 'y': ip.global_position.y, 'z': ip.global_position.z, 'c': ip.cond,'age_s':ip.age_s,'support':ip.support})
+			out.append({'id': ip.id, 'n': ip.n, 'x': ip.global_position.x, 'y': ip.global_position.y, 'z': ip.global_position.z, 'c': ip.cond,'age_s':ip.age_s,'support':ip.support,'rs':ip.states})
 	return out
 
 
@@ -4046,7 +4103,7 @@ func _restore_creatures(sv: Dictionary) -> void:
 		if Inventory.ITEMS.has(String(e['id'])):
 			var pickup_pos := _ground(float(e['x']), float(e['z']))
 			if e.has('y'): pickup_pos.y = float(e['y'])
-			var pickup:=ItemPickup.spawn(self, String(e['id']), int(e['n']), pickup_pos, float(e.get('c', -1.0)),float(e.get('age_s',0)))
+			var pickup:=ItemPickup.spawn(self, String(e['id']), int(e['n']), pickup_pos, float(e.get('c', -1.0)),float(e.get('age_s',0)), e.get('rs', []) if e.get('rs', []) is Array else [])
 			if pickup.id=="north_service_rifle" and not stores.is_empty():
 				var shop:=stores[0] as Store
 				if e.get('support',"")=="store_rifle" or shop.is_legacy_rifle_cache(pickup):shop.support_rifle(pickup)
@@ -4136,6 +4193,10 @@ func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 		if Inventory.is_rifle(String(k)) and zsv[k] is Array and (zsv[k] as Array).size() == 2: inv.zero[String(k)] = [float(zsv[k][0]), float(zsv[k][1])]
 	var csv: Dictionary = sv['inv'].get('light_charge', {})
 	for k in csv: inv.light_charge[String(k)] = float(csv[k])
+	var spsv: Dictionary = sv['inv'].get('spares', {})
+	for k in spsv:
+		if Inventory.is_rifle(String(k)) and spsv[k] is Array:
+			inv.spares[String(k)] = (spsv[k] as Array).filter(func(s) -> bool: return s is Dictionary).map(func(s) -> Dictionary: return inv._norm_state(String(k), s))
 	inv.torch_on = bool(sv['inv'].get('torch_on', false))
 	inv.torch_h = float(sv['inv'].get('torch_h', 6.0))
 	rifle_up = bool(sv['inv']['rifle_up']) and inv.count('rifle') > 0
@@ -4376,9 +4437,9 @@ func gunsmith_fit(rid: String, slot: String, aid: String, bench: bool) -> String
 		for t in a.get('tools', []):
 			if inv.count(String(t)) < 1: return 'Needs a %s, or a workbench' % inv.name_of(String(t)).to_lower()
 	var mins := float(a.get('fit_min', 5))
-	var verb := ('Fitting ' if aid != '' else 'Removing ') + String(a.get('name', 'part'))
+	var verb := ('Fitting ' if aid != '' else 'Removing ') + String(a.get('name', 'part')) + ' (%d min)' % int(mins)
 	if gunsmith != null: gunsmith.close()
-	_act_begin({"text": verb, "hold": clampf(mins * 0.35, 1.5, 8.0), "auto": true, "work": "reach",
+	_act_begin({"text": verb, "hold": clampf(mins * 0.35, 1.5, 8.0), "auto": true, "work": "reach", "game_min": mins,
 				"start": func() -> void: audio.play_at("cloth_wrap", player.position, -16, 1, 1, 6),
 				"act": _gunsmith_fit_done.bind(rid, slot, aid, bench)})
 	return ''
@@ -4395,7 +4456,7 @@ func gunsmith_zero(rid: String) -> String:
 	if not at_workbench(): return 'Zero it at a workbench'
 	if inv.count('ammo') < 3: return 'Needs three rounds'
 	if gunsmith != null: gunsmith.close()
-	_act_begin({"text": 'Zeroing ' + inv.name_of(rid), "hold": 8.0, "auto": true, "work": "reach", "act": _gunsmith_zero_done.bind(rid)})
+	_act_begin({"text": 'Zeroing ' + inv.name_of(rid) + ' (20 min)', "hold": 8.0, "auto": true, "work": "reach", "game_min": 20.0, "act": _gunsmith_zero_done.bind(rid)})
 	return ''
 
 func _gunsmith_zero_done(rid: String) -> void:

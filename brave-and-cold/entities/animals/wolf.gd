@@ -32,6 +32,7 @@ var player: Player
 var forest: ForestScatter
 var cabins: Array = []
 var state: State = State.WANDER
+var _dazzle_t := 0.0
 var speed_now := 0.0
 var bites := 0
 var hp := 40.0
@@ -144,11 +145,13 @@ func _player_indoors_shut() -> bool:
 	return false
 
 
+static var player_lit := false   # player's flashlight / weapon light on (GameWorld)
+
 func _can_see_player() -> bool:
 	var to := player.position - global_position
 	to.y = 0.0
 	var d := to.length()
-	var range_m := SIGHT_RANGE * (0.55 if player.crouching else 1.0)
+	var range_m := SIGHT_RANGE * (0.55 if player.crouching else 1.0) * (1.6 if player_lit else 1.0)
 	if d > range_m or _player_indoors_shut():
 		return false
 	var fwd := Vector3(-sin(rotation.y), 0.0, -cos(rotation.y))
@@ -265,6 +268,16 @@ func _process(delta: float) -> void:
 		State.CHASE:
 			_target = pp
 			want_speed = RUN_SPEED
+			# a light held in its eyes under 15 m: the wolf checks, slows and weaves - wary, not scared off
+			if player_lit and dist < 15.0 and dist > BITE_RANGE:
+				var look := -player.cam.global_basis.z
+				var to_me := (global_position + Vector3.UP * 0.5 - player.cam.global_position).normalized()
+				if look.dot(to_me) > 0.975:
+					_dazzle_t += delta
+					want_speed = WALK_SPEED * (0.6 if _dazzle_t < 1.5 else 1.4)
+					_target = pp + Vector3(sin(_state_t * 1.7), 0, cos(_state_t * 1.7)) * 4.0
+				else:
+					_dazzle_t = maxf(0.0, _dazzle_t - delta)
 			if dist < BITE_RANGE and absf(pp.y - global_position.y - 1.0) < 2.5:
 				want_speed = 0.0
 				_face(pp, delta, 12.0)

@@ -65,6 +65,16 @@ func run() -> void:
 	inv.fit_attachment("ranger_box_rifle", "light", ""); inv.fit_attachment("ranger_box_rifle", "light", "light_clamp")
 	check(absf(float(RifleDB.fitted("ranger_box_rifle").get("light_h")) - 1.25) < .001, "a light keeps its battery charge off the rifle")
 	check(RecipeDB.all().any(func(r) -> bool: return String(r.get("id", "")) == "tape_light" and r.get("out", {}).has("light_taped")), "flashlight + duct tape crafts a taped light")
+	# per-instance: two of the same rifle each keep their own setup
+	var iv := Inventory.new(); RifleDB.inv = iv
+	iv.add("ranger_box_rifle"); iv.fitted["ranger_box_rifle"] = {"optic": "scope_3_9x", "light": "", "mount": "", "muzzle": ""}
+	iv.add("ranger_box_rifle")
+	check(iv.count("ranger_box_rifle") == 2 and iv.spare_count("ranger_box_rifle") == 1 and String(RifleDB.fitted("ranger_box_rifle").get("optic")) == "scope_3_9x", "a second rifle of the same type goes in as a spare; the first keeps its 3-9x")
+	iv.cycle_spare("ranger_box_rifle")
+	check(String(RifleDB.fitted("ranger_box_rifle").get("optic")) == "scope_4x", "next rifle: the spare comes up with its own factory 4x")
+	iv.cycle_spare("ranger_box_rifle")
+	check(String(RifleDB.fitted("ranger_box_rifle").get("optic")) == "scope_3_9x", "and cycles back to the first")
+	RifleDB.inv = inv
 	# ---- live world: zero moves the shot, light visibility, hand torch, gunsmith, save/load
 	SaveGame.pending = {}; seed(20261004)
 	var w: Node3D = load("res://world/game_world.gd").new(); root.add_child(w)
@@ -78,12 +88,13 @@ func run() -> void:
 	w.inv.zero["ranger_box_rifle"] = [0.0, 3.0]
 	var up := 0.0
 	for i in 20: up += w._shot_dir().dot(w.player.cam.global_basis.y)
+	check((w.viewmodel._left.last_wrap as Dictionary).size() >= 4 and (w.viewmodel._left.last_wrap as Dictionary).values().all(func(v) -> bool: return float(v) > 0.2), "aimed: the support fingers curl round the fore-end (%s)" % str(w.viewmodel._left.last_wrap))
 	check(up / 20.0 > .0022, "a 3 mrad zero error lifts the shots (%.2f mrad mean)" % (up / 20.0 * 1000))
 	w.inv.zero["ranger_box_rifle"] = [0.0, 0.0]
 	# hand flashlight
 	w.rifle_up = false; w.aim_override = false; w.inv.add("flashlight"); w.inv.torch_h = 6.0; w.inv.torch_on = false
 	w._toggle_weapon_light(); await frames(5)
-	check(w.torch_shining() and w._torch != null and w._torch.visible and Zombie.player_lit, "L with the rifle lowered: handheld flashlight on, you are lit")
+	check(w.torch_shining() and w._torch != null and w._torch.visible and Zombie.player_lit and Wolf.player_lit and w._torch.get_node_or_null("BeamShaft") != null, "L with the rifle lowered: handheld flashlight on, you are lit")
 	var h0: float = w.inv.torch_h
 	w.clock.time_scale = 3600.0; await frames(30); w.clock.time_scale = 30.0
 	check(w.inv.torch_h < h0, "flashlight battery drains (%.2f h -> %.2f h)" % [h0, w.inv.torch_h])
@@ -98,14 +109,29 @@ func run() -> void:
 	var why: String = w.gunsmith_fit("ranger_box_rifle", "optic", "scope_3_9x", false)
 	check(why.contains("screwdriver"), "field scope swap needs a screwdriver (%s)" % why)
 	w.inv.add("screwdriver")
+	var gt0: float = w.clock.total_game_s
 	check(w.gunsmith_fit("ranger_box_rifle", "optic", "scope_3_9x", false) == "" and not w.gunsmith.is_open, "with tools: the swap starts as a timed action")
 	for i in 600:
 		await process_frame
 		if String(RifleDB.fitted("ranger_box_rifle").get("optic")) == "scope_3_9x" and w.gunsmith.is_open: break
 	check(String(RifleDB.fitted("ranger_box_rifle").get("optic")) == "scope_3_9x" and w.inv.count("scope_4x") >= 1, "3-9x fitted, the 4x back in the pack")
+	check(w.clock.total_game_s - gt0 > 18.0 * 60.0, "the 20 min fit takes game minutes (%.0f min)" % ((w.clock.total_game_s - gt0) / 60.0))
 	check(w.inv.zero_of("ranger_box_rifle").length() > 1.0, "and the rifle needs zeroing")
 	check(w.gunsmith_zero("ranger_box_rifle") == "Zero it at a workbench" or w.at_workbench(), "zeroing needs the workbench")
 	w.gunsmith.close()
+	# knocks: a heavy hit shifts a scope's zero
+	w.inv.zero["ranger_box_rifle"] = [0.0, 0.0]; w._last_hp = w.player.health + 20.0; w._zero_knocks("ranger_box_rifle")
+	check(w.inv.zero_of("ranger_box_rifle").length() > 0.25, "a heavy hit knocks the scope off zero (%.2f mrad)" % w.inv.zero_of("ranger_box_rifle").length())
+	# drop / pick up: the rifle on the ground keeps its own fit; a second one stays factory
+	w.rifle_up = false; w.inv.add("ranger_box_rifle")
+	w.drop_item("ranger_box_rifle", 1); await frames(2)
+	var gp: ItemPickup = null
+	for n in w.get_tree().get_nodes_in_group("pickups"):
+		if n is ItemPickup and (n as ItemPickup).id == "ranger_box_rifle" and not n.is_queued_for_deletion(): gp = n
+	check(gp != null and gp.states.size() == 1 and String((gp.states[0]["fit"] as Dictionary).get("optic")) == "scope_3_9x", "dropped rifle keeps its 3-9x on the ground")
+	check(String(RifleDB.fitted("ranger_box_rifle").get("optic")) == "scope_4x", "the one still carried shows its own 4x")
+	if gp != null: w.take_pickup(gp)
+	check(w.inv.spare_count("ranger_box_rifle") == 1, "picked back up as a spare with its own setup")
 	# save / load of fits, zero, torch
 	var d: Dictionary = w._save_data().duplicate(true)
 	check(d["inv"].has("zero") and d["inv"].has("torch_h") and (d["inv"]["fitted"] as Dictionary).has("ranger_box_rifle"), "save carries fits, zero and the flashlight")

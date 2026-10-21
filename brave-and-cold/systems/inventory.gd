@@ -154,6 +154,8 @@ var fitted: Dictionary = {}         # v3 rifle id -> {optic, light, light_h}; mi
 var light_on := false               # weapon light switched on (only shines while that rifle is raised)
 var light_charge: Dictionary = {}   # weapon light id -> battery hours left while it rides in the pack
 var zero: Dictionary = {}           # v3 rifle id -> [x, y] mrad point-of-impact offset (0 = zeroed at a bench)
+var spares: Dictionary = {}         # rifle id -> [state, ...] for the 2nd, 3rd... rifle of that id carried
+var last_removed_states: Array = [] # states of the rifles the last remove() took out (drop / store keep them)
 var torch_on := false               # handheld flashlight (rifle lowered)
 var torch_h := 6.0                  # its battery hours left
 var body: BodyTemperature
@@ -364,6 +366,33 @@ func fit_attachment(rid: String, slot: String, aid: String, bench := false) -> S
 	return ""
 
 
+## The top rifle of an id as a portable state.
+func state_of(rid: String) -> Dictionary:
+	return _norm_state(rid, {"fit": fitted.get(rid, {}), "zero": zero.get(rid, [0.0, 0.0]), "loaded": loaded.get(rid, RifleDB.mag(rid))})
+
+func _norm_state(rid: String, st: Dictionary) -> Dictionary:
+	var f: Dictionary = (st.get("fit", {}) as Dictionary).duplicate() if st.get("fit", {}) is Dictionary else {}
+	if RifleDB.is_v3(rid) and f.is_empty(): f = RifleDB.factory(rid)
+	var z: Array = st.get("zero", [0.0, 0.0]) if st.get("zero") is Array else [0.0, 0.0]
+	return {"fit": f, "zero": [float(z[0]), float(z[1])] if z.size() == 2 else [0.0, 0.0], "loaded": clampi(int(st.get("loaded", RifleDB.mag(rid))), 0, RifleDB.mag(rid))}
+
+func _apply_state(rid: String, st: Dictionary) -> void:
+	var s := _norm_state(rid, st)
+	if RifleDB.is_v3(rid): fitted[rid] = s.fit
+	zero[rid] = s.zero; loaded[rid] = s.loaded
+
+## How many rifles of this id are carried beyond the one on top.
+func spare_count(rid: String) -> int:
+	return (spares.get(rid, []) as Array).size()
+
+## Bring the next carried rifle of this id to the top (the top one goes to the back of the line).
+func cycle_spare(rid: String) -> bool:
+	var sp: Array = spares.get(rid, [])
+	if sp.is_empty(): return false
+	var top := state_of(rid)
+	_apply_state(rid, sp.pop_front()); sp.append(top); spares[rid] = sp
+	return true
+
 ## Point-of-impact shift after fitting a sight by hand: 1.5-4 mrad (5-14 MOA) in a random direction.
 func _field_zero() -> Array:
 	var a := randf() * TAU; var m := randf_range(1.5, 4.0)
@@ -400,11 +429,19 @@ func add_aged(id:String,n:int,seconds:float) -> void:
 	add(id,n)
 	if shelf_s(id)>0:age[id]=(prior*had+maxf(0,seconds)*n)/float(had+n)
 
-func add(id: String, n: int = 1) -> void:
+## Rifles are instances: the one on top (fitted / zero / loaded for that id) plus spares[id].
+## states = [{fit, zero, loaded}] for the rifles being added (a dropped or stored rifle keeps its own
+## sight, light, zero and rounds); missing states = a found rifle with its factory fit, loaded.
+func add(id: String, n: int = 1, states: Array = []) -> void:
 	if n<=0:return
 	if id == "rifle": id = DEFAULT_RIFLE
-	if is_rifle(id) and not loaded.has(id): loaded[id] = RifleDB.mag(id)   # found rifles come loaded
-	if is_rifle(id) and RifleDB.is_v3(id) and not fitted.has(id): fitted[id] = RifleDB.factory(id)   # with their factory sight/light
+	if is_rifle(id):
+		for k in n:
+			var st: Dictionary = states[k] if k < states.size() and states[k] is Dictionary else {}
+			if count(id) + k == 0: _apply_state(id, st)
+			else:
+				if not spares.has(id): spares[id] = []
+				(spares[id] as Array).append(_norm_state(id, st))
 	if shelf_s(id) > 0.0:
 		var old := count(id)
 		age[id] = float(age.get(id, 0.0)) * float(old) / float(old + n)   # new items are fresh: stack age averages down
@@ -419,6 +456,16 @@ func remove(id: String, n: int = 1) -> bool:
 		if id == "": return false
 	if count(id) < n:
 		return false
+	if is_rifle(id):
+		last_removed_states = []
+		for k in n:
+			last_removed_states.append(state_of(id))
+			var sp: Array = spares.get(id, [])
+			if not sp.is_empty():
+				_apply_state(id, sp.pop_front())
+				if sp.is_empty(): spares.erase(id)
+			elif count(id) - k <= 1:
+				fitted.erase(id); zero.erase(id); loaded.erase(id)
 	counts[id] = count(id) - n
 	if counts[id] <= 0:
 		counts.erase(id)

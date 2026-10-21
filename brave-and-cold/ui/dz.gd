@@ -147,7 +147,22 @@ static func _rifle_icon(id: String) -> Texture2D:
 	return _rifle_icons[id]
 
 
+## Rendered loose weapon parts (render_weapon_v3_sheet.py --parts): scopes, lights, mounts, moderators.
+static var _part_icons: Dictionary = {}
+static func part_icon(id: String) -> Texture2D:
+	if not _part_icons.has(id):
+		var path := "res://assets/ui/parts/%s.png" % id
+		_part_icons[id] = load(path) if ResourceLoader.exists(path) else null
+	return _part_icons[id]
+
+
 static func item_icon(ci: CanvasItem, id: String, r: Rect2, dim: float = 1.0) -> void:
+	var ptex := part_icon(id) if (Inventory.kind_of(id) == "attachment" or id == "flashlight") else null
+	if ptex != null:
+		var ps := minf(r.size.x / ptex.get_width(), r.size.y / ptex.get_height()) * 0.95
+		var psz := Vector2(ptex.get_width(), ptex.get_height()) * ps
+		ci.draw_texture_rect(ptex, Rect2(r.get_center() - psz * .5, psz), false, Color(dim, dim, dim, 1))
+		return
 	if Inventory.is_rifle(id):
 		var tex := _rifle_icon(id)
 		if tex != null:

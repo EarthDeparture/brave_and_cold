@@ -54,6 +54,27 @@ def trigger_guard_v4(key='alloy_black'):
 trigger_guard_v3 = trigger_guard_v4   # compact_patrol_rifle (W1) picks it up too
 
 
+def turret(name, base, axis, key, r=.0092, h=.0105):
+    """Scope adjustment turret: a short drum standing off the saddle with a knurled cap (axis 'y' or 'x')."""
+    ax = (0, 1, 0) if axis == 'y' else (1, 0, 0)
+    p1 = tuple(base[i] + ax[i] * h for i in range(3)); p2 = tuple(base[i] + ax[i] * (h + .0045) for i in range(3))
+    cylinder(name, base, p1, r, key, 24)
+    cylinder(name + 'Cap', p1, p2, r * 1.06, key, 24)
+    for k in range(12):
+        a = k * TAU / 12; o = (math.cos(a) * r * 1.07, math.sin(a) * r * 1.07)
+        q = (o[0], p1[1] + .0022, base[2] + o[1]) if axis == 'y' else (p1[0] + .0022, base[1] + o[0], base[2] + o[1])
+        box(name + 'Knurl', q, (.0012, .0040, .0012) if axis == 'y' else (.0040, .0012, .0012), key, .0002)
+
+
+def screw(name, p, axis='y', r=.0024, key='steel_bright', parent=None, sign=-1):
+    """Slotted screw head (blued/bright) standing .8 mm proud, slot across it."""
+    ax = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}[axis]; ax = tuple(sign * a for a in ax)
+    p0 = tuple(p[i] - ax[i] * .0004 for i in range(3)); p1 = tuple(p[i] + ax[i] * .0008 for i in range(3))
+    cylinder(name, p0, p1, r, key, 12, parent)
+    sz = {'x': (.0006, .0007, r * 1.9), 'y': (r * 1.9, .0006, .0007), 'z': (r * 1.9, .0007, .0006)}[axis]
+    box(name + 'Slot', tuple(p[i] + ax[i] * .0008 for i in range(3)), sz, 'synthetic_black', .0001, parent)
+
+
 def barrel3(rear_z, muzzle, r0, r1, key='blued', n=28, thread=False):
     """Tapered barrel from the receiver face (rear_z < 0) to a recessed crown with an open bore."""
     d0 = -rear_z
@@ -114,6 +135,8 @@ def sockets_common(aim_y, hl, mag_pos, bolthand_pos, bolthand_parent, eject=(.01
 
 def mech_bolt(aim_y, hl, mag_pos, mag_b, rear_z=.062, style='sporter', key='blued', guard_key=None):
     trigger = trigger_guard_v3(guard_key or key)
+    for z in (-.031, .059): screw('GuardScrew', (0, .0225, z), 'y', .0026, guard_key or key)
+    screw('TangScrew', (0, .0745, rear_z + .036), 'y', .0022, key, sign=1)
     bolt, handle, knob = bolt_parts(rear_z, style, key)
     charge = node('ChargingHandle', (.021, .074, -.070))
     release = node('MagazineRelease', (0, .026, mag_pos[2] - .046))
@@ -139,6 +162,7 @@ def recoil_pad(z, top, bot, hw, key='rubber', t=.022, spacer=True):
 
 def band(z, top, bot, hw, key='blued', w=.011, sq=2.4):
     loft('Band', [(z - w / 2, top, bot, hw, sq), (z + w / 2, top, bot, hw, sq)], key, n=26, sub=1)
+    screw('BandScrew', (hw + .0002, (top + bot) / 2, z), 'x', .0018, key, sign=1)
 
 
 def bead_front(m, sight_y, key='blued', ramp_len=.045, hood=False):
@@ -165,9 +189,12 @@ def leaf_rear(z, sight_y, key='blued', wide=False):
 def _scope(cy, eye_d, eye_r, tube_r, obj_d, obj_r, ring_ds, key='blued', bases=True, power_ring=False, ao=False):
     """Hunting scope on rings: eyepiece at eye_d (<0, toward the eye), objective at obj_d."""
     for d in ring_ds:
-        if bases: box('ScopeBase', (0, .0040, d), (.0160, .0080, .0180), key, .0010)
-        box('RingStand', (0, .0120, d), (.0130, .0080, .0120), key, .0010)
+        if bases:
+            box('ScopeBase', (0, .0040, d), (.0160, .0080, .0180), key, .0010)
+            for dz in (-.0055, .0055): screw('BaseScrew', (0, .0080, d + dz), 'y', .0019, 'steel_bright', sign=1)
+        loft('RingStand', [(d - .0060, cy - tube_r + .002, .0075, .0064, 3.4), (d + .0060, cy - tube_r + .002, .0075, .0064, 3.4)], key, n=20, sub=1)
         ring_d('ScopeRing', -d - .0060, tube_r, tube_r + .0024, .012, key, cy=cy)
+        for sx in (-1, 1): box('RingSplit', (sx * (tube_r + .0016), cy + .0004, d), (.0030, .0005, .0122), 'synthetic_black', .0001)
         for sx in (-1, 1): cylinder('RingScrew', (sx * (tube_r + .0024), cy - .0010, d - .003), (sx * (tube_r + .0040), cy - .0010, d - .003), .0016, 'steel_bright', 8)
     ep = eye_d; ob = obj_d
     body = [(ep + .004, eye_r - .0010), (ep + .010, eye_r), (ep + .044, eye_r - .0006), (ep + .066, tube_r), (ob - .070, tube_r),
@@ -180,8 +207,8 @@ def _scope(cy, eye_d, eye_r, tube_r, obj_d, obj_r, ring_ds, key='blued', bases=T
     if ao:           # adjustable objective ring with range marks
         lathe_d('AORing', [(ob - .026, obj_r + .0006), (ob - .012, obj_r + .0006)], key, cy=cy, n=36)
     mid = (ring_ds[0] + ring_ds[1]) / 2
-    lathe_d('TurretTop', [(mid - .010, .0001), (mid - .010, .0105), (mid + .010, .0105), (mid + .010, .0001)], key, cy=cy + tube_r + .0095, n=20)
-    lathe_d('TurretSide', [(mid - .010, .0001), (mid - .010, .0105), (mid + .010, .0105), (mid + .010, .0001)], key, cy=cy, x=tube_r + .0095, n=20)
+    turret('TurretTop', (0, cy + tube_r + .0020, -mid), 'y', key)
+    turret('TurretSide', (tube_r + .0020, cy, -mid), 'x', key)
     lathe_d('TurretSaddle', [(mid - .016, tube_r + .0030), (mid + .016, tube_r + .0030)], key, cy=cy, n=36)
     lens('ScopeEyeLens', ep + .003, eye_r - .0032, cy, 'glass')
     lens('ScopeObjLens', ob - .003, obj_r - .0024, cy, 'glass')
@@ -208,8 +235,8 @@ def optic_scope_scout_2x():
     lathe_d('ScoutBody', [(-.096, .0150), (-.090, .0160), (-.070, .0156), (-.050, .0128), (.050, .0128), (.070, .0150), (.096, .0158),
                           (.096, .0140), (.086, .0136)], 'alloy_black', cy=cy, n=32, cap=False)
     lathe_d('ScoutEyeRim', [(-.092, .0128), (-.098, .0128), (-.098, .0150), (-.094, .0160)], 'rubber', cy=cy, n=32, cap=False)
-    lathe_d('TurretTop', [(-.008, .0001), (-.008, .0090), (.008, .0090), (.008, .0001)], 'alloy_black', cy=cy + .0128 + .008, n=18)
-    lathe_d('TurretSide', [(-.008, .0001), (-.008, .0090), (.008, .0090), (.008, .0001)], 'alloy_black', cy=cy, x=.0128 + .008, n=18)
+    turret('TurretTop', (0, cy + .0140, 0.0), 'y', 'alloy_black', r=.0078, h=.0085)
+    turret('TurretSide', (.0140, cy, 0.0), 'x', 'alloy_black', r=.0078, h=.0085)
     lens('ScopeEyeLens', -.095, .0124, cy, 'glass')
     lens('ScopeObjLens', .093, .0132, cy, 'glass')
     socket('Mount', (0, 0, 0)); socket('Eye', (0, cy, .095)); socket('Scope', (0, cy, .095))
@@ -483,6 +510,20 @@ def expedition_rifle():
     return mech_bolt(sight_y, (.014, .049, -.360), (0, .044, -.075), mag_builder(.030, .084, .024, 'blued'), rear_z=.066)
 
 
+def flashlight_hand():
+    """Two-cell household flashlight held in the hand (same model family as the taped light):
+    grey anodised body with knurl bands, rubber tail switch, flared head, lens. Axis = -Z (beam)."""
+    lathe_d('TorchBody', [(-.100, .0118), (-.094, .0130), (.030, .0130), (.044, .0168), (.064, .0178), (.072, .0178),
+                          (.072, .0158), (.068, .0154)], 'parkerized', cy=0.0, n=32, cap=False)
+    lathe_d('TorchTail', [(-.106, .0001), (-.106, .0100), (-.100, .0118)], 'rubber', cy=0.0, n=24)
+    for d in (-.070, -.052, -.034):
+        lathe_d('KnurlBand', [(d, .0136), (d + .010, .0136)], 'alloy_black', cy=0.0, n=32)
+    box('TorchSwitch', (0, .0136, .012), (.0070, .0030, .0120), 'rubber', .0008)
+    lathe_d('Bezel', [(.066, .0180), (.073, .0182), (.073, .0160)], 'steel_bright', cy=0.0, n=32, cap=False)
+    lens('LampLens', .0705, .0156, 0.0, 'lamp_lens')
+    socket('Mount', (0, 0, 0)); socket('Grip', (0, 0, .040)); socket('Beam', (0, 0, -.074))
+
+
 MUZ3.update({'ranger_box_rifle': .660, 'timber_bolt_carbine': .500, 'north_service_rifle': .700, 'frontier_vented_rifle': .640,
              'brush_lever_rifle': .560, 'ridge_scout_rifle': .720, 'expedition_rifle': .760})
 RIFLES_W2 = [
@@ -497,6 +538,7 @@ RIFLES_W2 = [
 OPTICS_W2 = [('scope_3_9x', optic_scope_3_9x, '3-9x40 variable hunting scope on rings and bases'),
              ('scope_4_12x', optic_scope_4_12x, '4-12x50 adjustable-objective scope on high rings'),
              ('scope_scout_2x', optic_scope_scout_2x, '2x long-eye-relief scout scope on rail rings')]
+LIGHTS_W2 = [('flashlight_hand', flashlight_hand, 'Household two-cell flashlight, held in the hand')]
 MOUNTS_W2 = [('scout_mount_clamp', scout_mount_clamp, 'Clamp-on scout rail for a surplus rifle (no drilling)')]
 MUZZLES_W2 = [('muzzle_moderator', muzzle_moderator, 'Factory sound moderator for threaded barrels'),
               ('muzzle_brake', muzzle_brake, 'Ported muzzle brake')]

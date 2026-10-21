@@ -133,7 +133,11 @@ static func _mount_words(m) -> String:
 
 ## Fitted muzzle device stats ({} = bare muzzle): noise_mult, spread_mult.
 static func muzzle(id: String) -> Dictionary:
-	var a := attachment(String(fitted(id).get("muzzle", "")))
+	return muzzle_for(id, fitted(id))
+
+## Muzzle device stats with fit `f` (gunsmith compare).
+static func muzzle_for(id: String, f: Dictionary) -> Dictionary:
+	var a := attachment(String(f.get("muzzle", "")))
 	if not a.has("muzzle"): return {}
 	var m: Dictionary = (a["muzzle"] as Dictionary).duplicate()
 	if bool(spec(id).get("rimfire", false)) and m.has("rimfire_noise_mult"): m["noise_mult"] = m["rimfire_noise_mult"]
@@ -147,8 +151,12 @@ static func fit_sig(id: String) -> String:
 
 
 static func optic(id: String) -> Dictionary:
+	return optic_for(id, fitted(id)) if is_v3(id) else optic_for(id, {})
+
+## The sight a rifle has with fit `f` (v3: the fitted optic, else its irons).
+static func optic_for(id: String, f: Dictionary) -> Dictionary:
 	if is_v3(id):
-		var oid := String(fitted(id).get("optic", ""))
+		var oid := String(f.get("optic", ""))
 		var a := attachment(oid)
 		if a.has("optic"): return a["optic"]
 		return spec(id).get("irons", IRONS)
@@ -157,7 +165,11 @@ static func optic(id: String) -> Dictionary:
 
 ## Fitted weapon light spec (+ "id"), or {} when none.
 static func light(id: String) -> Dictionary:
-	var lid := String(fitted(id).get("light", ""))
+	return light_for(id, fitted(id))
+
+## Weapon light spec with fit `f` (+ "id"), or {}.
+static func light_for(id: String, f: Dictionary) -> Dictionary:
+	var lid := String(f.get("light", ""))
 	var a := attachment(lid)
 	if not a.has("light"): return {}
 	var l: Dictionary = (a["light"] as Dictionary).duplicate()

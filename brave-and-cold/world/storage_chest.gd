@@ -20,6 +20,7 @@ var spoilage_rate:=COLD_RATE # outdoor default; heated lookout pantry overrides 
 var contents: Dictionary = {}   # id -> n
 var cond: Dictionary = {}       # id -> condition 0..1 (only when worn)
 var age: Dictionary = {}        # id -> age seconds (perishables)
+var rifle_states: Dictionary = {}   # rifle id -> [state, ...] of the rifles stored here
 var want_open := false          # set by GameWorld while the gear screen is on this chest
 var lid_k := 0.0                # 0 shut .. 1 open
 var _lid: Node3D
@@ -241,8 +242,18 @@ func remove(id: String, n: int) -> void:
 	contents_changed.emit()
 
 
+func put_states(id: String, st: Array) -> void:
+	if not rifle_states.has(id): rifle_states[id] = []
+	(rifle_states[id] as Array).append_array(st.duplicate(true))
+
+func take_states(id: String, n: int) -> Array:
+	var all: Array = rifle_states.get(id, [])
+	var out := all.slice(0, n); rifle_states[id] = all.slice(n)
+	if (rifle_states[id] as Array).is_empty(): rifle_states.erase(id)
+	return out
+
 func to_dict() -> Dictionary:
-	return {"x": global_position.x, "y": global_position.y, "z": global_position.z, "yaw": rotation.y, "c": contents.duplicate(), "cond": cond.duplicate(), "age": age.duplicate()}
+	return {"x": global_position.x, "y": global_position.y, "z": global_position.z, "yaw": rotation.y, "c": contents.duplicate(), "cond": cond.duplicate(), "age": age.duplicate(), "rs": rifle_states.duplicate(true)}
 
 
 func load_dict(d: Dictionary) -> void:
@@ -251,6 +262,7 @@ func load_dict(d: Dictionary) -> void:
 		contents[String(k)] = int(d["c"][k])
 	cond = (d.get("cond", {}) as Dictionary).duplicate()
 	age = (d.get("age", {}) as Dictionary).duplicate()
+	rifle_states = (d.get("rs", {}) as Dictionary).duplicate(true) if d.get("rs", {}) is Dictionary else {}
 	_pile_dirty = true
 	contents_changed.emit()
 

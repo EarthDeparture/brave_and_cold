@@ -50,6 +50,10 @@ var _bolt: Node3D
 var weapon_id := "timber_bolt_carbine"
 var scoped_view := false
 var light_on := false   # weapon light switched on (GameWorld: L key, battery)
+var torch_on := false   # handheld flashlight in the left hand (GameWorld: L with the rifle lowered)
+var torch_beam: Node3D  # lamp face of the held flashlight (GameWorld parents its SpotLight here)
+var _torch: Node3D
+const TORCH_GLB := "res://assets/weapons/v3/lights/flashlight_hand.glb"
 var _weapon_clip := ""
 var _weapon_clip_t := 0.0
 var _guard_k := 0.0
@@ -335,9 +339,35 @@ func _process(delta: float) -> void:
 	elif shown == "fists":
 		_pose_fists(base)
 
+	var holding_torch := torch_on and shown != "rifle" and not working and _watch_k < .01 and not player.ui_open
+	if _torch != null: _torch.visible = holding_torch
+	if holding_torch: _pose_torch(base)
+	elif torch_beam != null and not torch_on: pass
 	watch.visible=_watch_k>.01 and not player.ui_open
 	if watch.visible:
 		_pose_watch(_watch_k)
+
+## Left hand holding the flashlight low and forward, beam toward the view centre; the fist's
+## knuckle line is tilted down from the beam (wrist bent), forearm runs down and back to the elbow.
+func _pose_torch(base: Transform3D) -> void:
+	if _torch == null:
+		if not ResourceLoader.exists(TORCH_GLB): return
+		_torch = (load(TORCH_GLB) as PackedScene).instantiate(); add_child(_torch)
+		var wp := WeaponPresentation.new(); wp._apply_materials(_torch); wp.free()
+		for mi: MeshInstance3D in _torch.find_children("*", "MeshInstance3D", true, false): mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		torch_beam = _torch.find_child("*Socket_Beam", true, false) as Node3D
+	var fist := Vector3(-.135, -.205, -.43)
+	var beam := Vector3(.10, .045, -1.0).normalized()
+	var x := (Basis(Vector3.RIGHT, deg_to_rad(-35.0)) * beam).normalized()
+	var y := (Vector3.RIGHT - x * x.dot(Vector3.RIGHT)).normalized()
+	var hb := Basis(x, y, x.cross(y))
+	var hand := Transform3D(hb, fist - hb * Vector3(0, -.028, -.072))
+	_left.visible = true; _sl_l.visible = true
+	_left.transform = base * hand; _left.pose("Shaft")
+	var tz := -beam; var ty := (Vector3.UP - tz * tz.dot(Vector3.UP)).normalized()
+	var tb := Basis(ty.cross(tz), ty, tz)
+	_torch.transform = base * Transform3D(tb, fist - tb * Vector3(0, 0, .040))
+	_aim_sleeve(_sl_l, _left.transform, Vector3.ZERO, base * Vector3(-.40, -.62, .16))
 
 func _pose_watch(k:float)->void:
 	_left.visible=true;_sl_l.visible=true
@@ -453,6 +483,11 @@ func _pose_rifle(base: Transform3D) -> void:
 	var right_offset := Vector3(.024,.054,.0585) if not _rifle.is_pistol_grip() else Vector3(.057,-.037,.050)
 	var trigger := _rifle.resting_socket_transform("HandR")*Transform3D(_right_weapon_basis(),right_offset)
 	var support := _rifle.resting_socket_transform("HandL")*Transform3D(Basis(Vector3.FORWARD,Vector3.DOWN,Vector3.LEFT),Vector3(-.042,-.035,.030))
+	var fe := {}; var wr := {}
+	if _rifle.is_v3():
+		fe = _rifle.section_at(_rifle.socket_model("HandL").z)
+		wr = _rifle.section_at(_rifle.socket_model("HandR").z + .012)
+		if not fe.is_empty(): support = _model_vm() * _support_on(fe)
 	trigger.origin += _rifle.resting_socket_transform("HandR").basis*_rifle.contact_offset("hold","right")
 	support.origin += _rifle.resting_socket_transform("HandL").basis*_rifle.contact_offset("hold","left")
 	var right := trigger; var left := support; var reach := 0.0
@@ -490,9 +525,38 @@ func _pose_rifle(base: Transform3D) -> void:
 		_right.position += _rifle.socket_transform("HandR").basis*_rifle.contact_offset("hold","right")
 		_right.pose("StockGrip","ToolGrip",sin(PI*cycle/.9)*.6)
 	_left.transform = left; _left.pose("ForeGrip",left_grip,left_mix,.45*sin(PI*left_mix))
+	if not fe.is_empty() and left_mix < .02:
+		_wrap(_left, "ForeGrip", fe, ["index", "middle", "ring", "little", "thumb"])
+	if not wr.is_empty() and reach < .02 and not (_rifle.is_lever_action() and cycle >= 0):
+		_wrap(_right, "Trigger" if _rifle.is_pistol_grip() else "StockGrip", wr, ["middle", "ring", "little", "thumb"])
 	_aim_sleeve(_sl_r,_right.transform,Vector3.ZERO,base*Vector3(.46,-.56,.32))
 	_aim_sleeve(_sl_l,left,Vector3.ZERO,base*Vector3(-.46,-.58,.28))
 	_flash.position = _rifle.socket_transform("Muzzle").origin
+
+## ---- v3 hand placement on the real wood (weapon mesh cross-sections) + finger-curl wrap.
+func _model_vm() -> Transform3D:
+	return _rifle.transform * _rifle.model.transform
+
+## Support hand on a fore-end section (model space): palm against the lower-left of the wood, turned
+## ~38 deg up toward the gun, fingers pointing across under it and a little forward (they wrap the far side),
+## thumb along the near side. Returns the hand transform in model space.
+const SUPPORT_PHI := 38.0
+const SUPPORT_YAW := 24.0
+func _support_on(sec: Dictionary) -> Transform3D:
+	var phi := deg_to_rad(SUPPORT_PHI); var psi := deg_to_rad(SUPPORT_YAW)
+	var c: Vector3 = sec.c; var hw: float = sec.hw; var hh: float = sec.hh
+	var n_out := Vector3(-sin(phi) * hh, -cos(phi) * hw, 0).normalized()   # ellipse normal at the contact
+	var p := c + Vector3(-hw * sin(phi), -hh * cos(phi), 0)
+	var tdir := Vector3(-n_out.y, n_out.x, 0)                               # around under the wood, to the right
+	var fing := (tdir * cos(psi) + Vector3.FORWARD * sin(psi)).normalized()
+	var y := n_out
+	var z := -(fing - y * y.dot(fing)).normalized()
+	var b := Basis(y.cross(z), y, z)
+	return Transform3D(b, p - b * Vector3(0, -0.013, -0.050))
+
+func _wrap(rig: SurvivorHandRig, grip: String, sec: Dictionary, fingers: Array) -> void:
+	var m := global_transform * _model_vm()
+	rig.wrap(grip, m * (sec.c as Vector3), m.basis * Vector3.FORWARD, m.basis * Vector3.UP, float(sec.hw), float(sec.hh), fingers)
 
 func _pose_fists(base: Transform3D) -> void:
 	var jab := 0.0

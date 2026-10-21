@@ -13,6 +13,7 @@ uniform float brightness = 1.0;                   // dimmer at night (auto)
 uniform vec4 tint : source_color = vec4(0.55, 0.80, 0.85, 0.07);
 uniform vec3 dot_color : source_color = vec3(1.0, 0.10, 0.05);
 uniform float dark = 0.0;                         // scope objective / eyepiece: dark glass
+uniform float glow = 0.0;                         // lamp lens lit (weapon light / flashlight on)
 
 void fragment() {
 	vec3 world = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
@@ -27,6 +28,6 @@ void fragment() {
 	ROUGHNESS = 0.04;
 	METALLIC = 0.0;
 	SPECULAR = mix(0.7, 0.22, dark);                 // coated scope glass reads dark, not mirror-white
-	EMISSION = dot_color * d * 7.0 * brightness;
+	EMISSION = dot_color * d * 7.0 * brightness + vec3(1.0, 0.95, 0.85) * glow;
 	ALPHA = clamp(mix(tint.a, 0.88, dark) + fres * 0.30 + core * dot_on, 0.0, 1.0);
 }
