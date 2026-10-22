@@ -35,7 +35,8 @@ var _dist := 1.30
 var _drag := false
 var _drag_from := Vector2.ZERO
 var _msg := ""
-var action_open := false    # inspect with the bolt drawn back / lever open (extractor, jewelled bolt, chamber)
+var action_open := false
+var _focus := Vector3.ZERO   # camera target: the receiver while the action is open    # inspect with the bolt drawn back / lever open (extractor, jewelled bolt, chamber)
 var _scroll := 0.0          # slot column scroll (wheel over the column)
 var _content_h := 0.0
 var _tab_cmp := ""          # rifle tab under the mouse: compared with the selected rifle
@@ -110,14 +111,22 @@ func _process(delta: float) -> void:
 	_msg_t -= delta
 	var s := _scale(); var o := _origin()
 	_vc.position = o + VIEW_R.position * s; _vc.size = VIEW_R.size * s
-	_cam.position = Vector3(sin(_yaw) * cos(_pitch), -sin(_pitch), cos(_yaw) * cos(_pitch)) * _dist
-	_cam.look_at(Vector3.ZERO, Vector3.UP)
+	_focus = _focus.lerp(Vector3(0.0, 0.0, 0.16) if action_open else Vector3.ZERO, clampf(delta * 6.0, 0.0, 1.0))
+	_cam.position = _focus + Vector3(sin(_yaw) * cos(_pitch), -sin(_pitch), cos(_yaw) * cos(_pitch)) * _dist
+	_cam.look_at(_focus, Vector3.UP)
 	if _gun != null and _gun.fit_sig != RifleDB.fit_sig(rid): _rebuild_gun()
 	if _gun != null: _pose_action()
 	_bg.queue_redraw(); _c.queue_redraw()
 
 
 func drag_held() -> bool: return _drag
+
+
+## Opening the action also swings the view to the ejection-port side, looking down into it, close in.
+func _toggle_action() -> void:
+	action_open = not action_open
+	if action_open: _yaw = 1.30; _pitch = -0.50; _dist = 0.62
+	else: _dist = 1.30; _pitch = -0.22
 
 
 ## Bolt rifles and the lever: the cycle clip held at its open point; self-loaders: the empty-reload clip with
@@ -237,7 +246,7 @@ func _draw_all() -> void:
 		x += 138.0
 		if x > 1340: break
 	_c.draw_rect(VIEW_R, DZ.EDGE, false, 1.5)
-	_button(Rect2(VIEW_R.end - Vector2(176, 44), Vector2(166, 34)), "CLOSE ACTION" if action_open else "OPEN ACTION", func() -> void: action_open = not action_open, true, 15)
+	_button(Rect2(VIEW_R.end - Vector2(176, 44), Vector2(166, 34)), "CLOSE ACTION" if action_open else "OPEN ACTION", func() -> void: _toggle_action(), true, 15)
 	DZ.text(_c, "drag: turn     wheel: closer", VIEW_R.position + Vector2(10, VIEW_R.size.y - 10), 15, DZ.DIM)
 	_preview = {}
 	_draw_slots(Vector2(934, 182))

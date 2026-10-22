@@ -236,9 +236,13 @@ func gunshot(rid := "") -> void:
 ## Action foley from the viewmodel's cycle (bolt_up/back/fwd/down, lever_open/close).
 const MECH_TRIM := {"dry_click": 8.0, "gate_close": 4.0, "mag_release": -2.0, "bolt_release": 2.0}
 var last_mech := ""
+## Per rifle class: a .22's parts are small and light (higher, quieter), a magnum's heavy (lower, louder).
+const MECH_CLASS := {"rimfire": [1.16, -3.0], "intermediate": [1.0, 0.0], "medium": [0.97, 0.0], "magnum_brake": [0.9, 1.5]}
 func mech(event: String) -> void:
 	last_mech = event
-	_play2d(event, SHOT_BASE_DB + MECH_DB + float(MECH_TRIM.get(event, 0.0)), _rng.randf_range(0.96, 1.04))
+	var rid: String = world.inv.rifle_id() if world != null and world.get("inv") != null and world.inv.count("rifle") > 0 else ""
+	var mc: Array = MECH_CLASS.get(RifleDB.report_class(rid) if rid != "" else "medium", [1.0, 0.0])
+	_play2d(event, SHOT_BASE_DB + MECH_DB + float(MECH_TRIM.get(event, 0.0)) + float(mc[1]), float(mc[0]) * _rng.randf_range(0.96, 1.04))
 
 
 # ------------------------------------------------------------ hearing (temporary threshold shift)

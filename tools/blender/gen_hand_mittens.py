@@ -25,7 +25,15 @@ WIDTH_K = 1.38      # bag half width vs half the knuckle span (leather + lining)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=SRC)
 keep = []
-for arm_name, out_name in (("HandRig", "MittenShell"), ("LeftHandRig", "MittenShellLeft")):
+WELT = 0.0013      # W9: the sewn welt seam standing proud round the bag's edge
+PUFF = 0.10        # lining belly, fraction of thickness at mid-bag
+VARIANTS = [   # (armature, mesh name, fingers in the bag, first finger of the bag's knuckle span)
+    ("HandRig", "MittenShell", ["index", "middle", "ring", "little"], "index"),
+    ("LeftHandRig", "MittenShellLeft", ["index", "middle", "ring", "little"], "index"),
+    ("HandRig", "TriggerMitt", ["middle", "ring", "little"], "middle"),        # index free: a hunter's mitt
+    ("LeftHandRig", "TriggerMittLeft", ["middle", "ring", "little"], "middle"),
+]
+for arm_name, out_name, BAG, FIRST in VARIANTS:
     arm = bpy.data.objects[arm_name]
     glove = next(o for o in bpy.data.objects if o.type == 'MESH' and o.parent == arm and o.data.materials and o.data.materials[0].name.startswith("survivor_leather"))
     m = glove.copy(); m.data = glove.data.copy(); m.name = out_name; m.data.name = out_name
@@ -35,15 +43,15 @@ for arm_name, out_name in (("HandRig", "MittenShell"), ("LeftHandRig", "MittenSh
     tail = lambda b: aw @ bones[b].tail_local
     mw = m.matrix_world; inv = mw.inverted()
     gi = {g.name: g.index for g in m.vertex_groups}
-    fgroups = {gi["%s_0%d" % (f, k)] for f in FINGERS for k in (1, 2, 3)}
+    fgroups = {gi["%s_0%d" % (f, k)] for f in BAG for k in (1, 2, 3)}
     # ---- frame of the bag: from the knuckle line along the middle finger, flattened palm-normal
-    k_in, k_out = head("index_01"), head("little_01")
-    base = k_in * 0.56 + k_out * 0.44   # the index side of the glove sticks out further than its knuckle
+    k_in, k_out = head(FIRST + "_01"), head("little_01")
+    base = k_in * 0.56 + k_out * 0.44 if FIRST == "index" else k_in * 0.47 + k_out * 0.53   # glove sides stick out past the knuckles
     tip = tail("middle_03")
     fdir = (tip - head("middle_01")).normalized()
     lat = (k_in - k_out); lat = (lat - fdir * lat.dot(fdir)).normalized()
     up = fdir.cross(lat).normalized()
-    half_w = (k_in - k_out).length / 2 * WIDTH_K
+    half_w = (k_in - k_out).length / 2 * (WIDTH_K if FIRST == "index" else 1.55)   # three fingers: proportionally wider padding
     L = (tip - base).dot(fdir) + 0.006
     # palm side: the side the fingers curl toward = away from the back of the hand. Use the vertex mass of the
     # glove's finger region to find which way `up` points relative to the hand centre line (keeps it symmetric).
@@ -86,6 +94,8 @@ for arm_name, out_name in (("HandRig", "MittenShell"), ("LeftHandRig", "MittenSh
             a = k * 2 * math.pi / N; c, s = math.cos(a), math.sin(a)
             ex = 0.7 + 0.3 * min(1.0, e)            # squarer along the bag, round at the tip
             x = math.copysign(abs(c) ** ex, c) * w; y = math.copysign(abs(s) ** 0.85, s) * h
+            y *= 1.0 + PUFF * math.sin(math.pi * min(1.0, max(0.0, t / L)))           # belly of the lining
+            x += math.copysign(WELT * math.exp(-(s / 0.16) ** 2), c)                   # the welt along both edges
             p = base + fdir * t + lat * x + up * y
             bv = bm.verts.new(inv @ p)
             ring.append((bv, k / N, (t + 0.03) / (L + 0.03), t, 1 if s >= 0 else -1))

@@ -195,6 +195,8 @@ const RELOAD_EVENTS := {
 		[1.94, "bolt_up", "bolt"], [2.00, "bolt_back", "bolt"], [2.42, "bolt_fwd", "bolt"], [2.74, "bolt_down", "bolt"],
 		[1.94, "charge_back", "semi"], [2.40, "bolt_release", "semi"]],
 	"reload_insert": [[0.10, "round_insert", "lever"], [0.30, "gate_close", "lever"]],
+	"reload_start": [[0.30, "gate_close", "lever"]],                                   # thumb finds the gate
+	"reload_end": [[0.12, "lever_open", "lever"], [0.34, "lever_close", "lever"]],   # work the lever to chamber
 }
 var _clip_prev := -1.0
 
@@ -247,7 +249,7 @@ func _process(delta: float) -> void:
 		if player.dead or player.ui_open or mode != "rifle" or work_kind != "": cancel_weapon_clip()
 		elif freeze_t < 0:
 			var t0 := _weapon_clip_t if _clip_prev >= 0.0 else -1.0
-			_weapon_clip_t += delta
+			_weapon_clip_t += delta * clip_speed
 			var who := "lever" if _rifle.is_lever_action() else ("bolt" if _rifle.is_bolt_action() else "semi")
 			for ev in RELOAD_EVENTS.get(_weapon_clip, []):
 				if (ev[2] == "all" or ev[2] == who) and t0 < float(ev[0]) and _weapon_clip_t >= float(ev[0]): mech.emit(String(ev[1]))
@@ -273,7 +275,7 @@ func _process(delta: float) -> void:
 		_cur = ''
 		_equip = 0.0
 	var gt: Color = GLOVE_TINT.get(glove_item, Color(0.52, 0.38, 0.26))
-	var mitts := glove_item in ["hide_mitts", "wolf_mitts"]
+	var mitts := "trigger" if glove_item == "hide_mitts" else ("full" if glove_item == "wolf_mitts" else "")   # hunter's mitt / fur mitten
 	_right.set_gloved(glove_item in GLOVES, gt, mitts)
 	_left.set_gloved(glove_item in GLOVES, gt, mitts)
 	_right.set_cold(hand_cold); _left.set_cold(hand_cold)
@@ -465,10 +467,11 @@ func weapon_busy() -> bool:
 	return _weapon_clip != ""
 
 ## Presentation only: existing inventory remains the owner of each fired round.
-func play_weapon_clip(clip: String) -> bool:
+var clip_speed := 1.0   # < 1 slows a weapon clip (wolf-fur mittens fumble the reload); foley keys on clip fraction so it stays in step
+func play_weapon_clip(clip: String, speed := 1.0) -> bool:
 	if mode != "rifle" or work_kind != "" or _fire_t >= 0 or player.dead or player.ui_open: return false
 	if _rifle.clip_length(clip) <= 0: return false
-	_weapon_clip = clip; _weapon_clip_t = 0.0; _clip_prev = 0.0
+	_weapon_clip = clip; _weapon_clip_t = 0.0; _clip_prev = 0.0; clip_speed = speed
 	return true
 
 func cancel_weapon_clip() -> void:

@@ -10,6 +10,8 @@ var _base_fog := 0.0
 var _base_ambient := 0.0
 var _base_ambient_color := Color.WHITE
 var _hour := 12.0
+var aurora := 0.0   # 0..1, set by AmbientLife (sky curtains + a green cast on moonlight and ambient)
+const MOON_COLOR := Color(0.53,0.66,0.90)
 
 func setup(sun_light: DirectionalLight3D, environment: Environment, sky_material: ProceduralSkyMaterial) -> void:
 	super.setup(sun_light,environment,sky_material)
@@ -109,6 +111,16 @@ func apply_hour(h: float) -> void:
 	env.fog_light_energy = 0.8
 	var haze := env.fog_light_color.srgb_to_linear()*env.fog_light_energy
 	material.set_shader_parameter("haze_color",Vector3(haze.r,haze.g,haze.b))
+	if aurora > 0.0:
+		var a := aurora*(1.0-day)*(1.0-o)
+		env.ambient_light_color = env.ambient_light_color.lerp(Color(0.30,0.64,0.50),0.2*a)
+		env.ambient_light_energy += 0.05*a
+		moon.light_color = MOON_COLOR.lerp(Color(0.46,0.86,0.64),0.32*a)
+		moon.light_energy += 0.025*a
+		moon.visible = moon.light_energy > 0.002
+	else:
+		moon.light_color = MOON_COLOR
+	material.set_shader_parameter("aurora",aurora)
 	_base_fog = env.fog_density
 	_base_ambient = env.ambient_light_energy
 	_base_ambient_color = env.ambient_light_color
@@ -132,4 +144,5 @@ func from_dict(data: Dictionary) -> void:
 func snow_tint() -> Color:
 	var day := smoothstep(-7.0,9.0,sin(PI*(_hour-6.0)/12.0)*42.0)
 	var o := weather.overcast if weather != null else 0.0
-	return Color(0.18,0.26,0.40).lerp(Color(0.92,0.95,1.0).lerp(Color(0.68,0.75,0.83),o),day)
+	var tint := Color(0.18,0.26,0.40).lerp(Color(0.92,0.95,1.0).lerp(Color(0.68,0.75,0.83),o),day)
+	return tint.lerp(Color(0.20,0.42,0.34),0.16*aurora*(1.0-day))

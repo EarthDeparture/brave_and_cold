@@ -16,6 +16,20 @@ var _glow: Texture2D
 var _hex: Texture2D        # aperture ghost: a 6-blade iris, soft edge, slightly brighter rim
 var _dirt: Texture2D       # lens grime: soft smudges + specks, lit only by a bright source in view
 var dirt_k := 0.0          # last frame's dirt strength (tests / debug)
+var _dirt_rect: ColorRect  # W9: grime lit brightest around the source (radial falloff), not flat across the glass
+const DIRT_SHADER := """shader_type canvas_item;
+render_mode blend_add;
+uniform sampler2D dirt : filter_linear;
+uniform vec2 src = vec2(0.5);
+uniform float aspect = 1.78;
+uniform float k = 0.0;
+uniform vec3 col : source_color = vec3(1.0);
+void fragment() {
+	float a = texture(dirt, UV).a;
+	vec2 d = (UV - src) * vec2(aspect, 1.0);
+	float m = 0.12 + 0.88 * exp(-dot(d, d) / 0.10);
+	COLOR = vec4(col, a * k * m);
+}"""
 var _vis: Dictionary = {}      # source key -> smoothed visibility 0..1
 var _occ: Dictionary = {}      # source key -> last traced visibility (0 hidden / 1 clear)
 var _frame := 0
@@ -34,6 +48,10 @@ func _ready() -> void:
 	_glow = gt
 	_hex = _make_hex(96)
 	_dirt = _make_dirt(480, 270)
+	_dirt_rect = ColorRect.new(); _dirt_rect.set_anchors_preset(Control.PRESET_FULL_RECT); _dirt_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var dsh := Shader.new(); dsh.code = DIRT_SHADER
+	var dm := ShaderMaterial.new(); dm.shader = dsh; dm.set_shader_parameter("dirt", _dirt); _dirt_rect.material = dm
+	add_child(_dirt_rect)
 
 
 static func _make_hex(n: int) -> Texture2D:
@@ -175,6 +193,12 @@ func _draw() -> void:
 			var gr: float = unit * float(g[1]) * (0.7 + 0.3 * sz)
 			var gc: Color = g[2]
 			_c.draw_texture_rect(_hex, Rect2(gp - Vector2(gr, gr), Vector2(gr, gr) * 2.0), false, Color(gc.r * col.r, gc.g * col.g, gc.b * col.b, 0.075 * k))
-	if dirt_k > 0.02 and not sources.is_empty():   # grime on the glass catches the light, tinted by the brightest source
+	var dm := _dirt_rect.material as ShaderMaterial   # grime on the glass catches the light, tinted by the brightest source
+	if dirt_k > 0.02 and not sources.is_empty():
 		var c0: Color = sources[0]["col"]
-		_c.draw_texture_rect(_dirt, Rect2(Vector2.ZERO, vp), false, Color(c0.r, c0.g, c0.b, 0.10 * dirt_k))
+		dm.set_shader_parameter("src", (sources[0]["screen"] as Vector2) / vp)
+		dm.set_shader_parameter("aspect", vp.x / maxf(1.0, vp.y))
+		dm.set_shader_parameter("col", Vector3(c0.r, c0.g, c0.b))
+		dm.set_shader_parameter("k", 0.22 * dirt_k)
+	else:
+		dm.set_shader_parameter("k", 0.0)

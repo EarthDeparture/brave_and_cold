@@ -18,6 +18,8 @@ uniform float daylight = 1.0;
 uniform float twilight = 0.0;
 uniform float moon_strength = 0.0;
 uniform bool cloud_quality = true;
+uniform float aurora = 0.0;          // 0..1, AmbientLife: about one clear night in four
+uniform float aurora_time = 0.0;
 
 float hash21(vec2 p) {
 	// Combine axes independently: x^y alone repeats along lattice diagonals.
@@ -106,6 +108,38 @@ float stars(vec3 d) {
 	float spot = 1.0-smoothstep(radius,radius+aa,length(f));
 	return spot * step(0.986,random) * smoothstep(0.04,0.28,d.y);
 }
+// Aurora: curtains = ribbons on a plane, extruded upward by marching stacked planes along the view ray. The
+// same ground track at every height gives the vertical ray structure; the bottom edge is bright and sharp,
+// green fading to violet at the top. Ribbons wander on a slow domain warp; fine rays shimmer along them.
+float aurora_ribbon(vec2 q, float t) {
+	float w = noise2(q * 0.2 + vec2(t * 0.020, -t * 0.013)) * 2.6 + noise2(q * 0.6 - vec2(t * 0.045, 0.0)) * 0.6;
+	float y = q.y + w * 1.5 + sin(q.x * 0.16 + t * 0.03) * 1.2;
+	float r = abs(fract(y * 0.09) - 0.5) * 2.0;                 // 0 on a ribbon's centre line
+	float band = exp(-r * r * 70.0) + 0.12 * exp(-r * r * 12.0);
+	float region = smoothstep(0.22, 0.52, noise2(q * 0.05 + vec2(3.1, t * 0.004)));   // only an arc or two
+	float rays = 0.40 + 0.60 * noise2(vec2(q.x * 1.6 + y * 0.5 + t * 0.25, y * 0.3));
+	return band * region * rays;
+}
+vec3 aurora_light(vec3 d, float jitter) {
+	if (d.y < 0.03) { return vec3(0.0); }
+	vec3 acc = vec3(0.0);
+	float t = aurora_time;
+	for (int i = 0; i < 20; i++) {
+		float hf = (float(i) + jitter) / 20.0;
+		float h = 1.0 + hf * 1.1;
+		vec2 q = d.xz / (d.y + 0.08) * h * 5.0 + vec2(4.0, 9.0);
+		float c = aurora_ribbon(q, t);
+		vec3 col = mix(vec3(0.10, 1.00, 0.42), vec3(0.20, 0.75, 0.62), smoothstep(0.15, 0.5, hf));
+		col = mix(col, vec3(0.55, 0.22, 0.85), smoothstep(0.55, 1.0, hf));
+		acc += col * c * exp(-hf * 2.8) * smoothstep(0.0, 0.05, hf);
+	}
+	acc /= 20.0;
+	float horizon = smoothstep(0.03, 0.22, d.y);
+	vec2 north = normalize(d.xz + vec2(0.0001));
+	float bias = 0.45 + 0.55 * smoothstep(-0.4, 0.6, -north.y);   // brighter toward the north (-z)
+	float pulse = 0.75 + 0.25 * sin(t * 0.07 + d.x * 2.0);
+	return acc * horizon * bias * pulse * 3.2;
+}
 void sky() {
 	vec3 d = normalize(EYEDIR);
 	if (AT_HALF_RES_PASS) {
@@ -117,6 +151,8 @@ void sky() {
 		vec3 base = atmosphere(d);
 		float veil = coverage * smoothstep(0.0,0.45,d.y);
 		COLOR = mix(base, mix(cloud_shadow,cloud_light,0.42),veil*0.70);
+		// The aurora lights the snow a little green (cheap: no curtains in the radiance pass).
+		COLOR += vec3(0.01, 0.05, 0.03) * aurora * (1.0-daylight) * (1.0-overcast) * smoothstep(0.0, 0.6, d.y);
 	} else {
 		vec3 base = atmosphere(d);
 		float sun_dot = dot(d,sun_direction);
@@ -128,6 +164,10 @@ void sky() {
 		base += vec3(0.65,0.76,0.92) * moon_disk * moon_texture * moon_strength;
 		base += vec3(0.72,0.80,1.0) * pow(max(moon_dot,0.0),180.0) * moon_strength * 0.07;
 		base += vec3(0.62,0.74,0.98) * stars(d) * (1.0-daylight) * (1.0-overcast) * 0.65;
+		if (aurora > 0.001) {
+			float jit = hash21(FRAGCOORD.xy);
+			base += aurora_light(d, jit) * aurora * (1.0-daylight) * (1.0-overcast);
+		}
 		COLOR = mix(base,HALF_RES_COLOR.rgb,HALF_RES_COLOR.a);
 	}
 }

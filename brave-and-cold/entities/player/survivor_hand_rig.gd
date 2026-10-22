@@ -4,6 +4,7 @@ extends Node3D
 const ASSET := preload("res://assets/models/viewmodel/anatomical_hand_rig.glb")
 const MITTENS := "res://assets/models/viewmodel/hand_mittens.glb"   # tools/blender/gen_hand_mittens.py
 var mitten: MeshInstance3D
+var trigger_mitt: MeshInstance3D   # W9: hunter's mitt, index finger free
 var skeleton: Skeleton3D
 var bare: MeshInstance3D
 var glove: MeshInstance3D
@@ -83,22 +84,28 @@ func _ready() -> void:
 func _attach_mitten() -> void:
 	if not ResourceLoader.exists(MITTENS): return
 	var src := (load(MITTENS) as PackedScene).instantiate()
-	var mi := src.find_child("MittenShellLeft" if mirrored else "MittenShell", true, false) as MeshInstance3D
-	if mi == null: src.free(); return
+	mitten = _take_shell(src, "MittenShellLeft" if mirrored else "MittenShell")
+	trigger_mitt = _take_shell(src, "TriggerMittLeft" if mirrored else "TriggerMitt")
+	src.free()
+
+func _take_shell(src: Node, nm: String) -> MeshInstance3D:
+	var mi := src.find_child(nm, true, false) as MeshInstance3D
+	if mi == null: return null
 	var xf := mi.transform
 	mi.get_parent().remove_child(mi); mi.owner = null
 	skeleton.add_child(mi); mi.transform = xf; mi.skeleton = NodePath("..")
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for i in mi.mesh.get_surface_count(): mi.set_surface_override_material(i, glove.get_surface_override_material(min(i, glove.mesh.get_surface_count() - 1)))
 	mi.visible = false
-	mitten = mi
-	src.free()
+	return mi
 
 
-func set_gloved(worn: bool, tint := Color(0.52, 0.38, 0.26), mitts := false) -> void:
-	var use_mitten := worn and mitts and mitten != null
-	bare.visible = not worn; nails.visible = not worn; glove.visible = worn and not use_mitten
-	if mitten != null: mitten.visible = use_mitten
+## mitts: "" (glove), "full" (mitten bag) or "trigger" (bag + free index finger).
+func set_gloved(worn: bool, tint := Color(0.52, 0.38, 0.26), mitts := "") -> void:
+	var shell: MeshInstance3D = (mitten if mitts == "full" else (trigger_mitt if mitts == "trigger" else null)) if worn else null
+	bare.visible = not worn; nails.visible = not worn; glove.visible = worn and shell == null
+	if mitten != null: mitten.visible = shell == mitten
+	if trigger_mitt != null: trigger_mitt.visible = shell == trigger_mitt
 	if worn and tint != _glove_tint:
 		_glove_tint = tint
 		for i in glove.mesh.get_surface_count():
@@ -115,7 +122,8 @@ func pose(grip: String, second := "", blend := 0.0, release := 0.0) -> void:
 		skeleton.set_bone_pose_position(i,rest_positions[i])
 		var rotation := (first[i] as Quaternion).slerp(other[i],mix)
 		skeleton.set_bone_pose_rotation(i,rotation.slerp(open[i],relaxed))
-	for mesh in ([bare, glove, mitten] if mitten != null else [bare, glove]):
+	for mesh in [bare, glove, mitten, trigger_mitt]:
+		if mesh == null: continue
 		for i in mesh.mesh.get_blend_shape_count():
 			var name := String(mesh.mesh.get_blend_shape_name(i))
 			var weight := (1.0-mix if name == "corrective_"+grip else 0.0) + (mix if second != "" and name == "corrective_"+second else 0.0)

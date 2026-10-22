@@ -23,10 +23,22 @@ func run() -> void:
 	# ---- hands
 	w.inv.add("ranger_box_rifle"); w.inv.use("ranger_box_rifle"); w.rifle_up = true
 	w.inv.extra["hands"] = "hide_mitts"; await frames(20)
-	check(vm._right.mitten != null and vm._right.mitten.visible and not vm._right.glove.visible and vm._left.mitten.visible, "mitts show the mitten shell (one bag, thumb free)")
+	check(vm._right.trigger_mitt != null and vm._right.trigger_mitt.visible and not vm._right.glove.visible and vm._left.trigger_mitt.visible, "hide mitts: trigger mitts (bag + free index)")
+	w.inv.extra["hands"] = "wolf_mitts"; await frames(5)
+	check(vm._right.mitten.visible and not vm._right.trigger_mitt.visible, "wolf mitts: full fur mitten")
+	var ib: bool = w.instant_bullets; w.instant_bullets = false; w.inv.add("ammo", 20)
+	var rl := func() -> Array:
+		w.inv.set_loaded(0); w._reload_t = 0.0; vm.cancel_weapon_clip(); await frames(2)
+		w._start_reload(); var r := [w._reload_t, vm.clip_speed]; w._reload_t = 0.0; vm.cancel_weapon_clip(); return r
+	var fur: Array = await rl.call()
+	w.inv.extra["hands"] = "hide_mitts"; await frames(3)
+	var trig: Array = await rl.call()
+	w.instant_bullets = ib; w.inv.extra["hands"] = "wolf_mitts"
+	check(float(trig[0]) > 0.5 and absf(float(fur[0]) / float(trig[0]) - 1.2) < 0.01 and absf(float(fur[1]) - 1.0 / 1.2) < 0.01 and float(trig[1]) == 1.0,
+		"wolf mitts fumble the reload: %.2f s vs %.2f s, clip slowed to %.2f" % [float(fur[0]), float(trig[0]), float(fur[1])])
 	check(vm._right.mitten.skin != null and vm._right.mitten.mesh.get_blend_shape_count() == vm._right.glove.mesh.get_blend_shape_count(), "mitten keeps the rig skin and the correctives")
 	w.inv.extra["hands"] = "work_gloves"; await frames(5)
-	check(vm._right.glove.visible and not vm._right.mitten.visible, "work gloves show the five-finger glove")
+	check(vm._right.glove.visible and not vm._right.mitten.visible and not vm._right.trigger_mitt.visible, "work gloves show the five-finger glove")
 	w.inv.extra["hands"] = ""; await frames(5)
 	var sm = vm._right.bare.get_surface_override_material(0)
 	check(vm._right.bare.visible and sm is ShaderMaterial and (sm as ShaderMaterial).shader.resource_path.ends_with("skin.gdshader"), "bare hands use the skin shader (pores, roughness, SSS)")

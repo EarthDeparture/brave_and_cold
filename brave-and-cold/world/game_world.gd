@@ -27,6 +27,7 @@ var noise_bus := NoiseBus.new()
 var player: Player
 var hud: Hud
 var lens_flare: LensFlare
+var ambient_life: AmbientLife   # alive L1: ravens over kills, aurora nights, distant howls / owls
 var reading: ReadingModal
 var forest: ForestScatter
 var plants: PlantField
@@ -400,6 +401,8 @@ func _ready() -> void:
 		lens_flare = LensFlare.new(); lens_flare.world = self; add_child(lens_flare)
 	hud.weather = weather
 	hud.visible = not opts.has('nohud')
+	if not opts.has('noambient'):
+		ambient_life = AmbientLife.new(); ambient_life.name = "AmbientLife"; add_child(ambient_life); ambient_life.setup(self)
 	gear = GearScreen.new()
 	add_child(gear)
 	_loot = opts.has('loot')
@@ -672,6 +675,7 @@ func _process(delta: float) -> void:
 			cf.fire.cue(noise_bus, cf.global_position, night, 1.0, cf)
 		for sb: Node in _stove_buildings():
 			(sb.get("stove") as Stove).fire.cue(noise_bus, (sb as Node3D).global_position, night, 0.6 * float(sb.call("noise_leak")), sb)
+		for g: Greenhouse in greenhouses: g.lantern_cue(noise_bus, night)
 		if opening != null:
 			opening.fire.cue(noise_bus, opening.chimney_world(), night, LookoutOpening.LIGHT_LEAK, opening)
 	for stn in stores:
@@ -3227,6 +3231,7 @@ var _reload_full := false
 
 ## Fill the equipped rifle from loose ammo. Magazine rifles swap in one go (tactical / empty clip);
 ## the lever rifle is loaded round by round. Tests (autostart) finish instantly.
+const WOLF_MITT_RELOAD := 1.2
 func _start_reload() -> void:
 	if inv == null or player.dead or _reload_t > 0.0 or not rifle_up: return
 	var rid := inv.rifle_id()
@@ -3240,7 +3245,9 @@ func _start_reload() -> void:
 	var clip := 'reload_insert' if single else ('reload_tactical' if have > 0 else 'reload_empty')
 	var dur: float = viewmodel._rifle.clip_length(clip) if viewmodel != null and viewmodel._rifle != null else 2.4
 	if single: dur = maxf(dur, .9) * float(mini(cap, inv.count('ammo')) - have) * .6 + .5
-	if viewmodel != null: viewmodel.play_weapon_clip(clip)
+	var fumble := WOLF_MITT_RELOAD if String(inv.extra.get('hands', '')) == 'wolf_mitts' else 1.0   # full mittens: no fingers
+	dur *= fumble
+	if viewmodel != null: viewmodel.play_weapon_clip(clip, 1.0 / fumble)
 	_reload_t = 0.001 if instant_bullets else dur
 	_say('Reloading %s' % inv.name_of(rid))
 

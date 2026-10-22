@@ -12,6 +12,7 @@
         {"id": "meat_stew", "name": "Meat stew", "inputs": {"red_meat": 1, "water": 1}, "cook_min": 45},
         {"id": "fish_stew", "name": "Fish stew", "inputs": {"fish": 1, "water": 1}, "cook_min": 35},
         {"id": "garden_stew", "name": "Garden stew", "inputs": {"red_meat": 1, "potato": 1, "carrot": 1, "water": 1}, "cook_min": 50},
+        {"id": "borscht", "name": "Borscht", "inputs": {"beet": 1, "potato": 1, "shallot": 1, "water": 1}, "cook_min": 40},
         {"id": "veg_soup", "name": "Vegetable soup", "inputs": {"potato": 1, "carrot": 1, "kale": 1, "water": 1}, "cook_min": 30}
     ]
 }
