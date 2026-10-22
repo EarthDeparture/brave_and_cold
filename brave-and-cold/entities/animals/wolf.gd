@@ -145,6 +145,9 @@ func _player_indoors_shut() -> bool:
 	return false
 
 
+static var raven_kills: Array = []   # carcasses with ravens over them (AmbientLife): seen from far, followed in
+const RAVEN_SIGHT := 450.0
+var _give_up := 40.0
 static var player_lit := false   # player's flashlight / weapon light on (GameWorld)
 
 func _can_see_player() -> bool:
@@ -166,9 +169,9 @@ func _smell_carcass() -> Node3D:
 		var c := cn as Node3D
 		if c == null or c == self or c.is_queued_for_deletion() or not Carcass.has_meat(c):
 			continue
-		if not Carcass.smelled_by(c, global_position):
-			continue
 		var d := c.global_position.distance_to(global_position)
+		if not Carcass.smelled_by(c, global_position) and not (d < RAVEN_SIGHT and raven_kills.has(c)):
+			continue
 		if d < bd:
 			bd = d
 			best = c
@@ -229,6 +232,7 @@ func _process(delta: float) -> void:
 						_carcass = sc
 						_feed_t = 0.0
 						_target = sc.global_position
+						_give_up = 40.0 + sc.global_position.distance_to(global_position) / TROT_SPEED
 						_set_state(State.INVESTIGATE)
 				var dd := Vector2(_target.x - global_position.x, _target.z - global_position.z).length()
 				if dd < 1.5 or _state_t > 14.0:
@@ -250,7 +254,7 @@ func _process(delta: float) -> void:
 						_eat_carcass()
 				else:
 					want_speed = TROT_SPEED
-					if _state_t > 40.0:
+					if _state_t > _give_up:
 						_carcass = null
 						_set_state(State.WANDER)
 						_pick_wander()

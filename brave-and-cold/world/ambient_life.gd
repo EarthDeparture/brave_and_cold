@@ -20,12 +20,19 @@ const QUIET_S := 40.0
 const MIN_AGE_S := 240.0       # game seconds before the first birds find a kill
 const ROOST_NIGHT := 0.7
 const PERCH_Y := 0.16          # body centre over the snow when standing
+const SIGNAL_S := 60.0         # a flock over a kill this long is a sign wolves / bears follow (Wolf.raven_kills)
+const PECK_PORTION_H := 2.0    # game hours for 5 ravens to strip one meat portion
+const WOLF_SCARE_R := 12.0
 
 const BIRD_SHADER := """
 shader_type spatial;
 render_mode cull_disabled;
-uniform vec3 albedo : source_color = vec3(0.022, 0.022, 0.028);
+uniform vec3 albedo : source_color = vec3(0.020, 0.020, 0.026);
+varying vec3 lp;
+varying float wingv;
 void vertex() {
+	lp = VERTEX;
+	wingv = COLOR.b;
 	vec4 c = INSTANCE_CUSTOM;            // x phase, y flap amount, z wing fold, w peck
 	float side = COLOR.g * 2.0 - 1.0;
 	if (COLOR.b > 0.5) {
@@ -42,9 +49,16 @@ void vertex() {
 	if (COLOR.a > 0.5) { VERTEX.y -= c.w * 0.10; VERTEX.z -= c.w * 0.03; }
 }
 void fragment() {
-	ALBEDO = albedo;
-	ROUGHNESS = 0.45;
-	SPECULAR = 0.35;
+	// Raven plumage: near-black with a blue-violet gloss that breaks up over the feather tracts (scalloped
+	// contour feathers on the body, long vanes along the wing), so a close bird is not a flat cut-out.
+	float body_f = sin(lp.z * 210.0 + sin(lp.x * 95.0) * 2.4) * sin(lp.x * 140.0 + lp.y * 120.0);
+	float wing_f = sin(lp.z * 150.0 + lp.x * 18.0) * 0.8 + sin(abs(lp.x) * 60.0) * 0.4;
+	float f = mix(body_f, wing_f, wingv) * 0.5 + 0.5;
+	f = mix(f, 0.5 + 0.2 * sin(lp.x * 70.0), step(0.14, lp.z) * (1.0 - wingv));   // tail: plain long rectrices
+	float fres = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
+	ALBEDO = albedo * (0.92 + 0.16 * f) + vec3(0.003, 0.004, 0.010) * fres;
+	ROUGHNESS = mix(0.34, 0.55, f);
+	SPECULAR = 0.45;
 	if (!FRONT_FACING) { NORMAL = -NORMAL; }
 }
 """
@@ -53,6 +67,8 @@ var world: Node
 var flocks: Array = []
 var aurora := 0.0
 var force_aurora := -1.0       # tests / captures: >= 0 overrides the schedule
+var force_arc := NAN           # tests / captures: fixes the arc position
+var aurora_arc := -30.0        # see winter_sky.gdshader: -30 low in the north .. 0 overhead
 var voices_enabled := true
 var heard: Array = []          # [{kind, pos, dist, real}] last voices played (tests / debug)
 var rng := RandomNumberGenerator.new()
@@ -106,6 +122,20 @@ func aurora_target() -> float:
 
 ## Darkness from the sun's elevation (same sun path as AtmosphereRig): 0 day .. 1 full night. The legacy
 ## gameplay_night_factor peaks at dusk (~0.8) and sits ~0.64 at midnight, so it can't gate roosting / voices.
+## The arc climbs from the northern horizon toward the zenith as the night's display peaks (~00:30) and sinks
+## again before dawn. Strong nights (half of them) put it overhead; weak ones keep it low in the north.
+func arc_at() -> float:
+	var clock: GameClock = world.get("clock") if world != null else null
+	if clock == null:
+		return -30.0
+	var h := clock.hour
+	var x := fposmod(h - 20.0, 24.0)
+	var nd := clock.day if h >= 12.0 else clock.day - 1
+	var strong := posmod(hash(nd * 131 + 7), 2) == 0
+	var reach := 33.0 if strong else 16.0
+	return -32.0 + reach * exp(-pow((x - 4.5) / 1.7, 2.0)) + 3.0 * sin(_t * 0.011)
+
+
 func _night() -> float:
 	var clock: GameClock = world.get("clock")
 	if clock == null:
@@ -133,6 +163,13 @@ func _process(delta: float) -> void:
 	if sr is AtmosphereRig:
 		(sr as AtmosphereRig).aurora = aurora
 		(sr as AtmosphereRig).material.set_shader_parameter("aurora_time", _t)
+		aurora_arc = arc_at() if is_nan(force_arc) else force_arc
+		(sr as AtmosphereRig).material.set_shader_parameter("aurora_arc", aurora_arc)
+	var signs: Array = []
+	for f in flocks:
+		if f.kind == "kill" and f.age > SIGNAL_S and is_instance_valid(f.target) and _night() < ROOST_NIGHT:
+			signs.append(f.target)
+	Wolf.raven_kills = signs
 	_scan_t -= delta
 	if _scan_t <= 0.0:
 		_scan_t = 2.0
@@ -204,9 +241,9 @@ func _make_mm(n: int) -> MultiMeshInstance3D:
 
 func _new_kill_flock(n: Node3D) -> Dictionary:
 	var h := absi(hash(n.get_instance_id()))
-	var count := 3 + h % 5
+	var count := (3 + h % 5) if n.is_in_group("carcasses") else (2 + h % 3)
 	var c := n.global_position
-	var f := {"kind": "kill", "target": n, "center": c, "state": "circle", "ts": 0.0, "quiet": 0.0,
+	var f := {"kind": "kill", "target": n, "center": c, "state": "circle", "ts": 0.0, "quiet": 0.0, "age": 0.0,
 		"base_h": 24.0 + float(h % 9), "dir": 1.0 if h % 2 == 0 else -1.0, "birds": [], "mi": _make_mm(count)}
 	for i in count:
 		var b := {"theta": rng.randf() * TAU, "r": rng.randf_range(9.0, 21.0), "dh": rng.randf_range(-5.0, 6.0),
@@ -299,6 +336,7 @@ func _update_flock(f: Dictionary, dt: float) -> void:
 		_write_mm(f)
 		return
 	# kill flock
+	f.age += dt
 	var tgt = f.target
 	var gone: bool = not is_instance_valid(tgt) or (tgt as Node).is_queued_for_deletion() or not ((tgt as Node).is_in_group("carcasses") or (tgt as Node).is_in_group("bodies"))
 	if gone and f.state != "leave":
@@ -362,9 +400,13 @@ func _update_flock(f: Dictionary, dt: float) -> void:
 					f.state = "ground"
 					f.ts = 0.0
 		"ground":
+			var wolf_near := _wolf_at(f.center, WOLF_SCARE_R)
 			if pd < SCARE_R:
 				scatter(f, pp)
+			elif wolf_near != Vector3.INF:
+				scatter(f, wolf_near)   # the wolves have come: the ravens give way
 			else:
+				_peck(f, dt)
 				for b in f.birds:
 					b.fold = 1.0
 					b.amp = 0.0
@@ -410,6 +452,28 @@ func _update_flock(f: Dictionary, dt: float) -> void:
 	_write_mm(f)
 
 
+func _wolf_at(c: Vector3, r: float) -> Vector3:
+	for w in _wolves():
+		if (w as Node3D).global_position.distance_to(c) < r:
+			return (w as Node3D).global_position
+	return Vector3.INF
+
+
+## Landed ravens strip the kill: PECK_PORTION_H game hours per portion for 5 birds, never the last portion.
+func _peck(f: Dictionary, dt: float) -> void:
+	var n: Node = f.target
+	if not is_instance_valid(n) or not n.is_in_group("carcasses") or not Carcass.has_meat(n):
+		return
+	var sp := Carcass.species_of(n)
+	if not Carcass.SPECIES.has(sp):
+		return
+	var clock: GameClock = world.get("clock")
+	var scale := clock.time_scale if clock != null else 48.0
+	var full := int(Carcass.SPECIES[sp].meat_n)
+	var s := Carcass.scavenged(n) + dt * scale / 3600.0 / PECK_PORTION_H * float(f.birds.size()) / 5.0
+	n.set_meta("scavenged", minf(s, float(full - 1)))
+
+
 func _circle(f: Dictionary, b: Dictionary, dt: float) -> void:
 	b.theta += f.dir * b.spd / b.r * dt
 	var tgt: Vector3 = f.center + Vector3(cos(b.theta) * b.r, f.base_h + b.dh + sin(_t * 0.3 + b.phase) * 3.0, sin(b.theta) * b.r)
@@ -447,7 +511,7 @@ func _write_mm(f: Dictionary) -> void:
 		var up := Vector3.UP if absf(fw.normalized().y) < 0.98 else Vector3.RIGHT
 		var basis := Basis.looking_at(fw.normalized(), up) * Basis(Vector3(0, 0, 1), b.bank)
 		if float(b.fold) > 0.01:   # perched: body tilts nose-up, less so while pecking
-			basis = basis * Basis(Vector3(1, 0, 0), float(b.fold) * (0.42 - 0.3 * float(b.peck)))
+			basis = basis * Basis(Vector3(1, 0, 0), float(b.fold) * (0.55 - 0.25 * float(b.peck)))
 		mm.set_instance_transform(i, Transform3D(basis, b.pos))
 		mm.set_instance_custom_data(i, Color(b.phase, b.amp, b.fold, b.peck))
 		lo = lo.min(b.pos)
@@ -612,9 +676,11 @@ func owl_call() -> void:
 static func bird_mesh() -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var rings := [[0.18, 0.035, 0.0, 0.0], [0.07, 0.085, 0.0, 0.0], [-0.06, 0.092, 0.008, 0.0], [-0.16, 0.062, 0.02, 0.0],
-		[-0.20, 0.058, 0.032, 1.0], [-0.28, 0.044, 0.03, 1.0], [-0.33, 0.022, 0.018, 1.0], [-0.42, 0.004, 0.006, 1.0]]
-	var sides := 7
+	# tail end .. breast .. neck .. head; then a heavy raven bill, deep at the base, hooked down at the tip
+	var rings := [[0.18, 0.035, 0.0, 0.0], [0.11, 0.070, 0.0, 0.0], [0.03, 0.088, 0.0, 0.0], [-0.06, 0.092, 0.006, 0.0],
+		[-0.14, 0.072, 0.016, 0.0], [-0.19, 0.060, 0.030, 1.0], [-0.25, 0.057, 0.034, 1.0], [-0.30, 0.040, 0.030, 1.0],
+		[-0.335, 0.026, 0.022, 1.0], [-0.38, 0.018, 0.014, 1.0], [-0.425, 0.009, 0.004, 1.0], [-0.445, 0.002, -0.006, 1.0]]
+	var sides := 10
 	var pts: Array = []
 	for r in rings:
 		var ring: Array = []
@@ -632,7 +698,7 @@ static func bird_mesh() -> ArrayMesh:
 			for v in [a0, b0, a1, a1, b0, b1]:
 				var c := Vector3(0, rings[i][2], v.z)
 				st.set_normal((v - c).normalized())
-				st.set_color(Color(0, 0.5, 0, head if (v.z < -0.19) else 0.0))
+				st.set_color(Color(0, 0.5, 0, head if (v.z < -0.17) else 0.0))
 				st.add_vertex(v)
 	var tail := [Vector3(-0.03, 0, 0.14), Vector3(0.03, 0, 0.14), Vector3(0.075, -0.005, 0.37), Vector3(0.0, -0.004, 0.40), Vector3(-0.075, -0.005, 0.37)]
 	for tri in [[0, 1, 2], [0, 2, 3], [0, 3, 4]]:

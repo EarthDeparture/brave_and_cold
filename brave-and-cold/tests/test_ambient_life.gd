@@ -14,6 +14,7 @@ func secs(s: float) -> void:
 	var t0 := Time.get_ticks_msec()
 	while Time.get_ticks_msec() - t0 < int(s * 1000.0): await process_frame
 
+const PERCH_Y_T := 0.16
 func flock_for(n: Node) -> Dictionary:
 	for f in w.ambient_life.flocks:
 		if f.kind == "kill" and f.target == n: return f
@@ -148,6 +149,52 @@ func run() -> void:
 	check(al._hunted(), "no chorus while a wolf is running you down")
 	al.heard.clear(); al.owl_call()
 	check(al.heard.size() == 1 and al.heard[0].kind == "owl", "owl call")
+	# ---- food web: ravens strip a real kill, wolves far beyond scent range follow the ravens, wolves displace them
+	w.clock.hour = 12.0; w.wolves.erase(wolf); wolf.queue_free(); await frames(2)
+	for f0 in al.flocks.duplicate(): al._free_flock(f0)
+	pp = w.player.global_position
+	var kp := pp + Vector3(90, 0, -60); kp.y = w._ground_y(kp.x, kp.z)
+	var dw: Wolf = w._add_wolf(kp, 11)
+	await frames(2)
+	dw.hit(999.0, kp); dw.set_meta("scent_age_s", 900.0)
+	await frames(2)
+	check(dw.is_in_group("carcasses") and Carcass.species_of(dw) == "wolf", "a shot wolf is a carcass")
+	al._scan()
+	var kf := flock_for(dw)
+	check(not kf.is_empty(), "ravens come to the wolf kill")
+	var zb := Node3D.new(); w.add_child(zb); zb.global_position = kp + Vector3(30, 0, 0); zb.add_to_group("bodies")
+	al._scan()
+	var bf := flock_for(zb)
+	check(not bf.is_empty() and bf.birds.size() <= 4, "a zombie body draws a smaller flock (%d)" % (bf.birds.size() if not bf.is_empty() else 0))
+	zb.remove_from_group("bodies"); zb.queue_free()
+	if not kf.is_empty():
+		var hunter_p := kp + Vector3(-330, 0, 40); hunter_p.y = w._ground_y(hunter_p.x, hunter_p.z)
+		var hunter: Wolf = w._add_wolf(hunter_p, 12)
+		await frames(2)
+		hunter.state = Wolf.State.WANDER
+		Wolf.raven_kills = []
+		check(not Carcass.smelled_by(dw, hunter.global_position) and hunter._smell_carcass() == null, "330 m off a wolf cannot smell the kill")
+		kf.age = 70.0; await frames(2)
+		check(Wolf.raven_kills.has(dw) and hunter._smell_carcass() == dw, "but it sees the ravens over it and goes there")
+		hunter.global_position = kp + Vector3(40, 0, 0)   # out of the way for the pecking part
+		kf.state = "ground"; kf.ts = 0.0
+		for b in kf.birds: b.pos = kp + Vector3(1.5, PERCH_Y_T, 0); b.land = b.pos; b.fold = 1.0
+		w.clock.time_scale = 48.0
+		al._peck(kf, 300.0)   # 300 s real at 48x = 4 game hours
+		w.clock.time_scale = 0.0
+		var sv := Carcass.scavenged(dw)
+		check(sv > 0.5 and Carcass.meat_left(dw, 3) < 3 and Carcass.meat_left(dw, 3) >= 1, "landed ravens strip meat (%.2f portions gone, %d of 3 left)" % [sv, Carcass.meat_left(dw, 3)])
+		dw.set_meta("scavenged", 99.0); al._peck(kf, 1.0)
+		check(Carcass.meat_left(dw, 3) == 1, "they never take the last portion")
+		var acts: Array = w._carcass_actions(dw)
+		var txt := ""
+		for a in acts: txt += String(a.get("text", "")) + " | "
+		check(txt.contains("ravens have been at it") and txt.contains("+1"), "butcher prompt shows the loss: " + txt.left(80))
+		hunter.global_position = kp + Vector3(5, 0, 0)
+		await frames(3)
+		check(kf.state == "scatter", "a wolf arriving at the kill scatters the ravens")
+		w.wolves.erase(hunter); hunter.queue_free()
+	w.wolves.erase(dw); dw.queue_free()
 	# ---- the bird mesh
 	var bm := AmbientLife.bird_mesh()
 	var ab := bm.get_aabb()

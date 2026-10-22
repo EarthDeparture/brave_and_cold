@@ -30,7 +30,7 @@ class Builder:
         return f
 
     def leaf(self, base, yaw, pitch, length, width, c0, c1, segs=7, curl=0.6, fold=0.25, profile="ovate",
-             wave=0.0, wave_n=6, lobes=0, mid=None, twist=0.0):
+             wave=0.0, wave_n=6, lobes=0, mid=None, twist=0.0, cols=1, ruffle=0.0):
         """Folded leaf strip from `base`, heading `yaw` around Z, rising at `pitch` and curling down by `curl`."""
         rows = []
         d = Vector((math.cos(yaw), math.sin(yaw), 0.0))
@@ -49,18 +49,23 @@ class Builder:
             up = dirv.cross(side).normalized()
             s2 = (side * math.cos(twist * t) + up * math.sin(twist * t))
             wv = math.sin(t * wave_n * math.pi) * wave * w
-            l = p + s2 * w + up * (fold * w + wv)
-            r = p - s2 * w + up * (fold * w - wv)
-            m = p
             cm = [a + (b - a) * t for a, b in zip(c0, c1)]
             cmid = mid if mid is not None else [min(1.0, x * 1.25) for x in cm]
-            rows.append(([self.bm.verts.new(l), self.bm.verts.new(m), self.bm.verts.new(r)], cm, cmid))
+            vs = []; cs = []
+            for k in range(-cols, cols + 1):   # across the blade: midrib at k = 0
+                u = k / cols; au = abs(u)
+                # edge ruffle (kale): a faster wave whose phase runs along the margin, growing toward the edge
+                rf = math.sin(t * wave_n * 1.5 * math.pi + u * 2.0) * ruffle * w * au * au
+                q = p + s2 * (w * u) + up * (fold * w * au + wv * (1 if u >= 0 else -1) * au * au + rf)
+                vs.append(self.bm.verts.new(q))
+                cs.append([m_ + (e - m_) * min(1.0, au * 1.4) for m_, e in zip(cmid, cm)])
+            rows.append((vs, cs))
             p = p + dirv * step
             ang -= curl / segs
         for i in range(segs):
-            a, ca, ma = rows[i]; b, cb, mb = rows[i + 1]
-            self._face([a[0], a[1], b[1], b[0]], [ca, ma, mb, cb])
-            self._face([a[1], a[2], b[2], b[1]], [ma, ca, cb, mb])
+            a, ca = rows[i]; b, cb = rows[i + 1]
+            for k in range(2 * cols):
+                self._face([a[k], a[k + 1], b[k + 1], b[k]], [ca[k], ca[k + 1], cb[k + 1], cb[k]])
         return p
 
     def tube(self, a, b, r0, r1, c0, c1, n=5, bend=None):
@@ -98,10 +103,13 @@ class Builder:
                 self._face([rings[i][k], rings[i][(k + 1) % n], rings[i + 1][(k + 1) % n], rings[i + 1][k]], [c, c, c, c])
 
     def bulb(self, p, r, c, n=8):
-        bmesh.ops.create_icosphere(self.bm, subdivisions=1, radius=r, matrix=Matrix.Translation(p))
-        for f in self.bm.faces:
-            if all(lp[self.col][3] == 0.0 or lp[self.col][:3] == (0.0, 0.0, 0.0) for lp in f.loops):
-                for lp in f.loops: lp[self.col] = (c[0], c[1], c[2], 1.0)
+        ret = bmesh.ops.create_icosphere(self.bm, subdivisions=2, radius=r, matrix=Matrix.Translation(p))
+        new = set(ret["verts"])
+        for f in self.bm.faces:   # colour only the bulb's own faces (new loops default to white)
+            if all(v in new for v in f.verts):
+                for lp in f.loops:
+                    top = max(0.0, (lp.vert.co.z - p.z) / r)   # papery skin: paler toward the neck
+                    lp[self.col] = (c[0] + 0.12 * top, c[1] + 0.10 * top, c[2] + 0.06 * top, 1.0)
 
     def done(self):
         me = bpy.data.meshes.new(self.name)
@@ -142,14 +150,24 @@ def potato(stage, rng):
         yaw = i * TAU / stems + rng.uniform(-0.3, 0.3)
         tip = Vector((math.cos(yaw) * 0.16 * k * (0.6 + lean), math.sin(yaw) * 0.16 * k * (0.6 + lean), 0.30 * k * (1.0 - 0.5 * lean)))
         mid = tip * 0.5 + Vector((0, 0, 0.06 * k))
+        if stage == "dead":   # frost-killed: stems lie on the soil, kinked at the base
+            tip = Vector((math.cos(yaw) * 0.27 * k, math.sin(yaw) * 0.27 * k, 0.025))
+            mid = Vector((math.cos(yaw) * 0.08 * k, math.sin(yaw) * 0.08 * k, 0.06))
         end = b.tube((0, 0, 0), tip, 0.0035 * k + 0.001, 0.002, STEM if stage not in ("dead",) else DEAD1, c1, n=5, bend=mid)
         # pinnate compound leaf: pairs of leaflets along the stem's upper half, and a terminal one
         for j in range(3):
             t = 0.45 + 0.17 * j
             q = Vector((0, 0, 0)).lerp(tip, t) + Vector((0, 0, 0.03 * k))
             for s in (-1, 1):
-                b.leaf(q, yaw + s * 1.25 + rng.uniform(-0.2, 0.2), 0.35 - lean * 0.6, 0.07 * k, 0.03 * k, c0, c1, segs=4, curl=0.5 + lean, profile="ovate")
-        b.leaf(end, yaw, 0.2 - lean * 0.5, 0.075 * k, 0.034 * k, c0, c1, segs=4, curl=0.6 + lean, profile="ovate")
+                if stage == "dead":   # shrivelled, hanging limp onto the soil
+                    q = Vector((0, 0, 0)).lerp(tip, t) + Vector((0, 0, 0.01))
+                    b.leaf(q, yaw + s * 1.4 + rng.uniform(-0.3, 0.3), -0.15, 0.05 * k, 0.012 * k, c0, c1, segs=4, curl=0.5, profile="lance", twist=0.8)
+                else:
+                    b.leaf(q, yaw + s * 1.25 + rng.uniform(-0.2, 0.2), 0.35 - lean * 0.6, 0.07 * k, 0.03 * k, c0, c1, segs=4, curl=0.5 + lean, profile="ovate")
+        if stage == "dead":
+            b.leaf(end, yaw, -0.1, 0.05 * k, 0.014 * k, c0, c1, segs=4, curl=0.4, profile="lance", twist=0.6)
+        else:
+            b.leaf(end, yaw, 0.2 - lean * 0.5, 0.075 * k, 0.034 * k, c0, c1, segs=4, curl=0.6 + lean, profile="ovate")
     return b.done()
 
 
@@ -189,8 +207,8 @@ def kale(stage, rng):
         yaw = i * 2.4 + rng.uniform(-0.15, 0.15)                 # golden-angle-ish spiral up the stalk
         z = stalk * (0.3 + 0.7 * i / n)
         pitch = (0.9 - 0.5 * i / n) - (1.3 if stage == "dead" else 0.0)
-        b.leaf((0, 0, z), yaw, pitch, 0.22 * k * (1.0 - 0.25 * i / n), 0.07 * k, c0, c1, segs=8, curl=0.9,
-               profile="ovate", wave=0.45, wave_n=9, mid=(0.32, 0.42, 0.36))
+        b.leaf((0, 0, z), yaw, pitch, 0.22 * k * (1.0 - 0.25 * i / n), 0.07 * k, c0, c1, segs=22, curl=0.9,
+               profile="ovate", wave=0.22, wave_n=4, mid=(0.32, 0.42, 0.36), cols=3, ruffle=0.24)
     return b.done()
 
 
@@ -199,8 +217,8 @@ def shallot(stage, rng):
     if stage == "s0":
         b.tube((0, 0, 0), (0, 0, 0.045), 0.0025, 0.0012, G_MID, G_LIGHT, n=5); return b.done()
     k = {"s1": 0.5, "s2": 1.0, "s3": 1.0, "dead": 0.9}[stage]
-    c0, c1 = {"s3": (YEL0, YEL1), "dead": (DEAD0, DEAD1)}.get(stage, (G_MID, G_LIGHT))
-    flop = {"s3": 1.0, "dead": 1.4}.get(stage, 0.0)             # ripe shallot tops fall over
+    c0, c1 = {"s3": (G_MID, YEL1), "dead": (DEAD0, DEAD1)}.get(stage, (G_MID, G_LIGHT))
+    flop = {"s3": 0.85, "dead": 1.4}.get(stage, 0.0)            # ripe shallot tops fall over
     for cl in range(3 if stage != "s1" else 1):
         cp = Vector((math.cos(cl * 2.1) * 0.03, math.sin(cl * 2.1) * 0.03, 0)) if stage != "s1" else Vector((0, 0, 0))
         for i in range(4):
@@ -210,7 +228,8 @@ def shallot(stage, rng):
             ctrl = cp + Vector((0, 0, h * (0.65 - 0.25 * flop)))
             b.tube(cp + Vector((0, 0, 0.005)), tip, 0.0035 * k + 0.001, 0.0008, c0, c1, n=5, bend=ctrl)
         if stage in ("s2", "s3", "dead"):
-            b.bulb(cp + Vector((0, 0, 0.004)), 0.016 * k, (0.40, 0.20, 0.14) if stage != "dead" else (0.18, 0.12, 0.08))
+            b.bulb(cp + Vector((0, 0, 0.010 if stage == "s3" else 0.004)), (0.021 if stage == "s3" else 0.016) * k,
+                   (0.46, 0.24, 0.16) if stage != "dead" else (0.18, 0.12, 0.08))
     return b.done()
 
 

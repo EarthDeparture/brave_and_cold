@@ -6,6 +6,7 @@ render_mode cull_disabled;
 
 uniform float jitter = 0.0;           // -1..1 per plot: slightly paler / deeper green
 uniform float frost = 0.0;            // 0..1: rimed, greyed leaves after a frost scare
+uniform float withered = 0.0;         // 1 = frost-killed: matte, papery, no light through it
 uniform vec3 translucency : source_color = vec3(0.30, 0.42, 0.10);
 
 void fragment() {
@@ -15,7 +16,7 @@ void fragment() {
 	c = mix(c, vec3(0.55, 0.60, 0.62), frost * 0.55);
 	ALBEDO = c;
 	if (!FRONT_FACING) NORMAL = -NORMAL;
-	ROUGHNESS = mix(0.62, 0.85, frost);
-	SPECULAR = 0.35;
-	BACKLIGHT = translucency * c * 2.2;
+	ROUGHNESS = mix(mix(0.62, 0.85, frost), 0.97, withered);
+	SPECULAR = mix(0.35, 0.08, withered);
+	BACKLIGHT = translucency * c * 2.2 * (1.0 - 0.8 * withered);
 }

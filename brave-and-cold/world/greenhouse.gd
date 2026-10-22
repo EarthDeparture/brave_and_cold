@@ -170,6 +170,7 @@ func _refresh_plant(i: int) -> void:
 	var m := ShaderMaterial.new(); m.shader = LEAF_SHADER
 	m.set_shader_parameter("jitter", rng.randf_range(-1.0, 1.0))
 	m.set_shader_parameter("frost", clampf(float(p.frost_s) / (Farming.rule("frost_kill_h") * 3600.0), 0.0, 1.0) if not bool(p.dead) else 0.0)
+	m.set_shader_parameter("withered", 1.0 if bool(p.dead) else 0.0)
 	mi.material_override = m
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mi.visibility_range_end = 60.0

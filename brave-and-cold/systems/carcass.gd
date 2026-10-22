@@ -93,6 +93,16 @@ static func smelled_by(carcass: Node3D, listener: Vector3) -> bool:
 	return d < scent_radius(age_s(carcass)) * k
 
 
+## Meat portions ravens have pecked off (float meta, saved). The butcher's yield drops by the whole portions,
+## never below one.
+static func scavenged(n: Node) -> float:
+	return maxf(0.0, float(n.get_meta("scavenged", 0.0)))
+
+
+static func meat_left(n: Node, full: int) -> int:
+	return maxi(1, full - int(floor(scavenged(n))))
+
+
 static func has_meat(n: Node) -> bool:
 	return not (n.get_meta("done", {}) as Dictionary).get("meat", false)
 

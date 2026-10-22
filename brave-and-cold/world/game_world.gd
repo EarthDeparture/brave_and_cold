@@ -2391,8 +2391,10 @@ func _carcass_actions(cn:Node3D) -> Array:
 		if not info.ok:
 			out.append({"text":label+" (needs a usable tool)","dbias":index*.01,"act":func()->void:_say("Bring a knife with 1% condition, or a hatchet with 2% for meat only")});continue
 		var tool:String=info.tool;var id:String=info.id;var n:int=info.n
+		if step=="meat":n=Carcass.meat_left(cn,n)
 		var stale:=step=="meat" and Carcass.food_age(cn)>=Inventory.shelf_s(id)
-		out.append({"text":label+" (+%d %s)"%[n,"spoiled portions" if stale else inv.name_of(id)],"hold":float(info.time),"label":label,"work":"reach","dbias":index*.01,"act":func()->void:_carcass_step(cn,species,step,id,n,tool)})
+		var pecked:=" - ravens have been at it" if step=="meat" and Carcass.scavenged(cn)>=1.0 else ""
+		out.append({"text":label+" (+%d %s)%s"%[n,"spoiled portions" if stale else inv.name_of(id),pecked],"hold":float(info.time),"label":label,"work":"reach","dbias":index*.01,"act":func()->void:_carcass_step(cn,species,step,id,n,tool)})
 	return out
 
 func _carcass_step(cn:Node3D,sp:String,step:String,id:String,n:int,tool:String="") -> void:
@@ -2401,7 +2403,7 @@ func _carcass_step(cn:Node3D,sp:String,step:String,id:String,n:int,tool:String="
 	if done.get(step,false) or step not in Carcass.open_steps(sp,done):return
 	# Recheck the chosen tool, never silently change yield/tool after the hold began.
 	var info:=Carcass.tool_step(sp,step,inv,tool)
-	if not info.ok or info.id!=id or int(info.n)!=n:
+	if not info.ok or info.id!=id or (Carcass.meat_left(cn,int(info.n)) if step=="meat" else int(info.n))!=n:
 		_say("Butchery interrupted: the required usable tool is no longer available");return
 	var output:=id;var food_age:=0.0
 	if step=="meat":
@@ -2482,7 +2484,7 @@ func _carcass_list() -> Array:
 		var sp := Carcass.species_of(c)
 		if sp == '':
 			continue
-		out.append({'sp': sp, 'x': c.global_position.x, 'z': c.global_position.z, 'done': c.get_meta('done', {}),'food_age_s':Carcass.food_age(c),'scent_age_s':Carcass.age_s(c)})
+		out.append({'sp': sp, 'x': c.global_position.x, 'z': c.global_position.z, 'done': c.get_meta('done', {}),'food_age_s':Carcass.food_age(c),'scent_age_s':Carcass.age_s(c),'scavenged':Carcass.scavenged(c)})
 	return out
 
 
@@ -4149,6 +4151,7 @@ func _restore_creatures(sv: Dictionary) -> void:
 			cn.set_meta('done', e.get('done', {}))
 			cn.set_meta('food_age_s',maxf(0,float(e.get('food_age_s',0))))
 			cn.set_meta('scent_age_s',maxf(0,float(e.get('scent_age_s',Carcass.food_age(cn)/StorageChest.COLD_RATE))))
+			cn.set_meta('scavenged',float(e.get('scavenged',0.0)))
 		ci += 1
 	if forest != null:
 		for info in forest.apply_felled(sv.get('felled', [])):

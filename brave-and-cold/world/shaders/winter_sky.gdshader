@@ -20,6 +20,8 @@ uniform float moon_strength = 0.0;
 uniform bool cloud_quality = true;
 uniform float aurora = 0.0;          // 0..1, AmbientLife: about one clear night in four
 uniform float aurora_time = 0.0;
+uniform float aurora_arc = -30.0;    // where the auroral arc runs, in base-plane units north(-)/south(+) of the
+									 // viewer: -30 ~ low on the northern horizon, 0 = overhead (AmbientLife drifts it)
 
 float hash21(vec2 p) {
 	// Combine axes independently: x^y alone repeats along lattice diagonals.
@@ -116,7 +118,13 @@ float aurora_ribbon(vec2 q, float t) {
 	float y = q.y + w * 1.5 + sin(q.x * 0.16 + t * 0.03) * 1.2;
 	float r = abs(fract(y * 0.09) - 0.5) * 2.0;                 // 0 on a ribbon's centre line
 	float band = exp(-r * r * 70.0) + 0.12 * exp(-r * r * 12.0);
-	float region = smoothstep(0.22, 0.52, noise2(q * 0.05 + vec2(3.1, t * 0.004)));   // only an arc or two
+	// An east-west auroral arc (a band of q.y) broken into bright segments along its length, plus a
+	// faint second arc poleward of it.
+	float a1 = (q.y - aurora_arc) / 9.0;
+	float a2 = (q.y - aurora_arc + 16.0) / 6.0;
+	float seg = smoothstep(0.22, 0.55, noise2(vec2(q.x * 0.045 + 7.0, t * 0.003)));
+	float seg2 = smoothstep(0.35, 0.65, noise2(vec2(q.x * 0.06 - 3.0, t * 0.004 + 5.0)));
+	float region = exp(-a1 * a1) * (0.25 + 0.75 * seg) + 0.45 * exp(-a2 * a2) * seg2;
 	float rays = 0.40 + 0.60 * noise2(vec2(q.x * 1.6 + y * 0.5 + t * 0.25, y * 0.3));
 	return band * region * rays;
 }
@@ -127,7 +135,7 @@ vec3 aurora_light(vec3 d, float jitter) {
 	for (int i = 0; i < 20; i++) {
 		float hf = (float(i) + jitter) / 20.0;
 		float h = 1.0 + hf * 1.1;
-		vec2 q = d.xz / (d.y + 0.08) * h * 5.0 + vec2(4.0, 9.0);
+		vec2 q = d.xz / (d.y + 0.08) * h * 5.0 + vec2(4.0, 0.0);
 		float c = aurora_ribbon(q, t);
 		vec3 col = mix(vec3(0.10, 1.00, 0.42), vec3(0.20, 0.75, 0.62), smoothstep(0.15, 0.5, hf));
 		col = mix(col, vec3(0.55, 0.22, 0.85), smoothstep(0.55, 1.0, hf));
@@ -135,10 +143,8 @@ vec3 aurora_light(vec3 d, float jitter) {
 	}
 	acc /= 20.0;
 	float horizon = smoothstep(0.03, 0.22, d.y);
-	vec2 north = normalize(d.xz + vec2(0.0001));
-	float bias = 0.45 + 0.55 * smoothstep(-0.4, 0.6, -north.y);   // brighter toward the north (-z)
 	float pulse = 0.75 + 0.25 * sin(t * 0.07 + d.x * 2.0);
-	return acc * horizon * bias * pulse * 3.2;
+	return acc * horizon * pulse * 3.2;
 }
 void sky() {
 	vec3 d = normalize(EYEDIR);
