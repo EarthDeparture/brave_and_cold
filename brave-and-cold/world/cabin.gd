@@ -42,6 +42,7 @@ const FURNITURE := {
 	"Furn_stool_b": {"name": "stool", "at": Vector3(-1.2, 0.72, 0.18), "plank": 1, "stick": 2, "hold": 5.0},
 }
 var broken: Array = []
+var toppled: Array = []   # A4 ransack: knocked over, not destroyed (still breakable for planks)
 var _furniture := {}
 var wood_pile := 6
 var crate_looted := false
@@ -318,6 +319,68 @@ func break_furniture(id: String) -> void:
 	if id in broken or not FURNITURE.has(id): return
 	broken.append(id)
 	if _furniture.has(id): (_furniture[id] as Node3D).visible = false
+
+
+## Knock a piece over where it stands: a stool on its side, the table on two legs against the floor.
+func topple_furniture(id: String) -> void:
+	if id in toppled or id in broken or not FURNITURE.has(id): return
+	toppled.append(id)
+	if not _furniture.has(id): return
+	var n := _furniture[id] as Node3D
+	var h: float = float(FURNITURE[id].at.y) - FLOOR_LOCAL_Y   # pivot height above the floor
+	var side := 1.0 if (hash(id) % 2) == 0 else -1.0
+	var ang := PI / 2 * 0.98 if FURNITURE[id].name == "stool" else 1.25
+	n.rotate_object_local(Vector3(0, 0, 1) if FURNITURE[id].name == "stool" else Vector3(1, 0, 0), ang * side)
+	n.position.y -= h * (0.55 if FURNITURE[id].name == "stool" else 0.55)
+
+
+func apply_toppled(ids: Array) -> void:
+	for id: Variant in ids:
+		topple_furniture(String(id))
+
+
+var litter_seed := 0   # A4 ransack: tins, rags and a broken plank or two on the floor (0 = none). Saved.
+func scatter_litter(sd: int) -> void:
+	if litter_seed != 0 or sd == 0: return
+	litter_seed = sd
+	var r := RandomNumberGenerator.new(); r.seed = sd
+	var root := Node3D.new(); root.name = "Litter"; add_child(root)
+	var wood := StandardMaterial3D.new(); wood.albedo_color = Color(0.36, 0.25, 0.16); wood.roughness = 0.9
+	var tin := StandardMaterial3D.new(); tin.albedo_color = Color(0.62, 0.62, 0.6); tin.metallic = 0.7; tin.roughness = 0.45
+	var cloth := StandardMaterial3D.new(); cloth.albedo_color = Color(0.42, 0.18, 0.14); cloth.roughness = 1.0
+	for id in broken:   # what was smashed leaves its planks where it stood
+		var at: Vector3 = FURNITURE[id].at
+		for k in 3:
+			var m := MeshInstance3D.new()
+			var bm := BoxMesh.new(); bm.size = Vector3(r.randf_range(0.35, 0.7), 0.025, 0.09)
+			m.mesh = bm; m.material_override = wood
+			root.add_child(m)
+			m.position = Vector3(at.x + r.randf_range(-0.4, 0.4), FLOOR_LOCAL_Y + 0.015 + k * 0.026, at.z + r.randf_range(-0.4, 0.4))
+			m.rotation = Vector3(0, r.randf() * TAU, r.randf_range(-0.08, 0.08))
+	for k in r.randi_range(3, 6):   # emptied tins and rags thrown down
+		var m := MeshInstance3D.new()
+		if r.randf() < 0.6:
+			var cm := CylinderMesh.new(); cm.top_radius = 0.04; cm.bottom_radius = 0.04; cm.height = 0.11; cm.radial_segments = 10
+			m.mesh = cm; m.material_override = tin
+			m.rotation = Vector3(PI / 2, r.randf() * TAU, 0)
+			m.position.y = FLOOR_LOCAL_Y + 0.04
+		else:
+			var bm2 := BoxMesh.new(); bm2.size = Vector3(r.randf_range(0.2, 0.35), 0.012, r.randf_range(0.12, 0.25))
+			m.mesh = bm2; m.material_override = cloth
+			m.rotation.y = r.randf() * TAU
+			m.position.y = FLOOR_LOCAL_Y + 0.008
+		root.add_child(m)
+		m.position.x = r.randf_range(-HX + 0.6, HX - 0.6)
+		m.position.z = r.randf_range(-HZ + 0.6, HZ - 0.6)
+
+
+## Forced open (A4 ransack): the same end state as a door bashed in.
+func break_door() -> void:
+	if door_broken: return
+	door_hp = 0.0
+	door_broken = true
+	door_open = true
+	if _door_pivot != null: _door_pivot.rotation.y = deg_to_rad(120.0)
 
 
 func apply_broken(ids: Array) -> void:

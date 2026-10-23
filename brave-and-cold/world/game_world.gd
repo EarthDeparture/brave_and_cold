@@ -32,6 +32,7 @@ var reading: ReadingModal
 var forest: ForestScatter
 var plants: PlantField
 var footprints: Footprints
+var world_events: WorldEvents     # A4: ransacked cabins, distant shots / flares / kills (store lights: StoreLights)
 var animal_tracks: AnimalTracks   # alive L2: deer / wolf / bear / hare prints and blood splatters
 var ground_drift: GroundDrift     # alive L1.4: wind-blown snow streaming along the ground
 var cabins: Array[Cabin] = []
@@ -448,6 +449,11 @@ func _ready() -> void:
 	collapse=FirstWeekCollapse.new();add_child(collapse);collapse.build(self,clinic_plan,sv.get("collapse",{}))
 	if opening_state.enabled and opts.get("town_life","1")!="0":
 		town_life=TownLife.new();add_child(town_life);town_life.build(self,sv.get("town_life",{}),loading and not sv.has("town_life"))
+	world_events = WorldEvents.new(); world_events.name = "WorldEvents"; add_child(world_events)
+	world_events.setup(self, opening_state.seed_value if opening_state != null else 1)
+	if sv.has("world_events"): world_events.from_dict(sv["world_events"])
+	for si in stores.size():
+		var sl := StoreLights.new(); sl.name = "StoreLights"; sl.setup(self, stores[si], 4400 + si)
 	_build_rooms(sv.get("rooms", []))
 	_build_forage(sv.get("forage", []))
 	_build_warrens()
@@ -4100,7 +4106,7 @@ func _track_hint(in_cabin: bool) -> String:
 func _save_data() -> Dictionary:
 	var cabs: Array = []
 	for cb in cabins:
-		cabs.append({'fire': cb.fire.to_dict(), 'broken': cb.broken.duplicate(), 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'dboards': cb.door_boards, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
+		cabs.append({'fire': cb.fire.to_dict(), 'broken': cb.broken.duplicate(), 'toppled': cb.toppled.duplicate(), 'dbroken': cb.door_broken, 'litter': cb.litter_seed, 'wood': cb.wood_pile, 'looted': cb.crate_looted, 'door_open': cb.door_open, 'dboards': cb.door_boards, 'open': cb.openings.map(func(op: Opening) -> Dictionary: return op.to_dict())})
 	var fires: Array = []
 	for cf in campfires:
 		fires.append({'x': cf.global_position.x, 'y': cf.global_position.y, 'z': cf.global_position.z, 'fire': cf.fire.to_dict()})
@@ -4135,6 +4141,7 @@ func _save_data() -> Dictionary:
 		'logs': _log_list(),
 		'carcasses': _carcass_list(),
 		'tracks': animal_tracks.log.to_dict(player.global_position) if animal_tracks != null else {},
+		'world_events': world_events.to_dict() if world_events != null else {},
 		'picked': plants.picked if plants != null else {},
 	}
 	if fire_lookout != null:
@@ -4324,6 +4331,9 @@ func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 			cb.fire.restore({'fuel_s': float(cabs[i].get('stove', 0)), 'water': cabs[i].get('prepared_water', {}), 'cooking': cabs[i].get('cooking', {})})
 		cb.refresh_fire()
 		cb.apply_broken(cabs[i].get('broken', []))
+		cb.apply_toppled(cabs[i].get('toppled', []))
+		cb.scatter_litter(int(cabs[i].get('litter', 0)))
+		if bool(cabs[i].get('dbroken', false)): cb.break_door()
 		cb.wood_pile = int(cabs[i]['wood'])
 		cb.crate_looted = bool(cabs[i]['looted'])
 		cb.door_boards = int(cabs[i].get('dboards', 0))
@@ -4331,7 +4341,7 @@ func _apply_save(sv: Dictionary, launch_options: Dictionary = {}) -> void:
 		if cabs[i].has('open'):
 			for k in range(mini(cb.openings.size(), cabs[i]['open'].size())):
 				cb.openings[k].from_dict(cabs[i]['open'][k])
-		if bool(cabs[i]['door_open']) != cb.door_open:
+		if bool(cabs[i]['door_open']) != cb.door_open and not cb.door_broken:
 			cb.toggle_door()
 	for f in sv['fires']:
 		var cf := Campfire.new()
