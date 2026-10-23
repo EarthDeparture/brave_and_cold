@@ -28,6 +28,16 @@ var _cue_left_s:=0.0
 var _attention_check_s:=0.0
 var _attention_clear:=false
 var _death_spine_start:=0.0
+## Daily routine (plan A3, set by TownLife): work = the site loop; at = stand at `anchor` facing `face_at` with
+## `pose` (warm / smoke / idle); sleep = lying on the bed; away = out of sight (commuting, or Rowan's back room).
+var mode := "work"
+var activity := "work"
+var anchor := Vector3.INF
+var face_at := Vector3.INF
+var pose := ""
+var _model_rest := Vector3.ZERO
+var _slept := false
+var _blanket: MeshInstance3D
 
 func _apply_coat(_seed: int) -> void: pass # Keep each imported civilian outfit.
 func _pick_wander() -> void:
@@ -54,6 +64,7 @@ func initialize(owner: Node3D, id: String, points: Array[Vector3], saved: Dictio
 	_prepare_appearance()
 	died.connect(func() -> void: life.history.killed(resident_id); remove_from_group("resident"))
 	state = State.IDLE; _gait_speed = 0; speed_now = 0
+	_model_rest = _model.position
 
 func set_phase(next: int, restoring := false) -> void:
 	if phase == next and not restoring: return
@@ -248,6 +259,12 @@ func _process(delta: float) -> void:
 				life.history.record(resident_id).departed=true;remove_from_group("resident");_bus.unregister(self);visible=false;set_process(false);return
 		_target=route[route_index];_move(.85 if route_index<route.size()-1 or global_position.distance_to(_target)>.16 else 0,delta)
 		_animate(delta);_update_presence(delta);return
+	if mode == "away":
+		return
+	if mode == "at" or mode == "sleep":
+		_hold(delta)
+		return
+	_wake_pose()
 	_pose_clock += delta; routine_s += delta; _stagger=maxf(0,_stagger-delta)
 	_alarm_s=maxf(0,_alarm_s-delta)
 	var stopped := talking or phase >= TownResidentState.Phase.ILL or _alarm_s>0
@@ -280,6 +297,57 @@ func _process(delta: float) -> void:
 	_deform_skin()
 	if _spine_bone>=0: _skin.set_bone_pose_rotation(_spine_bone,_spine_rest*Quaternion(Vector3.RIGHT,_rest_pitch+.015*sin(_pose_clock*1.1)))
 	_update_presence(delta)
+
+## Routine hold: standing at an anchor (warming at a stove, a smoke outside) or asleep on a bed.
+func _hold(delta: float) -> void:
+	_pose_clock += delta
+	_stagger = 0.0
+	speed_now = move_toward(speed_now, 0, delta * 4); _gait_speed = 0
+	if mode == "at":
+		_wake_pose()
+		if talking: _face(player.position, delta, 3)
+		elif face_at != Vector3.INF: _face(face_at, delta, 3)
+	_animate(delta)
+	if mode == "sleep":   # on its side on the mattress, head toward the pillow (+x of the bed), under a wool blanket
+		_model.rotation = Vector3(0, 0, -PI / 2)
+		_model.position = _model_rest + Vector3(0, 0.08, 0)
+		_slept = true
+		if _blanket == null:
+			_blanket = MeshInstance3D.new()
+			var bm := CapsuleMesh.new(); bm.radius = 0.42; bm.height = 1.45; bm.radial_segments = 16; bm.rings = 6
+			_blanket.mesh = bm
+			_blanket.rotation = Vector3(0, 0, PI / 2)   # a soft mound along the bed
+			_blanket.scale = Vector3(0.32, 1.0, 1.0)     # (local x of the rotated capsule = world up): flattened
+			var mat := StandardMaterial3D.new(); mat.albedo_color = Color(0.30, 0.20, 0.13); mat.roughness = 1.0
+			_blanket.material_override = mat
+			add_child(_blanket)
+		_blanket.position = Vector3(0.70, 0.10, 0.0)
+		_blanket.visible = true
+		for i in 2:
+			_arms[i].rotation.x = .9; _elbows[i].rotation.x = 1.1
+	else:
+		match pose:
+			"warm":   # palms to the stove
+				for i in 2:
+					_arms[i].rotation.x = .62 + .04 * sin(_pose_clock * 1.1 + i); _elbows[i].rotation.x = .55
+			"smoke":  # a hand to the mouth now and then
+				var up := fmod(_pose_clock + float(_id % 5), 9.0) < 2.2
+				_arms[1].rotation.x = .95 if up else .08; _elbows[1].rotation.x = 1.95 if up else .12
+				_arms[0].rotation.x = .06; _elbows[0].rotation.x = .2
+			_:
+				for i in 2:
+					_arms[i].rotation.x = .06; _elbows[i].rotation.x = .14
+	_deform_skin()
+	_update_presence(delta)
+
+
+func _wake_pose() -> void:
+	if _blanket != null: _blanket.visible = false
+	if _slept:
+		_slept = false
+		_model.rotation = Vector3.ZERO
+		_model.position = _model_rest
+
 
 func snapshot() -> Dictionary:
 	return {"hp":maxf(0,hp),"position":[global_position.x,global_position.y,global_position.z],"yaw":rotation.y,"route_index":route_index,"routine_s":routine_s,"leaving":leaving,"exit_index":route_index,"turn_s":turn_s,"dead_s":_dead_t,"corpse_cleared":state==State.DEAD and _dead_t>CORPSE_LIFE_S}

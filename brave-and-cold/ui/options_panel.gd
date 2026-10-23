@@ -47,6 +47,15 @@ func _init() -> void:
 	dev.add_theme_color_override("font_focus_color", MenuStyle.TEXT); dev.add_theme_color_override("font_pressed_color", MenuStyle.TEXT)
 	dev.toggled.connect(func(v: bool) -> void: Settings.dev_menu = v)
 	grid.add_child(dev)
+	grid.add_child(_label("Track hints"))
+	var th := CheckButton.new()
+	th.text = "read prints and blood"
+	th.button_pressed = Settings.track_hints
+	th.add_theme_font_override("font", MenuStyle.body_font()); th.add_theme_font_size_override("font_size", 16)
+	th.add_theme_color_override("font_color", MenuStyle.MUTED); th.add_theme_color_override("font_hover_color", MenuStyle.TEXT)
+	th.add_theme_color_override("font_focus_color", MenuStyle.TEXT); th.add_theme_color_override("font_pressed_color", MenuStyle.TEXT)
+	th.toggled.connect(func(v: bool) -> void: Settings.track_hints = v)
+	grid.add_child(th)
 	var note := MenuStyle.text("Graphics changes to shadows and ambient occlusion apply on the next load.", MenuStyle.body_font(), 14, MenuStyle.MUTED)
 	var gap2 := Control.new(); gap2.custom_minimum_size = Vector2(0, 8); add_child(gap2)
 	add_child(note)

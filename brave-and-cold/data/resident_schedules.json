@@ -1,0 +1,18 @@
+{
+  "_doc": "Named residents' days (plan A3). Blocks are [from_h, to_h, activity]; a block runs from_h <= hour < to_h. 'worried' applies from day 2. Activities: work (the existing site loop), stove (store stove, evening), lunch (store stove, midday), smoke (outside the clinic), home (own cabin, at the stove: lit), sleep (own bed; Rowan sleeps in the store's back room, out of sight), commute (on the road, out of sight). Illness, infection, death and departure override the schedule.",
+  "rowan": {
+    "home": "store",
+    "ordinary": [[0, 5.0, "sleep"], [5.0, 5.5, "stove"], [5.5, 18.0, "work"], [18.0, 22.5, "stove"], [22.5, 24, "sleep"]],
+    "worried":  [[0, 5.0, "sleep"], [5.0, 5.5, "stove"], [5.5, 17.0, "work"], [17.0, 23.0, "stove"], [23.0, 24, "sleep"]]
+  },
+  "lin": {
+    "home": "cabin",
+    "ordinary": [[0, 4.25, "sleep"], [4.25, 4.75, "home"], [4.75, 5.3, "commute"], [5.3, 12.0, "work"], [12.0, 12.75, "lunch"], [12.75, 17.5, "work"], [17.5, 18.1, "commute"], [18.1, 22.5, "home"], [22.5, 24, "sleep"]],
+    "worried":  [[0, 4.25, "sleep"], [4.25, 4.75, "home"], [4.75, 5.3, "commute"], [5.3, 12.0, "work"], [12.0, 12.75, "lunch"], [12.75, 16.0, "work"], [16.0, 16.6, "commute"], [16.6, 22.5, "home"], [22.5, 24, "sleep"]]
+  },
+  "sam": {
+    "home": "cabin",
+    "ordinary": [[0, 4.0, "sleep"], [4.0, 4.6, "home"], [4.6, 5.2, "commute"], [5.2, 13.0, "work"], [13.0, 13.4, "smoke"], [13.4, 19.0, "work"], [19.0, 19.6, "commute"], [19.6, 22.5, "home"], [22.5, 24, "sleep"]],
+    "worried":  [[0, 4.0, "sleep"], [4.0, 4.6, "home"], [4.6, 5.2, "commute"], [5.2, 13.0, "work"], [13.0, 13.4, "smoke"], [13.4, 21.0, "work"], [21.0, 21.6, "commute"], [21.6, 23.5, "home"], [23.5, 24, "sleep"]]
+  }
+}

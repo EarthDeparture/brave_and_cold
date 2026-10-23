@@ -40,6 +40,9 @@ func run() -> void:
 		at.stamp(["deer", "wolf", "bear", "hare"][i % 4], p, randf() * TAU, i % 2 == 0)
 	for i in AnimalTracks.BLOOD_POOL:
 		at.blood(bp + od * randf_range(2, 40) + Vector3(-od.z, 0, od.x) * randf_range(-20, 20), 0.3)
+	for i in AnimalTracks.BAND_POOL:
+		var q: Vector3 = bp + od * randf_range(14, 110) + Vector3(-od.z, 0, od.x) * randf_range(-40, 40)
+		at.log.add(TrackLog.K.BAND if i % 3 else TrackLog.K.TRAMPLE, q.x, q.z, randf() * TAU, 6.0, 35 if i % 3 else 600)
 	var al: AmbientLife = w.ambient_life
 	for k in 3:
 		var n := Node3D.new(); w.add_child(n); var kp: Vector3 = bp + od * (60.0 + k * 30.0); kp.y = w._ground_y(kp.x, kp.z)
@@ -62,5 +65,24 @@ func run() -> void:
 	for f in al.flocks: (f.mi as Node3D).visible = false
 	await frames(200)
 	await measure("all alive off")
+	# worst case CPU: a full ring (40000 crumbs) within 300 m, timed materialize + a logging frame
+	for i in TrackLog.MAX:
+		var q2: Vector3 = bp + Vector3(randf_range(-300, 300), 0, randf_range(-300, 300))
+		at.log.add(i % 6, q2.x, q2.z, 0.0, 1.0)
+	var t0 := Time.get_ticks_usec()
+	for r in 10: at.materialize()
+	print("PERF materialize full ring: %.2f ms" % ((Time.get_ticks_usec() - t0) / 10000.0))
+	for id in ["p", "b", "n"]:
+		t0 = Time.get_ticks_usec()
+		for r in 10: at._materialize_pool(id)
+		print("PERF   pool %s: %.2f ms" % [id, (Time.get_ticks_usec() - t0) / 10000.0])
+	var pq: Vector3 = w.player.global_position
+	var nq := 0
+	t0 = Time.get_ticks_usec()
+	for r in 10: nq = at.log.query(pq.x, pq.z, AnimalTracks.PRINT_R, AnimalTracks.PRINT_K).size()
+	print("PERF   query p: %.2f ms (%d hits)" % [(Time.get_ticks_usec() - t0) / 10000.0, nq])
+	t0 = Time.get_ticks_usec()
+	for r in 10: at.read_at(bp + od * 5.0)
+	print("PERF read_at: %.3f ms" % ((Time.get_ticks_usec() - t0) / 10000.0))
 	print("PERF height_samples/frame with drift: see ground_drift.height_samples")
 	quit(0)

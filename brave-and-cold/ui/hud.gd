@@ -54,6 +54,7 @@ var miss_ms := -9999
 var kills := 0
 var show_monitor := true
 var show_dev := false
+var track_hint := ""   # alive A1: what the prints / blood under the crosshair say ("Deer · fresh · running")
 var hide_ui := false   # gear screen covers everything
 
 var _ui: Control
@@ -167,6 +168,7 @@ func _draw_ui() -> void:
 	_draw_radio(sz, k)
 	_draw_actions(sz, k)
 	_draw_crosshair(sz, k)
+	_draw_track_hint(sz, k)
 	_draw_action(sz, k)
 	if player.struggling:
 		_draw_struggle(sz, k)
@@ -328,6 +330,17 @@ func _draw_aim_overlay(sz: Vector2, c: Vector2, ak: float) -> void:
 		_ui.draw_polygon(PackedVector2Array([c + d0 * r0, c + d0 * r1, c + d1 * r1, c + d1 * r0]), PackedColorArray([clear, dark, dark, clear]))
 		_ui.draw_polygon(PackedVector2Array([c + d0 * r1, c + d0 * r2, c + d1 * r2, c + d1 * r1]), PackedColorArray([dark, dark, dark, dark]))
 	_ui.draw_circle(c, 1.8, Color(0.9, 0.2, 0.15, 0.85 * ak))
+
+
+func _draw_track_hint(sz: Vector2, k: float) -> void:
+	if track_hint == "" or aim_k > 0.15 or action_t >= 0.0:
+		return
+	var fs := int(19.0 * k)
+	var w := DZ.text_w(track_hint, fs)
+	var p := Vector2(sz.x * 0.5 - w * 0.5, sz.y * 0.5 + 64.0 * k)
+	_ui.draw_rect(Rect2(p + Vector2(-14.0, -fs * 1.05) * k, Vector2(w + 28.0 * k, fs * 1.55)), Color(0.04, 0.05, 0.06, 0.42))
+	DZ.text(_ui, track_hint, p + Vector2(1, 1) * k, fs, Color(0, 0, 0, 0.6))
+	DZ.text(_ui, track_hint, p, fs, Color(0.90, 0.88, 0.80, 0.92))
 
 
 func _draw_crosshair(sz: Vector2, k: float) -> void:

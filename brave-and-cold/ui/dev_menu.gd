@@ -33,6 +33,8 @@ var spawner: ItemSpawner
 var zone_dbg: ZoneDebug
 
 
+var sound_board: SoundBoard   # plan A0: audition every clip, verdicts to user://sound_review.json
+
 func _init() -> void:
 	layer = 60
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -429,6 +431,10 @@ func _build() -> void:
 		if iv != null:
 			iv.wear("axe", 0.25))
 
+	_head(box, "AUDIO")
+	var arow := _flow(box)
+	_check(arow, "Show sound board", false, func(v: bool) -> void: sound_board.visible = v)
+
 	_head(box, "RENDER / DEBUG")
 	var rrow := _flow(box)
 	_check(rrow, "Show hit zones", false, func(v: bool) -> void: zone_dbg.visible = v)
@@ -462,6 +468,11 @@ func _build() -> void:
 	spawner = ItemSpawner.new()
 	add_child(spawner)
 	spawner.setup(world, player)
+	sound_board = SoundBoard.new()
+	add_child(sound_board)
+	sound_board.position = Vector2(392, 10)
+	sound_board.setup(world)
+	sound_board.visible = false
 	zone_dbg = ZoneDebug.new()
 	zone_dbg.player = player
 	zone_dbg.visible = false

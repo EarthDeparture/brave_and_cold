@@ -47,6 +47,7 @@ func run() -> void:
 		deer.global_position = q
 		await process_frame
 	var walk_n: int = at.stamped - n0
+	at.materialize()
 	check(walk_n >= 7 and walk_n <= 12 and at.prints_of("deer").size() >= 7, "a walking deer lays a line of prints (%d over 6 m)" % walk_n)
 	n0 = at.stamped
 	var dp2: Vector3 = deer.global_position
@@ -59,17 +60,20 @@ func run() -> void:
 	check(run_n >= 12 and run_n % 4 == 0, "a running deer bounds: prints in groups of four (%d over 12 m)" % run_n)
 	deer.set_process(true)
 	# ---- prints age in game time and fill in faster in snowfall
-	at._age[0] = 0.0; at._age[1] = 0.0
-	at._decals[0].visible = true; at._decals[1].visible = true
-	w.weather.precip = 0.0; at._fade(1.0)
-	var clear_age: float = at._age[0]
-	at._age[1] = 0.0; w.weather.precip = 1.0; at._fade(1.0)
-	var snow_age: float = at._age[1]
-	w.weather.precip = 0.0
-	check(clear_age > 40.0 and snow_age > clear_age * 6.0, "prints age in game time, fill in ~8x faster in heavy snow (%.0f s vs %.0f s)" % [clear_age, snow_age])
+	var lg: TrackLog = at.log
+	var i0: int = lg.add(TrackLog.K.DEER, bp.x, bp.z)
+	var e0: float = lg.eff_age(i0); var r0: float = lg.real_age(i0)
+	lg.advance(60.0, 0.0)
+	var clear_age: float = lg.eff_age(i0) - e0
+	var e1: float = lg.eff_age(i0)
+	lg.advance(60.0, 1.0)
+	var snow_age: float = lg.eff_age(i0) - e1
+	var real_d: float = lg.real_age(i0) - r0
+	check(clear_age > 59.0 and snow_age > clear_age * 6.0 and is_equal_approx(real_d, 120.0), "prints age in game time, fill in ~8x faster in heavy snow (%.0f s vs %.0f s), real age unaffected" % [clear_age, snow_age])
 	# ---- blood splatters
 	var b0: int = at.visible_counts().y
 	Carcass.blood(w, bp + od * 2.0, 0.3)
+	at.materialize()
 	check(at.visible_counts().y == b0 + 1, "Carcass.blood draws a splatter decal")
 	# ---- a wounded deer bolts away from the shot and leaves a blood trail
 	var shooter: Vector3 = w.player.global_position
@@ -78,6 +82,7 @@ func run() -> void:
 	deer.hit(24.0, shooter)
 	await secs(5.0)
 	var fled: float = deer.global_position.distance_to(shooter) - start.distance_to(shooter)
+	at.materialize()
 	var drops: int = at.visible_counts().y - b0
 	check(fled > 15.0, "the hit deer bolts away from the shooter (+%.0f m)" % fled)
 	check(drops >= 8, "and bleeds a trail (%d drops in 5 s)" % drops)
@@ -116,6 +121,7 @@ func run() -> void:
 		wolf._blood_d += 0.3
 		if wolf._blood_d > 3.5: wolf._blood_d = 3.6
 		wolf._process(0.05)
+	at.materialize()
 	check(at.visible_counts().y > b0, "and leaves drops behind it")
 	w.wolves.erase(wolf); wolf.queue_free()
 	# ---- ravens: wait for wolves, take off, squabble

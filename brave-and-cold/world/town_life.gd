@@ -11,12 +11,23 @@ var ledger: Node3D
 var closed_sign: Label3D
 var _last_calendar := -1
 var _legacy_wait := false
+## Daily routine (plan A3): data/resident_schedules.json. Rowan lives in the store; Lin and Sam in hamlet cabins.
+var schedules: Dictionary = {}
+var homes: Dictionary = {}      # id -> Cabin
+const STORE_STOVE := Vector3(-1.87, Store.FLOOR_LOCAL_Y, -0.45)
 
 func build(w: Node3D, saved: Dictionary={}, legacy:=false) -> void:
 	world=w
 	if w.stores.is_empty():return
 	store=w.stores[0];dialogue=JSON.parse_string(FileAccess.get_file_as_string("res://data/town_dialogue.json"))
 	history.restore(saved)
+	schedules = JSON.parse_string(FileAccess.get_file_as_string("res://data/resident_schedules.json"))
+	var hamlet: Array = []
+	for cb in w.cabins:
+		if cb != w.cabins[0]: hamlet.append(cb)
+	if hamlet.size() > 0:
+		homes["lin"] = hamlet[1 % hamlet.size()]
+		homes["sam"] = hamlet[3 % hamlet.size()]
 	conversation=TownConversation.new();conversation.life=self;add_child(conversation)
 	ledger=(load("res://assets/town_residents/issue_ledger.glb") as PackedScene).instantiate();store.add_child(ledger);ledger.position=Vector3(1.60,1.407,-1.17);ledger.rotation.y=PI/2
 	closed_sign=Label3D.new();store.add_child(closed_sign);closed_sign.text="CLOSED\nCollect marked service cases";closed_sign.font_size=40;closed_sign.pixel_size=.0017
@@ -72,9 +83,136 @@ func update(_gs: float) -> void:
 		var next:=history.phase(id,world.clock.day,world.clock.hour)
 		if a.phase!=next:
 			if conversation.actor==a:conversation.close()
+			if a.mode!="work":_apply(a,id,"work")   # they were at work when the day turned; leave / sicken from there
 			a.set_phase(next)
 			if a.infected and not world.zombies.has(a):world.zombies.append(a)
-	closed_sign.visible=TownResidentState.calendar_phase("rowan",world.clock.day,world.clock.hour)>=TownResidentState.Phase.ILL or bool(history.record("rowan").dead)
+	_routine()
+	var off_shift:=String(block_for("rowan",world.clock.day,world.clock.hour)[2])!="work"
+	closed_sign.visible=TownResidentState.calendar_phase("rowan",world.clock.day,world.clock.hour)>=TownResidentState.Phase.ILL or bool(history.record("rowan").dead) or off_shift
+
+# ------------------------------------------------------------------ daily routine
+func block_for(id: String, day: int, hour: float) -> Array:
+	var s: Dictionary = schedules.get(id, {})
+	var list: Array = s.get("worried" if day >= 2 else "ordinary", [])
+	for b in list:
+		if hour >= float(b[0]) and hour < float(b[1]): return b
+	return [0.0, 24.0, "work"]
+
+
+func _routine() -> void:
+	var day: int = world.clock.day
+	var hour: float = world.clock.hour
+	for id: String in actors:
+		var a: TownResident = actors[id]
+		if not is_instance_valid(a): continue
+		var b := block_for(id, day, hour)
+		var act: String = b[2]
+		var eligible := a.phase <= TownResidentState.Phase.WORRIED and not a.leaving and not a.infected and not a.is_dead()
+		if not eligible:
+			if a.mode != "work": _apply(a, id, "work")
+			continue
+		_maintain(id, act, day)
+		if a.activity == act: continue
+		var late := hour - float(b[0]) > 0.3
+		# never vanish, appear or jump in front of the player: wait until neither end is watched (18 game min at most)
+		if not late and a.mode != "away" and a.visible and observed(a): continue
+		if not late and act != "commute" and not (act == "sleep" and id == "rowan") and _point_observed(_anchor_for(a, id, act)): continue
+		_apply(a, id, act)
+
+
+func _ground_pt(at: Vector3) -> Vector3:
+	at.y = RoadNet.lift(world.terrain.data.get_height(at), at.x, at.z)
+	for c in world.colliders:
+		var y: float = c.floor_at(at.x, at.z, at.y)
+		if not is_nan(y): at.y = y; break
+	return at
+
+
+## Where an activity puts the resident (world position), INF = out of sight.
+func _anchor_for(a: TownResident, id: String, act: String) -> Vector3:
+	match act:
+		"work": return a.route[clampi(a.route_index, 0, a.route.size() - 1)] if a.route.size() > 0 else a.global_position
+		"stove": return store.to_global(Vector3(-1.15, Store.FLOOR_LOCAL_Y, -0.10))
+		"lunch": return store.to_global(Vector3(-1.30, Store.FLOOR_LOCAL_Y, 0.45))
+		"smoke":
+			var host: Node3D = world.collapse.clinic if world.collapse != null and world.collapse.clinic != null else store
+			return _ground_pt(host.to_global(Vector3(2.2, 0, (Clinic.HZ if host is Clinic else Store.HZ) + 1.4)))
+		"home":
+			var cb: Cabin = homes.get(id)
+			if cb == null: return Vector3.INF
+			var p := cb.to_global(Vector3(-1.70, 0, -1.00)); p.y = cb.floor_y; return p
+		"sleep":
+			var cb: Cabin = homes.get(id)
+			if cb == null or id == "rowan": return Vector3.INF
+			var p := cb.to_global(Vector3(1.15, 0, -1.65)); p.y = cb.floor_y + 0.46; return p
+	return Vector3.INF
+
+
+func _apply(a: TownResident, id: String, act: String) -> void:
+	a.activity = act
+	if conversation.actor == a and act != "work": conversation.close()
+	a.talking = false
+	var p := _anchor_for(a, id, act)
+	a.pose = ""
+	a.face_at = Vector3.INF
+	if id == "rowan":
+		var shut := act != "work"   # the shop door is shut whenever the counter is closed
+		if store.door_open == shut and not store.door_broken and store.door_boards == 0 and not store.contains_xz(world.player.position.x, world.player.position.z):
+			store.toggle_door()   # the shop opens at 05:30 and is shut at night
+	if p == Vector3.INF:
+		a.mode = "away"; a.visible = false
+		if act == "home" or act == "sleep" or act == "commute": _leave_cabin_shut(id)
+		return
+	a.global_position = p
+	a._target = p
+	a.speed_now = 0.0
+	a.visible = true
+	match act:
+		"work":
+			a.mode = "work"
+		"stove", "lunch":
+			a.mode = "at"; a.pose = "warm"; a.face_at = store.to_global(STORE_STOVE)
+		"smoke":
+			a.mode = "at"; a.pose = "smoke"
+			var host: Node3D = world.collapse.clinic if world.collapse != null and world.collapse.clinic != null else store
+			a.face_at = _ground_pt(host.to_global(Vector3(2.2, 0, 12.0)))
+		"home":
+			var cb: Cabin = homes[id]
+			a.mode = "at"; a.pose = "warm"; a.face_at = cb.stove_world_pos()
+			_leave_cabin_shut(id)
+		"sleep":
+			var cb: Cabin = homes[id]
+			a.mode = "sleep"; a.rotation.y = cb.rotation.y
+
+
+func _leave_cabin_shut(id: String) -> void:
+	var cb: Cabin = homes.get(id)
+	if cb == null or not cb.door_open or cb.door_broken: return
+	if Vector2(world.player.position.x - cb.global_position.x, world.player.position.z - cb.global_position.z).length() < 8.0: return
+	cb.toggle_door()
+
+
+## Fires follow the people: Rowan keeps the shop stove going while up; a home stove is lit while its owner is home
+## and awake, and left to burn down to embers overnight.
+func _maintain(id: String, act: String, day: int) -> void:
+	if id == "rowan" and store.stove != null and act in ["stove", "work"]:
+		if store.stove.fire.fuel_s < 1800.0: store.stove.fire.set_fuel(7200.0)
+	var cb: Cabin = homes.get(id)
+	if cb == null: return
+	var in_home := act == "home" or act == "sleep"
+	cb.cue_suppressed = in_home and day < 3
+	if act == "home" and cb.fire.fuel_s < 1800.0:
+		cb.fire.set_fuel(5400.0)
+
+
+func _point_observed(p: Vector3) -> bool:
+	if p == Vector3.INF: return false
+	var point := p + Vector3.UP * 1.2
+	if not world.player.cam.is_position_in_frustum(point): return false
+	var start: Vector3 = world.player.cam.global_position; var d := point - start
+	if d.length() > 120.0: return false
+	return HitZones.building_block(world._building_list(), start, d.normalized(), d.length()) >= d.length() - .15
+
 
 func _store_distance() -> float:
 	# Player.place holds Y at 400 until its first physics grounding pass.
@@ -114,7 +252,7 @@ func actions() -> Array:
 	var out: Array=[]
 	for id: String in actors:
 		var a: TownResident=actors[id]
-		if is_instance_valid(a) and a.visible and not a.is_dead() and a.phase<TownResidentState.Phase.UNRESPONSIVE:
+		if is_instance_valid(a) and a.visible and a.mode!="sleep" and not a.is_dead() and a.phase<TownResidentState.Phase.UNRESPONSIVE:
 			out.append({"pos":a.global_position+Vector3.UP*1.4,"r":2.8,"tol":.60,"text":"Talk to "+String(dialogue[id].name),"act":func() -> void:conversation.open(a)})
 	if ledger!=null:out.append({"pos":ledger.global_position,"r":1.9,"tol":.5,"text":"Read Rowan's issue ledger","act":read_ledger})
 	return out

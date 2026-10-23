@@ -633,6 +633,10 @@ func _process(delta: float) -> void:
 				break
 	if collapse!=null and collapse.clinic!=null and collapse.clinic.contains_xz(player.position.x,player.position.z):in_cabin=true
 	_indoor_k = move_toward(_indoor_k, 1.0 if in_cabin else 0.0, delta * 2.0)
+	_track_hint_t -= delta
+	if _track_hint_t <= 0.0:
+		_track_hint_t = 0.25
+		hud.track_hint = _track_hint(in_cabin)
 	if sky_rig is AtmosphereRig:
 		(sky_rig as AtmosphereRig).apply_shelter(_indoor_k)
 	elif _indoor_k > 0.0:
@@ -4066,6 +4070,33 @@ func story_skip_to(day: int, hour: float) -> bool:
 	return true
 
 
+var _track_hint_t := 0.0
+## Alive A1: the ground point under the crosshair (looking down, outdoors, within 6 m) read by AnimalTracks.
+func track_look_point() -> Vector3:
+	var cam: Camera3D = player.cam
+	var o := cam.global_position
+	var fwd := -cam.global_transform.basis.z
+	if fwd.y > -0.22:
+		return Vector3(NAN, NAN, NAN)
+	var t := 0.0
+	while t < 6.0:
+		t += 0.2
+		var q := o + fwd * t
+		var g := _ground(q.x, q.z)
+		if q.y <= g.y:
+			return g
+	return Vector3(NAN, NAN, NAN)
+
+
+func _track_hint(in_cabin: bool) -> String:
+	if not Settings.track_hints or animal_tracks == null or in_cabin or player.dead:
+		return ""
+	var p := track_look_point()
+	if is_nan(p.x):
+		return ""
+	return animal_tracks.read_at(p)
+
+
 func _save_data() -> Dictionary:
 	var cabs: Array = []
 	for cb in cabins:
@@ -4103,6 +4134,7 @@ func _save_data() -> Dictionary:
 		'felled': forest.felled.keys() if forest != null else [],
 		'logs': _log_list(),
 		'carcasses': _carcass_list(),
+		'tracks': animal_tracks.log.to_dict(player.global_position) if animal_tracks != null else {},
 		'picked': plants.picked if plants != null else {},
 	}
 	if fire_lookout != null:
@@ -4137,6 +4169,9 @@ func _alive_list(arr: Array) -> Array:
 
 
 func _restore_creatures(sv: Dictionary) -> void:
+	if animal_tracks != null and sv.has('tracks'):
+		animal_tracks.log.from_dict(sv['tracks'])
+		animal_tracks.materialize()
 	if plants != null:
 		plants.apply_picked(sv.get('picked', {}))
 	var ci := 0

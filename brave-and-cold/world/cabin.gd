@@ -245,7 +245,10 @@ func sight_line_open(a: Vector3, b: Vector3) -> bool:
 	return false
 
 
+var cue_suppressed := false   # a resident's own stove before the outbreak (TownLife): homes are lit, nobody is hunting yet
 func emit_light_cue() -> void:
+	if cue_suppressed:
+		return
 	fire.cue(bus, global_position, _night, light_signal(), self)
 
 
