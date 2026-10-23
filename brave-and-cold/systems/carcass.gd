@@ -109,6 +109,9 @@ static func has_meat(n: Node) -> bool:
 
 # ---- blood decals on the snow
 static func blood(parent: Node, pos: Vector3, size: float) -> void:
+	if AnimalTracks.instance != null and is_instance_valid(AnimalTracks.instance):   # splatter decals (L2)
+		AnimalTracks.instance.blood(pos, size)
+		return
 	var tree := parent.get_tree()
 	var all := tree.get_nodes_in_group("blood")
 	if all.size() > 250:

@@ -63,7 +63,10 @@ func run() -> void:
 	for b in f.birds: gmax = maxf(gmax, b.pos.y - w._ground_y(b.pos.x, b.pos.z))
 	check(f.state == "ground" and gmax < 0.5, "with nobody near they land at the kill (highest %.2f m off the snow)" % gmax)
 	await secs(0.5)
-	check(float(f.birds[0].fold) > 0.9, "wings folded on the ground")
+	var folded := 0
+	for b in f.birds:
+		if float(b.fold) > 0.65: folded += 1
+	check(folded == f.birds.size(), "wings folded on the ground (%d / %d)" % [folded, f.birds.size()])
 	# ---- walk up -> they scatter with calls and wingbeats
 	al.heard.clear()
 	w.player.place(cp.x - 15.0, cp.z)

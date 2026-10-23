@@ -134,7 +134,8 @@ vec3 aurora_light(vec3 d, float jitter) {
 	float t = aurora_time;
 	for (int i = 0; i < 20; i++) {
 		float hf = (float(i) + jitter) / 20.0;
-		float h = 1.0 + hf * 1.1;
+		// looking steeply up the stacked planes project almost onto each other and smear: shorten the stack
+		float h = 1.0 + hf * 1.1 * mix(1.0, 0.35, smoothstep(0.55, 0.95, d.y));
 		vec2 q = d.xz / (d.y + 0.08) * h * 5.0 + vec2(4.0, 0.0);
 		float c = aurora_ribbon(q, t);
 		vec3 col = mix(vec3(0.10, 1.00, 0.42), vec3(0.20, 0.75, 0.62), smoothstep(0.15, 0.5, hf));
@@ -144,7 +145,22 @@ vec3 aurora_light(vec3 d, float jitter) {
 	acc /= 20.0;
 	float horizon = smoothstep(0.03, 0.22, d.y);
 	float pulse = 0.75 + 0.25 * sin(t * 0.07 + d.x * 2.0);
-	return acc * horizon * pulse * 3.2;
+	// Corona: when the arc passes overhead its rays seem to converge on the magnetic zenith (a little south of
+	// straight up) - a crown of streaks fanning out from one point. Angular noise on a circle, so no seam.
+	float over = exp(-pow(aurora_arc / 9.0, 2.0));
+	vec3 corona = vec3(0.0);
+	if (over > 0.01) {
+		vec3 zen = normalize(vec3(0.0, 1.0, 0.22));
+		float rad = acos(clamp(dot(d, zen), -1.0, 1.0));
+		vec3 dd = d - zen * dot(d, zen);
+		float ang = atan(dd.x, dd.z);
+		vec2 cr = vec2(cos(ang), sin(ang));
+		float rays = pow(noise2(cr * 7.0 + vec2(t * 0.03, 3.0)), 3.0) * 1.8 + 0.25 * noise2(cr * 22.0 + vec2(0.0, t * 0.12));
+		float fall = exp(-rad * 3.4) * smoothstep(0.02, 0.16, rad);
+		vec3 ccol = mix(vec3(0.55, 0.25, 0.85), vec3(0.12, 0.95, 0.45), smoothstep(0.06, 0.45, rad));
+		corona = ccol * rays * fall * over * 0.40;
+	}
+	return acc * horizon * pulse * 3.2 + corona * pulse;
 }
 void sky() {
 	vec3 d = normalize(EYEDIR);

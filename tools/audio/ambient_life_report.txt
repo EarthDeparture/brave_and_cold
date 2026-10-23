@@ -10,3 +10,4 @@ raven_2       1.92 s  rms  -20.4 dB  centroid   1462 Hz  spectral peak   1032 Hz
 raven_3       2.34 s  rms  -21.8 dB  centroid   1550 Hz  spectral peak    443 Hz
 wings_0       3.40 s  rms  -21.3 dB  centroid   2024 Hz  spectral peak    597 Hz
 wings_1       3.40 s  rms  -21.5 dB  centroid   2045 Hz  spectral peak    486 Hz
+aurora_static 10.00 s  rms  -15.5 dB  centroid   1359 Hz  spectral peak   1317 Hz

@@ -32,6 +32,8 @@ var reading: ReadingModal
 var forest: ForestScatter
 var plants: PlantField
 var footprints: Footprints
+var animal_tracks: AnimalTracks   # alive L2: deer / wolf / bear / hare prints and blood splatters
+var ground_drift: GroundDrift     # alive L1.4: wind-blown snow streaming along the ground
 var cabins: Array[Cabin] = []
 var fire_lookout: FireLookout # Standalone additive mountain structure; never a ground cabin collider.
 var opening: LookoutOpening
@@ -222,6 +224,8 @@ func _ready() -> void:
 	footprints.detail_enabled = environment_detail_enabled
 	add_child(footprints)
 	player.footprints = footprints
+	animal_tracks = AnimalTracks.new(); animal_tracks.name = "AnimalTracks"; animal_tracks.world = self; add_child(animal_tracks)
+	ground_drift = GroundDrift.new(); ground_drift.name = "GroundDrift"; add_child(ground_drift); ground_drift.setup(self)
 	viewmodel = Viewmodel.new()
 	viewmodel.player = player
 	viewmodel.game_clock=clock

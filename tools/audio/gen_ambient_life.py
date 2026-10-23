@@ -14,7 +14,7 @@ forest/hill reverb), which is how the game uses them - distance hides most of th
 Output: brave-and-cold/assets/audio/ambient/*.wav (44.1 kHz mono 16-bit, peak -1 dBFS) and a report
 tools/audio/ambient_life_report.txt (length, peak, rms, centroid, f0 estimate). NOBODY HAS LISTENED: Troy must.
 """
-import os
+import glob, io, os, zipfile
 import numpy as np
 from scipy import signal
 from scipy.io import wavfile
@@ -166,6 +166,32 @@ def wings(seed, birds):
     return fade_tail(norm(x))
 
 
+# ---------------------------------------------------------------- aurora radio static (recorded)
+def aurora_static():
+    """A real powered-on ham receiver hiss (Sonniss GDC 2026, Epic Stock Media 'Fake Advertisements and Radio'),
+    10 s cut into a seamless loop, band-limited like a small speaker, with slow swells added (the aurora
+    'breathing' through the receiver)."""
+    zdir = os.path.expanduser("~/Downloads")
+    g = glob.glob(os.path.join(zdir, "*GameAudioBundle2of5*.zip"))
+    if not g: raise SystemExit("missing Sonniss part 2")
+    zf = zipfile.ZipFile(g[0])
+    name = next(n for n in zf.namelist() if "COMStatic_Radio Ham Loop Static Hum" in n and n.endswith(".wav"))
+    sr, x = wavfile.read(io.BytesIO(zf.read(name)))
+    x = x.astype(np.float64) / (32768.0 if x.dtype == np.int16 else float(np.iinfo(x.dtype).max) if x.dtype.kind == "i" else 1.0)
+    if x.ndim > 1: x = x.mean(axis=1)
+    gg = np.gcd(SR, sr)
+    x = signal.resample_poly(x, SR // gg, sr // gg)
+    seg = x[int(4.0 * SR): int(14.6 * SR)]
+    seg = bp(seg, 280, 3600, 3)
+    n = len(seg); xf = int(0.6 * SR)
+    loop = seg[: n - xf].copy()
+    ramp = np.linspace(0, 1, xf)
+    loop[:xf] = loop[:xf] * ramp + seg[n - xf:] * (1 - ramp)   # crossfade the tail into the head: seamless
+    tt = np.arange(len(loop)) / SR
+    swell = 0.75 + 0.25 * np.sin(2 * np.pi * tt / (len(loop) / SR) * 3 + 1.0)   # integer cycles: loops clean
+    return norm(loop * swell, -3.0)
+
+
 def write(name, x):
     os.makedirs(OUT, exist_ok=True)
     wavfile.write(os.path.join(OUT, name + ".wav"), SR, (np.clip(x, -1, 1) * 32767).astype(np.int16))
@@ -191,6 +217,7 @@ def main():
     rep.append(write("raven_3", raven(34, 460, 2)))
     rep.append(write("wings_0", wings(41, 3)))
     rep.append(write("wings_1", wings(42, 4)))
+    rep.append(write("aurora_static", aurora_static()))
     with open(os.path.join(ROOT, "tools", "audio", "ambient_life_report.txt"), "w") as f:
         f.write("\n".join(rep) + "\n")
     print("\n".join(rep))

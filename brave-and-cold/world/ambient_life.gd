@@ -45,8 +45,10 @@ void vertex() {
 		VERTEX.y += ad * sin(a) + c.z * 0.045;
 		NORMAL = normalize(vec3(-side * sin(a), cos(a), 0.0));
 	}
-	if (COLOR.b > 0.25 && COLOR.b < 0.75) { VERTEX.y = mix(-0.05, VERTEX.y, c.z); }   // legs: tucked in flight
-	if (COLOR.a > 0.5) { VERTEX.y -= c.w * 0.10; VERTEX.z -= c.w * 0.03; }
+	float legs = step(1.5, c.w);
+	float peck = c.w - 2.0 * legs;
+	if (COLOR.b > 0.25 && COLOR.b < 0.75) { VERTEX.y = mix(-0.05, VERTEX.y, max(c.z, legs)); }   // legs: tucked in flight, down to land / take off
+	if (COLOR.a > 0.5) { VERTEX.y -= peck * 0.10; VERTEX.z -= peck * 0.03; }
 }
 void fragment() {
 	// Raven plumage: near-black with a blue-violet gloss that breaks up over the feather tracts (scalloped
@@ -69,6 +71,11 @@ var aurora := 0.0
 var force_aurora := -1.0       # tests / captures: >= 0 overrides the schedule
 var force_arc := NAN           # tests / captures: fixes the arc position
 var aurora_arc := -30.0        # see winter_sky.gdshader: -30 low in the north .. 0 overhead
+var radio_static := Vector2.ZERO   # (desk, walkie) static levels 0..1 (tests / debug)
+var _static_desk: AudioStreamPlayer3D
+var _static_walkie: AudioStreamPlayer
+var _static_said_night := -999
+const STATIC_MIN := 0.3        # aurora strength at which dead receivers start to hiss
 var voices_enabled := true
 var heard: Array = []          # [{kind, pos, dist, real}] last voices played (tests / debug)
 var rng := RandomNumberGenerator.new()
@@ -136,6 +143,62 @@ func arc_at() -> float:
 	return -32.0 + reach * exp(-pow((x - 4.5) / 1.7, 2.0)) + 3.0 * sin(_t * 0.011)
 
 
+func _static_stream() -> AudioStream:
+	var s := _stream("aurora_static")
+	if s is AudioStreamWAV and (s as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_DISABLED:
+		var w := (s as AudioStreamWAV).duplicate() as AudioStreamWAV
+		w.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		w.loop_begin = 0
+		w.loop_end = w.data.size() / 2   # 16-bit mono frames
+		_streams["aurora_static"] = w
+		return w
+	return s
+
+
+## TLD: on an aurora night dead radios come alive. A switched-on desk receiver, or the carried walkie, that is
+## not playing a broadcast hisses with aurora static, swelling with the display.
+func _aurora_radio(dt: float) -> void:
+	var op = world.get("opening")
+	var k := clampf((aurora - STATIC_MIN) / (1.0 - STATIC_MIN), 0.0, 1.0)
+	var desk_on := false
+	var walkie_on := false
+	if op != null and k > 0.0 and is_instance_valid(op):
+		var st = op.get("state")
+		var spk = op.get("speaker")
+		var wk = op.get("walkie")
+		if st != null:
+			desk_on = bool(st.receiver_on) and spk != null and not (spk as AudioStreamPlayer3D).playing
+			walkie_on = bool(st.walkie_carried) and bool(st.walkie_ready()) and wk != null and not (wk as AudioStreamPlayer).playing
+		if desk_on:
+			if _static_desk == null:
+				_static_desk = AudioStreamPlayer3D.new()
+				_static_desk.stream = _static_stream()
+				_static_desk.unit_size = 3.0
+				_static_desk.max_distance = 30.0
+				add_child(_static_desk)
+			_static_desk.global_position = (spk as Node3D).global_position
+			if not _static_desk.playing:
+				_static_desk.play()
+				var nd := (world.get("clock") as GameClock).day if world.get("clock") != null else 0
+				if nd != _static_said_night and world.has_method("_say") and _player_pos().distance_to(_static_desk.global_position) < 12.0:
+					_static_said_night = nd
+					world.call("_say", "The dead receiver hisses and swells - the aurora is up.")
+			_static_desk.volume_db = lerpf(-24.0, -9.0, k) + 3.0 * sin(_t * 0.4)
+		if walkie_on:
+			if _static_walkie == null:
+				_static_walkie = AudioStreamPlayer.new()
+				_static_walkie.stream = _static_stream()
+				add_child(_static_walkie)
+			if not _static_walkie.playing:
+				_static_walkie.play()
+			_static_walkie.volume_db = lerpf(-34.0, -22.0, k) + 2.0 * sin(_t * 0.5 + 1.0)
+	if not desk_on and _static_desk != null and _static_desk.playing:
+		_static_desk.stop()
+	if not walkie_on and _static_walkie != null and _static_walkie.playing:
+		_static_walkie.stop()
+	radio_static = Vector2(k if desk_on else 0.0, k if walkie_on else 0.0)
+
+
 func _night() -> float:
 	var clock: GameClock = world.get("clock")
 	if clock == null:
@@ -178,6 +241,7 @@ func _process(delta: float) -> void:
 		_update_flock(f, delta)
 	if voices_enabled:
 		_voices(delta)
+	_aurora_radio(delta)
 	_flush_pending()
 
 
@@ -249,7 +313,8 @@ func _new_kill_flock(n: Node3D) -> Dictionary:
 		var b := {"theta": rng.randf() * TAU, "r": rng.randf_range(9.0, 21.0), "dh": rng.randf_range(-5.0, 6.0),
 			"spd": rng.randf_range(8.5, 11.0), "phase": rng.randf() * TAU, "amp": 0.15, "fold": 0.0, "peck": 0.0,
 			"flap_t": rng.randf_range(0.0, 4.0), "pos": c + Vector3(0, 30, 0), "fwd": Vector3.FORWARD, "bank": 0.0,
-			"land": Vector3.ZERO, "vel": Vector3.ZERO, "hop_t": rng.randf_range(1.0, 4.0), "yaw": rng.randf() * TAU}
+			"land": Vector3.ZERO, "vel": Vector3.ZERO, "hop_t": rng.randf_range(1.0, 4.0), "yaw": rng.randf() * TAU,
+			"legs": 0.0, "legs_t": 0.0, "pitch": 0.0, "hop_ph": 0.0, "flick": 0.0}
 		f.birds.append(b)
 	flocks.append(f)
 	return f
@@ -293,6 +358,11 @@ func scatter(f: Dictionary, from: Vector3) -> void:
 		b.fold = 0.0
 		b.peck = 0.0
 		b.amp = 1.0
+		if low:   # take-off: a jump on the legs, nose up, heavy first beats
+			b.legs = 1.0
+			b.legs_t = 0.45
+			b.pitch = 0.55
+			b.vel = (away * 0.35 + Vector3(0, 1, 0)).normalized() * 6.0
 	var c: Vector3 = f.center + Vector3(0, 2 if low else f.base_h, 0)
 	if low:
 		_play("wings_%d" % rng.randi_range(0, 1), c, -4.0, 6.0, 90.0)
@@ -359,7 +429,10 @@ func _update_flock(f: Dictionary, dt: float) -> void:
 		f.quiet += dt
 	match f.state:
 		"circle":
-			if pd < SCARE_R:
+			if _wolf_at(f.center, 15.0) != Vector3.INF and pd >= SCARE_R:
+				f.base_h = move_toward(f.base_h, 11.0, dt * 3.0)   # wolves on the kill: they wait, low, for scraps
+				f.quiet = 0.0
+			elif pd < SCARE_R:
 				f.base_h = maxf(f.base_h, 42.0)   # you are at their kill: they wheel high and wait
 			elif f.base_h > 30.0 and pd > LAND_CLEAR_R:
 				f.base_h = move_toward(f.base_h, 28.0, dt * 0.5)
@@ -375,8 +448,11 @@ func _update_flock(f: Dictionary, dt: float) -> void:
 					var lz: float = f.center.z + sin(a) * r
 					b.land = Vector3(lx, _ground(lx, lz) + PERCH_Y, lz)
 		"land":
+			var wolf_l := _wolf_at(f.center, 15.0)
 			if pd < SCARE_R:
 				scatter(f, pp)
+			elif wolf_l != Vector3.INF:
+				scatter(f, wolf_l)
 			else:
 				var all_down := true
 				for b in f.birds:
@@ -384,16 +460,22 @@ func _update_flock(f: Dictionary, dt: float) -> void:
 					var d := to.length()
 					if d > 0.15:
 						all_down = false
-						var step := minf(d, (5.0 + minf(d, 30.0) * 0.25) * dt)
+						var near := d < 4.0
+						var step := minf(d, ((1.8 + d * 0.5) if near else (5.0 + minf(d, 30.0) * 0.25)) * dt)
 						b.pos += to / d * step
 						var flat := Vector3(to.x, 0, to.z)
 						if flat.length() > 0.3:
 							b.fwd = flat.normalized()
-						b.amp = move_toward(b.amp, 0.9 if d < 6.0 else 0.3, dt * 2.0)
+							b.yaw = atan2(flat.z, flat.x)
+						b.amp = move_toward(b.amp, 1.0 if near else (0.9 if d < 6.0 else 0.3), dt * 3.0)
 						b.fold = 0.0
+						b.legs = 1.0 if near else 0.0          # legs swing down for the last metres
+						b.pitch = 0.65 * (1.0 - d / 4.0) if near else 0.0   # flare: nose up, wings braking
 					else:
 						b.pos = b.land
 						b.amp = 0.0
+						b.pitch = 0.0
+						b.legs = 1.0
 						b.fold = move_toward(b.fold, 1.0, dt * 3.0)
 					b.bank = 0.0
 				if all_down:
@@ -407,29 +489,57 @@ func _update_flock(f: Dictionary, dt: float) -> void:
 				scatter(f, wolf_near)   # the wolves have come: the ravens give way
 			else:
 				_peck(f, dt)
+				f.sq_t = float(f.get("sq_t", rng.randf_range(5.0, 12.0))) - dt
+				if f.sq_t <= 0.0:
+					f.sq_t = rng.randf_range(6.0, 15.0)
+					squabble(f)
 				for b in f.birds:
-					b.fold = 1.0
-					b.amp = 0.0
+					b.legs = 1.0
+					b.pitch = 0.0
 					b.hop_t -= dt
-					b.peck = maxf(0.0, sin(f.ts * 6.0 + b.phase)) if fmod(f.ts + b.phase, 5.0) < 2.5 else 0.0
-					if b.hop_t <= 0.0:   # a hop: a short shuffle round the carcass
+					b.flick = maxf(0.0, float(b.flick) - dt)
+					if b.hop_t <= 0.0:   # move round the carcass to a new spot
 						b.hop_t = rng.randf_range(2.0, 6.0)
-						b.yaw = rng.randf() * TAU
 						var a := rng.randf() * TAU
 						var r := rng.randf_range(1.0, 3.2)
 						var lx: float = f.center.x + cos(a) * r
 						var lz: float = f.center.z + sin(a) * r
 						b.land = Vector3(lx, _ground(lx, lz) + PERCH_Y, lz)
 					var to: Vector3 = b.land - b.pos
-					b.pos += to.limit_length(dt * 2.0)
-					b.pos.y = b.land.y + absf(sin(clampf(to.length(), 0.0, 0.6) * PI / 0.6)) * 0.12
+					to.y = 0.0
+					var dist := to.length()
+					if dist > 0.05:   # a raven on the ground hops: two-footed bounds, ~3 a second, wings flicked
+						b.hop_ph += dt * 3.2
+						b.pos += to / dist * minf(dist, dt * 1.2)
+						b.yaw = atan2(to.z, to.x)
+						b.pos.y = b.land.y + absf(sin(float(b.hop_ph) * PI)) * 0.07
+						b.amp = 0.3
+						b.fold = 0.7
+						b.peck = 0.0
+					else:
+						b.pos.y = b.land.y
+						b.hop_ph = 0.0
+						var sq: bool = float(b.flick) > 0.0
+						b.amp = 0.6 if sq else 0.0                 # squabbling: wings half open
+						b.fold = 0.5 if sq else 1.0
+						b.peck = 0.0 if sq else (maxf(0.0, sin(f.ts * 6.0 + b.phase)) if fmod(f.ts + b.phase, 5.0) < 2.5 else 0.0)
 					b.fwd = Vector3(cos(b.yaw), 0, sin(b.yaw))
 				if rng.randf() < dt * 0.02:
 					_play("raven_%d" % rng.randi_range(0, 3), f.center + Vector3(0, 0.5, 0), -4.0, 12.0, 300.0)
 		"scatter":
 			for b in f.birds:
 				b.pos += b.vel * dt
-				b.vel.y = move_toward(b.vel.y, 0.0, dt * 1.2)
+				if float(b.get("legs_t", 0.0)) > 0.0:
+					b.legs_t -= dt
+					if b.legs_t <= 0.0:   # off the ground: legs tucked, level off and fly away
+						b.legs = 0.0
+						var away: Vector3 = b.vel
+						away.y = 0.0
+						away = away.normalized() if away.length() > 0.1 else Vector3(1, 0, 0)
+						b.vel = (away + Vector3(0, 0.8, 0)).normalized() * rng.randf_range(7.0, 10.0)
+				else:
+					b.vel.y = move_toward(b.vel.y, 0.0, dt * 1.2)
+				b.pitch = move_toward(float(b.get("pitch", 0.0)), 0.0, dt * 1.2)
 				b.fwd = b.vel.normalized()
 				b.amp = 1.0
 				b.fold = 0.0
@@ -450,6 +560,37 @@ func _update_flock(f: Dictionary, dt: float) -> void:
 				_free_flock(f)
 				return
 	_write_mm(f)
+
+
+## Two ravens fall out over the meat: one lunges at its neighbour with wings half open and a harsh call, the
+## other hops back.
+func squabble(f: Dictionary) -> void:
+	if f.birds.size() < 2:
+		return
+	var a: Dictionary = f.birds[rng.randi() % f.birds.size()]
+	var b: Dictionary = {}
+	var bd := 1e9
+	for o in f.birds:
+		if o == a: continue
+		var dd: float = (o.pos - a.pos).length()
+		if dd < bd:
+			bd = dd
+			b = o
+	var dir: Vector3 = b.pos - a.pos
+	dir.y = 0.0
+	dir = dir.normalized() if dir.length() > 0.05 else Vector3(1, 0, 0)
+	var ap: Vector3 = a.pos + dir * 0.35
+	var bp: Vector3 = b.pos + dir * 0.5
+	a.land = Vector3(ap.x, _ground(ap.x, ap.z) + PERCH_Y, ap.z)
+	b.land = Vector3(bp.x, _ground(bp.x, bp.z) + PERCH_Y, bp.z)
+	a.flick = 0.8
+	b.flick = 0.6
+	a.hop_t = maxf(a.hop_t, 1.5)
+	b.hop_t = maxf(b.hop_t, 1.5)
+	a.yaw = atan2(dir.z, dir.x)
+	b.yaw = atan2(-dir.z, -dir.x)
+	f.squabbles = int(f.get("squabbles", 0)) + 1
+	_play("raven_%d" % rng.randi_range(0, 3), a.pos + Vector3(0, 0.3, 0), -5.0, 10.0, 260.0, rng.randf_range(1.05, 1.18))
 
 
 func _wolf_at(c: Vector3, r: float) -> Vector3:
@@ -489,6 +630,8 @@ func _circle(f: Dictionary, b: Dictionary, dt: float) -> void:
 	b.bank = -f.dir * atan(b.spd * b.spd / (b.r * 9.8)) * 0.8
 	b.fold = 0.0
 	b.peck = 0.0
+	b.legs = 0.0
+	b.pitch = 0.0
 	_flap_cycle(b, dt, 0.12)
 
 
@@ -510,10 +653,13 @@ func _write_mm(f: Dictionary) -> void:
 			fw = Vector3.FORWARD
 		var up := Vector3.UP if absf(fw.normalized().y) < 0.98 else Vector3.RIGHT
 		var basis := Basis.looking_at(fw.normalized(), up) * Basis(Vector3(0, 0, 1), b.bank)
+		var pitch := float(b.get("pitch", 0.0))
 		if float(b.fold) > 0.01:   # perched: body tilts nose-up, less so while pecking
-			basis = basis * Basis(Vector3(1, 0, 0), float(b.fold) * (0.55 - 0.25 * float(b.peck)))
+			pitch += float(b.fold) * (0.55 - 0.25 * float(b.peck))
+		if absf(pitch) > 0.001:
+			basis = basis * Basis(Vector3(1, 0, 0), pitch)
 		mm.set_instance_transform(i, Transform3D(basis, b.pos))
-		mm.set_instance_custom_data(i, Color(b.phase, b.amp, b.fold, b.peck))
+		mm.set_instance_custom_data(i, Color(b.phase, b.amp, b.fold, float(b.peck) + (2.0 if float(b.get("legs", 0.0)) > 0.5 else 0.0)))
 		lo = lo.min(b.pos)
 		hi = hi.max(b.pos)
 	mm.custom_aabb = AABB(lo - Vector3(1, 1, 1), hi - lo + Vector3(2, 2, 2))
@@ -631,7 +777,9 @@ func howl_chorus() -> void:
 		var d: float = w.global_position.distance_to(pp)
 		if d > 150.0 and d < 1200.0:
 			far.append(w)
-	far.shuffle()
+	for i in range(far.size() - 1, 0, -1):   # own RNG (Array.shuffle would draw on the global stream)
+		var j := rng.randi_range(0, i)
+		var tmp = far[i]; far[i] = far[j]; far[j] = tmp
 	var lead_dir: Vector3
 	var lead_d: float
 	var real := false

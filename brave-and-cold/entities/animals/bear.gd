@@ -20,3 +20,4 @@ func _init() -> void:
 	hp = 260.0
 	struggle_gain = 0.085
 	body_radius = 0.9
+	sate_portions = 5

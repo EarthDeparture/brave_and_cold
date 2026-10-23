@@ -23,6 +23,10 @@ var speed_now := 0.0
 var harvested := false
 var bleed := false  # wounded: loses hp and leaves a blood trail
 var _blood_d := 0.0
+var _blood_next := 1.5
+var _pool_t := 0.0
+const BLEED_HP_S := 0.65   # a wounded deer runs, then staggers on and beds down: a ~150-250 m blood trail
+const BED_HP := 12.0
 var _target := Vector3.ZERO
 var _state_t := 0.0
 var _threat := Vector3.ZERO
@@ -86,6 +90,10 @@ func hit(dmg: float, from: Vector3) -> void:
 		damaged.emit()
 		if dmg >= 15.0:
 			bleed = true
+		var away := global_position - from
+		away.y = 0.0
+		if away.length() < 0.1: away = Vector3(1, 0, 0)
+		_target = global_position + away.normalized() * 80.0   # bolt AWAY from the shot (it used to run to its old graze spot)
 		_set_state(State.FLEE)
 
 
@@ -130,11 +138,17 @@ func _process(delta: float) -> void:
 	if state == State.DEAD:
 		return
 	if bleed:
-		hp -= 1.6 * delta
+		hp -= BLEED_HP_S * delta
 		_blood_d += speed_now * delta
-		if _blood_d > 2.0:
+		if _blood_d > _blood_next:
 			_blood_d = 0.0
-			Carcass.blood(get_parent(), global_position, randf_range(0.22, 0.4))
+			_blood_next = _rng.randf_range(1.0, 2.6)
+			Carcass.blood(get_parent(), global_position + Vector3(_rng.randf_range(-0.2, 0.2), 0, _rng.randf_range(-0.2, 0.2)), _rng.randf_range(0.22, 0.48))
+		if speed_now < 0.2:   # standing / bedded: it pools
+			_pool_t += delta
+			if _pool_t > 4.0:
+				_pool_t = 0.0
+				Carcass.blood(get_parent(), global_position, _rng.randf_range(0.35, 0.55))
 		if hp <= 0.0:
 			_die()
 			return
@@ -144,6 +158,12 @@ func _process(delta: float) -> void:
 		_threat = player.position
 		_set_state(State.ALERT)
 	match state:
+		State.GRAZE when bleed:   # wounded: staggers on away from where it was hit, then beds down to die
+			var away := global_position - _threat
+			away.y = 0.0
+			if away.length() < 0.1: away = Vector3(1, 0, 0)
+			_target = global_position + away.normalized() * 20.0
+			want = 2.2 if hp > BED_HP else 0.0
 		State.GRAZE:
 			var dd := Vector2(_target.x - global_position.x, _target.z - global_position.z).length()
 			if dd < 1.0 or _state_t > 12.0:

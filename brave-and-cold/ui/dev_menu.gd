@@ -1260,7 +1260,12 @@ func _crafttest() -> void:
 	inv.add("matches", 1)
 	var fires: Array = world.get("campfires")
 	var f0 := fires.size()
+	_calm_for_fire()
 	world.call("_build_campfire")
+	for retry in 4:   # a match can fail (chance roll): strike another, the fuel stays
+		if fires.size() > f0: break
+		inv.add("matches", 1)
+		world.call("_build_campfire")
 	ok = fires.size() == f0 + 1 and inv.count("wood") == 0 and inv.count("kindling") == 0 and inv.count("matches") == 0
 	var cf: Campfire = fires[fires.size() - 1]
 	ok = ok and absf(cf.fuel_s - (FireSource.burn_s_for("campfire", "wood") + 2.0 * FireSource.burn_s_for("campfire", "kindling"))) < 1.0
@@ -1449,7 +1454,13 @@ func _weartest() -> void:
 		inv.counts.erase("matches")
 		inv.add("wood", 2)
 		inv.add("matches", 1)
+		var f1 := fires.size()
+		_calm_for_fire()
 		world.call("_build_campfire")
+		for retry in 4:
+			if fires.size() > f1: break
+			inv.add("matches", 1)
+			world.call("_build_campfire")
 		cf = fires[fires.size() - 1]
 	_tp(cf.global_position.x + 1.0, cf.global_position.z, cf.global_position)
 	await get_tree().create_timer(0.8).timeout
@@ -4417,3 +4428,11 @@ func _storetest() -> void:
 	fails += 0 if ok else 1
 	print("STORETEST failures=", fails)
 	get_tree().quit()
+
+
+## Dev tests that need a lit campfire: still air, no snow (the match chance is a real roll).
+func _calm_for_fire() -> void:
+	var wt = world.get("weather")
+	if wt != null:
+		wt.wind = 0.0
+		wt.precip = 0.0

@@ -40,6 +40,13 @@ var dead := false
 var _dead_t := 0.0
 var _carcass: Node3D = null
 var _feed_t := 0.0
+var _eaten := 0                 # portions eaten at this kill
+var _sated_t := 0.0             # > 0: fed, ignores carcasses (real seconds)
+var _bleed_t := 0.0             # > 0: wounded, drips blood as it moves
+var _blood_d := 0.0
+var _model_root: Node3D
+const FEED_PORTION_S := 10.0    # a wolf tears off one meat portion every ~10 s at a kill
+var sate_portions := 2          # a wolf eats ~2 portions (a bear more) and leaves the rest
 var _scent_t := 0.0
 var _target := Vector3.ZERO
 var _state_t := 0.0
@@ -62,6 +69,7 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	bus.noise.connect(_on_noise)
 	var model := (load(model_path) as PackedScene).instantiate()
 	add_child(model)
+	_model_root = model
 	var mat := StandardMaterial3D.new()
 	mat.vertex_color_use_as_albedo = true
 	mat.roughness = 1.0
@@ -93,6 +101,8 @@ func hit(dmg: float, from: Vector3) -> void:
 		tw.tween_property(self, "rotation:z", PI / 2.0, 0.5)
 		return
 	damaged.emit()
+	if dmg >= 8.0:
+		_bleed_t = 90.0 + dmg * 3.0   # wounded: a blood trail to follow
 	_target = from
 	_set_state(State.CHASE)
 
@@ -167,7 +177,7 @@ func _smell_carcass() -> Node3D:
 	var bd := 1e9
 	for cn in get_tree().get_nodes_in_group("carcasses"):
 		var c := cn as Node3D
-		if c == null or c == self or c.is_queued_for_deletion() or not Carcass.has_meat(c):
+		if c == null or c == self or c.is_queued_for_deletion() or not Carcass.has_meat(c) or _sated_t > 0.0:
 			continue
 		var d := c.global_position.distance_to(global_position)
 		if not Carcass.smelled_by(c, global_position) and not (d < RAVEN_SIGHT and raven_kills.has(c)):
@@ -178,17 +188,39 @@ func _smell_carcass() -> Node3D:
 	return best
 
 
+## Tear off one portion (shared 'scavenged' count with the ravens). The meat step is gone only when every portion
+## is; a sated wolf walks off and leaves the rest for the ravens - or you.
 func _eat_carcass() -> void:
+	var leave := true
 	if _carcass != null and is_instance_valid(_carcass):
-		var done: Dictionary = _carcass.get_meta("done", {})
-		done["meat"] = true
-		_carcass.set_meta("done", done)
-		if Carcass.open_steps(Carcass.species_of(_carcass), done).is_empty():
-			_carcass.queue_free()
+		var sp := Carcass.species_of(_carcass)
+		var full := int(Carcass.SPECIES[sp].meat_n) if Carcass.SPECIES.has(sp) else 1
+		var s := Carcass.scavenged(_carcass) + 1.0
+		_carcass.set_meta("scavenged", s)
+		_eaten += 1
+		if s >= float(full):
+			var done: Dictionary = _carcass.get_meta("done", {})
+			done["meat"] = true
+			_carcass.set_meta("done", done)
+			if Carcass.open_steps(sp, done).is_empty():
+				_carcass.queue_free()
+		else:
+			leave = _eaten >= sate_portions
+	if not leave:
+		_feed_t = 0.0
+		return
+	if _eaten > 0:
+		_sated_t = 600.0
+	_eaten = 0
 	_carcass = null
 	_feed_t = 0.0
 	_set_state(State.WANDER)
 	_pick_wander()
+
+
+func is_feeding() -> bool:
+	return state == State.INVESTIGATE and _carcass != null and is_instance_valid(_carcass) and speed_now < 0.3 \
+		and Vector2(_carcass.global_position.x - global_position.x, _carcass.global_position.z - global_position.z).length() < 2.5
 
 
 func animal_snow_mult(x: float, z: float) -> float:
@@ -204,6 +236,13 @@ func _process(delta: float) -> void:
 			queue_free()
 		return
 	_state_t += delta
+	_sated_t = maxf(0.0, _sated_t - delta)
+	if _bleed_t > 0.0:
+		_bleed_t -= delta
+		_blood_d += speed_now * delta
+		if _blood_d > _rng.randf_range(1.8, 3.5):
+			_blood_d = 0.0
+			Carcass.blood(get_parent(), global_position, _rng.randf_range(0.14, 0.26))
 	_bite_cd = maxf(0.0, _bite_cd - delta)
 	_struggle_cd = maxf(0.0, _struggle_cd - delta)
 	var fl := _flare_near()
@@ -250,7 +289,7 @@ func _process(delta: float) -> void:
 				if cd < 2.5:
 					want_speed = 0.0
 					_feed_t += delta
-					if _feed_t > 14.0:
+					if _feed_t > FEED_PORTION_S:
 						_eat_carcass()
 				else:
 					want_speed = TROT_SPEED
@@ -371,6 +410,10 @@ func _animate(delta: float) -> void:
 		_tail.rotation.x = -0.15 + sin(_phase * 0.5) * 0.06 - (0.35 if state == State.CHASE else 0.0)
 	if _body != null:
 		_body.position.y = absf(sin(_phase)) * 0.04 * amp
+	if _model_root != null:   # feeding: nose down at the kill, tugging
+		var feed := is_feeding()
+		var want := (-0.20 + sin(_state_t * 5.0) * 0.05) if feed else 0.0
+		_model_root.rotation.x = lerpf(_model_root.rotation.x, want, minf(1.0, delta * 4.0))
 
 
 func is_dead() -> bool:
