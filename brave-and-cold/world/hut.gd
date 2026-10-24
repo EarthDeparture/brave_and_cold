@@ -110,15 +110,18 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float, base_y: float
 	var scene := load(MODEL) as PackedScene
 	var model := scene.instantiate()
 	add_child(model)
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.roughness = 0.95
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat.albedo_texture = Cabin._grain_tex()   # same weathering grain as the cabins
-	mat.uv1_triplanar = true
-	mat.uv1_scale = Vector3(3.2, 0.35, 0.6)   # vertical streaks on the siding, floor streaks run along the boards
-	mat.albedo_color = Color(1.12, 1.12, 1.12)
-	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	var mat := Cabin.wood_material(Color.WHITE)   # W1: procedural boards; the hut floor is one slab, the shader draws the boards
+	mat.set_shader_parameter("floor_top", FLOOR_LOCAL_Y)
+	mat.set_shader_parameter("floor_along_x", false)
+	mat.set_shader_parameter("plank_pitch", 0.16)
+	mat.set_shader_parameter("plank_off", 0.0)
+	mat.set_shader_parameter("room_half", Vector2(HX - 0.08, HZ - 0.08))
+	mat.set_shader_parameter("side_x", HX - 0.2)
+	mat.set_shader_parameter("door_xz", Vector2(0.0, HZ))
+	mat.set_shader_parameter("stove_xz", Vector2(-0.9, -0.6))
+	mat.set_shader_parameter("wall_vertical", true)
+	mat.set_shader_parameter("extra_k", 1.0)
+	mat.set_shader_parameter("desat", 0.5)
 	for mi in model.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).material_override = mat
 	var t := WALL_T

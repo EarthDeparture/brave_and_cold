@@ -14,11 +14,14 @@ const DEPTH := 1.6
 const TEMP_C := 2.0
 const OPEN_DEG := 100.0
 const BOARD_TOP := 0.015   # gen_cabin floor planks: top 15 mm above FLOOR_LOCAL_Y
-const WOOD_COL := Color(0.30, 0.215, 0.145)   # a shade darker than the floor boards round it (newer, less worn)
+const WOOD_COL := Color(0.2, 0.145, 0.1)   # matches the W1 floor boards round it
 
 var cabin: Cabin
 var store: StorageChest
 var want_open := false
+var audio: Node            # GameAudio (set by the world): hinge creak on open, board thud on close
+var found := false         # first open says a line; saved
+var _was_up := false
 var hold_open := false   # captures / debug: keep the hatch up without the gear screen
 var lid_k := 0.0
 var _lid: Node3D
@@ -51,6 +54,7 @@ func setup(cb: Cabin, saved: Dictionary, seed_v: int) -> void:
 	store.label = "ROOT CELLAR  2 °C"
 	add_child(store)
 	store.position = Vector3(0.0, -1.2, 0.0)
+	found = saved.get("found", false) == true
 	if saved.has("store"):
 		store.load_dict(saved["store"])
 	else:   # someone's winter stores, left behind
@@ -62,7 +66,7 @@ func setup(cb: Cabin, saved: Dictionary, seed_v: int) -> void:
 
 
 func to_dict() -> Dictionary:
-	return {"store": store.to_dict()}
+	return {"store": store.to_dict(), "found": found}
 
 
 func rate() -> float:
@@ -84,12 +88,34 @@ func tick(game_s: float) -> void:
 
 func _process(delta: float) -> void:
 	if cabin != null and cabin.burned != _was_burned: _apply_burn()
-	var tgt := 1.0 if want_open or hold_open else 0.0
+	var up := want_open or hold_open
+	if up != _was_up:
+		_was_up = up
+		_sound(up)
+	var tgt := 1.0 if up else 0.0
 	if is_equal_approx(lid_k, tgt): return
 	lid_k = move_toward(lid_k, tgt, delta * 2.2)
 	var e := lid_k * lid_k * (3.0 - 2.0 * lid_k)
 	_lid.rotation.x = -deg_to_rad(OPEN_DEG) * e   # the far edge (ring) lifts toward +y
 	_pit.visible = lid_k > 0.02
+
+
+func _sound(opening: bool) -> void:
+	if audio == null or not is_inside_tree(): return
+	var at := hatch_world_pos()
+	if opening:   # the gate hinge clip pitched down: an old strap hinge under a heavy lid
+		var p := AudioStreamPlayer3D.new()
+		p.stream = load("res://assets/audio/sfx/gate_hinge.wav")
+		p.pitch_scale = 0.74
+		p.volume_db = -4.0
+		p.unit_size = 5.0
+		p.max_distance = 45.0
+		p.finished.connect(p.queue_free)
+		add_child(p)
+		p.global_position = at
+		p.play()
+	elif audio.has_method("play_at"):
+		audio.play_at("thud", at, -9.0, 1.25, 4.0, 40.0)
 
 
 func _apply_burn() -> void:

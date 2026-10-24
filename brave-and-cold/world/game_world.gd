@@ -458,6 +458,7 @@ func _ready() -> void:
 	var cellar_cb := RootCellar.pick(cabins)
 	if cellar_cb != null and opts.get("cellar", "1") != "0":
 		root_cellar = RootCellar.new(); root_cellar.setup(cellar_cb, sv.get("cellar", {}), opening_state.seed_value if opening_state != null else 1)
+		root_cellar.audio = audio
 	for si in stores.size():
 		var sl := StoreLights.new(); sl.name = "StoreLights"; sl.setup(self, stores[si], 4400 + si)
 	_build_rooms(sv.get("rooms", []))
@@ -1909,7 +1910,11 @@ func _update_prompt() -> void:
 		items.append_array(_furniture_items(cb))
 		items.append_array(_sleep_items(cb))
 		if root_cellar != null and root_cellar.cabin == cb:
-			items.append({"pos": root_cellar.hatch_world_pos(), "r": 2.3, "tol": 0.75, "text": root_cellar.label(), "act": func() -> void: gear.open_chest(root_cellar.store)})
+			items.append({"pos": root_cellar.hatch_world_pos(), "r": 2.3, "tol": 0.75, "text": root_cellar.label(), "act": func() -> void:
+				if not root_cellar.found:
+					root_cellar.found = true
+					_say("A root cellar under the boards. It stays just above freezing down there.")
+				gear.open_chest(root_cellar.store)})
 		for it in items:
 			if it.get('hide', false):
 				continue
@@ -4144,6 +4149,9 @@ func track_look_point() -> Vector3:
 		var q := o + fwd * t
 		var g := _ground(q.x, q.z)
 		if q.y <= g.y:
+			# W4: no read through a wall, a shed or a hut (snow you can't actually see)
+			if HitZones.building_block(_building_list(), o, fwd, t) < t - 0.15:
+				return Vector3(NAN, NAN, NAN)
 			return g
 	return Vector3(NAN, NAN, NAN)
 

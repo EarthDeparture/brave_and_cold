@@ -88,15 +88,7 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 	for id: String in FURNITURE:
 		var node := model.find_child(id, true, false) as Node3D
 		if node != null: _furniture[id] = node
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.roughness = 0.95
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat.albedo_color = tint * 1.12   # the grain texture below averages ~0.85
-	mat.albedo_texture = _grain_tex()
-	mat.uv1_triplanar = true          # the generated mesh has no UVs: project the grain from object space
-	mat.uv1_scale = Vector3(0.35, 3.2, 0.35)   # stretched vertically => horizontal streaks along the logs on every wall
-	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	var mat := wood_material(tint)
 	glass_mat = StandardMaterial3D.new()
 	glass_mat.albedo_color = Color(0.25, 0.32, 0.42)
 	glass_mat.roughness = 0.2
@@ -142,6 +134,22 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 
 
 static var _grain: NoiseTexture2D
+static var _wood_shader: Shader
+
+
+## W1: the cabin's one material. Procedural boards / logs / knots / grime in object space
+## (building_wood.gdshader) over the vertex colours; the mesh has no UVs.
+static func wood_material(t: Color) -> ShaderMaterial:
+	if _wood_shader == null:
+		_wood_shader = load("res://world/shaders/building_wood.gdshader")
+	var m := ShaderMaterial.new()
+	m.shader = _wood_shader
+	m.set_shader_parameter("tint", t)
+	m.set_shader_parameter("noise_tex", _grain_tex())
+	m.set_shader_parameter("floor_top", FLOOR_LOCAL_Y)
+	m.set_shader_parameter("door_xz", Vector2(0.0, HZ))
+	m.set_shader_parameter("stove_xz", Vector2(STOVE_LOCAL.x, STOVE_LOCAL.z))
+	return m
 
 
 ## Soft wood-grain / weathering noise (greys 0.68..1.0) multiplied over the vertex colours.

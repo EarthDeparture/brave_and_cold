@@ -518,23 +518,34 @@ func _move(want: float, delta: float) -> void:
 	global_position = pos
 
 
+var defend_k := 0.0   # W6: 0..1 how far into the guarding stance (head low, braced, tail out stiff)
 func _animate(delta: float) -> void:
 	_phase += delta * speed_now * 3.2
 	var amp := clampf(speed_now / RUN_SPEED, 0.0, 1.0) * 0.75 + (0.25 if speed_now > 0.1 else 0.0)
+	var guard := defending or (state == State.ALERT and speed_now < 0.5)
+	defend_k = move_toward(defend_k, 1.0 if guard else 0.0, delta * (3.0 if guard else 1.5))
+	var dk := defend_k * defend_k * (3.0 - 2.0 * defend_k)
+	amp *= 1.0 - 0.45 * dk   # the bluff charge is stiff-legged: short hard strides
 	var s := sin(_phase) * amp
-	if _legs.get("fl") != null:
-		(_legs["fl"] as Node3D).rotation.x = s
-		(_legs["br"] as Node3D).rotation.x = s
-		(_legs["fr"] as Node3D).rotation.x = -s
-		(_legs["bl"] as Node3D).rotation.x = -s
-	if _tail != null:
-		_tail.rotation.x = -0.15 + sin(_phase * 0.5) * 0.06 - (0.35 if state == State.CHASE else 0.0)
-	if _body != null:
-		_body.position.y = absf(sin(_phase)) * 0.04 * amp
-	if _model_root != null:   # feeding: nose down at the kill, tugging
-		var feed := is_feeding()
-		var want := (-0.20 + sin(_state_t * 5.0) * 0.05) if feed else 0.0
+	if _legs.get("fl") != null:   # braced: forelegs planted forward, hind legs set back under the crouch
+		(_legs["fl"] as Node3D).rotation.x = s + 0.24 * dk
+		(_legs["br"] as Node3D).rotation.x = s - 0.2 * dk
+		(_legs["fr"] as Node3D).rotation.x = -s + 0.24 * dk
+		(_legs["bl"] as Node3D).rotation.x = -s - 0.2 * dk
+	if _tail != null:   # hanging and swaying -> held straight out behind, rigid
+		var t_relaxed := -0.15 + sin(_phase * 0.5) * 0.06 - (0.35 if state == State.CHASE else 0.0)
+		_tail.rotation.x = lerpf(t_relaxed, -0.85 + sin(_t_snarl() * 31.0) * 0.015, dk)
+	if _body != null:   # a low growl's tremor through the body
+		_body.position.y = absf(sin(_phase)) * 0.04 * amp + sin(_t_snarl() * 38.0) * 0.004 * dk
+	if _model_root != null:   # feeding: nose down at the kill, tugging; guarding: head and shoulders dropped
+		var feed := is_feeding() and dk < 0.5
+		var want := (-0.20 + sin(_state_t * 5.0) * 0.05) if feed else -0.13 * dk
 		_model_root.rotation.x = lerpf(_model_root.rotation.x, want, minf(1.0, delta * 4.0))
+		_model_root.position.y = lerpf(_model_root.position.y, -0.07 * dk, minf(1.0, delta * 4.0))
+
+
+func _t_snarl() -> float:
+	return float(Time.get_ticks_msec()) * 0.001
 
 
 func is_dead() -> bool:

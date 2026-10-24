@@ -14,6 +14,7 @@ const IGNITE_S := 600.0
 const BLAZE_S := 9000.0
 const COLLAPSE_K := 0.35
 const SMOULDER_S := 43200.0
+const REFILL_S := 172800.0   # W5: the melt ring fills back in over ~2 days of clear weather (snow clock: faster in snow)
 const BURNED_MODEL := "res://assets/models/buildings/cabin_burned.glb"
 
 var world: Node
@@ -63,6 +64,9 @@ func blaze_k(now: float) -> float:
 func _process(delta: float) -> void:
 	_t += delta
 	_update(false)
+	if stage == "shell" and _ring.visible:
+		_ring.modulate.a = 0.9 * ring_left(world.clock.total_game_s)
+		_ring.visible = _ring.modulate.a > 0.01
 	if stage == "blaze":
 		_lure_t -= delta
 		if _lure_t <= 0.0:
@@ -76,6 +80,19 @@ func _process(delta: float) -> void:
 				else: bus.emit_smoke(c, 300.0, self)
 				bus.emit_noise(c, 30.0, self)
 		_burn_player(delta)
+
+
+var _snow0 := NAN
+## W5: 1 = the melt ring as the blaze left it, 0 = snowed over. Measured on the track log's snow clock
+## (1 + 7 x precip per second), so a blizzard buries it in hours; before that clock existed (or after a load)
+## the time since the blaze is taken as clear weather.
+func ring_left(now: float) -> float:
+	var end := start_s + IGNITE_S + BLAZE_S
+	if now < end: return 1.0
+	var tr = world.get("animal_tracks")
+	var sc: float = (tr.log as TrackLog).snow_clock if tr != null else now
+	if is_nan(_snow0): _snow0 = sc - (now - end)
+	return 1.0 - smoothstep(0.0, REFILL_S, sc - _snow0)
 
 
 func _burn_player(delta: float) -> void:
@@ -114,6 +131,7 @@ func _update(force: bool) -> void:
 			if _char_mat != null: _char_mat.emission_energy_multiplier = 10.0 * fl
 		"smoulder":
 			var sk := clampf((now - start_s - IGNITE_S - BLAZE_S) / SMOULDER_S, 0.0, 1.0)
+			_ring.modulate.a = 0.9 * ring_left(now)
 			_light.light_energy = 1.4 * (1.0 - sk) * fl
 			_smoke.amount_ratio = 0.3 * (1.0 - sk) + 0.05
 			if _char_mat != null: _char_mat.emission_energy_multiplier = 2.6 * pow(1.0 - sk, 1.5) * fl
@@ -142,7 +160,7 @@ func _enter(s: String) -> void:
 	if s == "smoulder" or s == "shell" or (s == "blaze" and blaze_k(world.clock.total_game_s) >= COLLAPSE_K):
 		if not collapsed: _collapse()
 	if s == "shell":
-		_ring.modulate.a = 0.9
+		_ring.modulate.a = 0.9 * ring_left(world.clock.total_game_s)
 		if _char_mat != null: _char_mat.emission_energy_multiplier = 0.0
 		_light.visible = false
 

@@ -114,6 +114,12 @@ func _process(delta: float) -> void:
 	if player == null:
 		return
 	_t += delta
+	# W4: the track read fades in / out instead of popping (keeps the last words while it fades)
+	if track_hint != "":
+		_th_text = track_hint
+		_th_a = move_toward(_th_a, 1.0, delta * 5.0)
+	else:
+		_th_a = move_toward(_th_a, 0.0, delta * 3.0)
 	for m in _msgs:
 		m["t"] += delta
 	while not _msgs.is_empty() and float(_msgs[0]["t"]) > MSG_LIFE:
@@ -359,15 +365,18 @@ func _draw_aware(sz: Vector2, k: float) -> void:
 	_ui.draw_circle(c, 1.2 * k + 3.4 * k * clampf(aware, 0.0, 1.0), col)
 
 
+var _th_text := ""
+var _th_a := 0.0
 func _draw_track_hint(sz: Vector2, k: float) -> void:
-	if track_hint == "" or aim_k > 0.15 or action_t >= 0.0:
+	if _th_a <= 0.01 or _th_text == "" or aim_k > 0.15 or action_t >= 0.0:
 		return
+	var a := _th_a * _th_a * (3.0 - 2.0 * _th_a)
 	var fs := int(19.0 * k)
-	var w := DZ.text_w(track_hint, fs)
+	var w := DZ.text_w(_th_text, fs)
 	var p := Vector2(sz.x * 0.5 - w * 0.5, sz.y * 0.5 + 64.0 * k)
-	_ui.draw_rect(Rect2(p + Vector2(-14.0, -fs * 1.05) * k, Vector2(w + 28.0 * k, fs * 1.55)), Color(0.04, 0.05, 0.06, 0.42))
-	DZ.text(_ui, track_hint, p + Vector2(1, 1) * k, fs, Color(0, 0, 0, 0.6))
-	DZ.text(_ui, track_hint, p, fs, Color(0.90, 0.88, 0.80, 0.92))
+	_ui.draw_rect(Rect2(p + Vector2(-14.0, -fs * 1.05) * k, Vector2(w + 28.0 * k, fs * 1.55)), Color(0.04, 0.05, 0.06, 0.42 * a))
+	DZ.text(_ui, _th_text, p + Vector2(1, 1) * k, fs, Color(0, 0, 0, 0.6 * a))
+	DZ.text(_ui, _th_text, p, fs, Color(0.90, 0.88, 0.80, 0.92 * a))
 
 
 func _draw_crosshair(sz: Vector2, k: float) -> void:
