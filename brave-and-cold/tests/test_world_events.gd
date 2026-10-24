@@ -194,4 +194,64 @@ func run() -> void:
 			lit_max = maxf(lit_max, sl.level)
 		check(sl.mode == "aurora" and lit_max > 0.3, "strong aurora, grid down: the dead tubes flicker (peak %.2f)" % lit_max)
 		check(sl.lure_count > l0, "and the flicker is a light lure (%d)" % (sl.lure_count - l0))
+	# ---- E2: the cabin fire
+	var fd: Dictionary = we.fire
+	check(int(fd.day) >= 4 and int(fd.day) <= 6 and float(fd.at_h) >= 21.0, "one fire planned for D4-D6 at night (D%d %.1fh)" % [int(fd.day), float(fd.at_h)])
+	if int(fd.i) >= 0:   # the store-light section above ran D5 at 23:00: it may already have started; start over
+		var old: Cabin = w.cabins[int(fd.i)]
+		if old.on_fire != null: old.on_fire.queue_free(); old.on_fire = null
+		fd.i = -1; fd.start_s = -1.0
+	# pick: never claimed, never within 300 m
+	var pp0: Vector3 = w.player.global_position
+	w.clock.day = int(fd.day); w.clock.hour = float(fd.at_h) + 0.1
+	var cl := ci
+	we.claims[cl] = w.clock.total_game_s
+	we.enabled = true
+	await frames(3)
+	var fi := int(we.fire.i)
+	check(fi >= 1 and fi != cl and not we.claimed(fi), "the fire takes an unclaimed cabin (%d)" % fi)
+	var fcb: Cabin = w.cabins[fi] if fi >= 1 else null
+	if fcb != null:
+		check(fcb.global_position.distance_to(w.player.global_position) >= 300.0, "300 m or more from the player (%.0f m)" % fcb.global_position.distance_to(w.player.global_position))
+		var cf: CabinFire = fcb.on_fire
+		check(cf != null and cf.stage == "ignition", "it starts with ignition")
+		we.enabled = false
+		var t0: float = cf.start_s
+		cf.start_s = w.clock.total_game_s - CabinFire.IGNITE_S - 60.0
+		await frames(3)
+		check(cf.stage == "blaze" and not cf.collapsed and not fcb.burned, "then the blaze, roof still on")
+		# lures: at night a light lure every 8 s -> a horde 300 m off turns toward it
+		var lights: Array = []
+		w.noise_bus.light.connect(func(p: Vector3, r: float, s: Object) -> void: if s == cf: lights.append(r))
+		var hd2 = w.pop.hordes[0] if w.pop != null and w.pop.hordes.size() > 0 else null
+		if hd2 != null:
+			hd2.center = Vector2(fcb.global_position.x + 300.0, fcb.global_position.z); hd2.state = 0; hd2.target = hd2.center
+		cf._lure_t = 0.0
+		await frames(3)
+		check(lights.size() >= 1 and lights[0] >= 100.0, "the blaze is a light lure at night (%s)" % str(lights))
+		if hd2 != null:
+			check(int(hd2.state) == 1 and hd2.target.distance_to(Vector2(fcb.global_position.x, fcb.global_position.z)) < 2.0, "a horde 300 m off heads for the fire")
+		cf.start_s = w.clock.total_game_s - CabinFire.IGNITE_S - CabinFire.BLAZE_S * 0.5
+		await frames(3)
+		check(cf.collapsed and fcb.burned and fcb.crate_looted and fcb.door_broken, "the roof falls in: a burned shell")
+		check(is_inf(fcb.ceiling_at_world(fcb.global_position + Vector3(0, 1.6, 0))) and is_equal_approx(RoomClimate.leak_of(fcb), 1.0), "no roof, holds no heat")
+		# save mid-blaze, reload into a fresh WorldEvents: the fire resumes from its time
+		var dd: Dictionary = we.to_dict()
+		check(int(dd.fire.i) == fi and is_equal_approx(float(dd.fire.start_s), cf.start_s), "the fire is saved with its start time")
+		cf.start_s = w.clock.total_game_s - CabinFire.IGNITE_S - CabinFire.BLAZE_S - CabinFire.SMOULDER_S * 0.5
+		await frames(3)
+		check(cf.stage == "smoulder", "then it smoulders")
+		cf.start_s = w.clock.total_game_s - CabinFire.IGNITE_S - CabinFire.BLAZE_S - CabinFire.SMOULDER_S - 10.0
+		await frames(3)
+		check(cf.stage == "shell" and not cf._light.visible, "and goes cold")
+		# walking into a blaze burns
+		cf.start_s = w.clock.total_game_s - CabinFire.IGNITE_S - CabinFire.BLAZE_S * 0.6
+		await frames(2)
+		w.player.god = false
+		var hp0: float = w.player.health
+		w.player.place(fcb.global_position.x, fcb.global_position.z)
+		await secs(0.6)
+		check(w.player.health < hp0, "standing in the blaze burns (%.1f -> %.1f)" % [hp0, w.player.health])
+		w.player.health = hp0; w.player.god = true
+		w.player.place(pp0.x, pp0.z)
 	print("WORLD_EVENTS_TEST checks=", checks, " failures=", failures); quit(1 if failures else 0)

@@ -30,6 +30,7 @@ var ransacked := {}             # cabin index -> day
 var pending: Array = []         # [{i, day, at_h}] ransacks waiting for an unobserved moment
 var told := {}                  # cabin index -> said "Someone has been through here."
 var sites: Array = []           # {kind, x, z, seed, dead} props rebuilt on load (pickups are saved by the world)
+var fire := {}                  # one cabin fire per run: {day, at_h, i, start_s}
 var history: Array = []         # [game_s, text] what happened, for tests / debug
 var _dwell := {}
 var _shots: Array = []          # [real_t, dir, dist, site]
@@ -44,6 +45,8 @@ func setup(w: Node, run_seed: int) -> void:
 	world = w
 	seed_base = run_seed
 	rng.seed = hash([run_seed, "a4_sfx"])
+	var r := _seeded(4242)
+	fire = {"day": r.randi_range(4, 6), "at_h": r.randf_range(21.0, 23.5), "i": -1, "start_s": -1.0}
 	for arg: String in OS.get_cmdline_user_args():
 		if arg == "noevents": enabled = false
 
@@ -123,6 +126,9 @@ func _process(delta: float) -> void:
 		if _observed(world.cabins[i].global_position): continue
 		pending.erase(pr)
 		ransack(i)
+	if int(fire.get("i", -1)) < 0 and day >= int(fire.day) and day <= int(fire.day) + 2:
+		if (day > int(fire.day) or hour >= float(fire.at_h)) and (hour >= 20.5 or hour < 4.5):
+			_try_fire()
 	_update_shots()
 	_update_flares(delta)
 
@@ -230,6 +236,37 @@ func _boot_line(tracks: AnimalTracks, a: Vector3, b: Vector3, age: float, r: Ran
 			tracks.log.add(TrackLog.K.BAND, m.x, m.z, yaw, s - band_from, 68, int(TrackLog.K.BOOT), ag, ag)
 			band_from = s
 		s += 0.72
+
+
+# ------------------------------------------------------------------ E2 the cabin fire
+## The farthest unclaimed cabin 300 m+ from the player (never the start cabin or a lived-in home). Retried every
+## frame through the night until one qualifies.
+func _try_fire() -> void:
+	var p := _player()
+	if p == null: return
+	var best := -1
+	var best_d := 300.0
+	for i in range(1, world.cabins.size()):
+		var cb: Cabin = world.cabins[i]
+		if cb.burned or claimed(i): continue
+		var d := p.global_position.distance_to(cb.global_position)
+		if d >= best_d and d < 2500.0:
+			best = i; best_d = d
+	if best >= 0:
+		start_fire(best, _now())
+
+
+func start_fire(i: int, t0: float) -> void:
+	fire.i = i
+	fire.start_s = t0
+	var cf := CabinFire.new(); cf.name = "CabinFire"
+	cf.setup(world, world.cabins[i], t0)
+	_note("cabin %d caught fire" % i)
+
+
+func burning() -> CabinFire:
+	var i := int(fire.get("i", -1))
+	return world.cabins[i].on_fire if i >= 0 and i < world.cabins.size() else null
 
 
 # ------------------------------------------------------------------ E3 distant events
@@ -459,8 +496,11 @@ func _note(s: String) -> void:
 
 # ------------------------------------------------------------------ save
 func to_dict() -> Dictionary:
+	var bf := burning()
+	if bf != null: fire.start_s = bf.start_s   # the live fire is the truth
 	return {"v": 1, "rolled": rolled_day, "events": events.duplicate(true), "claims": claims.duplicate(),
-		"ransacked": ransacked.duplicate(), "pending": pending.duplicate(true), "told": told.duplicate(), "sites": sites.duplicate(true)}
+		"ransacked": ransacked.duplicate(), "pending": pending.duplicate(true), "told": told.duplicate(), "sites": sites.duplicate(true),
+		"fire": fire.duplicate()}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -477,6 +517,11 @@ func from_dict(d: Dictionary) -> void:
 	for k in (d.get("told", {}) as Dictionary): told[int(k)] = true
 	pending = []
 	for pr in d.get("pending", []): pending.append({"i": int(pr.i), "day": int(pr.day), "at_h": float(pr.at_h)})
+	if d.has("fire"):
+		var f: Dictionary = d.fire
+		fire = {"day": int(f.get("day", 5)), "at_h": float(f.get("at_h", 22.0)), "i": -1, "start_s": -1.0}
+		if int(f.get("i", -1)) >= 0 and int(f.i) < world.cabins.size() and world.cabins[int(f.i)].on_fire == null:
+			start_fire(int(f.i), float(f.start_s))   # stages derive from time: resumes mid-blaze, or as a cold shell
 	sites = []
 	for n in get_tree().get_nodes_in_group("event_sites"): n.queue_free()
 	for s in d.get("sites", []):

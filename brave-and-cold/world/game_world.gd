@@ -627,7 +627,7 @@ func _process(delta: float) -> void:
 	# inside a cabin the world fog (blizzard haze, aerial perspective) must not veil the room: fade it right down, ease in/out at the door
 	var in_cabin := false
 	for cb in cabins:
-		if cb.contains_xz(player.position.x, player.position.z):
+		if cb.contains_xz(player.position.x, player.position.z) and not cb.burned:
 			in_cabin = true
 			break
 	if fire_lookout != null and fire_lookout.contains_room(player.position):

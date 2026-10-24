@@ -42,7 +42,9 @@ const FURNITURE := {
 	"Furn_stool_b": {"name": "stool", "at": Vector3(-1.2, 0.72, 0.18), "plank": 1, "stick": 2, "hold": 5.0},
 }
 var broken: Array = []
-var toppled: Array = []   # A4 ransack: knocked over, not destroyed (still breakable for planks)
+var toppled: Array = []
+var burned := false        # A4 E2: the roof is gone (CabinFire): no shelter from snow or cold, only from wind
+var on_fire: Node = null   # the CabinFire while / after it burns   # A4 ransack: knocked over, not destroyed (still breakable for planks)
 var _furniture := {}
 var wood_pile := 6
 var crate_looted := false
@@ -248,6 +250,7 @@ func sight_line_open(a: Vector3, b: Vector3) -> bool:
 
 var cue_suppressed := false   # a resident's own stove before the outbreak (TownLife): homes are lit, nobody is hunting yet
 func emit_light_cue() -> void:
+	if burned: return
 	if cue_suppressed:
 		return
 	fire.cue(bus, global_position, _night, light_signal(), self)
@@ -605,6 +608,7 @@ func floor_at(x: float, z: float, terrain_h: float) -> float:
 
 ## Head clearance for the custom controller; does not affect the walking floor.
 func ceiling_at_world(eye: Vector3) -> float:
+	if burned: return INF
 	var p := to_local(eye)
 	if absf(p.x) < DOOR_HALF + 0.20 and absf(p.z - HZ) < 0.30:
 		return global_position.y + 2.35

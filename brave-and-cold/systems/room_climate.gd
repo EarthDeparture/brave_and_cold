@@ -36,6 +36,7 @@ func advance(game_s: float, outside_c: float) -> void:
 static func leak_of(building: Object) -> float:
 	var l := 0.0
 	if building == null: return l
+	if "burned" in building and bool(building.get("burned")): return 1.0   # a burned shell holds no heat
 	if "door_open" in building and bool(building.get("door_open")): l += 0.5
 	if "door_broken" in building and bool(building.get("door_broken")): l += 0.2
 	if "openings" in building:
