@@ -32,6 +32,7 @@ var reading: ReadingModal
 var forest: ForestScatter
 var plants: PlantField
 var footprints: Footprints
+var root_cellar: RootCellar       # A7: the 2 C store under one hamlet cabin floor
 var world_events: WorldEvents     # A4: ransacked cabins, distant shots / flares / kills (store lights: StoreLights)
 var animal_tracks: AnimalTracks   # alive L2: deer / wolf / bear / hare prints and blood splatters
 var drift_features: DriftFeatures   # A2: ridge / roof plumes, gust snow-bombs, blowing-snow hiss
@@ -454,6 +455,9 @@ func _ready() -> void:
 	world_events = WorldEvents.new(); world_events.name = "WorldEvents"; add_child(world_events)
 	world_events.setup(self, opening_state.seed_value if opening_state != null else 1)
 	if sv.has("world_events"): world_events.from_dict(sv["world_events"])
+	var cellar_cb := RootCellar.pick(cabins)
+	if cellar_cb != null and opts.get("cellar", "1") != "0":
+		root_cellar = RootCellar.new(); root_cellar.setup(cellar_cb, sv.get("cellar", {}), opening_state.seed_value if opening_state != null else 1)
 	for si in stores.size():
 		var sl := StoreLights.new(); sl.name = "StoreLights"; sl.setup(self, stores[si], 4400 + si)
 	_build_rooms(sv.get("rooms", []))
@@ -721,8 +725,11 @@ func _process(delta: float) -> void:
 	for chx in chests:
 		var cc: StorageChest = chx
 		cc.want_open = gear != null and gear.is_open and gear._chest == cc and gear._tab == "chest"
-		cc.spoilage_rate = Spoilage.rate_c(air_at(cc.global_position))  # snow-cold box or heated room
+		cc.spoilage_rate = Spoilage.rate_c(cc.fixed_c if not is_nan(cc.fixed_c) else air_at(cc.global_position))  # snow-cold box or heated room
 		cc.tick(gs)
+	if root_cellar != null:
+		root_cellar.want_open = gear != null and gear.is_open and gear._chest == root_cellar.store and gear._tab == "chest"
+		root_cellar.tick(gs)
 	_hold_attack()
 	_bullets_update(delta)
 	player.injury.update(gs, delta)
@@ -1901,6 +1908,8 @@ func _update_prompt() -> void:
 		items.append_array(fire_actions(cb.fire, cb.stove_world_pos(), cb.refresh_fire, 1.7, 0.9, cb.rack_world_pos()))
 		items.append_array(_furniture_items(cb))
 		items.append_array(_sleep_items(cb))
+		if root_cellar != null and root_cellar.cabin == cb:
+			items.append({"pos": root_cellar.hatch_world_pos(), "r": 2.3, "tol": 0.75, "text": root_cellar.label(), "act": func() -> void: gear.open_chest(root_cellar.store)})
 		for it in items:
 			if it.get('hide', false):
 				continue
@@ -4168,6 +4177,7 @@ func _save_data() -> Dictionary:
 		'huts': huts.map(func(h: Hut) -> Dictionary: return h.state_dict()),
 		'holes': ice_holes.map(func(h: IceHole) -> Dictionary: return h.to_dict()),
 		'chests': chests.map(func(c: StorageChest) -> Dictionary: return c.to_dict()),
+		'cellar': root_cellar.to_dict() if root_cellar != null else {},
 		'stores': stores.map(func(s: Store) -> Dictionary: return s.state_dict()),
 		'greenhouses': greenhouses.map(func(g: Greenhouse) -> Dictionary: return g.state_dict()),
 		'frostbite': frostbite.to_dict(),

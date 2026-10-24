@@ -193,7 +193,7 @@ func ransack(i: int) -> void:
 	cb.scatter_litter(r.randi())
 	var dr := r.randf()
 	if dr < 0.3: cb.break_door()
-	elif dr < 0.75 and not cb.door_open: cb.toggle_door()
+	elif not cb.door_open: cb.toggle_door()   # looters leave it open (was a 25% chance to leave it shut: flaky test, not the design)
 	var door := cb.door_world_pos()
 	var a_in := r.randf() * TAU
 	var a_out := a_in + r.randf_range(1.2, 5.0)

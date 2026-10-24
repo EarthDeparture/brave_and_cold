@@ -1027,17 +1027,22 @@ func _huntest() -> void:
 	d1.hit(9999.0, pp)
 	# --- wounded deer bleeds out, leaves trail
 	var b0 := get_tree().get_nodes_in_group("blood").size()
+	var tl0 := 0
+	var atr = world.get("animal_tracks")
+	if atr != null: tl0 = (atr.log as TrackLog).query(pp.x, pp.z, 400.0, [TrackLog.K.BLOOD]).size()
 	var p2 := Vector3(pp.x - 20.0, tg.data.get_height(Vector3(pp.x - 20.0, 0, pp.z)), pp.z)
 	var d2: Deer = world.call("_add_deer", p2, 42)
 	d2.hit(35.0, Vector3(pp.x, 0, pp.z))
 	var okb: bool = d2.bleed and d2.state == Deer.State.FLEE and d2.hp > 0.0
 	print("HUNTEST wound bleeds=", okb)
 	fails += 0 if okb else 1
-	for i in range(30):
+	d2.hp = minf(d2.hp, 12.0)   # skip most of the ~100 s bleed (0.65 hp/s)
+	for i in range(40):
 		await get_tree().create_timer(1.0).timeout
 		if d2.is_dead():
 			break
 	var trail := get_tree().get_nodes_in_group("blood").size() - b0
+	if atr != null: trail += (atr.log as TrackLog).query(pp.x, pp.z, 400.0, [TrackLog.K.BLOOD]).size() - tl0
 	okb = d2.is_dead() and trail >= 4 and d2.is_in_group("carcasses")
 	print("HUNTEST bleeds out dead=", d2.is_dead(), " blood decals=", trail)
 	fails += 0 if okb else 1
@@ -1068,12 +1073,13 @@ func _huntest() -> void:
 			found = true
 	print("HUNTEST carcass in save list=", found)
 	fails += 0 if found else 1
-	for i in range(30):
+	var mf0 := Carcass.meat_frac(carc)
+	for i in range(40):   # a wolf tears a portion every ~10 s and leaves once sated (~2 portions)
 		Carcass.wind_dir = Vector2(1, 0)
 		await get_tree().create_timer(1.0).timeout
-		if not is_instance_valid(carc) or not Carcass.has_meat(carc):
+		if not is_instance_valid(carc) or Carcass.meat_frac(carc) < mf0 - 0.01:
 			break
-	ok2 = not is_instance_valid(carc) or not Carcass.has_meat(carc)
+	ok2 = not is_instance_valid(carc) or Carcass.meat_frac(carc) < mf0 - 0.01
 	print("HUNTEST wolf scavenged meat=", ok2)
 	fails += 0 if ok2 else 1
 	print("HUNTEST failures=", fails)

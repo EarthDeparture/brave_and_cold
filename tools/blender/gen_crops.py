@@ -23,10 +23,13 @@ class Builder:
     def __init__(self, name):
         self.name = name; self.bm = bmesh.new()
         self.col = self.bm.loops.layers.color.new("Col")
+        self.uv = self.bm.loops.layers.uv.new("UVMap")   # leaves only: u across the blade (0.5 = midrib), v base->tip
 
-    def _face(self, vs, cols):
+    def _face(self, vs, cols, uvs=None):
         f = self.bm.faces.new(vs)
         for lp, c in zip(f.loops, cols): lp[self.col] = (c[0], c[1], c[2], 1.0)
+        if uvs is not None:
+            for lp, uv in zip(f.loops, uvs): lp[self.uv].uv = uv
         return f
 
     def leaf(self, base, yaw, pitch, length, width, c0, c1, segs=7, curl=0.6, fold=0.25, profile="ovate",
@@ -64,8 +67,11 @@ class Builder:
             ang -= curl / segs
         for i in range(segs):
             a, ca = rows[i]; b, cb = rows[i + 1]
+            v0 = 0.01 + 0.99 * i / segs; v1 = 0.01 + 0.99 * (i + 1) / segs   # v > 0 marks a leaf for the vein shader
             for k in range(2 * cols):
-                self._face([a[k], a[k + 1], b[k + 1], b[k]], [ca[k], ca[k + 1], cb[k + 1], cb[k]])
+                u0 = k / (2 * cols); u1 = (k + 1) / (2 * cols)
+                self._face([a[k], a[k + 1], b[k + 1], b[k]], [ca[k], ca[k + 1], cb[k + 1], cb[k]],
+                           [(u0, v0), (u1, v0), (u1, v1), (u0, v1)])
         return p
 
     def tube(self, a, b, r0, r1, c0, c1, n=5, bend=None):

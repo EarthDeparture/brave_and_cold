@@ -17,6 +17,9 @@ const H := 0.5
 
 var visual_enabled := true
 var spoilage_rate:=COLD_RATE # outdoor default; heated lookout pantry overrides this
+var fixed_c := NAN          # A7: a store held at a fixed temperature (root cellar); NAN = the air where it sits
+var label := ""            # gear screen title (empty = CHEST)
+var listed := true          # false: not in the 'chests' group (gear screen never auto-picks it)
 var contents: Dictionary = {}   # id -> n
 var cond: Dictionary = {}       # id -> condition 0..1 (only when worn)
 var age: Dictionary = {}        # id -> age seconds (perishables)
@@ -32,7 +35,8 @@ const PILE_MAX := 14
 
 
 func _ready() -> void:
-	add_to_group("chests")
+	if listed:
+		add_to_group("chests")
 	if visual_enabled:
 		_build()
 	else:

@@ -724,7 +724,7 @@ func _draw_ground() -> void:
 		_gscroll = 0})
 	if is_instance_valid(_chest):
 		var ct := Rect2(Vector2(GROUND_O.x + 178.0, ty - 20.0), Vector2(230, 26))
-		var ctxt := "CHEST (%d/%d stacks)" % [_chest.stack_count(), StorageChest.CAP]
+		var ctxt := "%s (%d/%d stacks)" % [_chest.label if _chest.label != "" else "CHEST", _chest.stack_count(), StorageChest.CAP]
 		_c.draw_rect(ct, Color(0.2, 0.22, 0.17, 0.95) if chest_mode else Color(0.09, 0.10, 0.09, 0.9))
 		_c.draw_rect(ct, DZ.ACCENT if chest_mode else DZ.EDGE, false, 1.0)
 		DZ.text(_c, ctxt, ct.position + Vector2(10, 19), 15, DZ.TEXT if chest_mode else DZ.DIM)
