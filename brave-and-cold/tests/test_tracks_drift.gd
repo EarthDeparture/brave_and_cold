@@ -162,6 +162,16 @@ func run() -> void:
 	var gd: GroundDrift = w.ground_drift
 	gd.force_wind = 3.0; await secs(1.0)
 	check(gd.active == 0, "no ground drift in a light wind")
+	# A2: drift now follows openness (little under trees): test the strong-wind streaming on open ground
+	var op: Vector3 = w.player.global_position
+	var best := -1.0
+	for ix in range(-15, 16):
+		for iz in range(-15, 16):
+			var q: Vector3 = w.player.global_position + Vector3(ix * 16.0, 0, iz * 16.0)
+			if is_nan(w._ground_y(q.x, q.z)) or w.snow.tier_at(q.x, q.z) <= 0: continue
+			var o: float = gd.openness_at(q.x, q.z)
+			if o > best: best = o; op = q
+	w.player.place(op.x, op.z)
 	gd.force_wind = 15.0; await secs(3.0)
 	check(gd.level > 0.6 and gd.active > 120 and gd._grains.emitting, "a strong wind streams snow along the ground (%d streaks, level %.2f)" % [gd.active, gd.level])
 	var pp2: Vector3 = w.player.global_position

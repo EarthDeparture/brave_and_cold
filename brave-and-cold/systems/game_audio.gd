@@ -88,6 +88,8 @@ func _process(delta: float) -> void:
 	var ws := wind_speed
 	if weather != null:
 		ws = weather.wind
+	var gd = world.get("ground_drift") if world != null else null
+	if gd != null: ws *= lerpf(0.65, 1.0, clampf((float(gd.ground_wind_k) - 0.4) / 0.6, 0.0, 1.0))   # A2: calmer in the trees
 	var wn := clampf(ws / 20.0, 0.0, 1.0)
 	var target := lerpf(-30.0, -5.0, sqrt(wn)) + 2.5 * gust
 	var cutoff := lerpf(9000.0, 20000.0, wn)

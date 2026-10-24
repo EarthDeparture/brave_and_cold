@@ -51,6 +51,16 @@ var _mm: MultiMesh
 var _s: Array = []
 var _rng := RandomNumberGenerator.new()
 var _grains: GPUParticles3D       # spindrift: fine grains skimming the snow right round your feet
+## A2: drift only where the wind reaches the snow. Openness 0..1 per 8 m cell (canopy height, buildings), cached;
+## streaks don't start in a building or its lee (2.5 x its height downwind) and die when they reach a trunk.
+const OPEN_CELL := 8.0
+var _open := {}
+var ground_wind_k := 1.0          # wind near the ground at the player: x0.4 under a dense canopy (GameAudio, features)
+var open_here := 1.0
+var _blds: Array = []
+var _bld_t := 0.0
+var lee_rejects := 0              # tests: spawns refused in a building lee
+var trunk_kills := 0              # tests: streaks that ran into a trunk
 var _gpm: ParticleProcessMaterial
 const GRAINS := 1400
 
@@ -152,6 +162,48 @@ func _make_grains() -> void:
 	add_child(_grains)
 
 
+func openness_at(x: float, z: float) -> float:
+	var k := (int(floor(x / OPEN_CELL)) + 100000) * 1000003 + (int(floor(z / OPEN_CELL)) + 100000)
+	var v = _open.get(k)
+	if v != null: return v
+	if _open.size() > 20000: _open.clear()
+	var o := 1.0
+	var snow: SnowField = world.get("snow") if world != null else null
+	if snow != null:
+		var cx: float = (floorf(x / OPEN_CELL) + 0.5) * OPEN_CELL
+		var cz: float = (floorf(z / OPEN_CELL) + 0.5) * OPEN_CELL
+		var ch := 0.0
+		for off in [Vector2.ZERO, Vector2(2.5, 2.5), Vector2(-2.5, 2.5), Vector2(2.5, -2.5), Vector2(-2.5, -2.5)]:
+			ch += snow.canopy_height_at(cx + off.x, cz + off.y)
+		ch /= 5.0
+		o = 1.0 - clampf((ch - 2.0) / 9.0, 0.0, 1.0) * 0.88   # under ~2 m (scrub, drifts) counts as open
+	_open[k] = o
+	return o
+
+
+## Inside a building, or in the sheltered wake 2.5 x its height downwind of it.
+func in_lee(p: Vector2, wd: Vector2) -> bool:
+	for b in _blds:
+		if not is_instance_valid(b): continue
+		if b.has_method("contains_xz"):
+			if b.contains_xz(p.x, p.y): return true
+		elif b.has_method("contains_room") and b.contains_room(Vector3(p.x, b.global_position.y + 1.0, p.y)): return true
+		var c := Vector2(b.global_position.x, b.global_position.z)
+		var rel := p - c
+		var along := rel.dot(wd)
+		var lat := absf(rel.dot(Vector2(-wd.y, wd.x)))
+		if along > 0.0 and along < 3.5 + 2.5 * 4.5 and lat < 4.0: return true
+	return false
+
+
+func _refresh_blds(pp: Vector3) -> void:
+	_blds.clear()
+	if world == null or not world.has_method("_building_list"): return
+	for b in world.call("_building_list"):
+		if b is Node3D and (b as Node3D).global_position.distance_to(pp) < R + 40.0 and (b.has_method("contains_xz") or b.has_method("contains_room")):
+			_blds.append(b)
+
+
 func _ground(x: float, z: float) -> float:
 	return float(world.call("_ground_y", x, z)) if world.has_method("_ground_y") else 0.0
 
@@ -164,7 +216,23 @@ func _respawn(s: Dictionary, pp: Vector2, wd: Vector2, anywhere: bool) -> void:
 		var up := R * _rng.randf_range(0.5, 0.95)
 		var lat := sqrt(maxf(R * R - up * up, 0.0)) * 0.95   # stay inside the circle (corner spawns would churn)
 		p = pp - wd * up + Vector2(-wd.y, wd.x) * _rng.randf_range(-lat, lat)
+	# openness + lee: a few tries for a spot the wind actually sweeps; otherwise this streak sits out its life
+	s.o = 0.0
+	for attempt in 4:
+		if in_lee(p, wd):
+			lee_rejects += 1
+		elif _rng.randf() < openness_at(p.x, p.y):
+			s.o = 1.0
+			break
+		if not anywhere:
+			var up2 := R * _rng.randf_range(0.5, 0.95)
+			var lat2 := sqrt(maxf(R * R - up2 * up2, 0.0)) * 0.95
+			p = pp - wd * up2 + Vector2(-wd.y, wd.x) * _rng.randf_range(-lat2, lat2)
+		else:
+			var a2 := _rng.randf() * TAU
+			p = pp + Vector2(cos(a2), sin(a2)) * sqrt(_rng.randf()) * R
 	s.p = p
+	s.chk = p
 	s.len = _rng.randf_range(3.0, 8.0)
 	s.wid = _rng.randf_range(1.3, 3.2)
 	s.life = _rng.randf_range(2.5, 5.0)
@@ -186,7 +254,13 @@ func _process(delta: float) -> void:
 	var pp3: Vector3 = (p as Node3D).global_position
 	var snow: SnowField = world.get("snow")
 	var on_snow := snow == null or snow.tier_at(pp3.x, pp3.z) > 0
-	var target := clampf((wind - MIN_WIND) / (FULL_WIND - MIN_WIND), 0.0, 1.0) * (1.0 - indoor) * (1.0 if on_snow else 0.4)
+	open_here = openness_at(pp3.x, pp3.z)
+	ground_wind_k = lerpf(0.4, 1.0, open_here)
+	_bld_t -= delta
+	if _bld_t <= 0.0:
+		_bld_t = 2.0
+		_refresh_blds(pp3)
+	var target := clampf((wind * ground_wind_k - MIN_WIND) / (FULL_WIND - MIN_WIND), 0.0, 1.0) * (1.0 - indoor) * (1.0 if on_snow else 0.4)
 	level = move_toward(level, target, delta * 0.5)
 	var want := int(round(level * N))
 	if _grains != null:
@@ -225,6 +299,14 @@ func _process(delta: float) -> void:
 		s.p += wd * spd * float(s.v) * delta
 		if s.age > s.life or (s.p - pp).length() > R:
 			_respawn(s, pp, wd, false)
+		elif (i + _frame) % 30 == 0 and float(s.get("o", 1.0)) > 0.0:   # ~every 0.5 s: did it run into a trunk?
+			var forest = world.get("forest")
+			var ck: Vector2 = s.get("chk", s.p)
+			if (forest != null and forest.trunks_on_segment(ck.x, ck.y, s.p.x, s.p.y) > 0) or in_lee(s.p, wd):   # a trunk, or drifted into a building / its lee
+				trunk_kills += 1
+				s.age = maxf(float(s.age), float(s.life) * 0.86)   # fade out against the trunk, not pop
+				s.o = 0.0
+			s.chk = s.p
 		var half: Vector2 = wd * float(s.len) * 0.5
 		# terrain heights are resampled for a quarter of the streaks each frame (staggered); a streak moves
 		# < 1 m between samples, the slope error is centimetres
@@ -238,7 +320,7 @@ func _process(delta: float) -> void:
 		var basis := Basis.looking_at(fwd.normalized(), Vector3.UP)
 		basis = basis.scaled_local(Vector3(float(s.wid), 1.0 + 0.6 * level, float(s.len)))
 		_mm.set_instance_transform(i, Transform3D(basis, Vector3(s.p.x, (y0 + y1) * 0.5 + 0.04, s.p.y)))
-		_mm.set_instance_custom_data(i, Color(float(s.age) / float(s.life), float(s.ph), level, 0))
+		_mm.set_instance_custom_data(i, Color(float(s.age) / float(s.life), float(s.ph), level * float(s.get("o", 1.0)), 0))
 	active = want
 	_mm.visible_instance_count = want
 	_mm.custom_aabb = AABB(pp3 - Vector3(R + 6, 30, R + 6), Vector3(2 * R + 12, 60, 2 * R + 12))
