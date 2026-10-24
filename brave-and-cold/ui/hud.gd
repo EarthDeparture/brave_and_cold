@@ -54,6 +54,8 @@ var miss_ms := -9999
 var kills := 0
 var show_monitor := true
 var show_dev := false
+var aware := 0.0          # A5: the most aware infected nearby (0 = none above 0.15); drawn as a faint eye
+var aware_chase := false
 var track_hint := ""   # alive A1: what the prints / blood under the crosshair say ("Deer · fresh · running")
 var hide_ui := false   # gear screen covers everything
 
@@ -169,6 +171,7 @@ func _draw_ui() -> void:
 	_draw_actions(sz, k)
 	_draw_crosshair(sz, k)
 	_draw_track_hint(sz, k)
+	_draw_aware(sz, k)
 	_draw_action(sz, k)
 	if player.struggling:
 		_draw_struggle(sz, k)
@@ -330,6 +333,30 @@ func _draw_aim_overlay(sz: Vector2, c: Vector2, ak: float) -> void:
 		_ui.draw_polygon(PackedVector2Array([c + d0 * r0, c + d0 * r1, c + d1 * r1, c + d1 * r0]), PackedColorArray([clear, dark, dark, clear]))
 		_ui.draw_polygon(PackedVector2Array([c + d0 * r1, c + d0 * r2, c + d1 * r2, c + d1 * r1]), PackedColorArray([dark, dark, dark, dark]))
 	_ui.draw_circle(c, 1.8, Color(0.9, 0.2, 0.15, 0.85 * ak))
+
+
+## A faint eye above the crosshair: outline brightens and the pupil fills with awareness; amber once something is
+## looking for you, red when it has you.
+func _draw_aware(sz: Vector2, k: float) -> void:
+	if aware <= 0.0 or aim_k > 0.15:
+		return
+	var c := Vector2(sz.x * 0.5, sz.y * 0.5 - 46.0 * k)
+	var w := 15.0 * k
+	var h := 6.5 * k
+	var col := Color(0.92, 0.92, 0.88)
+	if aware >= Zombie.SUSPICIOUS: col = Color(0.96, 0.72, 0.30)
+	if aware_chase: col = Color(0.92, 0.30, 0.22)
+	col.a = 0.28 + 0.55 * clampf(aware, 0.0, 1.0)
+	var top := PackedVector2Array()
+	var bot := PackedVector2Array()
+	for i in 17:
+		var t := float(i) / 16.0
+		var x := lerpf(-w, w, t)
+		var y := h * sin(PI * t)
+		top.append(c + Vector2(x, -y)); bot.append(c + Vector2(x, y))
+	_ui.draw_polyline(top, col, 1.4 * maxf(k, 1.0), true)
+	_ui.draw_polyline(bot, col, 1.4 * maxf(k, 1.0), true)
+	_ui.draw_circle(c, 1.2 * k + 3.4 * k * clampf(aware, 0.0, 1.0), col)
 
 
 func _draw_track_hint(sz: Vector2, k: float) -> void:

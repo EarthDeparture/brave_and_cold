@@ -24,6 +24,15 @@ const CORPSE_LIFE_S := 300.0
 
 static var night_factor := 0.0
 static var player_lit := false     # player's flashlight / weapon light on: seen from far, even at night
+## A5 stealth: noticing is gradual. GameWorld sets these once a frame.
+static var player_vis := 1.0       # how noticeable the player's movement is: still 0.35 .. crouch-walk 0.6 .. walk 1 .. sprint 2
+static var fire_lit := false       # the player stands within 8 m of a burning fire at night: lit up like a stage
+static var aurora := 0.0           # aurora strength: a bright aurora night is less dark
+static var indoor_dark := false    # inside a building at night with no light: hard to pick out
+const NOTICE_RATE := 1.6           # awareness / s at full sight weight and player_vis 1
+const SUSPICIOUS := 0.35           # stop, turn, groan, go and look
+const AWARE_DECAY := 0.15          # / s while unseen
+const POINT_BLANK := 2.5           # closer than this: noticed at once
 static var ambient_c := 0.0       # cold stiffens them: slower below -24 C, idle ones freeze solid below -32 C
 static var _mats: Array[StandardMaterial3D] = []     # shared tints (batching) instead of one material per zombie
 static var _scw_frame := -1
@@ -96,7 +105,10 @@ var _bdoor := false
 var _bpick_t := 99.0
 var _bbld = null
 var _sight_cd := 0.0
-var _sight_val := false
+var _sight_val := 0.0
+var awareness := 0.0               # 0..1: SUSPICIOUS investigates, 1 chases
+var suspicious := false            # investigating something it half-saw (GameAudio groans once)
+var _sus_hold := 0.0               # stands and stares a moment before walking over
 var _vault_t := -1.0
 var _vault_from := Vector3.ZERO
 var _vault_to := Vector3.ZERO
@@ -232,6 +244,12 @@ func on_noise(pos: Vector3, _radius_in: float, _source: Object) -> void:
 			_wake()
 		return
 	_target = pos
+	if _radius >= 100.0 and _source == player and global_position.distance_to(pos) < 40.0:
+		awareness = 1.0   # a gunshot this close: it knows exactly where you are
+		suspicious = false
+		_last_seen_t = 0.0
+		_set_state(State.CHASE)
+		return
 	if state != State.CHASE:
 		_set_state(State.INVESTIGATE)
 
@@ -279,42 +297,64 @@ func _shut_cabin_with_player():
 	return _scw_val
 
 
+## How lit the player is for a zombie's eyes: day 1, night 0.55 (aurora lifts it), firelight 1.6, own lamp 2.5.
+static func light_factor() -> float:
+	if player_lit: return 2.5
+	var l := 1.0 - 0.45 * night_factor + 0.3 * clampf(aurora, 0.0, 1.0) * night_factor
+	if indoor_dark and night_factor > 0.5: l *= 0.6
+	return maxf(l, 1.6 if fire_lit else 0.0)
+
+
 func _can_see_player() -> bool:
+	return _sight_k() > 0.0
+
+
+## Sight weight 0..1 (0 = can't see): cone (full ahead, 0.45 at the edge, 0.6 all round inside 4 m) x distance
+## falloff (1 - (d / range)^2). Range scales with stance and light; walls and trunks still block.
+func _sight_k() -> float:
 	var to := player.position - global_position
 	to.y = 0.0
 	var d := to.length()
-	var rng_m := SIGHT_RANGE * (0.55 if player.crouching else 1.0) * (2.5 if player_lit else (1.0 - 0.45 * night_factor)) * (0.5 if crawling else 1.0)
+	var rng_m := SIGHT_RANGE * (0.55 if player.crouching else 1.0) * light_factor() * (0.5 if crawling else 1.0)
 	if d > rng_m:
-		return false
+		return 0.0
 	var fwd := Vector3(-sin(rotation.y), 0.0, -cos(rotation.y))
-	if not (d < 4.0 or fwd.dot(to / maxf(d, 0.001)) > 0.3):
-		return false
+	var ca := fwd.dot(to / maxf(d, 0.001))
+	var cone := 0.0
+	if ca > 0.3:
+		cone = lerpf(0.45, 1.0, clampf((ca - 0.3) / 0.6, 0.0, 1.0))
+	elif d < 4.0:
+		cone = 0.6
+	else:
+		return 0.0
 	# walls block sight except through uncovered windows / the open door (either side of the wall)
 	var zeye := global_position + Vector3(0, 1.5, 0)
 	_scan_bld()
 	var pb = _scw_any
 	if pb != null and not pb.contains_xz(global_position.x, global_position.z):
 		if not pb.sight_line_open(zeye, player.position):   # player.position is already eye height
-			return false
+			return 0.0
 	elif pb == null:
 		for cb in cabins:
 			if cb.contains_xz(global_position.x, global_position.z):
 				if not cb.sight_line_open(zeye, player.position):
-					return false
+					return 0.0
 				break
 	# trunks in between: each one cuts the range by a quarter (close range is exempt)
 	if forest != null and d > 4.0:
 		var n := forest.trunks_on_segment(global_position.x, global_position.z, player.position.x, player.position.z)
-		if n > 0 and d > rng_m * maxf(0.0, 1.0 - 0.25 * float(n)):
-			return false
-	return true
+		if n > 0:
+			rng_m *= maxf(0.0, 1.0 - 0.25 * float(n))
+			if d > rng_m:
+				return 0.0
+	return cone * (1.0 - pow(d / maxf(rng_m, 0.01), 2.0))
 
 
-func _sees_cached(delta: float) -> bool:
+func _sees_cached(delta: float) -> float:
 	_sight_cd -= delta
 	if _sight_cd <= 0.0:
 		_sight_cd = 0.12
-		_sight_val = _can_see_player()
+		_sight_val = _sight_k()
 	return _sight_val
 
 
@@ -336,6 +376,8 @@ func hit(dmg: float, from: Vector3) -> void:
 		_target = from
 		_set_state(State.CHASE)
 		_last_seen_t = 0.0
+		awareness = 1.0
+		suspicious = false
 
 
 func _die() -> void:
@@ -412,14 +454,29 @@ func _tick(delta: float) -> void:
 	_stagger = maxf(0.0, _stagger - delta)
 	var dist := sqrt(d2)
 	var want := 0.0
-	var sees := _sees_cached(delta)
+	var sk := _sees_cached(delta)
+	if sk > 0.0:
+		if dist < POINT_BLANK:
+			awareness = 1.0
+		else:
+			awareness = minf(1.0, awareness + NOTICE_RATE * player_vis * sk * delta)
+	else:
+		awareness = maxf(0.0, awareness - AWARE_DECAY * delta)
+	var sees := sk > 0.0 and (awareness >= 1.0 or state == State.CHASE)
 	if sees:
 		_target = pp
 		_last_seen_t = 0.0
+		suspicious = false
 		if state != State.CHASE:
 			_set_state(State.CHASE)
 	else:
 		_last_seen_t += delta
+		if sk > 0.0 and awareness >= SUSPICIOUS and state != State.CHASE:
+			_target = pp   # it half-saw something there
+			if not suspicious:
+				suspicious = true
+				_sus_hold = 1.3
+				_set_state(State.INVESTIGATE)
 	match state:
 		State.IDLE:
 			var dd := Vector2(_target.x - global_position.x, _target.z - global_position.z).length()
@@ -431,11 +488,19 @@ func _tick(delta: float) -> void:
 				want = IDLE_SPEED
 		State.INVESTIGATE:
 			want = INVESTIGATE_SPEED
+			if suspicious:   # stop and stare, then shuffle over to look
+				_sus_hold -= delta
+				if _sus_hold > 0.0:
+					want = 0.0
+					_face(_target, delta, 3.0)
+				else:
+					want = 0.9
 			var dd2 := Vector2(_target.x - global_position.x, _target.z - global_position.z).length()
 			if _shut_cabin_with_player() != null and dist < 30.0 and _state_t > 1.0:
 				_set_state(State.CHASE)   # someone is hiding in there: go for them
 			elif dd2 < 2.0 or _state_t > 20.0:
 				_set_state(State.IDLE)
+				suspicious = false
 				_pick_wander()
 		State.CHASE:
 			want = CHASE_SPEED

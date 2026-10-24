@@ -2212,6 +2212,7 @@ func _update_optic(delta: float) -> void:
 	_update_torch(delta)
 	Zombie.player_lit = light_shining() or torch_shining()   # a lit lamp carries far at night
 	Wolf.player_lit = Zombie.player_lit
+	_update_stealth(delta)
 	_update_beams()
 	_zero_knocks(rid)
 	hud.optic_kind = kind if rifle_up else ''
@@ -4077,6 +4078,45 @@ func story_skip_to(day: int, hour: float) -> bool:
 
 
 var _track_hint_t := 0.0
+var _aware_t := 0.0
+var stealth_vis_override := -1.0   # tests: fix the player's movement noticeability (-1 = from the player)
+## A5 stealth: what the infected see of you this frame (Zombie statics), and the HUD eye (max awareness near you).
+func _update_stealth(delta: float) -> void:
+	var sp: float = player.speed_now
+	var v := 0.25 if player.crouching else 0.35
+	if sp > 0.3: v = 0.6 if player.crouching else (2.0 if player.sprinting else 1.0)
+	if weather != null: v *= 1.0 - 0.35 * clampf(weather.precip, 0.0, 1.0)
+	Zombie.player_vis = v if stealth_vis_override < 0.0 else stealth_vis_override
+	Zombie.fire_lit = _firelit_at(player.global_position, 8.0)
+	Zombie.aurora = ambient_life.aurora if ambient_life != null else 0.0
+	var dark_room := room_at(player.position) != null
+	if dark_room:
+		for cb in cabins:
+			if cb.contains_xz(player.position.x, player.position.z) and (cb.is_lit() or cb.burned): dark_room = false
+	Zombie.indoor_dark = dark_room
+	_aware_t -= delta
+	if _aware_t <= 0.0 and hud != null:
+		_aware_t = 0.1
+		var mx := 0.0
+		var chase := false
+		for z in zombies:
+			if not is_instance_valid(z) or z.is_dead(): continue
+			if z.global_position.distance_squared_to(player.global_position) > 3600.0: continue
+			mx = maxf(mx, z.awareness)
+			if z.state == Zombie.State.CHASE and z.awareness >= 1.0: chase = true
+		hud.aware = mx if (mx >= 0.15 and Settings.stealth_eye) else 0.0
+		hud.aware_chase = chase
+
+
+## A burning fire within r of p at night (campfires, a cabin in flames).
+func _firelit_at(p: Vector3, r: float) -> bool:
+	if sky_rig == null or sky_rig.gameplay_night_factor < 0.4: return false
+	for cf in campfires:
+		if cf.is_lit() and cf.global_position.distance_to(p) < r: return true
+	if world_events != null:
+		var bf := world_events.burning()
+		if bf != null and bf.stage == "blaze" and bf.global_position.distance_to(p) < r + 22.0: return true
+	return false
 ## Alive A1: the ground point under the crosshair (looking down, outdoors, within 6 m) read by AnimalTracks.
 func track_look_point() -> Vector3:
 	var cam: Camera3D = player.cam

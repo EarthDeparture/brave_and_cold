@@ -12,7 +12,8 @@ static var dev_menu := false      # developer menu available (toggle key: backti
 ## The alpha-tested crowns are fill-rate bound in the shadow map; atlas size is the big lever.
 const GRAPHICS := ["performance", "balanced", "quality"]
 static var graphics := "balanced"
-static var track_hints := true    # TLD-style read of tracks / blood when looking down at them
+static var track_hints := true
+static var stealth_eye := true     # A5 awareness eye above the crosshair    # TLD-style read of tracks / blood when looking down at them
 static var _loaded := false
 
 
@@ -27,6 +28,7 @@ static func load_all() -> void:
 		dev_menu = bool(c.get_value("debug", "dev_menu", dev_menu))
 		graphics = String(c.get_value("video", "graphics", graphics))
 		track_hints = bool(c.get_value("gameplay", "track_hints", track_hints))
+		stealth_eye = bool(c.get_value("gameplay", "stealth_eye", stealth_eye))
 	if not GRAPHICS.has(graphics):
 		graphics = "balanced"
 	for arg: String in OS.get_cmdline_user_args():   # benchmarks / captures: graphics=quality
@@ -42,6 +44,7 @@ static func save_all() -> void:
 	c.set_value("debug", "dev_menu", dev_menu)
 	c.set_value("video", "graphics", graphics)
 	c.set_value("gameplay", "track_hints", track_hints)
+	c.set_value("gameplay", "stealth_eye", stealth_eye)
 	c.save(PATH)
 
 

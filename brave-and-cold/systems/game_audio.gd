@@ -30,6 +30,7 @@ var _rng := RandomNumberGenerator.new()
 var _zstate: Dictionary = {}
 var _wstate: Dictionary = {}
 var _zgroan: Dictionary = {}
+var _zsus: Dictionary = {}
 var _step_n := 0
 var _step_player: AudioStreamPlayer
 
@@ -450,7 +451,7 @@ func _creatures(delta: float) -> void:
 	_prune_t -= delta
 	if _prune_t <= 0.0:
 		_prune_t = 30.0
-		for dct in [_zstate, _wstate, _zgroan, _wired, _last_pos, _stride]:
+		for dct in [_zstate, _wstate, _zgroan, _zsus, _wired, _last_pos, _stride]:
 			for k in (dct as Dictionary).keys():
 				if not is_instance_id_valid(int(k)):
 					(dct as Dictionary).erase(k)
@@ -466,6 +467,10 @@ func _creatures(delta: float) -> void:
 		var st: int = z.state
 		if _zstate.get(id, -1) != st and st == Zombie.State.CHASE and d < 70.0:
 			v.say("groan", 6.0, _rng.randf_range(1.05, 1.25), 6.0, 140.0, "alert")
+		var sus: bool = z.suspicious
+		if sus and not bool(_zsus.get(id, false)) and d < 50.0:   # A5: a low questioning groan as it turns
+			v.say("groan", 0.0, _rng.randf_range(0.62, 0.72), 4.0, 60.0, "alert")
+		_zsus[id] = sus
 		_zstate[id] = st
 		if st != Zombie.State.DEAD and st != Zombie.State.SLEEP:
 			if d < STEP_R:
