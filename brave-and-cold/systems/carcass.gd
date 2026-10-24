@@ -107,6 +107,131 @@ static func has_meat(n: Node) -> bool:
 	return not (n.get_meta("done", {}) as Dictionary).get("meat", false)
 
 
+# ---- A6 carcass stages: what is left shows on the body
+## Meat left (scavenged by wolves / ravens / you) darkens the body with a wet, dark-red overlay and spreads a blood
+## ring on the snow under it; stripped (meat gone) the body is flattened and a rib cage shows; skinned too, only the
+## bones are left. Cheap: re-applied only when the fraction changes.
+static func meat_frac(n: Node) -> float:
+	var sp := species_of(n)
+	if not SPECIES.has(sp): return 1.0
+	if not has_meat(n): return 0.0
+	return clampf(1.0 - scavenged(n) / float(SPECIES[sp].meat_n), 0.0, 1.0)
+
+
+static func update_stage(n: Node3D) -> void:
+	if n == null or not is_instance_valid(n): return
+	var sp := species_of(n)
+	if not SPECIES.has(sp): return
+	var frac := meat_frac(n)
+	var skinned := bool((n.get_meta("done", {}) as Dictionary).get("hide", false))
+	var key := frac + (10.0 if skinned else 0.0)
+	if absf(key - float(n.get_meta("stage_key", -1.0))) < 0.01: return
+	n.set_meta("stage_key", key)
+	var sc := float(SPECIES[sp].scale)
+	var ov: StandardMaterial3D = n.get_meta("stage_mat") if n.has_meta("stage_mat") else null
+	if ov == null:
+		ov = StandardMaterial3D.new()
+		ov.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		ov.albedo_color = Color(0.2, 0.018, 0.015, 0.0)
+		ov.roughness = 0.35   # wet
+		n.set_meta("stage_mat", ov)
+	ov.albedo_color.a = (1.0 - frac) * 0.85   # torn open: dark raw meat and soaked fur (0.6 didn't read at range)
+	var helpers := ["StageRing", "StageRibs"]
+	for mi in n.find_children("*", "MeshInstance3D", true, false):
+		var skip := false
+		for h in helpers:
+			if mi.name == h or (mi.get_parent() != null and mi.get_parent().name == h): skip = true
+		if skip: continue
+		# the body's own (vertex-colour) material, made unique to this carcass, tinted toward dark raw red: the
+		# overlay pass didn't read on these models
+		var m3 := mi as MeshInstance3D
+		var own = m3.get_meta("stage_own") if m3.has_meta("stage_own") else null
+		if own == null and m3.material_override is StandardMaterial3D:
+			own = (m3.material_override as StandardMaterial3D).duplicate()
+			m3.material_override = own
+			m3.set_meta("stage_own", own)
+			m3.set_meta("stage_base", (own as StandardMaterial3D).albedo_color)
+		if own != null:
+			var base: Color = m3.get_meta("stage_base", Color.WHITE)
+			(own as StandardMaterial3D).albedo_color = base.lerp(Color(0.40, 0.07, 0.06), (1.0 - frac) * 0.8)
+			(own as StandardMaterial3D).roughness = lerpf(1.0, 0.45, 1.0 - frac)   # wet
+		else:
+			m3.material_overlay = ov
+	# blood ring under the body (top level: dead wolves lie rolled on their side)
+	var ring: Decal = n.get_node_or_null("StageRing")
+	if ring == null:
+		ring = Decal.new(); ring.name = "StageRing"; ring.top_level = true
+		ring.texture_albedo = AnimalTracks._make_blood(int(n.get_instance_id() % 4))
+		ring.upper_fade = 0.3; ring.lower_fade = 0.3
+		n.add_child(ring)
+		ring.global_position = n.global_position
+		ring.global_rotation = Vector3(0, float(n.get_instance_id() % 628) * 0.01, 0)
+	var rs := sc * (1.2 + 1.8 * (1.0 - frac))
+	ring.size = Vector3(rs, 2.0, rs * 0.8)
+	ring.modulate.a = 0.35 + 0.55 * (1.0 - frac)
+	if frac <= 0.0 and not n.has_meta("stripped"):
+		n.set_meta("stripped", true)
+		for ch in n.get_children():
+			if ch is Node3D and not (ch is Decal) and not (String(ch.name) in helpers):
+				(ch as Node3D).scale *= Vector3(1.0, 0.6, 1.0)
+		var ribs := MeshInstance3D.new(); ribs.name = "StageRibs"; ribs.top_level = true
+		ribs.mesh = rib_cage(sc)
+		var bm := StandardMaterial3D.new(); bm.vertex_color_use_as_albedo = true; bm.roughness = 0.55
+		ribs.material_override = bm
+		n.add_child(ribs)
+		# lie on the slope, not flat in the air over it
+		var gp := n.global_position
+		var par := n.get_parent()
+		var nrm := Vector3.UP
+		if par != null and par.has_method("_ground_y"):
+			var hx0: float = par.call("_ground_y", gp.x - 0.8, gp.z); var hx1: float = par.call("_ground_y", gp.x + 0.8, gp.z)
+			var hz0: float = par.call("_ground_y", gp.x, gp.z - 0.8); var hz1: float = par.call("_ground_y", gp.x, gp.z + 0.8)
+			nrm = Vector3(-(hx1 - hx0) / 1.6, 1.0, -(hz1 - hz0) / 1.6).normalized()
+			gp.y = par.call("_ground_y", gp.x, gp.z)
+		var yaw := float(n.get_instance_id() % 628) * 0.01
+		var fwd := Vector3(sin(yaw), 0, cos(yaw)).slide(nrm).normalized()
+		ribs.global_transform = Transform3D(Basis(nrm.cross(fwd).normalized(), nrm, fwd).orthonormalized(), gp + nrm * 0.04 * sc)
+	if frac <= 0.0 and skinned:   # meat and hide gone: only the bones
+		for ch in n.get_children():
+			if ch is Node3D and not (ch is Decal) and not (String(ch.name) in helpers): (ch as Node3D).visible = false
+
+
+## A stripped rib cage: a spine along z, ribs arching up from it, bone stained dark red.
+static func rib_cage(sc: float) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var rng := RandomNumberGenerator.new(); rng.seed = int(sc * 1000.0)
+	var L := 0.95 * sc
+	var bone := Color(0.66, 0.58, 0.49)
+	var blood := Color(0.38, 0.06, 0.05)
+	var tube := func(pts: Array, r: float) -> void:
+		for i in pts.size() - 1:
+			var a: Vector3 = pts[i]; var b: Vector3 = pts[i + 1]
+			var d := (b - a).normalized()
+			var u := d.cross(Vector3.UP if absf(d.y) < 0.9 else Vector3.RIGHT).normalized()
+			var v := d.cross(u)
+			for k in 6:
+				var t0 := TAU * k / 6.0; var t1 := TAU * (k + 1) / 6.0
+				var o0 := (u * cos(t0) + v * sin(t0)) * r; var o1 := (u * cos(t1) + v * sin(t1)) * r
+				var c := bone.lerp(blood, clampf(rng.randf() * 1.3 - 0.2, 0.0, 1.0))
+				for q in [a + o0, b + o0, b + o1, a + o0, b + o1, a + o1]:
+					st.set_color(c); st.add_vertex(q)
+	var spine: Array = []
+	for i in 9: spine.append(Vector3(0, 0.03 * sc, -L * 0.5 + L * i / 8.0))
+	tube.call(spine, 0.035 * sc)
+	for j in 7:
+		var z := -L * 0.32 + L * 0.64 * j / 6.0
+		var rr := sc * (0.22 + 0.08 * sin(PI * j / 6.0))
+		for side in [-1.0, 1.0]:
+			var arc: Array = []
+			for i in 8:
+				var a := PI * (0.06 + 0.42 * i / 7.0)
+				arc.append(Vector3(side * sin(a) * rr, 0.03 * sc + (1.0 - cos(a)) * rr * 0.9 * (0.75 if i > 5 else 1.0), z + 0.02 * sc * i))
+			tube.call(arc, 0.014 * sc)
+	st.generate_normals()
+	return st.commit()
+
+
 # ---- blood decals on the snow
 static func blood(parent: Node, pos: Vector3, size: float) -> void:
 	if AnimalTracks.instance != null and is_instance_valid(AnimalTracks.instance):   # splatter decals (L2)

@@ -492,10 +492,14 @@ func _update_flock(f: Dictionary, dt: float) -> void:
 				f.sq_t = float(f.get("sq_t", rng.randf_range(5.0, 12.0))) - dt
 				if f.sq_t <= 0.0:
 					f.sq_t = rng.randf_range(6.0, 15.0)
-					squabble(f)
+					if rng.randf() < 0.4: tug(f)
+					else: squabble(f)
 				for b in f.birds:
 					b.legs = 1.0
 					b.pitch = 0.0
+					if _tug_step(f, b, dt):
+						b.fwd = Vector3(cos(b.yaw), 0, sin(b.yaw))
+						continue
 					b.hop_t -= dt
 					b.flick = maxf(0.0, float(b.flick) - dt)
 					if b.hop_t <= 0.0:   # move round the carcass to a new spot
@@ -591,6 +595,69 @@ func squabble(f: Dictionary) -> void:
 	b.yaw = atan2(-dir.z, -dir.x)
 	f.squabbles = int(f.get("squabbles", 0)) + 1
 	_play("raven_%d" % rng.randi_range(0, 3), a.pos + Vector3(0, 0.3, 0), -5.0, 10.0, 260.0, rng.randf_range(1.05, 1.18))
+
+
+## A6 raven tug-of-war: two birds face each other over the meat, both gripping, pulling back in turn with wings
+## half spread; then the loser lets go and hops back and the winner springs ~2 m up with the scrap. Visual only.
+func tug(f: Dictionary) -> void:
+	if f.birds.size() < 2:
+		return
+	var a: Dictionary = f.birds[rng.randi() % f.birds.size()]
+	var b: Dictionary = a
+	while b == a: b = f.birds[rng.randi() % f.birds.size()]
+	var ax := rng.randf() * TAU
+	var dir := Vector3(cos(ax), 0, sin(ax))
+	for pair in [[a, 1.0], [b, -1.0]]:
+		var bird: Dictionary = pair[0]
+		var s: float = pair[1]
+		var p: Vector3 = f.center - dir * s * 0.27
+		bird.land = Vector3(p.x, _ground(p.x, p.z) + PERCH_Y, p.z)
+		bird.pos = Vector3(bird.pos.x, bird.land.y, bird.pos.z)
+		bird.tug_c = p
+		bird.tug_dir = dir * s     # facing the meat / the other bird
+		bird.tug_t = rng.randf_range(2.4, 4.0)
+		bird.tug_s = 0.0 if s > 0.0 else PI   # opposite phase: one pulls while the other leans in
+		bird.hop_t = 99.0
+	var win: Dictionary = a if rng.randf() < 0.5 else b
+	win.tug_win = true
+	(b if win == a else a).tug_win = false
+	f.tugs = int(f.get("tugs", 0)) + 1
+	_play("raven_%d" % rng.randi_range(0, 3), f.center + Vector3(0, 0.3, 0), -5.0, 10.0, 260.0, rng.randf_range(1.1, 1.25))
+
+
+## Drives a bird that is tugging / jumping with its scrap. True while it owns the bird this frame.
+func _tug_step(f: Dictionary, b: Dictionary, dt: float) -> bool:
+	if float(b.get("jump_t", 0.0)) > 0.0:   # the winner's spring with the scrap
+		b.jump_t -= dt
+		var k := 1.0 - float(b.jump_t) / 0.9
+		b.pos = Vector3(b.pos.x, b.land.y + sin(PI * clampf(k, 0.0, 1.0)) * 2.0, b.pos.z)
+		b.amp = 1.0; b.fold = 0.0; b.peck = 0.0; b.legs = 1.0 if k < 0.3 or k > 0.8 else 0.0
+		if b.jump_t <= 0.0:
+			b.pos.y = b.land.y; b.hop_t = rng.randf_range(1.0, 3.0)
+		return true
+	if float(b.get("tug_t", 0.0)) <= 0.0:
+		return false
+	b.tug_t -= dt
+	var d: Vector3 = b.tug_dir
+	b.yaw = atan2(d.z, d.x)
+	var pull := sin(f.ts * 4.2 + float(b.tug_s))   # > 0: hauling back
+	var c: Vector3 = b.tug_c
+	var p := c - d * maxf(0.0, pull) * 0.09
+	b.pos = Vector3(p.x, b.land.y, p.z)
+	b.amp = 0.5 + 0.25 * maxf(0.0, pull)     # wings half spread, bracing
+	b.fold = 0.45
+	b.peck = 0.85                             # head down, bill on the meat
+	b.pitch = -0.12 * maxf(0.0, pull)         # leaning back as it hauls
+	if b.tug_t <= 0.0:
+		b.peck = 0.0
+		if bool(b.get("tug_win", false)):
+			b.jump_t = 0.9
+		else:   # lets go and hops back
+			var back: Vector3 = c - d * 0.6
+			b.land = Vector3(back.x, _ground(back.x, back.z) + PERCH_Y, back.z)
+			b.hop_t = rng.randf_range(1.5, 3.0)
+			b.flick = 0.5
+	return true
 
 
 func _wolf_at(c: Vector3, r: float) -> Vector3:

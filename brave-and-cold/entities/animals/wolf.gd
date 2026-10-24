@@ -7,6 +7,7 @@ enum State { WANDER, INVESTIGATE, ALERT, CHASE, RETREAT }
 signal attacked   # for GameAudio
 signal damaged
 signal died
+signal growled   # A6: a wolf over its kill warning you off (GameAudio)
 
 var WALK_SPEED := 1.6
 var TROT_SPEED := 3.4
@@ -45,6 +46,26 @@ var _sated_t := 0.0             # > 0: fed, ignores carcasses (real seconds)
 var _bleed_t := 0.0             # > 0: wounded, drips blood as it moves
 var _blood_d := 0.0
 var _model_root: Node3D
+## A6 food web 3: a wolf defends its kill (TLD). Under 30 m it stands over it and growls; under 15 m it bluff-charges
+## and goes back; stay close after that (or come within 6 m) and it attacks. A lit torch within 10 m or a flare makes it
+## flee and abandon the kill for 5 min - the meat is yours. Several wolves at one kill take turns: one feeds, the
+## others circle at ~8 m and swap after each portion.
+static var player_torch := false   # a burning torch in hand (GameWorld): wolves give it room
+const DEFEND_R := 30.0
+const BLUFF_R := 15.0
+const TORCH_R := 10.0
+var defending := false
+var growls := 0
+var bluffs := 0
+var abandons := 0
+var _growl_cd := 0.0
+var _bluff_t := 0.0                # > 0 charging, < 0 trotting back to the kill
+var _bluff_cd := 0.0
+var _close_t := 0.0
+var _avoid: Node3D = null          # a kill it was driven off
+var _avoid_t := 0.0
+var _yield_t := 0.0                # just ate a portion with others waiting: let one of them in
+var circling := false
 const FEED_PORTION_S := 10.0    # a wolf tears off one meat portion every ~10 s at a kill
 var sate_portions := 2          # a wolf eats ~2 portions (a bear more) and leaves the rest
 var _scent_t := 0.0
@@ -81,6 +102,7 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	_tail = model.find_child(part_prefix + "_tail", true, false)
 	_body = model.find_child(part_prefix + "_body", true, false)
 	add_to_group("hostile")
+	add_to_group("wolves")   # A6: packmates at a kill take turns
 	_pick_wander()
 
 
@@ -179,6 +201,8 @@ func _smell_carcass() -> Node3D:
 		var c := cn as Node3D
 		if c == null or c == self or c.is_queued_for_deletion() or not Carcass.has_meat(c) or _sated_t > 0.0:
 			continue
+		if c == _avoid and _avoid_t > 0.0:
+			continue
 		var d := c.global_position.distance_to(global_position)
 		if not Carcass.smelled_by(c, global_position) and not (d < RAVEN_SIGHT and raven_kills.has(c)):
 			continue
@@ -208,7 +232,12 @@ func _eat_carcass() -> void:
 			leave = _eaten >= sate_portions
 	if not leave:
 		_feed_t = 0.0
+		if _carcass != null and is_instance_valid(_carcass) and _others_waiting(_carcass):
+			_carcass.set_meta("feeder", 0)   # a packmate's turn
+			_yield_t = FEED_PORTION_S * 1.2
 		return
+	if _carcass != null and is_instance_valid(_carcass) and int(_carcass.get_meta("feeder", 0)) == get_instance_id():
+		_carcass.set_meta("feeder", 0)
 	if _eaten > 0:
 		_sated_t = 600.0
 	_eaten = 0
@@ -216,6 +245,72 @@ func _eat_carcass() -> void:
 	_feed_t = 0.0
 	_set_state(State.WANDER)
 	_pick_wander()
+
+
+func _others_waiting(c: Node3D) -> bool:
+	for w in get_tree().get_nodes_in_group("wolves"):
+		if w != self and is_instance_valid(w) and not w.dead and w._carcass == c and w.global_position.distance_to(c.global_position) < 15.0:
+			return true
+	return false
+
+
+## Driven off its kill: flee from the player and leave the carcass alone for a while.
+func abandon_kill() -> void:
+	if _carcass != null and is_instance_valid(_carcass):
+		_avoid = _carcass
+		_avoid_t = 300.0
+		if int(_carcass.get_meta("feeder", 0)) == get_instance_id(): _carcass.set_meta("feeder", 0)
+	abandons += 1
+	_carcass = null
+	defending = false
+	circling = false
+	_bluff_t = 0.0
+	var away := global_position - player.position
+	away.y = 0.0
+	_target = global_position + (away.normalized() if away.length() > 0.01 else Vector3.FORWARD) * 45.0
+	_set_state(State.RETREAT)
+
+
+## Standing over the kill with the player within DEFEND_R. Returns the speed to move at.
+func _defend(delta: float, dist: float, pp: Vector3) -> float:
+	if (player_torch and dist < TORCH_R) or _flare_near() != null:
+		abandon_kill()
+		return TROT_SPEED
+	defending = true
+	_growl_cd -= delta
+	_bluff_cd = maxf(0.0, _bluff_cd - delta)
+	if _growl_cd <= 0.0:
+		_growl_cd = _rng.randf_range(2.2, 3.8)
+		growls += 1
+		growled.emit()
+	if _bluff_t > 0.0:   # the charge: straight at you, stopping short
+		_bluff_t -= delta
+		_target = pp
+		if dist < 6.0 or _bluff_t <= 0.0:
+			_bluff_t = -2.2
+		return RUN_SPEED * 0.85
+	if _bluff_t < 0.0:   # back over the kill
+		_bluff_t = minf(0.0, _bluff_t + delta)
+		_target = _carcass.global_position
+		return TROT_SPEED
+	_face(pp, delta, 6.0)
+	if dist < BLUFF_R:
+		_close_t += delta
+		if dist < 6.0 or (bluffs > 0 and _close_t > 3.0):   # you didn't back off: now it means it
+			defending = false
+			if int(_carcass.get_meta("feeder", 0)) == get_instance_id(): _carcass.set_meta("feeder", 0)
+			_carcass = null
+			_set_state(State.ALERT)
+			return 0.0
+		if _bluff_cd <= 0.0:
+			_bluff_cd = 9.0
+			_bluff_t = 1.5
+			bluffs += 1
+			growls += 1
+			growled.emit()
+	else:
+		_close_t = maxf(0.0, _close_t - delta * 0.5)
+	return 0.0
 
 
 func is_feeding() -> bool:
@@ -237,6 +332,8 @@ func _process(delta: float) -> void:
 		return
 	_state_t += delta
 	_sated_t = maxf(0.0, _sated_t - delta)
+	_avoid_t = maxf(0.0, _avoid_t - delta)
+	_yield_t = maxf(0.0, _yield_t - delta)
 	if _bleed_t > 0.0:
 		_bleed_t -= delta
 		_blood_d += speed_now * delta
@@ -246,6 +343,8 @@ func _process(delta: float) -> void:
 	_bite_cd = maxf(0.0, _bite_cd - delta)
 	_struggle_cd = maxf(0.0, _struggle_cd - delta)
 	var fl := _flare_near()
+	if fl != null and _carcass != null:
+		abandon_kill()
 	if fl != null:
 		var away := global_position - fl.global_position
 		away.y = 0.0
@@ -282,17 +381,39 @@ func _process(delta: float) -> void:
 				else:
 					want_speed = WALK_SPEED
 		State.INVESTIGATE:
-			if _can_see_player():
+			var kill_ok := _carcass != null and is_instance_valid(_carcass) and not _carcass.is_queued_for_deletion() and Carcass.has_meat(_carcass)
+			var kcd := 1e9
+			if kill_ok:
+				kcd = Vector2(_carcass.global_position.x - global_position.x, _carcass.global_position.z - global_position.z).length()
+			if kill_ok and kcd < 11.0 and dist < DEFEND_R:
+				want_speed = _defend(delta, dist, pp)
+			elif _can_see_player():
+				defending = false
 				_set_state(State.ALERT)
-			elif _carcass != null and is_instance_valid(_carcass) and not _carcass.is_queued_for_deletion() and Carcass.has_meat(_carcass):
-				var cd := Vector2(_carcass.global_position.x - global_position.x, _carcass.global_position.z - global_position.z).length()
-				if cd < 2.5:
+			elif kill_ok:
+				defending = false
+				var cd := kcd
+				var fid := int(_carcass.get_meta("feeder", 0))
+				var fw = instance_from_id(fid) if fid != 0 else null
+				var other_feeding: bool = fw != null and fw != self and is_instance_valid(fw) and not fw.dead and fw._carcass == _carcass
+				if cd < 11.0 and (other_feeding or _yield_t > 0.0):   # a packmate is eating: circle and wait
+					circling = true
+					var a := _state_t * 0.22 + float(get_instance_id() % 628) * 0.01
+					_target = _carcass.global_position + Vector3(cos(a), 0, sin(a)) * 8.0
+					want_speed = WALK_SPEED
+					_give_up = _state_t + 40.0   # waiting its turn is not giving up
+				elif cd < 2.5:
+					circling = false
+					if fid == 0 or not other_feeding: _carcass.set_meta("feeder", get_instance_id())
+					_target = _carcass.global_position
 					want_speed = 0.0
 					_feed_t += delta
 					if _feed_t > FEED_PORTION_S:
 						_eat_carcass()
 				else:
 					want_speed = TROT_SPEED
+					circling = false
+					_target = _carcass.global_position   # (a circling packmate's turn: in to the kill)
 					if _state_t > _give_up:
 						_carcass = null
 						_set_state(State.WANDER)

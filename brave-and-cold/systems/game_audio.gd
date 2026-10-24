@@ -491,6 +491,9 @@ func _creatures(delta: float) -> void:
 		var wid: int = w.get_instance_id()
 		var wv := voice_of(w, 0.9)
 		_wire(w, wv, "wolf")
+		if not bool(w.get_meta("growl_wired", false)) and w.has_signal("growled"):   # A6: the warning over a kill
+			w.set_meta("growl_wired", true)
+			w.growled.connect(func() -> void: wv.say("growl", 4.0, _rng.randf_range(0.8, 0.95), 5.0, 90.0, "growl"))
 		var wst: int = w.state
 		if _wstate.get(wid, -1) != wst:
 			if wst == Wolf.State.ALERT and wd < 400.0:

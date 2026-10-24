@@ -606,7 +606,9 @@ func _process(delta: float) -> void:
 	if hud != null:
 		var here := room_at(player.position)
 		hud.indoor_c = here.room_c if here != null else NAN
-	for carcass:Node3D in get_tree().get_nodes_in_group("carcasses"):Carcass.advance_food(carcass,gs)
+	for carcass:Node3D in get_tree().get_nodes_in_group("carcasses"):
+		Carcass.advance_food(carcass,gs)
+		Carcass.update_stage(carcass)   # A6: meat left shows on the body
 	if opening != null: opening.advance(gs)
 	if first_week!=null:first_week.update(gs)
 	if collapse!=null:collapse.update(gs)
@@ -2214,6 +2216,7 @@ func _update_optic(delta: float) -> void:
 	_update_torch(delta)
 	Zombie.player_lit = light_shining() or torch_shining()   # a lit lamp carries far at night
 	Wolf.player_lit = Zombie.player_lit
+	Wolf.player_torch = torch_shining()
 	_update_stealth(delta)
 	_update_beams()
 	_zero_knocks(rid)
