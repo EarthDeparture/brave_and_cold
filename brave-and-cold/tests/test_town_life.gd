@@ -58,7 +58,10 @@ func run() -> void:
 	w.player.position=life.store.to_global(Vector3(.65,Store.FLOOR_LOCAL_Y+w.player.eye_h,-.65))
 	when(w,2,14) # fixture calendar positioning; real game only advances forward
 	a.hit(17,w.player.position);check(a.hp==83 and not a.is_in_group("hostile"),"injuring a civilian does not activate the infected brain")
+	when(w,2,13.9);check(life.line_for(a,"delivery").contains("due this afternoon"),"before the day-two delivery deadline the truck is still due")
 	when(w,2,14);check(life.line_for(a,"delivery").contains("held"),"delivery account agrees with dispatch")
+	when(w,3,10);check(life.line_for(a,"delivery").contains("truck never came"),"day-three morning acknowledges the missed delivery")
+	when(w,3,14);check(life.line_for(a,"delivery").contains("depot stopped answering"),"ill Rowan cannot revert to yesterday's driver-sick explanation")
 	when(w,3,11);check(a.phase==TownResidentState.Phase.ILL and life.closed_sign.visible and life.line_for(a,"greeting").contains("Sunday"),"illness has a prior exposure rather than an unseen trip while watched")
 	check(a.pallor_amount()>.2 and a._health_materials[0].detail_enabled and a._health_materials[0].albedo_color==Color.WHITE and life.actors.sam.pallor_amount()==0 and not life.actors.sam._health_materials[0].detail_enabled,"ill owner develops pallor (mixed toward grey, never darkened) without altering the clinic worker")
 	life.conversation.open(a);when(w,3,18)

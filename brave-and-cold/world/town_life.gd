@@ -235,7 +235,7 @@ func observed(a: TownResident) -> bool:
 func line_for(a: TownResident, topic: String) -> String:
 	var entry: Dictionary=dialogue[a.resident_id]
 	var key: String="ill" if a.phase==TownResidentState.Phase.ILL else ("worried" if a.phase==TownResidentState.Phase.WORRIED else "ordinary")
-	if a.resident_id=="rowan" and topic=="delivery" and world.clock.day>=2 and world.clock.hour>=14:
+	if a.resident_id=="rowan" and topic=="delivery" and a.phase==TownResidentState.Phase.WORRIED and world.clock.day==2 and world.clock.hour>=14:
 		return "The depot says the driver called in sick. The truck is held there. Your reserved equipment is already here; don't wait beside the road."
 	if a.resident_id=="rowan" and a.phase==TownResidentState.Phase.WORRIED and world.clock.day>=3 and topic in ["delivery","greeting"]:
 		return "The truck never came. Cars from the city arrived overnight. My brother still has that fever. The marked cases stay here for you."
