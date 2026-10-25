@@ -112,6 +112,9 @@ func _routine() -> void:
 			if a.mode != "work": _apply(a, id, "work")
 			continue
 		_maintain(id, act, day)
+		# Normal shifts wait for a live exchange, even after the observation grace.
+		# Urgent phase changes are handled above this routine and still interrupt.
+		if a.talking: continue
 		if a.activity == act: continue
 		var late := hour - float(b[0]) > 0.3
 		# never vanish, appear or jump in front of the player: wait until neither end is watched (18 game min at most)

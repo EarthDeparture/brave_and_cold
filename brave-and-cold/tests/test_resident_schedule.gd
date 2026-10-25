@@ -79,13 +79,30 @@ func run() -> void:
 	at(2, 21.4)
 	check(sam.mode == "away" and not sam.visible, "past the grace time Sam goes anyway")
 	look_away()
+	# The observation grace never cuts off a live conversation.
+	at(2, 16.9)
+	w.player.position = rowan.global_position + Vector3(-1.2, w.player.eye_h, 0)
+	w.player.cam.global_position = w.player.position
+	w.player.cam.look_at(rowan.global_position + Vector3.UP * 1.4, Vector3.UP)
+	var talking_pos := rowan.global_position
+	life.conversation.open(rowan)
+	check(life.conversation.is_open and rowan.talking, "exchange opens before Rowan's shift ends")
+	at(2, 17.1)
+	check(life.conversation.is_open and rowan.activity == "work" and rowan.global_position == talking_pos, "early shift transition waits for the exchange")
+	at(2, 17.4)
+	check(life.conversation.is_open and rowan.talking and rowan.global_position == talking_pos, "past 18 minutes, a live exchange still cannot be relocated")
+	life.conversation.close(); look_away(); at(2, 17.41)
+	check(rowan.activity == "stove" and rowan.global_position.distance_to(talking_pos) > 1.0 and not w.player.ui_open, "closing the exchange releases the ordinary schedule and player input")
 	# departure overrides the routine; the leaver is placed at work first
 	at(2, 23.9)
 	check(lin.mode == "sleep", "D2 night Lin asleep")
 	at(3, 8.0)
 	check(lin.leaving or bool(life.history.record("lin").departed), "D3 08:00 Lin departs as before (routine does not block it)")
 	# illness overrides
+	at(3, 10.5)
+	life.conversation.open(rowan)
 	at(3, 11.0)
 	check(rowan.phase == TownResidentState.Phase.ILL and rowan.mode == "work" and rowan.visible, "D3 11:00 ill Rowan stays at the store")
+	check(not life.conversation.is_open and not rowan.talking, "illness still interrupts an exchange despite the routine guard")
 	w.queue_free(); await process_frame; await process_frame
 	print("RESIDENT_SCHEDULE_TEST checks=", checks, " failures=", failures); quit(1 if failures else 0)
