@@ -107,6 +107,7 @@ func advance(game_s: float, air_c: float) -> void:   # the stove advances with t
 		var was := Farming.stage(plots[i]) + Farming.status(plots[i])
 		Farming.advance(plots[i], game_s, air_c, l)
 		if Farming.stage(plots[i]) + Farming.status(plots[i]) != was: _refresh_plant(i)
+		else: _update_plant_frost(i)
 	# snowmelt barrel: snow by the stove turns to watering water (not drinking water)
 	if float(barrel.snow_kg) > 0.0 and air_c > 0.5:
 		var m := minf(float(barrel.snow_kg), SNOW_MELT_KG_H * air_c * game_s / 3600.0)
@@ -178,6 +179,16 @@ func _refresh_plant(i: int) -> void:
 		var ring := MeshInstance3D.new(); var cm := CylinderMesh.new(); cm.top_radius = 0.17; cm.bottom_radius = 0.19; cm.height = 0.012; cm.radial_segments = 14
 		ring.mesh = cm; ring.position.y = 0.004; n.add_child(ring)
 		var rm := StandardMaterial3D.new(); rm.albedo_color = Color(0.09, 0.07, 0.05); rm.roughness = 0.95; ring.material_override = rm
+
+
+## Frost accumulates even when growth/stage/status are unchanged. Keep the existing leaf mesh.
+func _update_plant_frost(i: int) -> void:
+	var p: Dictionary = plots[i]
+	var frost := clampf(float(p.frost_s) / (Farming.rule("frost_kill_h") * 3600.0), 0.0, 1.0) if not bool(p.dead) else 0.0
+	for child: Node in _plants[i].get_children():
+		if child is MeshInstance3D and not child.is_queued_for_deletion():
+			var material := (child as MeshInstance3D).material_override as ShaderMaterial
+			if material != null: material.set_shader_parameter("frost", frost)
 
 
 static func _crop_mesh(nm: String) -> Mesh:
