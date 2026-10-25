@@ -1,0 +1,73 @@
+{
+  "start_commit": "8886280",
+  "recovery_tag": "checkpoint/pre-atomic-story-crops-2026-10-25",
+  "scope": "Four small story/presentation corrections; local tests and controlled renders; no human play acceptance or performance claim",
+  "assertions": 161,
+  "suites": [
+    {
+      "suite": "TOWN_LIFE_TEST",
+      "checks": 54,
+      "failures": 0,
+      "log": "brave-and-cold\\shots\\atomic-final-test_town_life.log",
+      "sha256": "d1314d59c937c3cee75adfde39622d5ccaafbaf9688b979ccddd4d0abe88ba9c"
+    },
+    {
+      "suite": "RESIDENT_SCHEDULE_TEST",
+      "checks": 27,
+      "failures": 0,
+      "log": "brave-and-cold\\shots\\atomic-conversation-schedule.log",
+      "sha256": "877242bf1efdf74169f171a97a184986f276760eea328b43f3f3d2d96c2db3f6"
+    },
+    {
+      "suite": "GREENHOUSE_TEST",
+      "checks": 26,
+      "failures": 0,
+      "log": "brave-and-cold\\shots\\atomic-final-test_greenhouse.log",
+      "sha256": "5b655c8a1e9c51fa504599bd4add579469af14a843ea97f9fcfc044937a88ae9"
+    },
+    {
+      "suite": "FARMING_V2_TEST",
+      "checks": 25,
+      "failures": 0,
+      "log": "brave-and-cold\\shots\\atomic-final-test_farming_v2.log",
+      "sha256": "ed6e5660c5538e9112728613fbd1af31768d136b1cb4b3c5fa0be70e890acaa2"
+    },
+    {
+      "suite": "CROP_FROST_TEST",
+      "checks": 9,
+      "failures": 0,
+      "log": "brave-and-cold\\shots\\atomic-final-test_crop_frost.log",
+      "sha256": "41f4ad7dd6bf505cc8efbaaacf269b35bfd87199e4252c6c01b37620461717db"
+    },
+    {
+      "suite": "CROP_INSPECTION_TEST",
+      "checks": 20,
+      "failures": 0,
+      "log": "brave-and-cold\\shots\\atomic-crop-inspection.log",
+      "sha256": "67f3139509335731e8dbba26ccccfc965c81b783f112849167e0357a20786802"
+    }
+  ],
+  "source_sha256": {
+    "brave-and-cold/world/town_life.gd": "0d2407a126e220a9b8c5b801830120e88dd72978fa1af0f0e43e648a59868050",
+    "brave-and-cold/world/greenhouse.gd": "51019371e9d41f6474ed97d97a46167ab3ac9ee4c189d08686d5fc519d76d5bc",
+    "brave-and-cold/tests/test_town_life.gd": "057cd89cda22bd52ce129c1ab041e5ff894fe8de4700893bcc1bc8429d81d537",
+    "brave-and-cold/tests/test_resident_schedule.gd": "7c172f1a0ab1fce65c73af48f3b3218981afbca4d8a378a290f7a49574cb5d0c",
+    "brave-and-cold/tests/test_crop_frost.gd": "03d13ed4866f7873e9cd014ad0331ccd106747422129d1e702239b2cdec38bc9",
+    "brave-and-cold/tests/test_crop_inspection.gd": "235944a3f166fe4f1c382188e6e6d29840564a5a355b4d7cb8538a3c3ed3ec09"
+  },
+  "capture_sha256": {
+    "dead.png": "ab096c76887b6507f69755eeec0da546e03572d55c744470fded86fada98af2e",
+    "half-frost.png": "90894a6c02076bbc86d70bc7122ff77ee7d0196c27011c48e758f6ee249c303e",
+    "healthy.png": "d005bf6b38ba9f56b6db825c622d7f5662df675977ebbbaaad9b24ec03dd2bad",
+    "heavy-frost.png": "a918a6f63fb976f031b99e55dde71da466fbd693762ea2ff397e90b5a22a3c75",
+    "recovered.png": "d005bf6b38ba9f56b6db825c622d7f5662df675977ebbbaaad9b24ec03dd2bad"
+  },
+  "render_checks": 14,
+  "render_log_sha256": "0b9d53dcdbb9406ef7dba51a97287bb8cc0986a451183356fe7b09ab346e16fc",
+  "known_diagnostics": [
+    "sandbox certificate store access",
+    "existing sound-board review JSON read error in world fixtures",
+    "Terrain3D interpolation deprecation",
+    "sandbox user log/shader cache access in render fixture"
+  ]
+}

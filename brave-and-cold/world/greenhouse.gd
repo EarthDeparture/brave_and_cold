@@ -101,8 +101,10 @@ func setup(terrain: Terrain3D, x: float, z: float, yaw_deg: float) -> bool:
 ## Sun through the glazing, 0..1 (Farming.light_factor), set by GameWorld each update.
 var light := 0.0
 func lantern_lit() -> bool: return bool(lantern.lit) and float(lantern.oil_h) > 0.0
+func _effective_light() -> float:
+	return maxf(light, Farming.rule("lantern_light") if lantern_lit() else 0.0)
 func advance(game_s: float, air_c: float) -> void:   # the stove advances with the other stove buildings
-	var l := maxf(light, Farming.rule("lantern_light") if lantern_lit() else 0.0)
+	var l := _effective_light()
 	for i in plots.size():
 		var was := Farming.stage(plots[i]) + Farming.status(plots[i])
 		Farming.advance(plots[i], game_s, air_c, l)
@@ -128,6 +130,14 @@ func lantern_cue(bus: NoiseBus, night: float) -> void:
 
 func plot_world(i: int) -> Vector3: return to_global(Vector3(PLOTS[i].x, SOIL_Y + 0.15, PLOTS[i].y))
 
+## One current blocker, in urgency order. Cool soil still grows; dim light still contributes.
+func _growth_pause_reason(p: Dictionary) -> String:
+	if not Farming.can_grow(p): return ""
+	if room != null and room.room_c < 0.0: return "Freezing"
+	if float(p.water) <= 0.0: return "Needs water"
+	if _effective_light() <= 0.0: return "Too dark"
+	return ""
+
 ## Interaction entries for GameWorld (pos, r, tol, text, hold, act). `say` shows a message.
 func actions(inv: Inventory, say: Callable) -> Array:
 	var out: Array = []
@@ -135,6 +145,8 @@ func actions(inv: Inventory, say: Callable) -> Array:
 	out.append_array(_prop_actions(inv, say))
 	for i in plots.size():
 		var p: Dictionary = plots[i]; var pos := plot_world(i); var st := Farming.status(p)
+		var reason := _growth_pause_reason(p)
+		if reason != "": st += " • " + reason
 		if inv.count("compost") > 0 and not bool(p.get("compost", false)) and not bool(p.dead) and not Farming.ripe(p):
 			out.append({"pos": pos, "r": 1.9, "tol": 0.45, "text": "Work compost into the %s" % ("plot" if String(p.crop) == "" else st), "hold": 2.0,
 				"act": func() -> void: say.call(Farming.add_compost(p, inv)); _refresh_plant(i)})
