@@ -1,0 +1,27 @@
+{
+  "source_sha256": "0b49f61b88540be4cc910a9be681154d2d7e4590f997ad10760aea7b04511dcb",
+  "glb_sha256": "6c8ba2b710faa1059ce5508cbd20ee5a87f793060c579b4d8fd9c8bfc504f5db",
+  "native_sha256": "a610f3c19b425a20df8c978fd5b20006f4de31903a66f56a6bca112f5a4e4f39",
+  "original": true,
+  "bones_per_hand": 17,
+  "glove_fit_scale": 1.006,
+  "grips": [
+    "Open",
+    "Relaxed",
+    "Fist",
+    "Shaft",
+    "Trigger",
+    "Support",
+    "Bolt",
+    "PinchReady",
+    "Magazine",
+    "ToolGrip",
+    "ForeGrip",
+    "PistolFire",
+    "StockFire",
+    "StockGrip",
+    "BottleGrip"
+  ],
+  "notes": "Original approved anatomy with thin fitted leather surfaces and baked seam materials; nails hide when gloves are worn.",
+  "packed_textures": true
+}

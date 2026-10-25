@@ -1,0 +1,194 @@
+{
+  "propane_cylinder": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 10,
+    "pivots": 1
+  },
+  "canvas_backpack": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 15,
+    "pivots": 2
+  },
+  "jaw_trap_open": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 12,
+    "pivots": 3
+  },
+  "jaw_trap_closed": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 12,
+    "pivots": 3
+  },
+  "camp_pot_large": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 6,
+    "pivots": 1
+  },
+  "camp_pot_small": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 6,
+    "pivots": 1
+  },
+  "skillet_large": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 9,
+    "pivots": 1
+  },
+  "skillet_small": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 9,
+    "pivots": 1
+  },
+  "water_bottle_tall": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 6,
+    "pivots": 3
+  },
+  "water_bottle_short": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 12,
+    "pivots": 3
+  },
+  "fuel_jerrycan": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 10,
+    "pivots": 2
+  },
+  "first_aid_case": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 15,
+    "pivots": 2
+  },
+  "portable_radio": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 25,
+    "pivots": 3
+  },
+  "matchbox_closed": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 10,
+    "pivots": 1
+  },
+  "matchbox_open": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 13,
+    "pivots": 1
+  },
+  "field_flashlight": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 12,
+    "pivots": 2
+  },
+  "battery_aa": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 10,
+    "pivots": 0
+  },
+  "battery_d": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 10,
+    "pivots": 0
+  },
+  "field_compass_closed": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 13,
+    "pivots": 3
+  },
+  "field_compass_open": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 13,
+    "pivots": 3
+  },
+  "food_can_beans": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 7,
+    "pivots": 1
+  },
+  "food_can_soup": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 7,
+    "pivots": 1
+  },
+  "food_can_fish": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 7,
+    "pivots": 1
+  },
+  "food_can_fruit": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 7,
+    "pivots": 1
+  },
+  "rolled_bandage": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 4,
+    "pivots": 0
+  },
+  "field_shovel": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 12,
+    "pivots": 3
+  },
+  "hunting_knife": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 12,
+    "pivots": 2
+  },
+  "woodcutting_hatchet": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 9,
+    "pivots": 3
+  },
+  "improvised_stone_axe": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 12,
+    "pivots": 3
+  },
+  "rescue_hatchet": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 12,
+    "pivots": 3
+  },
+  "camp_pot_lid_large": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 6,
+    "pivots": 1
+  },
+  "camp_pot_lid_small": {
+    "opening_ready_scene": true,
+    "metres": true,
+    "packed_texture_nodes": 6,
+    "pivots": 1
+  }
+}

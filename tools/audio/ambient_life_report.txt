@@ -1,0 +1,13 @@
+howl_far_0    8.00 s  rms  -14.1 dB  centroid    668 Hz  spectral peak    512 Hz
+howl_far_1    8.80 s  rms  -13.7 dB  centroid    597 Hz  spectral peak    441 Hz
+howl_far_2    6.80 s  rms  -15.6 dB  centroid    785 Hz  spectral peak    604 Hz
+howl_far_3    6.00 s  rms  -15.4 dB  centroid    697 Hz  spectral peak    554 Hz
+owl_0         4.04 s  rms  -12.6 dB  centroid    329 Hz  spectral peak    293 Hz
+owl_1         3.41 s  rms  -11.7 dB  centroid    410 Hz  spectral peak    343 Hz
+raven_0       2.34 s  rms  -19.4 dB  centroid   1579 Hz  spectral peak    853 Hz
+raven_1       2.76 s  rms  -20.0 dB  centroid   1542 Hz  spectral peak   1105 Hz
+raven_2       1.92 s  rms  -20.4 dB  centroid   1462 Hz  spectral peak   1032 Hz
+raven_3       2.34 s  rms  -21.8 dB  centroid   1550 Hz  spectral peak    443 Hz
+wings_0       3.40 s  rms  -21.3 dB  centroid   2024 Hz  spectral peak    597 Hz
+wings_1       3.40 s  rms  -21.5 dB  centroid   2045 Hz  spectral peak    486 Hz
+aurora_static 10.00 s  rms  -15.5 dB  centroid   1359 Hz  spectral peak   1317 Hz

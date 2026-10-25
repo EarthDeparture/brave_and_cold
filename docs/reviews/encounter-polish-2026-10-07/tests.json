@@ -1,0 +1,71 @@
+{
+  "checks": 410,
+  "failures": 0,
+  "suites": [
+    {
+      "suite": "Skin / collapse / slopes",
+      "summary": "INFECTED_SKIN_TEST checks=42 failures=0",
+      "checks": 42,
+      "failures": 0,
+      "log": "brave-and-cold/shots/encounter-polish/death-tests.log",
+      "log_sha256": "0cd6e0b9d06d011e353c6a8c5899ece5e1f76d0e4a81fadb4f83e9bfb1b31e2e"
+    },
+    {
+      "suite": "Stock signals / cache hinge",
+      "summary": "ENCOUNTER_PRESENTATION_TEST checks=15 failures=0",
+      "checks": 15,
+      "failures": 0,
+      "log": "brave-and-cold/shots/encounter-polish/stock-tests.log",
+      "log_sha256": "32c1f0b6f4252d168d44e88c94719a3f3a615387c9572a897737fa2721f165ae"
+    },
+    {
+      "suite": "Reserve identities",
+      "summary": "POPULATION_RESERVE_TEST checks=9 failures=0",
+      "checks": 9,
+      "failures": 0,
+      "log": "brave-and-cold/shots/encounter-polish/reserve-tests.log",
+      "log_sha256": "b5e7637fddf8a5bac4dae81e54963e76294f208351078dbcc03980955d020969"
+    },
+    {
+      "suite": "Clinic / cohort / reload / ramps",
+      "summary": "FIRST_WEEK_COLLAPSE_TEST checks=192 failures=0",
+      "checks": 192,
+      "failures": 0,
+      "log": "brave-and-cold/shots/encounter-polish/collapse-final-tests.log",
+      "log_sha256": "dad00abaac6a6ac186a7e713bc7d7424019b69eb0778f6c86586357863adde07"
+    },
+    {
+      "suite": "Route resources / reload",
+      "summary": "FIRST_WEEK_CORE_TEST checks=33 failures=0",
+      "checks": 33,
+      "failures": 0,
+      "log": "brave-and-cold/shots/encounter-polish/core-tests.log",
+      "log_sha256": "85bd315836071e93743654e3024a912752fda9941af26e87bf414112ad994204"
+    },
+    {
+      "suite": "Pacing / overnight / carried relay",
+      "summary": "OPENING_PACING_TEST checks=51 failures=0",
+      "checks": 51,
+      "failures": 0,
+      "log": "brave-and-cold/shots/encounter-polish/pacing-final-tests.log",
+      "log_sha256": "d8de349619f13d3555fd491b50b3e8016848645b4854883b85ac69f0c7343011"
+    },
+    {
+      "suite": "First-week story / finite stock",
+      "summary": "FIRST_WEEK_STORY_TEST checks=38 failures=0",
+      "checks": 38,
+      "failures": 0,
+      "log": "brave-and-cold/shots/encounter-polish/story-tests.log",
+      "log_sha256": "ffcbbb7d1193834413f3cf30a43093a9fe0478b6246815226e07c4ae6bdb3e03"
+    },
+    {
+      "suite": "Habitats / field plan / persistence",
+      "summary": "OPENING_QUALITY_TEST checks=30 failures=0",
+      "checks": 30,
+      "failures": 0,
+      "log": "brave-and-cold/shots/encounter-polish/quality-tests.log",
+      "log_sha256": "63ec8b74a670f0cbf4b1f6ac6e422883c3ebf4cd2e4866f52e0c1bd04ff01ec5"
+    }
+  ],
+  "scope": "Local Godot checks; no human play session is claimed."
+}

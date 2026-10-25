@@ -1,0 +1,112 @@
+{
+    "_doc": "Winter greenhouse crops (phase F, farming v2). grow_h = game hours of full-rate growth (warm, lit, watered). seed = item planted (one per plot). yield = [min, max] of the harvest item. Sustainable loops: potato and shallot replant from the harvest (a shallot bulb grows a cluster); radish is an annual and BOLTS if left ripe for bolt_h hours: harvest then gives seed (bolt_seed x bolt_yield) instead of roots. Carrot, kale and beet are biennials - no seed in a season, so their packets are finite. Compost x compost_mult growth and +compost_bonus yield; a lit lantern gives lantern_light at night.",
+    "crops": {
+        "potato": {
+            "name": "potatoes",
+            "seed": "potato",
+            "grow_h": 60.0,
+            "harvest": "potato",
+            "yield": [
+                3,
+                4
+            ],
+            "color": [
+                0.22,
+                0.36,
+                0.16
+            ]
+        },
+        "carrot": {
+            "name": "carrots",
+            "seed": "carrot_seeds",
+            "grow_h": 48.0,
+            "harvest": "carrot",
+            "yield": [
+                2,
+                3
+            ],
+            "color": [
+                0.3,
+                0.46,
+                0.18
+            ]
+        },
+        "kale": {
+            "name": "kale",
+            "seed": "kale_seeds",
+            "grow_h": 30.0,
+            "harvest": "kale",
+            "yield": [
+                2,
+                2
+            ],
+            "color": [
+                0.18,
+                0.32,
+                0.22
+            ]
+        },
+        "shallot": {
+            "name": "shallots",
+            "seed": "shallot",
+            "grow_h": 44.0,
+            "harvest": "shallot",
+            "yield": [
+                4,
+                6
+            ],
+            "color": [
+                0.3,
+                0.48,
+                0.16
+            ]
+        },
+        "beet": {
+            "name": "beets",
+            "seed": "beet_seeds",
+            "grow_h": 50.0,
+            "harvest": "beet",
+            "yield": [
+                2,
+                3
+            ],
+            "color": [
+                0.17,
+                0.27,
+                0.1
+            ]
+        },
+        "radish": {
+            "name": "radishes",
+            "seed": "radish_seeds",
+            "grow_h": 18.0,
+            "harvest": "radish",
+            "yield": [
+                3,
+                4
+            ],
+            "color": [
+                0.16,
+                0.32,
+                0.08
+            ],
+            "bolt_h": 20.0,
+            "bolt_seed": "radish_seeds",
+            "bolt_yield": [
+                2,
+                3
+            ]
+        }
+    },
+    "rules": {
+        "frost_kill_h": 2.0,
+        "dry_kill_h": 24.0,
+        "water_per_l": 1.2,
+        "dry_per_h": 0.045,
+        "night_growth": 0.0,
+        "glazing": 0.8,
+        "compost_mult": 1.3,
+        "compost_bonus": 1,
+        "lantern_light": 0.5
+    }
+}

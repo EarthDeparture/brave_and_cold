@@ -1,0 +1,1073 @@
+{
+  "glb_geometry_and_animation": "passed",
+  "assets": {
+    "ridge_scout_rifle": {
+      "triangles": 6758,
+      "dimensions_m": [
+        0.07949999812990427,
+        0.23600000515580177,
+        1.0938999950885773
+      ],
+      "materials": 6,
+      "embedded_images": 16,
+      "bytes": 7458156,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "ridge_scout_rifle__Pivot_Bolt",
+        "ridge_scout_rifle__Pivot_BoltHandle",
+        "ridge_scout_rifle__Socket_BoltHand",
+        "ridge_scout_rifle__Pivot_ChargingHandle",
+        "ridge_scout_rifle__Pivot_Magazine",
+        "ridge_scout_rifle__Socket_MagazineHand",
+        "ridge_scout_rifle__Pivot_MagazineRelease",
+        "ridge_scout_rifle__Pivot_Safety",
+        "ridge_scout_rifle__Pivot_SpentCase",
+        "ridge_scout_rifle__Pivot_Trigger",
+        "ridge_scout_rifle__Socket_Aim",
+        "ridge_scout_rifle__Socket_Ejection",
+        "ridge_scout_rifle__Socket_HandL",
+        "ridge_scout_rifle__Socket_HandR",
+        "ridge_scout_rifle__Socket_MagazineInsert",
+        "ridge_scout_rifle__Socket_Muzzle",
+        "ridge_scout_rifle__Socket_TriggerFinger"
+      ],
+      "animations": {
+        "idle": {
+          "duration_s": 1.2000000476837158,
+          "channels": 1,
+          "changed_channels": 1,
+          "animated_nodes": [
+            "ridge_scout_rifle"
+          ]
+        },
+        "fire": {
+          "duration_s": 0.30000001192092896,
+          "channels": 8,
+          "changed_channels": 8,
+          "animated_nodes": [
+            "ridge_scout_rifle",
+            "ridge_scout_rifle__Pivot_Bolt",
+            "ridge_scout_rifle__Pivot_ChargingHandle",
+            "ridge_scout_rifle__Pivot_SpentCase",
+            "ridge_scout_rifle__Pivot_Trigger"
+          ]
+        },
+        "cycle": {
+          "duration_s": 0.8999999761581421,
+          "channels": 5,
+          "changed_channels": 5,
+          "animated_nodes": [
+            "ridge_scout_rifle__Pivot_Bolt",
+            "ridge_scout_rifle__Pivot_ChargingHandle",
+            "ridge_scout_rifle__Pivot_SpentCase"
+          ]
+        },
+        "reload_tactical": {
+          "duration_s": 2.4000000953674316,
+          "channels": 4,
+          "changed_channels": 4,
+          "animated_nodes": [
+            "ridge_scout_rifle__Pivot_Magazine",
+            "ridge_scout_rifle__Pivot_MagazineRelease",
+            "ridge_scout_rifle__Socket_HandL"
+          ]
+        },
+        "reload_empty": {
+          "duration_s": 3.0,
+          "channels": 7,
+          "changed_channels": 7,
+          "animated_nodes": [
+            "ridge_scout_rifle__Pivot_Bolt",
+            "ridge_scout_rifle__Pivot_ChargingHandle",
+            "ridge_scout_rifle__Pivot_Magazine",
+            "ridge_scout_rifle__Pivot_MagazineRelease",
+            "ridge_scout_rifle__Socket_HandL",
+            "ridge_scout_rifle__Socket_HandR"
+          ]
+        },
+        "inspect": {
+          "duration_s": 2.0,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "ridge_scout_rifle"
+          ]
+        },
+        "equip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "ridge_scout_rifle"
+          ]
+        },
+        "unequip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "ridge_scout_rifle"
+          ]
+        }
+      }
+    },
+    "timber_bolt_carbine": {
+      "triangles": 6786,
+      "dimensions_m": [
+        0.09399999723918104,
+        0.21716930717229843,
+        0.9638999700546265
+      ],
+      "materials": 6,
+      "embedded_images": 16,
+      "bytes": 7461076,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "timber_bolt_carbine__Pivot_Bolt",
+        "timber_bolt_carbine__Pivot_BoltHandle",
+        "timber_bolt_carbine__Socket_BoltHand",
+        "timber_bolt_carbine__Pivot_ChargingHandle",
+        "timber_bolt_carbine__Pivot_Magazine",
+        "timber_bolt_carbine__Socket_MagazineHand",
+        "timber_bolt_carbine__Pivot_MagazineRelease",
+        "timber_bolt_carbine__Pivot_Safety",
+        "timber_bolt_carbine__Pivot_SpentCase",
+        "timber_bolt_carbine__Pivot_Trigger",
+        "timber_bolt_carbine__Socket_Aim",
+        "timber_bolt_carbine__Socket_Ejection",
+        "timber_bolt_carbine__Socket_HandL",
+        "timber_bolt_carbine__Socket_HandR",
+        "timber_bolt_carbine__Socket_MagazineInsert",
+        "timber_bolt_carbine__Socket_Muzzle",
+        "timber_bolt_carbine__Socket_TriggerFinger"
+      ],
+      "animations": {
+        "idle": {
+          "duration_s": 1.2000000476837158,
+          "channels": 1,
+          "changed_channels": 1,
+          "animated_nodes": [
+            "timber_bolt_carbine"
+          ]
+        },
+        "fire": {
+          "duration_s": 0.30000001192092896,
+          "channels": 3,
+          "changed_channels": 3,
+          "animated_nodes": [
+            "timber_bolt_carbine",
+            "timber_bolt_carbine__Pivot_Trigger"
+          ]
+        },
+        "cycle": {
+          "duration_s": 0.8999999761581421,
+          "channels": 6,
+          "changed_channels": 6,
+          "animated_nodes": [
+            "timber_bolt_carbine__Pivot_Bolt",
+            "timber_bolt_carbine__Pivot_BoltHandle",
+            "timber_bolt_carbine__Pivot_SpentCase",
+            "timber_bolt_carbine__Socket_HandR"
+          ]
+        },
+        "reload_tactical": {
+          "duration_s": 2.4000000953674316,
+          "channels": 4,
+          "changed_channels": 4,
+          "animated_nodes": [
+            "timber_bolt_carbine__Pivot_Magazine",
+            "timber_bolt_carbine__Pivot_MagazineRelease",
+            "timber_bolt_carbine__Socket_HandL"
+          ]
+        },
+        "reload_empty": {
+          "duration_s": 3.0,
+          "channels": 8,
+          "changed_channels": 8,
+          "animated_nodes": [
+            "timber_bolt_carbine__Pivot_Bolt",
+            "timber_bolt_carbine__Pivot_BoltHandle",
+            "timber_bolt_carbine__Pivot_ChargingHandle",
+            "timber_bolt_carbine__Pivot_Magazine",
+            "timber_bolt_carbine__Pivot_MagazineRelease",
+            "timber_bolt_carbine__Socket_HandL",
+            "timber_bolt_carbine__Socket_HandR"
+          ]
+        },
+        "inspect": {
+          "duration_s": 2.0,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "timber_bolt_carbine"
+          ]
+        },
+        "equip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "timber_bolt_carbine"
+          ]
+        },
+        "unequip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "timber_bolt_carbine"
+          ]
+        }
+      }
+    },
+    "ranger_box_rifle": {
+      "triangles": 6606,
+      "dimensions_m": [
+        0.07949999812990427,
+        0.2527155801653862,
+        1.0239000022411346
+      ],
+      "materials": 6,
+      "embedded_images": 16,
+      "bytes": 7447516,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "ranger_box_rifle__Pivot_Bolt",
+        "ranger_box_rifle__Pivot_BoltHandle",
+        "ranger_box_rifle__Socket_BoltHand",
+        "ranger_box_rifle__Pivot_ChargingHandle",
+        "ranger_box_rifle__Pivot_Magazine",
+        "ranger_box_rifle__Socket_MagazineHand",
+        "ranger_box_rifle__Pivot_MagazineRelease",
+        "ranger_box_rifle__Pivot_Safety",
+        "ranger_box_rifle__Pivot_SpentCase",
+        "ranger_box_rifle__Pivot_Trigger",
+        "ranger_box_rifle__Socket_Aim",
+        "ranger_box_rifle__Socket_Ejection",
+        "ranger_box_rifle__Socket_HandL",
+        "ranger_box_rifle__Socket_HandR",
+        "ranger_box_rifle__Socket_MagazineInsert",
+        "ranger_box_rifle__Socket_Muzzle",
+        "ranger_box_rifle__Socket_TriggerFinger"
+      ],
+      "animations": {
+        "idle": {
+          "duration_s": 1.2000000476837158,
+          "channels": 1,
+          "changed_channels": 1,
+          "animated_nodes": [
+            "ranger_box_rifle"
+          ]
+        },
+        "fire": {
+          "duration_s": 0.30000001192092896,
+          "channels": 8,
+          "changed_channels": 8,
+          "animated_nodes": [
+            "ranger_box_rifle",
+            "ranger_box_rifle__Pivot_Bolt",
+            "ranger_box_rifle__Pivot_ChargingHandle",
+            "ranger_box_rifle__Pivot_SpentCase",
+            "ranger_box_rifle__Pivot_Trigger"
+          ]
+        },
+        "cycle": {
+          "duration_s": 0.8999999761581421,
+          "channels": 5,
+          "changed_channels": 5,
+          "animated_nodes": [
+            "ranger_box_rifle__Pivot_Bolt",
+            "ranger_box_rifle__Pivot_ChargingHandle",
+            "ranger_box_rifle__Pivot_SpentCase"
+          ]
+        },
+        "reload_tactical": {
+          "duration_s": 2.4000000953674316,
+          "channels": 4,
+          "changed_channels": 4,
+          "animated_nodes": [
+            "ranger_box_rifle__Pivot_Magazine",
+            "ranger_box_rifle__Pivot_MagazineRelease",
+            "ranger_box_rifle__Socket_HandL"
+          ]
+        },
+        "reload_empty": {
+          "duration_s": 3.0,
+          "channels": 7,
+          "changed_channels": 7,
+          "animated_nodes": [
+            "ranger_box_rifle__Pivot_Bolt",
+            "ranger_box_rifle__Pivot_ChargingHandle",
+            "ranger_box_rifle__Pivot_Magazine",
+            "ranger_box_rifle__Pivot_MagazineRelease",
+            "ranger_box_rifle__Socket_HandL",
+            "ranger_box_rifle__Socket_HandR"
+          ]
+        },
+        "inspect": {
+          "duration_s": 2.0,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "ranger_box_rifle"
+          ]
+        },
+        "equip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "ranger_box_rifle"
+          ]
+        },
+        "unequip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "ranger_box_rifle"
+          ]
+        }
+      }
+    },
+    "brush_lever_rifle": {
+      "triangles": 7050,
+      "dimensions_m": [
+        0.0720005375736589,
+        0.2688649272673601,
+        0.9739000201225281
+      ],
+      "materials": 6,
+      "embedded_images": 16,
+      "bytes": 7469940,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "brush_lever_rifle__Pivot_Bolt",
+        "brush_lever_rifle__Pivot_BoltHandle",
+        "brush_lever_rifle__Socket_BoltHand",
+        "brush_lever_rifle__Pivot_ChargingHandle",
+        "brush_lever_rifle__Pivot_InsertRound",
+        "brush_lever_rifle__Pivot_Lever",
+        "brush_lever_rifle__Pivot_LoadingGate",
+        "brush_lever_rifle__Pivot_MagazineRelease",
+        "brush_lever_rifle__Pivot_Safety",
+        "brush_lever_rifle__Pivot_SpentCase",
+        "brush_lever_rifle__Pivot_Trigger",
+        "brush_lever_rifle__Socket_Aim",
+        "brush_lever_rifle__Socket_Ejection",
+        "brush_lever_rifle__Socket_HandL",
+        "brush_lever_rifle__Socket_HandR",
+        "brush_lever_rifle__Socket_LoadingGate",
+        "brush_lever_rifle__Socket_MagazineInsert",
+        "brush_lever_rifle__Socket_Muzzle",
+        "brush_lever_rifle__Socket_TriggerFinger"
+      ],
+      "animations": {
+        "idle": {
+          "duration_s": 1.2000000476837158,
+          "channels": 1,
+          "changed_channels": 1,
+          "animated_nodes": [
+            "brush_lever_rifle"
+          ]
+        },
+        "fire": {
+          "duration_s": 0.30000001192092896,
+          "channels": 3,
+          "changed_channels": 3,
+          "animated_nodes": [
+            "brush_lever_rifle",
+            "brush_lever_rifle__Pivot_Trigger"
+          ]
+        },
+        "cycle": {
+          "duration_s": 0.8999999761581421,
+          "channels": 7,
+          "changed_channels": 7,
+          "animated_nodes": [
+            "brush_lever_rifle__Pivot_Bolt",
+            "brush_lever_rifle__Pivot_Lever",
+            "brush_lever_rifle__Pivot_SpentCase",
+            "brush_lever_rifle__Socket_HandR"
+          ]
+        },
+        "reload_start": {
+          "duration_s": 0.46666666865348816,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "brush_lever_rifle",
+            "brush_lever_rifle__Socket_HandL"
+          ]
+        },
+        "reload_insert": {
+          "duration_s": 0.8999999761581421,
+          "channels": 4,
+          "changed_channels": 4,
+          "animated_nodes": [
+            "brush_lever_rifle__Pivot_InsertRound",
+            "brush_lever_rifle__Pivot_LoadingGate",
+            "brush_lever_rifle__Socket_HandL"
+          ]
+        },
+        "reload_end": {
+          "duration_s": 0.46666666865348816,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "brush_lever_rifle",
+            "brush_lever_rifle__Socket_HandL"
+          ]
+        },
+        "inspect": {
+          "duration_s": 2.0,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "brush_lever_rifle"
+          ]
+        },
+        "equip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "brush_lever_rifle"
+          ]
+        },
+        "unequip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "brush_lever_rifle"
+          ]
+        }
+      }
+    },
+    "frontier_vented_rifle": {
+      "triangles": 7462,
+      "dimensions_m": [
+        0.08049999829381704,
+        0.23400000110268593,
+        1.0538999736309052
+      ],
+      "materials": 6,
+      "embedded_images": 16,
+      "bytes": 7509756,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "frontier_vented_rifle__Pivot_Bolt",
+        "frontier_vented_rifle__Pivot_BoltHandle",
+        "frontier_vented_rifle__Socket_BoltHand",
+        "frontier_vented_rifle__Pivot_ChargingHandle",
+        "frontier_vented_rifle__Pivot_Magazine",
+        "frontier_vented_rifle__Socket_MagazineHand",
+        "frontier_vented_rifle__Pivot_MagazineRelease",
+        "frontier_vented_rifle__Pivot_Safety",
+        "frontier_vented_rifle__Pivot_SpentCase",
+        "frontier_vented_rifle__Pivot_Trigger",
+        "frontier_vented_rifle__Socket_Aim",
+        "frontier_vented_rifle__Socket_Ejection",
+        "frontier_vented_rifle__Socket_HandL",
+        "frontier_vented_rifle__Socket_HandR",
+        "frontier_vented_rifle__Socket_MagazineInsert",
+        "frontier_vented_rifle__Socket_Muzzle",
+        "frontier_vented_rifle__Socket_TriggerFinger"
+      ],
+      "animations": {
+        "idle": {
+          "duration_s": 1.2000000476837158,
+          "channels": 1,
+          "changed_channels": 1,
+          "animated_nodes": [
+            "frontier_vented_rifle"
+          ]
+        },
+        "fire": {
+          "duration_s": 0.30000001192092896,
+          "channels": 8,
+          "changed_channels": 8,
+          "animated_nodes": [
+            "frontier_vented_rifle",
+            "frontier_vented_rifle__Pivot_Bolt",
+            "frontier_vented_rifle__Pivot_ChargingHandle",
+            "frontier_vented_rifle__Pivot_SpentCase",
+            "frontier_vented_rifle__Pivot_Trigger"
+          ]
+        },
+        "cycle": {
+          "duration_s": 0.8999999761581421,
+          "channels": 5,
+          "changed_channels": 5,
+          "animated_nodes": [
+            "frontier_vented_rifle__Pivot_Bolt",
+            "frontier_vented_rifle__Pivot_ChargingHandle",
+            "frontier_vented_rifle__Pivot_SpentCase"
+          ]
+        },
+        "reload_tactical": {
+          "duration_s": 2.4000000953674316,
+          "channels": 4,
+          "changed_channels": 4,
+          "animated_nodes": [
+            "frontier_vented_rifle__Pivot_Magazine",
+            "frontier_vented_rifle__Pivot_MagazineRelease",
+            "frontier_vented_rifle__Socket_HandL"
+          ]
+        },
+        "reload_empty": {
+          "duration_s": 3.0,
+          "channels": 7,
+          "changed_channels": 7,
+          "animated_nodes": [
+            "frontier_vented_rifle__Pivot_Bolt",
+            "frontier_vented_rifle__Pivot_ChargingHandle",
+            "frontier_vented_rifle__Pivot_Magazine",
+            "frontier_vented_rifle__Pivot_MagazineRelease",
+            "frontier_vented_rifle__Socket_HandL",
+            "frontier_vented_rifle__Socket_HandR"
+          ]
+        },
+        "inspect": {
+          "duration_s": 2.0,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "frontier_vented_rifle"
+          ]
+        },
+        "equip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "frontier_vented_rifle"
+          ]
+        },
+        "unequip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "frontier_vented_rifle"
+          ]
+        }
+      }
+    },
+    "north_service_rifle": {
+      "triangles": 7422,
+      "dimensions_m": [
+        0.07949999812990427,
+        0.2816256918013096,
+        1.0639000236988068
+      ],
+      "materials": 6,
+      "embedded_images": 16,
+      "bytes": 7489456,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "north_service_rifle__Pivot_Bolt",
+        "north_service_rifle__Pivot_BoltHandle",
+        "north_service_rifle__Socket_BoltHand",
+        "north_service_rifle__Pivot_ChargingHandle",
+        "north_service_rifle__Pivot_Magazine",
+        "north_service_rifle__Socket_MagazineHand",
+        "north_service_rifle__Pivot_MagazineRelease",
+        "north_service_rifle__Pivot_Safety",
+        "north_service_rifle__Pivot_SpentCase",
+        "north_service_rifle__Pivot_Trigger",
+        "north_service_rifle__Socket_Aim",
+        "north_service_rifle__Socket_Ejection",
+        "north_service_rifle__Socket_HandL",
+        "north_service_rifle__Socket_HandR",
+        "north_service_rifle__Socket_MagazineInsert",
+        "north_service_rifle__Socket_Muzzle",
+        "north_service_rifle__Socket_TriggerFinger"
+      ],
+      "animations": {
+        "idle": {
+          "duration_s": 1.2000000476837158,
+          "channels": 1,
+          "changed_channels": 1,
+          "animated_nodes": [
+            "north_service_rifle"
+          ]
+        },
+        "fire": {
+          "duration_s": 0.30000001192092896,
+          "channels": 8,
+          "changed_channels": 8,
+          "animated_nodes": [
+            "north_service_rifle",
+            "north_service_rifle__Pivot_Bolt",
+            "north_service_rifle__Pivot_ChargingHandle",
+            "north_service_rifle__Pivot_SpentCase",
+            "north_service_rifle__Pivot_Trigger"
+          ]
+        },
+        "cycle": {
+          "duration_s": 0.8999999761581421,
+          "channels": 5,
+          "changed_channels": 5,
+          "animated_nodes": [
+            "north_service_rifle__Pivot_Bolt",
+            "north_service_rifle__Pivot_ChargingHandle",
+            "north_service_rifle__Pivot_SpentCase"
+          ]
+        },
+        "reload_tactical": {
+          "duration_s": 2.4000000953674316,
+          "channels": 4,
+          "changed_channels": 4,
+          "animated_nodes": [
+            "north_service_rifle__Pivot_Magazine",
+            "north_service_rifle__Pivot_MagazineRelease",
+            "north_service_rifle__Socket_HandL"
+          ]
+        },
+        "reload_empty": {
+          "duration_s": 3.0,
+          "channels": 7,
+          "changed_channels": 7,
+          "animated_nodes": [
+            "north_service_rifle__Pivot_Bolt",
+            "north_service_rifle__Pivot_ChargingHandle",
+            "north_service_rifle__Pivot_Magazine",
+            "north_service_rifle__Pivot_MagazineRelease",
+            "north_service_rifle__Socket_HandL",
+            "north_service_rifle__Socket_HandR"
+          ]
+        },
+        "inspect": {
+          "duration_s": 2.0,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "north_service_rifle"
+          ]
+        },
+        "equip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "north_service_rifle"
+          ]
+        },
+        "unequip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "north_service_rifle"
+          ]
+        }
+      }
+    },
+    "compact_patrol_rifle": {
+      "triangles": 6982,
+      "dimensions_m": [
+        0.08221555905129704,
+        0.2920735366642475,
+        0.8770000031217933
+      ],
+      "materials": 6,
+      "embedded_images": 16,
+      "bytes": 7494744,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "compact_patrol_rifle__Pivot_Bolt",
+        "compact_patrol_rifle__Pivot_BoltHandle",
+        "compact_patrol_rifle__Socket_BoltHand",
+        "compact_patrol_rifle__Pivot_ChargingHandle",
+        "compact_patrol_rifle__Pivot_FoldingStock",
+        "compact_patrol_rifle__Pivot_Magazine",
+        "compact_patrol_rifle__Socket_MagazineHand",
+        "compact_patrol_rifle__Pivot_MagazineRelease",
+        "compact_patrol_rifle__Pivot_Safety",
+        "compact_patrol_rifle__Pivot_SpentCase",
+        "compact_patrol_rifle__Pivot_Trigger",
+        "compact_patrol_rifle__Socket_Aim",
+        "compact_patrol_rifle__Socket_Ejection",
+        "compact_patrol_rifle__Socket_HandL",
+        "compact_patrol_rifle__Socket_HandR",
+        "compact_patrol_rifle__Socket_MagazineInsert",
+        "compact_patrol_rifle__Socket_Muzzle",
+        "compact_patrol_rifle__Socket_TriggerFinger"
+      ],
+      "animations": {
+        "idle": {
+          "duration_s": 1.2000000476837158,
+          "channels": 1,
+          "changed_channels": 1,
+          "animated_nodes": [
+            "compact_patrol_rifle"
+          ]
+        },
+        "fire": {
+          "duration_s": 0.30000001192092896,
+          "channels": 8,
+          "changed_channels": 8,
+          "animated_nodes": [
+            "compact_patrol_rifle",
+            "compact_patrol_rifle__Pivot_Bolt",
+            "compact_patrol_rifle__Pivot_ChargingHandle",
+            "compact_patrol_rifle__Pivot_SpentCase",
+            "compact_patrol_rifle__Pivot_Trigger"
+          ]
+        },
+        "cycle": {
+          "duration_s": 0.8999999761581421,
+          "channels": 5,
+          "changed_channels": 5,
+          "animated_nodes": [
+            "compact_patrol_rifle__Pivot_Bolt",
+            "compact_patrol_rifle__Pivot_ChargingHandle",
+            "compact_patrol_rifle__Pivot_SpentCase"
+          ]
+        },
+        "reload_tactical": {
+          "duration_s": 2.4000000953674316,
+          "channels": 4,
+          "changed_channels": 4,
+          "animated_nodes": [
+            "compact_patrol_rifle__Pivot_Magazine",
+            "compact_patrol_rifle__Pivot_MagazineRelease",
+            "compact_patrol_rifle__Socket_HandL"
+          ]
+        },
+        "reload_empty": {
+          "duration_s": 3.0,
+          "channels": 7,
+          "changed_channels": 7,
+          "animated_nodes": [
+            "compact_patrol_rifle__Pivot_Bolt",
+            "compact_patrol_rifle__Pivot_ChargingHandle",
+            "compact_patrol_rifle__Pivot_Magazine",
+            "compact_patrol_rifle__Pivot_MagazineRelease",
+            "compact_patrol_rifle__Socket_HandL",
+            "compact_patrol_rifle__Socket_HandR"
+          ]
+        },
+        "inspect": {
+          "duration_s": 2.0,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "compact_patrol_rifle"
+          ]
+        },
+        "equip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "compact_patrol_rifle"
+          ]
+        },
+        "unequip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "compact_patrol_rifle"
+          ]
+        },
+        "stock_fold": {
+          "duration_s": 0.6000000238418579,
+          "channels": 1,
+          "changed_channels": 1,
+          "animated_nodes": [
+            "compact_patrol_rifle__Pivot_FoldingStock"
+          ]
+        },
+        "stock_unfold": {
+          "duration_s": 0.6000000238418579,
+          "channels": 1,
+          "changed_channels": 1,
+          "animated_nodes": [
+            "compact_patrol_rifle__Pivot_FoldingStock"
+          ]
+        }
+      }
+    },
+    "expedition_rifle": {
+      "triangles": 7838,
+      "dimensions_m": [
+        0.07949999812990427,
+        0.2816256918013096,
+        1.113899976015091
+      ],
+      "materials": 6,
+      "embedded_images": 16,
+      "bytes": 7510328,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "expedition_rifle__Pivot_Bolt",
+        "expedition_rifle__Pivot_BoltHandle",
+        "expedition_rifle__Socket_BoltHand",
+        "expedition_rifle__Pivot_ChargingHandle",
+        "expedition_rifle__Pivot_Magazine",
+        "expedition_rifle__Socket_MagazineHand",
+        "expedition_rifle__Pivot_MagazineRelease",
+        "expedition_rifle__Pivot_Safety",
+        "expedition_rifle__Pivot_SpentCase",
+        "expedition_rifle__Pivot_Trigger",
+        "expedition_rifle__Socket_Aim",
+        "expedition_rifle__Socket_Ejection",
+        "expedition_rifle__Socket_HandL",
+        "expedition_rifle__Socket_HandR",
+        "expedition_rifle__Socket_MagazineInsert",
+        "expedition_rifle__Socket_Muzzle",
+        "expedition_rifle__Socket_TriggerFinger"
+      ],
+      "animations": {
+        "idle": {
+          "duration_s": 1.2000000476837158,
+          "channels": 1,
+          "changed_channels": 1,
+          "animated_nodes": [
+            "expedition_rifle"
+          ]
+        },
+        "fire": {
+          "duration_s": 0.30000001192092896,
+          "channels": 8,
+          "changed_channels": 8,
+          "animated_nodes": [
+            "expedition_rifle",
+            "expedition_rifle__Pivot_Bolt",
+            "expedition_rifle__Pivot_ChargingHandle",
+            "expedition_rifle__Pivot_SpentCase",
+            "expedition_rifle__Pivot_Trigger"
+          ]
+        },
+        "cycle": {
+          "duration_s": 0.8999999761581421,
+          "channels": 5,
+          "changed_channels": 5,
+          "animated_nodes": [
+            "expedition_rifle__Pivot_Bolt",
+            "expedition_rifle__Pivot_ChargingHandle",
+            "expedition_rifle__Pivot_SpentCase"
+          ]
+        },
+        "reload_tactical": {
+          "duration_s": 2.4000000953674316,
+          "channels": 4,
+          "changed_channels": 4,
+          "animated_nodes": [
+            "expedition_rifle__Pivot_Magazine",
+            "expedition_rifle__Pivot_MagazineRelease",
+            "expedition_rifle__Socket_HandL"
+          ]
+        },
+        "reload_empty": {
+          "duration_s": 3.0,
+          "channels": 7,
+          "changed_channels": 7,
+          "animated_nodes": [
+            "expedition_rifle__Pivot_Bolt",
+            "expedition_rifle__Pivot_ChargingHandle",
+            "expedition_rifle__Pivot_Magazine",
+            "expedition_rifle__Pivot_MagazineRelease",
+            "expedition_rifle__Socket_HandL",
+            "expedition_rifle__Socket_HandR"
+          ]
+        },
+        "inspect": {
+          "duration_s": 2.0,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "expedition_rifle"
+          ]
+        },
+        "equip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "expedition_rifle"
+          ]
+        },
+        "unequip": {
+          "duration_s": 0.5333333611488342,
+          "channels": 2,
+          "changed_channels": 2,
+          "animated_nodes": [
+            "expedition_rifle"
+          ]
+        }
+      }
+    },
+    "ridge_scout_rifle_spare_magazine": {
+      "triangles": 972,
+      "dimensions_m": [
+        0.039000000804662704,
+        0.11371557181701064,
+        0.08397070690989494
+      ],
+      "materials": 3,
+      "embedded_images": 9,
+      "bytes": 4502536,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "ridge_scout_rifle_spare_magazine__Socket_Hand",
+        "ridge_scout_rifle_spare_magazine__Socket_Insertion"
+      ],
+      "animations": {}
+    },
+    "timber_bolt_carbine_spare_magazine": {
+      "triangles": 972,
+      "dimensions_m": [
+        0.039000000804662704,
+        0.0987155712209642,
+        0.08388685807585716
+      ],
+      "materials": 3,
+      "embedded_images": 9,
+      "bytes": 4502488,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "timber_bolt_carbine_spare_magazine__Socket_Hand",
+        "timber_bolt_carbine_spare_magazine__Socket_Insertion"
+      ],
+      "animations": {}
+    },
+    "ranger_box_rifle_spare_magazine": {
+      "triangles": 972,
+      "dimensions_m": [
+        0.039000000804662704,
+        0.14371557300910354,
+        0.08408492431044579
+      ],
+      "materials": 3,
+      "embedded_images": 9,
+      "bytes": 4502588,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "ranger_box_rifle_spare_magazine__Socket_Hand",
+        "ranger_box_rifle_spare_magazine__Socket_Insertion"
+      ],
+      "animations": {}
+    },
+    "frontier_vented_rifle_spare_magazine": {
+      "triangles": 972,
+      "dimensions_m": [
+        0.039000000804662704,
+        0.11371557181701064,
+        0.08397070690989494
+      ],
+      "materials": 3,
+      "embedded_images": 9,
+      "bytes": 4502568,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "frontier_vented_rifle_spare_magazine__Socket_Hand",
+        "frontier_vented_rifle_spare_magazine__Socket_Insertion"
+      ],
+      "animations": {}
+    },
+    "north_service_rifle_spare_magazine": {
+      "triangles": 972,
+      "dimensions_m": [
+        0.039000000804662704,
+        0.1337155750952661,
+        0.09382713213562965
+      ],
+      "materials": 3,
+      "embedded_images": 9,
+      "bytes": 4502424,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "north_service_rifle_spare_magazine__Socket_Hand",
+        "north_service_rifle_spare_magazine__Socket_Insertion"
+      ],
+      "animations": {}
+    },
+    "compact_patrol_rifle_spare_magazine": {
+      "triangles": 972,
+      "dimensions_m": [
+        0.039000000804662704,
+        0.1637155613861978,
+        0.09395170584321022
+      ],
+      "materials": 3,
+      "embedded_images": 9,
+      "bytes": 4502176,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "compact_patrol_rifle_spare_magazine__Socket_Hand",
+        "compact_patrol_rifle_spare_magazine__Socket_Insertion"
+      ],
+      "animations": {}
+    },
+    "expedition_rifle_spare_magazine": {
+      "triangles": 972,
+      "dimensions_m": [
+        0.039000000804662704,
+        0.1637155613861978,
+        0.09395170584321022
+      ],
+      "materials": 3,
+      "embedded_images": 9,
+      "bytes": 4502144,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "expedition_rifle_spare_magazine__Socket_Hand",
+        "expedition_rifle_spare_magazine__Socket_Insertion"
+      ],
+      "animations": {}
+    },
+    "visual_rifle_round": {
+      "triangles": 264,
+      "dimensions_m": [
+        0.010799997594356278,
+        0.01079999893724896,
+        0.04970000157142211
+      ],
+      "materials": 2,
+      "embedded_images": 6,
+      "bytes": 2420452,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "visual_rifle_round__Socket_Pickup"
+      ],
+      "animations": {}
+    },
+    "visual_spent_case": {
+      "triangles": 204,
+      "dimensions_m": [
+        0.010799997594356278,
+        0.01079999893724896,
+        0.03470000428535934
+      ],
+      "materials": 1,
+      "embedded_images": 3,
+      "bytes": 1212760,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "visual_spent_case__Socket_Pickup"
+      ],
+      "animations": {}
+    },
+    "round_loading_strip": {
+      "triangles": 1428,
+      "dimensions_m": [
+        0.05700000002980232,
+        0.010800001117478275,
+        0.05350000225007534
+      ],
+      "materials": 2,
+      "embedded_images": 6,
+      "bytes": 2461728,
+      "degenerate_triangles": 0,
+      "nodes": [
+        "round_loading_strip__Socket_Hand"
+      ],
+      "animations": {}
+    }
+  }
+}

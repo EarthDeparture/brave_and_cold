@@ -1,0 +1,70 @@
+{
+  "runtime": "86a5a82",
+  "native_sha256": "25b3c33f10624aae23e62ed169b6f46db6b7709233ceef511b5bb4db283eb436",
+  "near_glb_sha256": "cd5a97f622cea3b7cf367ddf705512cb8035e689258f62c6d8e7b020f1400c84",
+  "proxy_glb_sha256": "98cab1b23472969d427d70aefa14a7ce1ab70792efbe6b743fa0d9280fdc94bc",
+  "captures": {
+    "clinic-settled.png": "d7883a8def0b0bc2262bccfbacec98ed6ea7241ff5c5a57866af486c4ffdf31e",
+    "clinic-worker.png": "b5c5844580ba81ad18fea5e78343babfafb13891075b0ba90cd89b3a0019d329",
+    "comparison-face.png": "925825e8f28178a3625064d079d50613ee9562eb38d71df68ba544ad32fb4578",
+    "comparison-rest.png": "ba6b798e5d0b358064e71237ee4f71c51597c51d9244ab1f7ab87fdaa5e2bab9",
+    "hammer-impact.png": "a2675158c363556a2ded02a6fe41d675e7aa53468f8ac17f1b3d068905d2eeb2",
+    "walking-comparison.gif": "5cc14ed9ee8835e5cb79661d31625c297baca24f860b317a0847d727c74bdbbf"
+  },
+  "tests": {
+    "gameplay_and_pose_checks": 474,
+    "asset_checks": 55,
+    "failures": 0,
+    "suites": [
+      {
+        "suite": "infected_skin",
+        "checks": 46,
+        "failures": 0,
+        "log_sha256": "b8d330aefa0f03b7f934361989c662899cb60df770d5103f3418dd954514f9ea"
+      },
+      {
+        "suite": "infected_gait",
+        "checks": 50,
+        "failures": 0,
+        "log_sha256": "7f0d63dc1dfb04a5e7bef890a7a3a87b194f9b544a68dd983764ee92a117a0a7"
+      },
+      {
+        "suite": "viewmodel",
+        "checks": 78,
+        "failures": 0,
+        "log_sha256": "09f8eb1dbfc8c129e25553d33d5286bc56869b4ed3cd37311c91ed8456aead74"
+      },
+      {
+        "suite": "first_week_collapse",
+        "checks": 192,
+        "failures": 0,
+        "log_sha256": "bf5c54600e68163d6bdc0b44411bad9aa50d74fade8cb801da00256c2272d0a3"
+      },
+      {
+        "suite": "first_week_core",
+        "checks": 33,
+        "failures": 0,
+        "log_sha256": "282bc3343f313e869f91c74de3513d959d2212decf72af70e71cc78e6e516657"
+      },
+      {
+        "suite": "opening_pacing",
+        "checks": 51,
+        "failures": 0,
+        "log_sha256": "5e19f0f0ade650460381ba8dcf2b158f97b7895a97f4ee316f1f4b08d1327ae9"
+      },
+      {
+        "suite": "encounter_presentation",
+        "checks": 15,
+        "failures": 0,
+        "log_sha256": "32c1f0b6f4252d168d44e88c94719a3f3a615387c9572a897737fa2721f165ae"
+      },
+      {
+        "suite": "population_reserve",
+        "checks": 9,
+        "failures": 0,
+        "log_sha256": "b5e7637fddf8a5bac4dae81e54963e76294f208351078dbcc03980955d020969"
+      }
+    ]
+  },
+  "scope": "Original local Blender assets, actual-byte validation and Godot GPU captures. No human play acceptance, canonical package or sealed renderer telemetry claimed."
+}

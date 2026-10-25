@@ -1,0 +1,21 @@
+{
+  "winter_infected": {
+    "triangles": 13536,
+    "bytes": 562320,
+    "sha256": "4c54800b968f7935eebdde8814e9c63fa5cf8f7782f5a20341bef783a4090b62",
+    "source": "tools/blender/generated/infected/winter_infected.blend",
+    "source_sha256": "db607ec3605a11f1aad38011873a20741079c8cd2351ca04f9dec18b45548237",
+    "mesh_nodes": 21
+  },
+  "proxy": {
+    "triangles": 2163,
+    "sha256": "b1a0e371aa9d4997ccebf2e04e14e6962f9f9214012f1323c615606662e8ae3b"
+  },
+  "provenance": {
+    "license": "Original project-authored geometry; original project canvas graphic",
+    "blender": "5.2.2 LTS",
+    "rig": "Node joints / shoulder, elbow, hip, knee",
+    "units": "metres",
+    "generator_sha256": "07e3d86f3942610ba99837d5f2100a8e6d13c68d0bb1524b651cd73d3f2d1aee"
+  }
+}

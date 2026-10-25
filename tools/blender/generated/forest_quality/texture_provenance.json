@@ -1,0 +1,24 @@
+{
+  "origin": "Original Pillow botanical paint",
+  "seed": 71739,
+  "snow_seed": 71741,
+  "dimensions": [
+    1024,
+    1024
+  ],
+  "sha256": "8ab8be2a8c30ee0e66613c430eba23e9808444a377b3bb80bae153c6cc2284bf",
+  "snow_sha256": "3320db6b7321793bf86abcd85540876130c2f7a38a56f054a149c4913d238446",
+  "atlas_sha256": "6a3a2ec588527ecd3116629f3fd49a8c69aedc701d8182765b2a68696a59ef44",
+  "atlas_dimensions": [
+    2048,
+    1024
+  ],
+  "bark": {
+    "seed": 71740,
+    "origin": "Original non-periodic conifer fissures; existing project-authored pale birch half retained",
+    "files": {
+      "winter_bark.png": "5c372433d8ead40a9229f2eff064fafb49b1853b585303e191d48af0af434dbe",
+      "winter_bark_normal.png": "4ab6968438581eb625456661ac38ead205248801bb1fd12cbe8f503a8dd3eb4e"
+    }
+  }
+}

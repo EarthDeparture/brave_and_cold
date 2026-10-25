@@ -1,0 +1,281 @@
+{
+  "scope": "Local original Blender derivative, actual-byte/engine-pose validation and direct renders; no canonical package, sealed run or human play acceptance",
+  "start_commit": "15f0b46",
+  "gameplay_checks": 558,
+  "asset_checks": 142,
+  "suites": [
+    {
+      "suite": "resident-presence-final-resident_presence",
+      "checks": 33,
+      "failures": 0,
+      "log_sha256": "c76e99b69effb226d7e3ee7162f3da36cb92ff583fd29c4ac2acf3073da2c93c"
+    },
+    {
+      "suite": "resident-presence-final-town_life",
+      "checks": 51,
+      "failures": 0,
+      "log_sha256": "ae1c94488ef506af867a6ad26ee2fedcae081548441722d60a27fabfbce2e303"
+    },
+    {
+      "suite": "resident-presence-final-store_support",
+      "checks": 35,
+      "failures": 0,
+      "log_sha256": "46ad2d0fdd06ad65c835ae1074ff4b6b2d2218d722f4284102ba53b5efdfda5e"
+    },
+    {
+      "suite": "resident-presence-final-first_week_collapse",
+      "checks": 193,
+      "failures": 0,
+      "log_sha256": "a9fd9af855a01fadac6387b4bc8f5b077f65134df30ec519e9729baccd9dc371"
+    },
+    {
+      "suite": "resident-presence-skin-rowan",
+      "checks": 49,
+      "failures": 0,
+      "log_sha256": "3f604f61960c74866375591489a43c42ca299e7a7ac40fb2e1573dd781f425d9"
+    },
+    {
+      "suite": "resident-presence-skin-sam",
+      "checks": 49,
+      "failures": 0,
+      "log_sha256": "21bfa3691413ccaac1c83d24a0258082ad38f184505bb5870eeec4324a280cf8"
+    },
+    {
+      "suite": "resident-presence-skin-lin",
+      "checks": 49,
+      "failures": 0,
+      "log_sha256": "7f3396acf94fd57b618c7878678276ca8d4ff73b0f60c40a923982d8268079a4"
+    },
+    {
+      "suite": "resident-presence-skin-infected_preview",
+      "checks": 49,
+      "failures": 0,
+      "log_sha256": "d520f7903c3cd86933404886bd7cd7924ad680b9cee96ece320961c4fc76af57"
+    },
+    {
+      "suite": "resident-presence-gait",
+      "checks": 50,
+      "failures": 0,
+      "log_sha256": "21e7a8ce83836cad321c209e03b80966b9bb118fbc831946168ff7d2e786dd6b"
+    }
+  ],
+  "captures": {
+    "diagnostic-closed.png": {
+      "source_dimensions": [
+        720,
+        720
+      ],
+      "source_sha256": "6125f86f8b3b4f25e8e354890ec261c8973e1b9aa1977d4b3a216261d1ed410e",
+      "review_sha256": "d2322338e7cadeb45bad15ec1ff8f50702ee7189481225e32cac3ff9e2c690c9"
+    },
+    "diagnostic-eye-material-candidate.png": {
+      "source_dimensions": [
+        720,
+        720
+      ],
+      "source_sha256": "a0b520fd080859aa007efbaccc2f4af4836ca034750e288504b13b4a248f3e01",
+      "review_sha256": "1367b0a50176915b6df457ce5e8af381ee8f1e8a2087323d973e63838d0ee8ef"
+    },
+    "diagnostic-gaze-left.png": {
+      "source_dimensions": [
+        720,
+        720
+      ],
+      "source_sha256": "44b7127c9b504c3243f2879c9785cf3869293c65ebcb3de6b6bbc1c20401fb80",
+      "review_sha256": "0897900ae093f057d08a8d94756d25946fa30aa73d3219140696775fed2a6f2c"
+    },
+    "diagnostic-gaze-right.png": {
+      "source_dimensions": [
+        720,
+        720
+      ],
+      "source_sha256": "61385ae51653407197991b966598359b97d20115fb1a34045ac203b2d6f3c096",
+      "review_sha256": "8667d0afa6949c0f5aef52b49e89e432721efe56a598c5513d104bd54ac82fb7"
+    },
+    "diagnostic-gaze-up.png": {
+      "source_dimensions": [
+        720,
+        720
+      ],
+      "source_sha256": "d288d335bfa733c076347a917a43e6e83741576fb7ecfae217481cc94a7eb103",
+      "review_sha256": "9cdb629cc554e9b4f604044915995256ac5797fdfd3bb7870a4ed1ecb0ed7819"
+    },
+    "diagnostic-half.png": {
+      "source_dimensions": [
+        720,
+        720
+      ],
+      "source_sha256": "87074ab6244c9b7bffac7da81167eb8765913a0559e4e7eb8156588b7adadae8",
+      "review_sha256": "e4ad3bad59cb320c74f4fea7b0112074793467a71962416f0b642d959d336ff6"
+    },
+    "diagnostic-open.png": {
+      "source_dimensions": [
+        720,
+        720
+      ],
+      "source_sha256": "5d949d4057af3731d132c0ff403855bf85a589fda57525242a83a24bfd34f049",
+      "review_sha256": "72c8de5f598e64c36997fac5bbcd818a1ddb56788e188a30875727bec1188adc"
+    },
+    "diagnostic-profile-closed.png": {
+      "source_dimensions": [
+        720,
+        720
+      ],
+      "source_sha256": "012114bb4e37c16b0878de3219a508bd757563a7d3dae0f2addba8f07b319c64",
+      "review_sha256": "66c8066e4a07b7d97e28f310abd0f885fdb250a857adcf12488d19232b283af4"
+    },
+    "diagnostic-profile-open.png": {
+      "source_dimensions": [
+        720,
+        720
+      ],
+      "source_sha256": "ef7ce0fb450c8cbdc284b80b29ff0b60ebf6322aeabcdf2c990e03a17272e722",
+      "review_sha256": "24014cf215cff7e5b2fa43544573391e8000a83a850f810858ee0a08318fa892"
+    },
+    "world-equipment-glance.png": {
+      "source_dimensions": [
+        1280,
+        720
+      ],
+      "source_sha256": "0f952a2556a4b11defc7249b88713e2324167ec4c4d1e90023fd336d58a3b67c",
+      "review_sha256": "2affd7360f441cccecb9e164aa2359a3d0ad8be3bb99de0e4cad5898764ea72b"
+    },
+    "world-infected.png": {
+      "source_dimensions": [
+        1280,
+        720
+      ],
+      "source_sha256": "469ff8d60df3fb762bf5d2e03dde7efc38aff3574ec4049779f4a50647affe27",
+      "review_sha256": "59cf227ae603400c0bf662a7b51d36f8d1b4eb51343d90b0bfd0e866567ab704"
+    },
+    "world-living-attention.png": {
+      "source_dimensions": [
+        1280,
+        720
+      ],
+      "source_sha256": "28f6f7da7fe168860dbcc4b441712ceb28eeee06d4ee3f6b8c7b5466910d1720",
+      "review_sha256": "ec16c04118e6bd40f2547ca6f971977a0251a93f667ea2dca085e804eb0f6612"
+    },
+    "world-living-blink.png": {
+      "source_dimensions": [
+        1280,
+        720
+      ],
+      "source_sha256": "3629d21d38e36835c025f970a83e337900712d7d1576ae115ee17e1294dfd544",
+      "review_sha256": "e7c5c3e195f63d4b0ea827bfebd7477ebed04d2e96d50630bc2d3c92021ec6df"
+    },
+    "world-optional-exchange.png": {
+      "source_dimensions": [
+        1280,
+        720
+      ],
+      "source_sha256": "06ceab70c85e692c8ba532ce0f9b57c2bc5c779050628d306136e4eb2316b036",
+      "review_sha256": "04c3b907c45d720691320c83488ef4b2edcfa2650e62cb07655a0ad4623fc71b"
+    },
+    "world-unresponsive.png": {
+      "source_dimensions": [
+        1280,
+        720
+      ],
+      "source_sha256": "a1392778ff4baa54ed239d9378ef6c42c40c724d98759d36f42f8d20e451e197",
+      "review_sha256": "7c2bf2ec75107292293d475bb403a67690783c9c28f055fe6071db5dc5363878"
+    }
+  },
+  "rendered_aperture_neutral_pixels": {
+    "open": 1233,
+    "half": 490,
+    "closed": 0
+  },
+  "timing_medians_ms": {
+    "off": 12.688,
+    "on": 12.568
+  },
+  "timing_log_sha256": "5f66f1a3364312183b29eba6d9a342dbd8b56699aebfebcb07f5b98479055c69",
+  "sources": {
+    "brave-and-cold\\entities\\town_resident.gd": "836edef67bca1de2ae74a13ecc46bf645b01bfe42327e0a6f435e716a7820b1d",
+    "brave-and-cold\\systems\\resident_presence.gd": "27a44523d6459cc0e0c967f317d9b152a773b79e24cd09430cc932d5796c0a61",
+    "brave-and-cold\\ui\\town_conversation.gd": "80e7dd1aad264fa6d9bf8bb56a4cfd340ef1a00d8836b4db42ca96c6395549db",
+    "brave-and-cold\\tests\\test_resident_presence.gd": "9cddf602feaa662932566cd02910b93098af4b559f52b4b899ae214d6ce4395b",
+    "tools\\blender\\gen_resident_presence.py": "370e81e09a4aa4651d0fafabda60a29b0556eaa4011aa0daff474234753975c5",
+    "tools\\validate_resident_presence.py": "85d12cb08025a335f923fbf9a5e6afa704e68681d69e23ee103ea042b520a6d0"
+  },
+  "assets": {
+    "license": "Original project human and modeled eyelid animation; original master retained; winding inspected",
+    "source_native_sha256": "397faa6d514bf4448711cbef7970fe8fc787ae45f16a979c51afc7dba22f160b",
+    "source_generator_sha256": "632b3a0460d3ed582561cb88920cae9e874762debc6daaef6e1f63769300d7fb",
+    "native_sha256": "66ed61af1d602fe8fd42fdbf1c3e545f2300955fbb3e4367fa066e681b3338a6",
+    "generator_sha256": "370e81e09a4aa4651d0fafabda60a29b0556eaa4011aa0daff474234753975c5",
+    "blender": "5.2.2 LTS",
+    "normal_repairs": [
+      {
+        "object": "Eyes",
+        "reversed_faces": 0
+      },
+      {
+        "object": "Head",
+        "reversed_faces": 0
+      }
+    ],
+    "blink_vertices": 480,
+    "exports": [
+      {
+        "id": "rowan",
+        "triangles": 39588,
+        "surfaces": 9,
+        "modules": [
+          "Head",
+          "Eyes",
+          "Hands",
+          "Jacket",
+          "Trousers",
+          "Boots",
+          "Cap",
+          "Apron"
+        ],
+        "sha256": "1c6d5154f6538df1154a14e3450e6d1abb7e4743bc38f09e8d7796110233689b"
+      },
+      {
+        "id": "sam",
+        "triangles": 38542,
+        "surfaces": 7,
+        "modules": [
+          "Head",
+          "Eyes",
+          "Hands",
+          "Jacket",
+          "Trousers",
+          "Boots"
+        ],
+        "sha256": "68aacbe7f1a2c7927a9e7eb7f18dd04cb1703e1221248dc0f5a597d92f015ea4"
+      },
+      {
+        "id": "lin",
+        "triangles": 38542,
+        "surfaces": 7,
+        "modules": [
+          "Head",
+          "Eyes",
+          "Hands",
+          "Jacket",
+          "Trousers",
+          "Boots"
+        ],
+        "sha256": "0e6bbbd4717a07cbc077d8c707cc1d98270b0f6c6319a08fda66c1ab2fedd5ca"
+      },
+      {
+        "id": "infected_preview",
+        "triangles": 38542,
+        "surfaces": 7,
+        "modules": [
+          "Head",
+          "Eyes",
+          "Hands",
+          "Jacket",
+          "Trousers",
+          "Boots"
+        ],
+        "sha256": "2ef3b3a84d88a130f82e241b3ae46668b5dc72ef54d3d8de730c18a91e617053"
+      }
+    ]
+  }
+}

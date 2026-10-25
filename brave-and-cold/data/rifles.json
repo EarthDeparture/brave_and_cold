@@ -1,0 +1,285 @@
+{
+  "_note": "Per-rifle handling. Art: assets/weapons/v3 (weapon kit v3, modular). All fire the shared 'ammo' item. damage is per hit before zone multiplier (old single rifle = 100). cycle_s = time before the next shot. spread = multiplier on the shared hip/aim cone. noise = multiplier on NoiseBus.RADIUS_GUNSHOT. optic = sight on the receiver: type scope (black tube picture, model hidden) | tube_dot (wide tube, red dot) | reflex (model stays, red dot) | iron (model stays); mag = fixed [m] or variable [min, max] true magnification vs the 70 deg hip view; the mouse wheel steps only variable scopes; reticle = duplex | bdc (first-focal-plane holdover for 200/300/400 m from the real ballistics) | dot | none. mag = rounds before a reload. reload = magazine | single. v3 rifles (weapon kit v3, modular): 'v3': true, 'mounts' = what the rifle can take (optic rail|bases|scout|none, light barrel|none), 'factory' = attachments it is found with, 'irons' = the built-in sight used when no optic is fitted. Their sight comes from the fitted optic in data/attachments.json (RifleDB.optic), not from an 'optic' block. action = bolt | semi | lever (drives the viewmodel cycle). mounts.mount = adapter slot (scout_clamp), mounts.muzzle = thread | none. rimfire: moderators work better. report = gunshot audio class (rimfire | intermediate | medium | magnum_brake, tools/audio/gen_gunshots.py); supersonic defaults to not rimfire (the .22s fire subsonic standard-velocity rounds). checkering = cut panels on wood [[z0, z1, y_max], ...] (grip / fore-end sides, model space).",
+  "timber_bolt_carbine": {
+    "report": "medium",
+    "name": "Timber Scout Carbine",
+    "action": "bolt",
+    "mag": 5,
+    "reload": "magazine",
+    "damage": 110,
+    "cycle_s": 1.2,
+    "spread": 0.9,
+    "recoil": 1.0,
+    "noise": 1.0,
+    "weight": 3.6,
+    "desc": "Short camo-dipped bolt carbine with a forward 2x scout scope. Quick to the shoulder; five rounds.",
+    "mounts": {
+      "optic": "scout",
+      "light": "barrel",
+      "muzzle": "none"
+    },
+    "factory": {
+      "optic": "scope_scout_2x",
+      "light": ""
+    },
+    "irons": {
+      "type": "iron",
+      "mag": [
+        1.1
+      ],
+      "reticle": "none",
+      "label": "ghost ring rear, protected post"
+    },
+    "v3": true
+  },
+  "ranger_box_rifle": {
+    "report": "medium",
+    "name": "Ranger Hunting Rifle",
+    "action": "bolt",
+    "mag": 4,
+    "reload": "magazine",
+    "damage": 125,
+    "cycle_s": 1.3,
+    "spread": 0.75,
+    "recoil": 1.15,
+    "noise": 1.05,
+    "weight": 3.6,
+    "desc": "Walnut bolt-action deer rifle under a 4x scope. Four heavy rounds; the hunter's choice.",
+    "mounts": {
+      "optic": "bases",
+      "light": "barrel",
+      "muzzle": "none"
+    },
+    "factory": {
+      "optic": "scope_4x",
+      "light": ""
+    },
+    "irons": {
+      "type": "iron",
+      "mag": [
+        1.1
+      ],
+      "reticle": "none",
+      "label": "folding leaf rear, bead front"
+    },
+    "v3": true,
+    "checkering": [
+      [
+        0.074,
+        0.124,
+        0.042
+      ],
+      [
+        -0.34,
+        -0.215,
+        0.074
+      ]
+    ]
+  },
+  "frontier_vented_rifle": {
+    "report": "intermediate",
+    "name": "Frontier Semi Carbine",
+    "action": "semi",
+    "mag": 5,
+    "reload": "magazine",
+    "damage": 85,
+    "cycle_s": 0.45,
+    "spread": 1.05,
+    "recoil": 0.85,
+    "noise": 1.0,
+    "weight": 3.9,
+    "desc": "SKS-type self-loader in red hardwood with a red-dot tube on the cover rail. Five rounds, quick follow-ups.",
+    "mounts": {
+      "optic": "rail",
+      "light": "barrel",
+      "muzzle": "none"
+    },
+    "factory": {
+      "optic": "reddot_tube",
+      "light": ""
+    },
+    "irons": {
+      "type": "iron",
+      "mag": [
+        1.1
+      ],
+      "reticle": "none",
+      "label": "tangent rear, hooded post"
+    },
+    "v3": true
+  },
+  "ridge_scout_rifle": {
+    "report": "medium",
+    "name": "Ridge Varmint Rifle",
+    "action": "bolt",
+    "mag": 5,
+    "reload": "magazine",
+    "damage": 115,
+    "cycle_s": 1.25,
+    "spread": 0.55,
+    "recoil": 0.95,
+    "noise": 1.0,
+    "weight": 4.8,
+    "desc": "Heavy stainless barrel in grey laminate under a 3-9x scope with holdover marks. Threaded muzzle; no iron sights.",
+    "mounts": {
+      "optic": "bases",
+      "light": "none",
+      "muzzle": "thread"
+    },
+    "factory": {
+      "optic": "scope_3_9x",
+      "light": ""
+    },
+    "irons": {
+      "type": "iron",
+      "mag": [
+        1.1
+      ],
+      "reticle": "none",
+      "label": "no iron sights (bare receiver)"
+    },
+    "v3": true
+  },
+  "brush_lever_rifle": {
+    "report": "medium",
+    "name": "Brush Lever Carbine",
+    "action": "lever",
+    "mag": 6,
+    "reload": "single",
+    "damage": 95,
+    "cycle_s": 0.75,
+    "spread": 1.0,
+    "recoil": 0.95,
+    "noise": 0.95,
+    "weight": 3.3,
+    "desc": "Walnut lever carbine with a tube magazine and buckhorn sights. Six rounds fed one at a time.",
+    "mounts": {
+      "optic": "none",
+      "light": "none",
+      "muzzle": "none"
+    },
+    "factory": {
+      "optic": "",
+      "light": ""
+    },
+    "irons": {
+      "type": "iron",
+      "mag": [
+        1.1
+      ],
+      "reticle": "none",
+      "label": "buckhorn rear, bead front"
+    },
+    "v3": true,
+    "checkering": [
+      [
+        0.056,
+        0.118,
+        0.07
+      ],
+      [
+        -0.3,
+        -0.18,
+        0.08
+      ]
+    ]
+  },
+  "north_service_rifle": {
+    "report": "medium",
+    "name": "North Service Rifle",
+    "action": "bolt",
+    "mag": 10,
+    "reload": "magazine",
+    "damage": 110,
+    "cycle_s": 1.05,
+    "spread": 0.85,
+    "recoil": 1.0,
+    "noise": 1.05,
+    "weight": 4.1,
+    "desc": "Surplus military bolt rifle in old birch. Ten rounds, a fast bolt and an aperture sight; takes a clamp-on scout mount.",
+    "mounts": {
+      "optic": "none",
+      "mount": "scout_clamp",
+      "light": "none",
+      "muzzle": "none"
+    },
+    "factory": {
+      "optic": "",
+      "light": ""
+    },
+    "irons": {
+      "type": "iron",
+      "mag": [
+        1.1
+      ],
+      "reticle": "none",
+      "label": "aperture rear, protected post"
+    },
+    "v3": true
+  },
+  "compact_patrol_rifle": {
+    "report": "rimfire",
+    "name": "Compact Rimfire Carbine",
+    "desc": "Light .22 rimfire carbine with a birch stock, a micro reflex sight and a barrel-clamp light. Ten quiet rounds; aim for the head.",
+    "weight": 2.5,
+    "mag": 10,
+    "reload": "magazine",
+    "damage": 50,
+    "cycle_s": 0.22,
+    "spread": 0.95,
+    "recoil": 0.35,
+    "noise": 0.55,
+    "v3": true,
+    "mounts": {
+      "optic": "rail",
+      "light": "barrel",
+      "muzzle": "thread"
+    },
+    "factory": {
+      "optic": "reflex_micro",
+      "light": "light_clamp"
+    },
+    "irons": {
+      "type": "iron",
+      "mag": [
+        1.1
+      ],
+      "reticle": "none",
+      "label": "open iron sights (folding leaf, bead)"
+    },
+    "action": "semi",
+    "rimfire": true
+  },
+  "expedition_rifle": {
+    "report": "magnum_brake",
+    "name": "Expedition Magnum",
+    "action": "bolt",
+    "mag": 4,
+    "reload": "magazine",
+    "damage": 150,
+    "cycle_s": 1.35,
+    "spread": 0.5,
+    "recoil": 1.4,
+    "noise": 1.35,
+    "weight": 4.2,
+    "desc": "Black synthetic magnum with a ported brake and a 4-12x scope. Four devastating, very loud rounds.",
+    "mounts": {
+      "optic": "bases",
+      "light": "barrel",
+      "muzzle": "none"
+    },
+    "factory": {
+      "optic": "scope_4_12x",
+      "light": ""
+    },
+    "irons": {
+      "type": "iron",
+      "mag": [
+        1.1
+      ],
+      "reticle": "none",
+      "label": "express rear, hooded bead"
+    },
+    "v3": true
+  }
+}

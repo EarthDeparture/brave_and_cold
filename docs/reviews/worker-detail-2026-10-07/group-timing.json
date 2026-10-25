@@ -1,0 +1,71 @@
+{
+	"adapter": "NVIDIA GeForce GTX 1080 Ti",
+	"renderer": "forward_plus",
+	"resolution": [
+		1920,
+		1080
+	],
+	"rows": [
+		{
+			"actors": 55,
+			"max_ms": 8.887,
+			"median_ms": 5.607,
+			"p95_ms": 7.714,
+			"repeat": 0,
+			"samples": 240,
+			"variant": "before",
+			"visible": 16
+		},
+		{
+			"actors": 55,
+			"max_ms": 9.908,
+			"median_ms": 5.553,
+			"p95_ms": 8.661,
+			"repeat": 1,
+			"samples": 240,
+			"variant": "before",
+			"visible": 16
+		},
+		{
+			"actors": 55,
+			"max_ms": 8.759,
+			"median_ms": 4.807,
+			"p95_ms": 6.626,
+			"repeat": 2,
+			"samples": 240,
+			"variant": "before",
+			"visible": 16
+		},
+		{
+			"actors": 55,
+			"max_ms": 13.298,
+			"median_ms": 7.886,
+			"p95_ms": 11.562,
+			"repeat": 0,
+			"samples": 240,
+			"variant": "after",
+			"visible": 16
+		},
+		{
+			"actors": 55,
+			"max_ms": 12.125,
+			"median_ms": 6.313,
+			"p95_ms": 8.857,
+			"repeat": 1,
+			"samples": 240,
+			"variant": "after",
+			"visible": 16
+		},
+		{
+			"actors": 55,
+			"max_ms": 10.917,
+			"median_ms": 5.994,
+			"p95_ms": 7.964,
+			"repeat": 2,
+			"samples": 240,
+			"variant": "after",
+			"visible": 16
+		}
+	],
+	"scope": "55 posed actors, 16 visible; no terrain or AI; warm 240-frame samples after 120 warmup"
+}

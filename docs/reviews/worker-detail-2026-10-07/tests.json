@@ -1,0 +1,55 @@
+{
+  "gameplay_and_pose_checks": 474,
+  "asset_checks": 55,
+  "failures": 0,
+  "suites": [
+    {
+      "suite": "infected_skin",
+      "checks": 46,
+      "failures": 0,
+      "log_sha256": "b8d330aefa0f03b7f934361989c662899cb60df770d5103f3418dd954514f9ea"
+    },
+    {
+      "suite": "infected_gait",
+      "checks": 50,
+      "failures": 0,
+      "log_sha256": "7f0d63dc1dfb04a5e7bef890a7a3a87b194f9b544a68dd983764ee92a117a0a7"
+    },
+    {
+      "suite": "viewmodel",
+      "checks": 78,
+      "failures": 0,
+      "log_sha256": "09f8eb1dbfc8c129e25553d33d5286bc56869b4ed3cd37311c91ed8456aead74"
+    },
+    {
+      "suite": "first_week_collapse",
+      "checks": 192,
+      "failures": 0,
+      "log_sha256": "bf5c54600e68163d6bdc0b44411bad9aa50d74fade8cb801da00256c2272d0a3"
+    },
+    {
+      "suite": "first_week_core",
+      "checks": 33,
+      "failures": 0,
+      "log_sha256": "282bc3343f313e869f91c74de3513d959d2212decf72af70e71cc78e6e516657"
+    },
+    {
+      "suite": "opening_pacing",
+      "checks": 51,
+      "failures": 0,
+      "log_sha256": "5e19f0f0ade650460381ba8dcf2b158f97b7895a97f4ee316f1f4b08d1327ae9"
+    },
+    {
+      "suite": "encounter_presentation",
+      "checks": 15,
+      "failures": 0,
+      "log_sha256": "32c1f0b6f4252d168d44e88c94719a3f3a615387c9572a897737fa2721f165ae"
+    },
+    {
+      "suite": "population_reserve",
+      "checks": 9,
+      "failures": 0,
+      "log_sha256": "b5e7637fddf8a5bac4dae81e54963e76294f208351078dbcc03980955d020969"
+    }
+  ]
+}

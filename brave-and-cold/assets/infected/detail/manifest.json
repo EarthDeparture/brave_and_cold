@@ -1,0 +1,35 @@
+{
+  "license": "Original project-authored geometry and procedural textures; no external sources",
+  "blender": "5.2.2 LTS",
+  "units": "metres",
+  "near_triangles": 17790,
+  "far_triangles": 2192,
+  "surfaces": 7,
+  "bones": [
+    "pelvis",
+    "spine",
+    "head",
+    "skin_zombie_arm_l",
+    "skin_zombie_elbow_l",
+    "skin_zombie_arm_r",
+    "skin_zombie_elbow_r",
+    "skin_zombie_leg_l",
+    "skin_zombie_knee_l",
+    "skin_zombie_ankle_l",
+    "skin_zombie_leg_r",
+    "skin_zombie_knee_r",
+    "skin_zombie_ankle_r"
+  ],
+  "rig_migration": "11 to 13: ankle children keep boots upright; eight logical joint drivers unchanged",
+  "native": "tools\\blender\\generated\\worker_detail\\winter_worker_detail.blend",
+  "native_sha256": "25b3c33f10624aae23e62ed169b6f46db6b7709233ceef511b5bb4db283eb436",
+  "glb_sha256": "cd5a97f622cea3b7cf367ddf705512cb8035e689258f62c6d8e7b020f1400c84",
+  "proxy_sha256": "98cab1b23472969d427d70aefa14a7ce1ab70792efbe6b743fa0d9280fdc94bc",
+  "generator_sha256": "e312f58f46c833322083e8c3ba00485d1ec83ad495858c8e6191cdcd3fce62ae",
+  "textures": {
+    "worker_canvas_albedo.png": "ccf3d833f88d6fc14abc093030efbe0f505630a51afaf18749ed638628e8ccfb",
+    "worker_canvas_normal.png": "19270e7d3a38e32097a272109dee5908898eec3b19c5b038d2c73279288031fc",
+    "worker_canvas_roughness.png": "7a3332d8f8558849f8dbcde24c4b7b94c11775532c94cd3debea4c66b5cf0d22",
+    "worker_skin_albedo.png": "a2d792bda045c2c988dc1f22c4d531d5ee24521ae3eed39e5560879b96aec842"
+  }
+}

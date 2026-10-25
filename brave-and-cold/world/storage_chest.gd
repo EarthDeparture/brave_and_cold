@@ -1,0 +1,278 @@
+class_name StorageChest
+extends Node3D
+signal contents_changed
+## Craftable wooden storage chest (Blender model chest.glb, lid pivots on the hinge). Holds up to CAP stacks.
+## Remembers wear and age of what it holds. Perishables age at COLD_RATE of normal (a box out in the snow).
+## Solid for the player (rect collider like Outbuilding). Node origin is on the ground.
+
+const MODEL := "res://assets/models/props/chest.glb"
+const CAP := 24
+const HX := 0.47        # collider half extents
+const HZ := 0.31
+const COLD_RATE := 0.35
+const LID_OPEN_DEG := 105.0
+const W := 0.9
+const D := 0.55
+const H := 0.5
+
+var visual_enabled := true
+var spoilage_rate:=COLD_RATE # outdoor default; heated lookout pantry overrides this
+var fixed_c := NAN          # A7: a store held at a fixed temperature (root cellar); NAN = the air where it sits
+var label := ""            # gear screen title (empty = CHEST)
+var listed := true          # false: not in the 'chests' group (gear screen never auto-picks it)
+var contents: Dictionary = {}   # id -> n
+var cond: Dictionary = {}       # id -> condition 0..1 (only when worn)
+var age: Dictionary = {}        # id -> age seconds (perishables)
+var rifle_states: Dictionary = {}   # rifle id -> [state, ...] of the rifles stored here
+var want_open := false          # set by GameWorld while the gear screen is on this chest
+var lid_k := 0.0                # 0 shut .. 1 open
+var _lid: Node3D
+var _pile: Node3D               # little coloured blocks for what is inside (only built while the lid is up)
+var _pile_dirty := true
+const KIND_COL := {"weapon": Color(0.35, 0.36, 0.38), "tool": Color(0.5, 0.42, 0.3), "ammo": Color(0.62, 0.5, 0.2),
+	"clothing": Color(0.3, 0.38, 0.5), "food": Color(0.55, 0.28, 0.2), "fuel": Color(0.3, 0.22, 0.14), "misc": Color(0.45, 0.45, 0.4)}
+const PILE_MAX := 14
+
+
+func _ready() -> void:
+	if listed:
+		add_to_group("chests")
+	if visual_enabled:
+		_build()
+	else:
+		set_process(false)
+
+
+func _build() -> void:
+	var mat := StandardMaterial3D.new()
+	mat.vertex_color_use_as_albedo = true
+	mat.roughness = 0.9
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	if ResourceLoader.exists(MODEL):
+		var root := (load(MODEL) as PackedScene).instantiate()
+		add_child(root)
+		for mi in root.find_children("*", "MeshInstance3D", true, false):
+			(mi as MeshInstance3D).material_override = mat
+		_lid = root.find_child("chest_lid", true, false) as Node3D
+	if _lid == null:
+		_build_fallback(mat)
+	# trampled patch of bare ground under it
+	var pm := CylinderMesh.new()
+	pm.top_radius = 0.78
+	pm.bottom_radius = 0.82
+	pm.height = 0.02
+	pm.radial_segments = 20
+	var pmat := StandardMaterial3D.new()
+	pmat.albedo_color = Color(0.27, 0.25, 0.24)
+	pmat.roughness = 1.0
+	var patch := MeshInstance3D.new()
+	patch.mesh = pm
+	patch.material_override = pmat
+	patch.position = Vector3(0, 0.03, 0)
+	patch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(patch)
+
+
+func _build_fallback(mat: Material) -> void:
+	var wood := StandardMaterial3D.new()
+	wood.albedo_color = Color(0.34, 0.23, 0.14)
+	wood.roughness = 0.92
+	_box(Vector3(W, H, D), Vector3(0, H * 0.5, 0), wood, self)
+	_lid = Node3D.new()
+	_lid.position = Vector3(0, H, -D * 0.5)
+	add_child(_lid)
+	_box(Vector3(W + 0.03, 0.12, D + 0.03), Vector3(0, 0.06, D * 0.5), wood, _lid)
+
+
+func _box(size: Vector3, pos: Vector3, mat: Material, parent: Node) -> void:
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = size
+	mi.mesh = bm
+	mi.material_override = mat
+	mi.position = pos
+	parent.add_child(mi)
+
+
+func _process(delta: float) -> void:
+	var tgt := 1.0 if want_open else 0.0
+	if _pile_dirty and lid_k > 0.15:
+		_update_pile()
+	if is_equal_approx(lid_k, tgt):
+		return
+	lid_k = move_toward(lid_k, tgt, delta * 2.6)
+	_update_pile()
+	if _lid != null:
+		var e := lid_k * lid_k * (3.0 - 2.0 * lid_k)
+		_lid.rotation.x = -deg_to_rad(LID_OPEN_DEG) * e
+
+
+## Contents blocks: one per stack (max PILE_MAX), sized by count, coloured by kind, laid in a grid on the chest floor.
+## Built lazily and only while the lid is lifted, so a closed chest costs nothing.
+func _update_pile() -> void:
+	var show_it := lid_k > 0.15
+	if _pile != null:
+		_pile.visible = show_it
+	if not show_it or not _pile_dirty:
+		return
+	_pile_dirty = false
+	if _pile != null:
+		_pile.queue_free()
+	_pile = Node3D.new()
+	add_child(_pile)
+	var ids := stacks()
+	var cols := 5
+	for i in mini(ids.size(), PILE_MAX):
+		var st: Dictionary = ids[i]
+		var n: int = st["n"]
+		var sz := clampf(0.07 + 0.012 * float(n), 0.07, 0.15)
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = KIND_COL.get(Inventory.kind_of(String(st["id"])), KIND_COL["misc"])
+		mat.roughness = 0.9
+		var bm := BoxMesh.new()
+		bm.size = Vector3(sz, sz * 0.8, sz)
+		var mi := MeshInstance3D.new()
+		mi.mesh = bm
+		mi.material_override = mat
+		var gx := (float(i % cols) - float(cols - 1) * 0.5) * 0.15
+		var gz := (float(i / cols) - 1.0) * 0.14
+		mi.position = Vector3(gx, 0.05 + sz * 0.4, gz)
+		mi.rotation.y = float((i * 37) % 17) * 0.05
+		_pile.add_child(mi)
+
+
+## Quarter turn (the player turns a placed chest to face the way they want).
+func rotate_quarter() -> void:
+	rotation.y = wrapf(rotation.y + PI * 0.5, -PI, PI)
+
+
+func center_world() -> Vector3:
+	return global_position + Vector3(0.0, 0.35, 0.0)
+
+
+## Push a circle (world x,z,r) out of the chest footprint. Returns corrected (x, z).
+func resolve(x: float, z: float, r: float) -> Vector2:
+	var l := to_local(Vector3(x, global_position.y, z))
+	var cx := clampf(l.x, -HX, HX)
+	var cz := clampf(l.z, -HZ, HZ)
+	var dv := Vector2(l.x - cx, l.z - cz)
+	var dl := dv.length()
+	if dl >= r:
+		return Vector2(x, z)
+	if dl > 0.0001:
+		dv = dv / dl * r
+		l.x = cx + dv.x
+		l.z = cz + dv.y
+	else:
+		var px := HX - absf(l.x)
+		var pz := HZ - absf(l.z)
+		if px < pz:
+			l.x = signf(l.x if l.x != 0.0 else 1.0) * (HX + r)
+		else:
+			l.z = signf(l.z if l.z != 0.0 else 1.0) * (HZ + r)
+	var wv := to_global(Vector3(l.x, 0.0, l.z))
+	return Vector2(wv.x, wv.z)
+
+
+## Slow spoilage: game seconds elapsed. Spoiled stacks turn into rotten meat.
+func tick(game_s: float) -> void:
+	var spoiled: Array = []
+	for id in contents.keys():
+		var s := Inventory.shelf_s(String(id))
+		if s <= 0.0:
+			continue
+		age[id] = float(age.get(id, 0.0)) + maxf(0,game_s) * spoilage_rate
+		if float(age[id]) >= s:
+			spoiled.append(String(id))
+	for id in spoiled:
+		var n: int = count(id)
+		contents.erase(id)
+		cond.erase(id)
+		age.erase(id)
+		contents["rotten_meat"] = count("rotten_meat") + n
+		_pile_dirty = true
+	if not spoiled.is_empty(): contents_changed.emit()
+
+
+func count(id: String) -> int:
+	return int(contents.get(id, 0))
+
+
+func stack_count() -> int:
+	return contents.size()
+
+
+func is_empty() -> bool:
+	return contents.is_empty()
+
+
+func can_hold(id: String) -> bool:
+	return contents.has(id) or contents.size() < CAP
+
+
+## Sorted [{id, n}] for the UI.
+func stacks() -> Array:
+	var out: Array = []
+	var ids := contents.keys()
+	ids.sort_custom(func(a, b) -> bool:
+		var ka := Inventory.KIND_ORDER.find(Inventory.kind_of(String(a)))
+		var kb := Inventory.KIND_ORDER.find(Inventory.kind_of(String(b)))
+		return String(a) < String(b) if ka == kb else ka < kb)
+	for id in ids:
+		out.append({"id": String(id), "n": int(contents[id])})
+	return out
+
+
+func put(id: String, n: int, c: float, a: float) -> void:
+	var old := count(id)
+	if c < 0.999 or cond.has(id):
+		cond[id] = (float(cond.get(id, 1.0)) * old + c * n) / float(old + n)
+	if a > 0.0 or age.has(id):
+		age[id] = (float(age.get(id, 0.0)) * old + a * n) / float(old + n)
+	contents[id] = old + n
+	_pile_dirty = true
+	contents_changed.emit()
+
+
+func remove(id: String, n: int) -> void:
+	var left := count(id) - n
+	if left <= 0:
+		contents.erase(id)
+		cond.erase(id)
+		age.erase(id)
+	else:
+		contents[id] = left
+	_pile_dirty = true
+	contents_changed.emit()
+
+
+func put_states(id: String, st: Array) -> void:
+	if not rifle_states.has(id): rifle_states[id] = []
+	(rifle_states[id] as Array).append_array(st.duplicate(true))
+
+func take_states(id: String, n: int) -> Array:
+	var all: Array = rifle_states.get(id, [])
+	var out := all.slice(0, n); rifle_states[id] = all.slice(n)
+	if (rifle_states[id] as Array).is_empty(): rifle_states.erase(id)
+	return out
+
+func to_dict() -> Dictionary:
+	return {"x": global_position.x, "y": global_position.y, "z": global_position.z, "yaw": rotation.y, "c": contents.duplicate(), "cond": cond.duplicate(), "age": age.duplicate(), "rs": rifle_states.duplicate(true)}
+
+
+func load_dict(d: Dictionary) -> void:
+	contents.clear()
+	for k in (d.get("c", {}) as Dictionary).keys():
+		contents[String(k)] = int(d["c"][k])
+	cond = (d.get("cond", {}) as Dictionary).duplicate()
+	age = (d.get("age", {}) as Dictionary).duplicate()
+	rifle_states = (d.get("rs", {}) as Dictionary).duplicate(true) if d.get("rs", {}) is Dictionary else {}
+	_pile_dirty = true
+	contents_changed.emit()
+
+
+## A crate occupies its actual height, not an invisible column through the map.
+func resolve_at(foot:Vector3,eye_height:float,radius:float) -> Vector2:
+	if foot.y>global_position.y+.75 or foot.y+eye_height<global_position.y-.05:
+		return Vector2(foot.x,foot.z)
+	return resolve(foot.x,foot.z,radius)

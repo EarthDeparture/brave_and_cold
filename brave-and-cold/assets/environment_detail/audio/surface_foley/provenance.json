@@ -1,0 +1,55 @@
+{
+  "origin": "Original NumPy/SciPy synthesis; heel/toe contact plus distinct resonances",
+  "seed": 8180,
+  "files": [
+    {
+      "file": "step_wood_0.wav",
+      "duration_s": 0.32997732426303855,
+      "peak": 0.64,
+      "rms": 0.10206270905089165,
+      "sha256": "c9d54c95bd9b0bb34fe6896f56cabd0d410438b0350b6e2e1595d2f959d5694a"
+    },
+    {
+      "file": "step_wood_1.wav",
+      "duration_s": 0.34199546485260773,
+      "peak": 0.655,
+      "rms": 0.07118653526513345,
+      "sha256": "b517339a67342d6ae8607cf8a004f601951e45456479b4d59f4534aa157eb15d"
+    },
+    {
+      "file": "step_wood_2.wav",
+      "duration_s": 0.353968253968254,
+      "peak": 0.67,
+      "rms": 0.08346743238159689,
+      "sha256": "b1970c13c20d3f8a9fd8f594950021a9f3d3bddadb016cb38cbdeb0f93610d8f"
+    },
+    {
+      "file": "step_wood_3.wav",
+      "duration_s": 0.3659863945578231,
+      "peak": 0.685,
+      "rms": 0.10501526851841374,
+      "sha256": "e8832eb36a6529bfa9115279199461877f9c4de5c3303536d8204125242d1718"
+    },
+    {
+      "file": "step_ice_0.wav",
+      "duration_s": 0.32997732426303855,
+      "peak": 0.64,
+      "rms": 0.0629523347259388,
+      "sha256": "2b8698140748dbf36bcebf70d104da5fcd2b34e1b1c3edf5323aae20afe6d75e"
+    },
+    {
+      "file": "step_ice_1.wav",
+      "duration_s": 0.34199546485260773,
+      "peak": 0.655,
+      "rms": 0.06600843773396757,
+      "sha256": "f676657a73e8f7cba4bd3fc543d3426fc08f3ecd803d5c1195004d96a2dbed58"
+    },
+    {
+      "file": "step_ice_2.wav",
+      "duration_s": 0.353968253968254,
+      "peak": 0.67,
+      "rms": 0.05818079992971542,
+      "sha256": "1b2e06258dda0812ac29175e7fa02019af22d3622807453ea8846942c81b5aa0"
+    }
+  ]
+}

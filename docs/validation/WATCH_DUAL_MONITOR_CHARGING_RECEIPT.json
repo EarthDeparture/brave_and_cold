@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-05",
+  "baseline": "6e7bab656b7aba967a0ae3ae51153eb07d85fe43",
+  "checkpoint": "checkpoint/pre-watch-dual-monitor-2026-10-05",
+  "branch": "codex/watch-dual-monitor-charging",
+  "engine": "Godot 4.7.2 stable",
+  "renderer": "Forward+ Direct3D 12",
+  "device": "GeForce GTX 1080 Ti",
+  "tests": {
+    "test_walkie_charge": {
+      "passed_checks": 66,
+      "failures": 0
+    },
+    "test_watch_walkie_door": {
+      "passed_checks": 46,
+      "failures": 0
+    },
+    "test_lookout_assignment": {
+      "passed_checks": 27,
+      "failures": 0
+    },
+    "test_radio_bulletins": {
+      "passed_checks": 140,
+      "failures": 0
+    },
+    "test_lookout_door_log": {
+      "passed_checks": 35,
+      "failures": 0
+    },
+    "test_lookout_opening": {
+      "passed_checks": 53,
+      "failures": 0
+    },
+    "test_lookout_radio_logs": {
+      "passed_checks": 29,
+      "failures": 0
+    },
+    "test_survival_props": {
+      "passed_checks": 36,
+      "failures": 0
+    }
+  },
+  "total_passed_checks": 432,
+  "asset": {
+    "ok": true,
+    "triangles": 4510,
+    "degenerate_triangles": 0,
+    "bytes": 401292,
+    "semantic_nodes": [
+      "Cradle",
+      "Display",
+      "Handset"
+    ],
+    "materials": 7,
+    "sha256": "5265d2b66b339afc5bffef7b61589040454328cd7706876bbc06cf5feaeced86",
+    "source_sha256": "67652412a0afa3fc41bb513cbe5aaa7ec58f61c39aa3c5ff014ce901d43bff3a"
+  },
+  "original_audio_clips_validated": 30,
+  "captures_sha256": {
+    "charging_detail.png": "c1c596e13d4ef67079b1aa9cf593beced61a64f0c7ec0a2890f1363140c97eec",
+    "desk_full.png": "3ab2d8b813f9eec00c4327aad75c29c263a51aa471ed461323c21beb6cf6aabe",
+    "empty_cradle.png": "0822a5ee664ed51ffd9c33d7bd4de7204ed331ff506f7870c95f5250d95b5dbe",
+    "inventory_carried_watch.png": "1fd5c0288371a4c748a8ee489ebf360561aae1f6914cc857a9def1504ec98476",
+    "inventory_empty_watch.png": "eacfe39d2b7618ff2e0566132ab15deec5bf8d911e067b59f26a29cc9d495a3e",
+    "public_walkie_outside.png": "17c5146fc039fb0e90425d94bdd115c22b9733733d4fda25383b988c75a86085",
+    "watch_crafting_720p.png": "2424e751c02b5cd5339c270ab8f5f2b7a3cb5c8f925d8cc9741b86f3b41e393a",
+    "watch_midnight.png": "c73278838876a3788e9e8aeaedca457f0da5c7146d152a255c5d0e45db641bd3"
+  },
+  "diagnostics": "No script/parse errors in final runs. Existing interpolation deprecation and shutdown CanvasItem/ObjectDB/resource leak diagnostics remain.",
+  "human_playtest": "Pending user play-test; automated receiver/input/sleep/door tests and GPU captures verified."
+}

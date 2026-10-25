@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "origin": "Original project-authored Blender geometry and original botanical paint",
+  "units": "1m root-normalized; Godot +Y up; existing canopy scaling retained",
+  "surface": "alpha .10 bark, .50 green spray, .52 snow-loaded spray, 1 supported snow; one surface; no collision",
+  "budget": {
+    "near": 4200,
+    "far": 1100
+  },
+  "native_sha256": "3f0e5946af74fedd0e446b1ccbdeeb5948c5425358a79ab08ef7ea228e5ea354",
+  "texture_sha256": "8ab8be2a8c30ee0e66613c430eba23e9808444a377b3bb80bae153c6cc2284bf",
+  "generator_sha256": "92b3f9965887b5c2dd839a6f5f5cb04c8e59393d6519550d5315c008d6725433",
+  "models": [
+    {
+      "name": "spruce_a",
+      "triangles": 3592,
+      "sha256": "1cc82eaf3048419db25e722596ec4c00d4a41b6ae4d12ca5ea4bd787e1e5611f"
+    },
+    {
+      "name": "spruce_a_far",
+      "triangles": 338,
+      "sha256": "87a0bd0a11b22d5607b378ea0db78f3b1e432257b48072b8a1af93b3c8095748"
+    },
+    {
+      "name": "spruce_b",
+      "triangles": 3340,
+      "sha256": "d1695147bb32507bb833ae014a9bf3acef87faeee12a0700b42871dc10e5ded9"
+    },
+    {
+      "name": "spruce_b_far",
+      "triangles": 310,
+      "sha256": "af152cb69a3f98a308ea75cfb474547dba8fd492600436cdf76a7386f621c078"
+    },
+    {
+      "name": "spruce_c",
+      "triangles": 3396,
+      "sha256": "5fc91a8dd48b04851f48803c0edf43c60428329e3b3783da96a04af653c082c2"
+    },
+    {
+      "name": "spruce_c_far",
+      "triangles": 324,
+      "sha256": "b26a296b86f98619b2d1a0a8a7169e4e9d30ebc42cddaa43001cca14ba200e38"
+    },
+    {
+      "name": "snow_pine_open",
+      "triangles": 2552,
+      "sha256": "64a64707dd65d7ddbb88693805f90db966d58f1e56268ed896c7e6ee85ddc1d7"
+    },
+    {
+      "name": "snow_pine_open_far",
+      "triangles": 238,
+      "sha256": "b914d79d9d2fd980b1781d761fc83f7cf6a2c764cc7340fbae4e81f38099f35f"
+    },
+    {
+      "name": "snow_fir_full",
+      "triangles": 3916,
+      "sha256": "e2f351d1f71a68d6bd1b69cf1be996f2964ddd6da977f3b189b5491387e2a449"
+    },
+    {
+      "name": "snow_fir_full_far",
+      "triangles": 374,
+      "sha256": "d58bb96fbd324b77bb6622b2bf13183d915824c77e418ce68d6026a184ad9f51"
+    },
+    {
+      "name": "snow_spruce_wind",
+      "triangles": 3628,
+      "sha256": "950dc1d4d6c1ae48191e8d15185d045416c2a8f6643d2306321c1c84b6517c17"
+    },
+    {
+      "name": "snow_spruce_wind_far",
+      "triangles": 342,
+      "sha256": "151a1b14ea8c831e152374db0453e19bac90044a50133c3d41bca4ed8d281605"
+    }
+  ]
+}

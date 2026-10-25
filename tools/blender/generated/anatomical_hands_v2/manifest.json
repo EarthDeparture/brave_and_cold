@@ -1,0 +1,110 @@
+{
+  "name": "North Ridge / Anatomical Hands v2",
+  "units": "metres",
+  "wrist_origin": [
+    0,
+    0,
+    0
+  ],
+  "fingers_forward": "-Z",
+  "dorsum": "+Y",
+  "forearm": "+Z",
+  "blender": "5.2.2 LTS",
+  "reference_sha256": "2d426770f02a5748e690e18901a97c9d1d46b0c5927a9c2c3443dbe8a1ab87eb",
+  "reference_use": "Topology and anatomical guidance; source pixels are not copied or redistributed.",
+  "source": "Original new quad cage, anatomical lofts and original baked skin fields. Existing project coordinate/armature helpers reused.",
+  "bones": [
+    "forearm",
+    "hand",
+    "index_01",
+    "index_02",
+    "index_03",
+    "middle_01",
+    "middle_02",
+    "middle_03",
+    "ring_01",
+    "ring_02",
+    "ring_03",
+    "little_01",
+    "little_02",
+    "little_03",
+    "thumb_01",
+    "thumb_02",
+    "thumb_03"
+  ],
+  "poses": [
+    "Open",
+    "Relaxed",
+    "Fist",
+    "Shaft",
+    "Trigger",
+    "Support",
+    "Bolt",
+    "PinchReady",
+    "Magazine"
+  ],
+  "clips": [
+    "Open",
+    "Relaxed",
+    "Fist",
+    "Shaft",
+    "Trigger",
+    "Support",
+    "Bolt",
+    "PinchReady",
+    "Magazine",
+    "FlexCycle"
+  ],
+  "volume_correctives": {
+    "BareHand": {
+      "Relaxed": 0.00017430399565430076,
+      "Fist": 0.003132649505665249,
+      "Shaft": 0.002121359662332783,
+      "Trigger": 0.0020539994463664767,
+      "Support": 0.0010044771806899451,
+      "Bolt": 0.0017409458301590561,
+      "PinchReady": 0.0012311906300933426,
+      "Magazine": 0.001087349631441186
+    },
+    "BareHandLeft": {
+      "Relaxed": 0.00017430399565430076,
+      "Fist": 0.003132649505665249,
+      "Shaft": 0.002121359662332783,
+      "Trigger": 0.0020539994463664767,
+      "Support": 0.0010044771806899451,
+      "Bolt": 0.0017409458301590561,
+      "PinchReady": 0.0012311906300933426,
+      "Magazine": 0.001087349631441186
+    }
+  },
+  "meshes": {
+    "BareHand": {
+      "vertices": 14899,
+      "triangles": 29792,
+      "closed": true
+    },
+    "BareHandLeft": {
+      "vertices": 14899,
+      "triangles": 29792,
+      "closed": true
+    },
+    "NailsRight": {
+      "vertices": 305,
+      "triangles": 590,
+      "closed": true
+    },
+    "NailsLeft": {
+      "vertices": 305,
+      "triangles": 590,
+      "closed": true
+    }
+  },
+  "control_cage": {
+    "vertices": 943,
+    "faces": 922,
+    "connected": true
+  },
+  "glb_sha256": "34d84231f47457df40764c36a387e24af11f3cc06c9b89782cdec6625199ea0a",
+  "native_sha256": "0b49f61b88540be4cc910a9be681154d2d7e4590f997ad10760aea7b04511dcb",
+  "runtime_replacement": false
+}

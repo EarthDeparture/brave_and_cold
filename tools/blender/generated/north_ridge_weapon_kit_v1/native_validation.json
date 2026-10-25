@@ -1,0 +1,404 @@
+{
+  "ridge_scout_rifle": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 40,
+    "nodes": 17,
+    "animations": {
+      "idle": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "fire": {
+        "rig_moves": true,
+        "matched_tracks": 5
+      },
+      "cycle": {
+        "rig_moves": true,
+        "matched_tracks": 3
+      },
+      "reload_tactical": {
+        "rig_moves": true,
+        "matched_tracks": 3
+      },
+      "reload_empty": {
+        "rig_moves": true,
+        "matched_tracks": 6
+      },
+      "inspect": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "equip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "unequip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      }
+    }
+  },
+  "timber_bolt_carbine": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 40,
+    "nodes": 17,
+    "animations": {
+      "idle": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "fire": {
+        "rig_moves": true,
+        "matched_tracks": 2
+      },
+      "cycle": {
+        "rig_moves": true,
+        "matched_tracks": 4
+      },
+      "reload_tactical": {
+        "rig_moves": true,
+        "matched_tracks": 3
+      },
+      "reload_empty": {
+        "rig_moves": true,
+        "matched_tracks": 7
+      },
+      "inspect": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "equip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "unequip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      }
+    }
+  },
+  "ranger_box_rifle": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 40,
+    "nodes": 17,
+    "animations": {
+      "idle": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "fire": {
+        "rig_moves": true,
+        "matched_tracks": 5
+      },
+      "cycle": {
+        "rig_moves": true,
+        "matched_tracks": 3
+      },
+      "reload_tactical": {
+        "rig_moves": true,
+        "matched_tracks": 3
+      },
+      "reload_empty": {
+        "rig_moves": true,
+        "matched_tracks": 6
+      },
+      "inspect": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "equip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "unequip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      }
+    }
+  },
+  "brush_lever_rifle": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 40,
+    "nodes": 19,
+    "animations": {
+      "idle": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "fire": {
+        "rig_moves": true,
+        "matched_tracks": 2
+      },
+      "cycle": {
+        "rig_moves": true,
+        "matched_tracks": 4
+      },
+      "reload_start": {
+        "rig_moves": true,
+        "matched_tracks": 2
+      },
+      "reload_insert": {
+        "rig_moves": true,
+        "matched_tracks": 4
+      },
+      "reload_end": {
+        "rig_moves": true,
+        "matched_tracks": 2
+      },
+      "inspect": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "equip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "unequip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      }
+    }
+  },
+  "frontier_vented_rifle": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 40,
+    "nodes": 17,
+    "animations": {
+      "idle": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "fire": {
+        "rig_moves": true,
+        "matched_tracks": 5
+      },
+      "cycle": {
+        "rig_moves": true,
+        "matched_tracks": 3
+      },
+      "reload_tactical": {
+        "rig_moves": true,
+        "matched_tracks": 3
+      },
+      "reload_empty": {
+        "rig_moves": true,
+        "matched_tracks": 6
+      },
+      "inspect": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "equip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "unequip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      }
+    }
+  },
+  "north_service_rifle": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 40,
+    "nodes": 17,
+    "animations": {
+      "idle": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "fire": {
+        "rig_moves": true,
+        "matched_tracks": 5
+      },
+      "cycle": {
+        "rig_moves": true,
+        "matched_tracks": 3
+      },
+      "reload_tactical": {
+        "rig_moves": true,
+        "matched_tracks": 3
+      },
+      "reload_empty": {
+        "rig_moves": true,
+        "matched_tracks": 6
+      },
+      "inspect": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "equip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "unequip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      }
+    }
+  },
+  "compact_patrol_rifle": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 46,
+    "nodes": 18,
+    "animations": {
+      "idle": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "fire": {
+        "rig_moves": true,
+        "matched_tracks": 5
+      },
+      "cycle": {
+        "rig_moves": true,
+        "matched_tracks": 3
+      },
+      "reload_tactical": {
+        "rig_moves": true,
+        "matched_tracks": 3
+      },
+      "reload_empty": {
+        "rig_moves": true,
+        "matched_tracks": 6
+      },
+      "inspect": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "equip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "unequip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "stock_fold": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "stock_unfold": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      }
+    }
+  },
+  "expedition_rifle": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 40,
+    "nodes": 17,
+    "animations": {
+      "idle": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "fire": {
+        "rig_moves": true,
+        "matched_tracks": 5
+      },
+      "cycle": {
+        "rig_moves": true,
+        "matched_tracks": 3
+      },
+      "reload_tactical": {
+        "rig_moves": true,
+        "matched_tracks": 3
+      },
+      "reload_empty": {
+        "rig_moves": true,
+        "matched_tracks": 6
+      },
+      "inspect": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "equip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      },
+      "unequip": {
+        "rig_moves": true,
+        "matched_tracks": 1
+      }
+    }
+  },
+  "ridge_scout_rifle_spare_magazine": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 9,
+    "nodes": 2,
+    "animations": {}
+  },
+  "timber_bolt_carbine_spare_magazine": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 9,
+    "nodes": 2,
+    "animations": {}
+  },
+  "ranger_box_rifle_spare_magazine": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 9,
+    "nodes": 2,
+    "animations": {}
+  },
+  "frontier_vented_rifle_spare_magazine": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 9,
+    "nodes": 2,
+    "animations": {}
+  },
+  "north_service_rifle_spare_magazine": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 9,
+    "nodes": 2,
+    "animations": {}
+  },
+  "compact_patrol_rifle_spare_magazine": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 9,
+    "nodes": 2,
+    "animations": {}
+  },
+  "expedition_rifle_spare_magazine": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 9,
+    "nodes": 2,
+    "animations": {}
+  },
+  "visual_rifle_round": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 6,
+    "nodes": 1,
+    "animations": {}
+  },
+  "visual_spent_case": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 3,
+    "nodes": 1,
+    "animations": {}
+  },
+  "round_loading_strip": {
+    "opening_ready": true,
+    "metres": true,
+    "packed_textures": 6,
+    "nodes": 1,
+    "animations": {}
+  }
+}

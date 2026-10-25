@@ -1,0 +1,182 @@
+{
+  "scope": "Original local Blender assets, actual-byte validation, Godot captures and bounded local timing. No canonical package, sealed run or human play acceptance.",
+  "assets": {
+    "license": "Original project source, geometry and procedural maps; no external inputs",
+    "units": "metres",
+    "source_sha256": "25b3c33f10624aae23e62ed169b6f46db6b7709233ceef511b5bb4db283eb436",
+    "native_sha256": "77d61934093daef718c078e275b29485e645c2dbc809f6ea414bd394e194e1ff",
+    "generator_sha256": "52e9aaf1fde3f2e91f83f66ae748e2ebea3f1c8e181275436c96553b74389e8b",
+    "blender": "5.2.2 LTS",
+    "models": [
+      {
+        "id": "rowan_shopkeeper",
+        "triangles": 18574,
+        "surfaces": 10,
+        "sha256": "28d9c03f3a2c8a8c94e33e40528b35e472daa1d1fa3c2fac0b088dee4270c8c1"
+      },
+      {
+        "id": "sam_clinic",
+        "triangles": 17790,
+        "surfaces": 7,
+        "sha256": "b892e9da722856820ab1bf06dbf6a4ed21125c95201f28289fcddc12e3937f12"
+      },
+      {
+        "id": "lin_runner",
+        "triangles": 17790,
+        "surfaces": 7,
+        "sha256": "d861f11cb06b65576f6d656b5d4eb04c782fb970eff9f2202af7da587f2159cb"
+      }
+    ],
+    "ledger_sha256": "e5eb4d12d06888de37e72d8765f4a1dbcef0ac81a49a649fc3302d67375585ce",
+    "ledger_native_sha256": "378d35e109890e4f3247a99d7f78f7f6aa41ed674c572c2bda9fc290c57ba57a"
+  },
+  "sources": {
+    "brave-and-cold\\entities\\town_resident.gd": "0a2bf0c8ba68596e871125539681bd260116c7e85aa55d94e2c9cf42dcd344af",
+    "brave-and-cold\\systems\\town_resident_state.gd": "d3ceb50b4ad3b7aa5db4199788e2c9b552850c8794d100b4a54506160fdc5538",
+    "brave-and-cold\\world\\town_life.gd": "4051def13a3d941441e0082abdb0b48e1d7d7649d20c00cacb7d1b68c3b43ecf",
+    "brave-and-cold\\ui\\town_conversation.gd": "a252758d7d55f81bd36bccc3fe121a293fb72bbe51e9ec00c010078c23185636",
+    "brave-and-cold\\data\\town_dialogue.json": "caed3b3210465ae5de734327ccb658e6e0d2948954a296f43f3f019fd5d120c2",
+    "brave-and-cold\\entities\\zombies\\zombie.gd": "ed1d4885f7872396eefbc305ab17fbfbd5208a6356420ed8a7948211df9adebe",
+    "brave-and-cold\\world\\game_world.gd": "26a328a73433a8123b7f03179ab8e19df2cd55ac4579fc355c0772fc1f18249b"
+  },
+  "captures": {
+    "clinic-worker.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "a0de666d4e592e361e41894e414d2ee89e1ef6c554e6bfebd9637115b0aa20ac",
+      "review_sha256": "ca6e162d00670b02f77dd82f68f94acc081f2358a7d27f0d9acafcf3e09c96af"
+    },
+    "closed-shop.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "93cedfda4f08bf87633622836998c4466c429ccfdd40aa68c3dbc0ad1a5cd9d5",
+      "review_sha256": "a5446218bb74806b92f537f0c233ad50231c36abd505547978f781e6ad0a60d9"
+    },
+    "conversation.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "2385e6c9e4b0cf3260ca147c5400827bfac574f04692386bc0dcd74e33a6d72d",
+      "review_sha256": "f6e15b178f154133a07ea328d6d5c4f7cff3642a4f50e2d442088d6b4bea9475"
+    },
+    "ill-counter.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "b36cda2a8a3dafea6d6c1c3251b31f32974a9272d8243c38019a0484ba3e1db9",
+      "review_sha256": "91c1f8ddd2b4818a2c6d874b1bb8a50a8ed73e8e3712350a499195f37f88c191"
+    },
+    "infected-counter.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "351495b3019f1f3784fbeb5540b98298dc1232c8e5c6a00e08786e745c87742c",
+      "review_sha256": "c2da5ef0177bdbd7057b9373615589db3f224b68d64e259b2f5f3616a4b61c1d"
+    },
+    "ordinary-counter.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "029d45da11bd73d2dee46a5fc26d4beafb30b837841bed912b50fca9498659f8",
+      "review_sha256": "8d105110c9bd3946227b779c263acaeeea762aa4cc892c5ef097ca82159055a7"
+    },
+    "ordinary-face.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "09b46e54d278f76cba674af55559e6db622eab74ee0a21d071bed42954030362",
+      "review_sha256": "4d8aaaa0e44380597aeeceadaa876d09e582f53abd8775161f34e9d8af6478a7"
+    },
+    "physical-ledger.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "f7837ee1124748e27fdfc495131ba10a9b86fcd1466e33f00a70f76aafd18db7",
+      "review_sha256": "55b37b50d92d1ac5c6d3b8ce08586bb65f8eaee0a4740354afe2aabbd0b694b9"
+    },
+    "supply-runner.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "f3f6c9698dbbb9cad11d0c34dd424b0f0da17871194df594399970f11818649a",
+      "review_sha256": "bd2f3de5a5ff3ae55d15f28e24ee6478e69f0ad201c0c06c16345a514cdde8e4"
+    },
+    "terminal-owner.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "522215e8162ae7505c1fee031b97147b522a33eef4fea45191d3ddd7b70c62cf",
+      "review_sha256": "6e7c4dddc6390c66c6473c34807320c910f2c7861a2b35d849e5461b56a7ade6"
+    },
+    "unresponsive.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "2b829a7c581f59ace4d6356775c5437c60a7b23ee56c105edff1dff3679e235b",
+      "review_sha256": "937035a27d6b00e5727a2b999b1e2111c70e350f0c8e0570056d37e777215177"
+    }
+  },
+  "tests": {
+    "gameplay_and_pose_checks": 466,
+    "asset_checks": 111,
+    "failures": 0,
+    "suites": [
+      {
+        "suite": "town_life",
+        "checks": 47,
+        "failures": 0,
+        "log_sha256": "3281f9a5fdebd4395c8664e5d45f6237c06d27cc75242b807df0989638ab4ded"
+      },
+      {
+        "suite": "infected_skin",
+        "checks": 46,
+        "failures": 0,
+        "log_sha256": "d2adcb51b55d56963e2a826066ad36c3803b00914bf571d1830ef6ffaf1eb972"
+      },
+      {
+        "suite": "infected_gait",
+        "checks": 50,
+        "failures": 0,
+        "log_sha256": "7f0d63dc1dfb04a5e7bef890a7a3a87b194f9b544a68dd983764ee92a117a0a7"
+      },
+      {
+        "suite": "first_week_collapse",
+        "checks": 193,
+        "failures": 0,
+        "log_sha256": "7969f7b5cafbd81efbc41ebc7219a66fca62fa3660e0cc37f97426aa8b12d3b8"
+      },
+      {
+        "suite": "shift_work",
+        "checks": 28,
+        "failures": 0,
+        "log_sha256": "22bc9a1889dfd2598e0641fe11f64f8bea6d61ff12902bd6a36451bc34d48abd"
+      },
+      {
+        "suite": "lookout_opening",
+        "checks": 53,
+        "failures": 0,
+        "log_sha256": "63a24e90f59d1d32d055a69c8c506e2392e40e97b90befae8b73b2f4fee93d72"
+      },
+      {
+        "suite": "electrical_fieldwork",
+        "checks": 49,
+        "failures": 0,
+        "log_sha256": "16c4cc3687e5ed988ed74295235b67c5de4950233874df40fe8b14536be9321d"
+      }
+    ]
+  },
+  "timing_log_sha256": "21ae46af1df3c58e6f942906c6a75889c95ecd6ada4157528c8b1eccaadca125"
+}

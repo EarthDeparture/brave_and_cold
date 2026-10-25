@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "asset": "cloud_fields.png",
+  "origin": "Original deterministic procedural field generated in this project; no external textures or model assets",
+  "generator": "tools/atmosphere/generate_cloud_fields.py",
+  "seed": 1337,
+  "dimensions": [1024, 1024],
+  "channels": {"R": "cloud density", "G": "fine density detail", "B": "domain warp"},
+  "sampling": "Linear, repeating, cubic grid-wrap generation; stored as linear data",
+  "sha256": "ed492188352f194d407b42c6dd534061d0057f636ac5382fe40428a125ca3d73",
+  "verified": "Regeneration produced the identical PNG SHA256 on 2026-10-03"
+}

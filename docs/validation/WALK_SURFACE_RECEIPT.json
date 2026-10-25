@@ -1,0 +1,1094 @@
+{
+  "baseline_commit": "39d91cb",
+  "checkpoint": "checkpoint/pre-walk-surface-2026-10-04",
+  "branch": "codex/walk-surface-polish",
+  "engine": "Godot 4.7.2",
+  "gpu": "NVIDIA GeForce GTX 1080 Ti",
+  "resolution": [
+    1600,
+    900
+  ],
+  "seed": 20261003,
+  "baseline_survey": {
+    "terrain": {
+      "cases": 438,
+      "blocked_frames": 0,
+      "deflections": 0,
+      "camera_step_change_p95_m": 0.008214759826660154,
+      "camera_step_change_max_m": 0.0243988037109375,
+      "support_error_max_m": null
+    },
+    "road": {
+      "cases": 189,
+      "blocked_frames": 0,
+      "deflections": 1,
+      "camera_step_change_p95_m": 0.011808776855468776,
+      "camera_step_change_max_m": 0.0280609130859375,
+      "support_error_max_m": 0.719084930419921
+    },
+    "shoulder": {
+      "cases": 378,
+      "blocked_frames": 0,
+      "deflections": 0,
+      "camera_step_change_p95_m": 0.007418823242187497,
+      "camera_step_change_max_m": 0.0267181396484375,
+      "support_error_max_m": 0.445979309082034
+    }
+  },
+  "candidate_survey": {
+    "terrain": {
+      "cases": 438,
+      "blocked_frames": 0,
+      "deflections": 0,
+      "camera_step_change_p95_m": 0.0026352778077125528,
+      "camera_step_change_max_m": 0.00422993302345276,
+      "support_error_max_m": null
+    },
+    "road": {
+      "cases": 189,
+      "blocked_frames": 0,
+      "deflections": 0,
+      "camera_step_change_p95_m": 0.0048906303942203464,
+      "camera_step_change_max_m": 0.0205759331583977,
+      "support_error_max_m": 7.62893597539005e-06
+    },
+    "shoulder": {
+      "cases": 378,
+      "blocked_frames": 0,
+      "deflections": 11,
+      "camera_step_change_p95_m": 0.005536050349473953,
+      "camera_step_change_max_m": 0.0191313922405243,
+      "support_error_max_m": 7.62932816655848e-06
+    }
+  },
+  "tests": {
+    "walk_surfaces": {
+      "sha256": "a4f0526bd5170ab97e5f7998604d23f382f294fef6fa754ca5bd0c548c497a2f",
+      "results": [
+        "WALK_SURFACE_TEST_COMPLETE failures=0 routes=192 max_contact_error_m=0.00001517009454 max_camera_step_change_m=0.01003733277321"
+      ]
+    },
+    "jump": {
+      "sha256": "6591e9bdf4eb265e6c8ff5b063d44ae46c9879d478d7ca167ee9d5229d49976f",
+      "results": [
+        "JUMP_TEST_COMPLETE failures=0"
+      ]
+    },
+    "shore_walking": {
+      "sha256": "840d55420d570996bf37d333297f97bb3c0e62acce55b3983d39d25f34b65d21",
+      "results": [
+        "SHORE_WALK fps=30 crossings=28 blocked_frames=0 minimum_metres=25.0005416870117 max_vertical_bump_m=0.00892170146108",
+        "SHORE_WALK fps=60 crossings=28 blocked_frames=0 minimum_metres=25.0005416870117 max_vertical_bump_m=0.00311069190502",
+        "SHORE_WALK fps=120 crossings=28 blocked_frames=0 minimum_metres=25.0007629394531 max_vertical_bump_m=0.00089591741562",
+        "STAIR_CONTROLLER ascent=true height=21.4099999848425 blocked_frames=0",
+        "STAIR_CONTROLLER descent=true height=0.00000013743038 blocked_frames=0"
+      ]
+    },
+    "road_detail": {
+      "sha256": "844bc4d916c5a03b371e91e77b09b91d009416c7275b0da0bbf2eb933b344334",
+      "results": [
+        "ROAD_DETAIL_TEST_COMPLETE failures=0 points=1024 signs=18 metres=2558.13801461458"
+      ]
+    },
+    "viewmodel": {
+      "sha256": "307ac213720ac0c4cea26132539f2f7d904c7b6283b27799a3d4fce0f28d77af",
+      "results": [
+        "HAND_RIG_TEST failures=0"
+      ]
+    },
+    "fire_lookout": {
+      "sha256": "45bbbeb0a03f2c42e25b420bf7d81fc8bb5a95b9baab660a2087f093cf23a7c7",
+      "results": [
+        "FIRE_LOOKOUT_TEST failures=0"
+      ]
+    },
+    "environment_detail": {
+      "sha256": "1aa4e17c54d890eb5be7b76a961d3629de3f2e9fd66c3e305a3d0af8b5e2f386",
+      "results": [
+        "ENVIRONMENT_DETAIL_TESTS failures=0"
+      ]
+    },
+    "atmosphere": {
+      "sha256": "852cb98e800c8e527059cd4e9fb45d8336ecffe36ac287442fc1afb88dda4550",
+      "results": [
+        "ATMOSPHERE_TESTS failures=0 max_gameplay_difference=0.00000008703091 max_solar_step_radians=0.0027052925434"
+      ]
+    },
+    "frozen_water": {
+      "sha256": "154c27e9739c6b0047d6ef541f5b18f6832bfa295fad8f8b3a65546d23b0f5ff",
+      "results": [
+        "ICE_MESH_TEST finite=true clockwise=true authored_heights=true max_height_error=0.00001746205891 thickness=true footprint=true top_faces=88624 bottom_faces=88624 edge_quads=7752"
+      ]
+    },
+    "audio": {
+      "sha256": "3b8366ba1bf9effbc6f71ea30a88dff9340e6ecdc6fb7458036987e21e7f9d93",
+      "results": [
+        "AUDIO_TESTS failures=0"
+      ]
+    },
+    "survival": {
+      "sha256": "b5182f7b2577a558f4d90a65ee1bbc2bfa69fa72a98d82d92a40914e42be3565",
+      "results": [
+        "SURVIVAL_TESTS failures=0"
+      ]
+    }
+  },
+  "surface_render": {
+    "walk_metres": 31.83837890625,
+    "camera_step_change_max_m": 0.00277788937091827,
+    "controller_median_ms": 0.554,
+    "controller_p99_ms": 1.253
+  },
+  "captures": {
+    "rifle-hip-bare": "85ab39ef017a09335d43f9ab74c9c8341a5522f7863015a2f6dbca6be627f155",
+    "rifle-aim-bare": "1494fb4145ce06ee64b883c527d4293fdf5b871f4bce78e0fd3daa04b39d6e5c",
+    "rifle-bolt-bare": "e72ca3d751bec21d6134af769c2d032477c396d5428f0e1d4ae917191df89b01",
+    "axe-rest-bare": "8d878131ef010329d49d0b6c5e2412273ebc16d20267bea80579c074fa653f25",
+    "axe-strike-bare": "927011fadd48feb3ed1c344587a8dae42508ede8248c07e2aadc90f6836206ba",
+    "fists-bare": "c4a6162d0e6af298df267fae866f99a79d12c1c4eb06f57b106e46445868c39f",
+    "jab-bare": "f40f9db5a684a5fb30424a3d7a01cc169ff9eb8e0045a72c56649192281235b3",
+    "rifle-hip-gloves": "771f79e58ac778a3e8db395daa05abae3c8248ae4352485d88795ec73e30f3bc",
+    "rifle-aim-gloves": "41b50fdb7796e54436e5d918225ccea3be0f463feefd1ac3b6876b40948dc475",
+    "rifle-bolt-gloves": "caf55c1fc8e81649939e07a5228dd41f1a517db8694d8aa3349b263c3b60bdda",
+    "axe-rest-gloves": "7486d933b9b592e0988ef5f9e28cc4f117b7112bd16b08073f2b3c57db174faa",
+    "axe-strike-gloves": "6a44989c6dc90273d5ba02e81adaf74a38162933f4b4681c110784e3124c1a95",
+    "fists-gloves": "47f708d76085bf7a316ea6a84c5421cf1e3db686b1d730ab729d4c1354ceec99",
+    "jab-gloves": "3115b53514fe65f659cf4c853b4be09bdc2449e0520dac2ed795847c60441b9c",
+    "lookout-maintenance": "ec6a908447b365dc66060a08f2a53c64f7d8d5ba015420b39c1d14445e86ccea"
+  },
+  "film": [
+    {
+      "frame": 0,
+      "sha256": "64254b328692ae3252ea53dc40723cf6bda3bae14d31d941297744ccea8bf6ef",
+      "eye": [
+        -595.0,
+        10.4692431509053,
+        -72.0
+      ]
+    },
+    {
+      "frame": 10,
+      "sha256": "4a8444663a3da500eac8cb96d41d09cab21ece249ff6a25ccb5451fbf6aebd8a",
+      "eye": [
+        -595.187255859375,
+        10.4676746248733,
+        -72.017822265625
+      ]
+    },
+    {
+      "frame": 20,
+      "sha256": "28398a60a44f5d4ccae5ebae7a094a4767048ffed8b56a4b5560cb3c1bd10452",
+      "eye": [
+        -595.526000976563,
+        10.4617992220446,
+        -72.1055908203125
+      ]
+    },
+    {
+      "frame": 30,
+      "sha256": "04a137af4d4ba81d5dfa5f919399610637b182b6727df56d868d0d44f065dcf2",
+      "eye": [
+        -596.0234375,
+        10.4552696747705,
+        -72.12353515625
+      ]
+    },
+    {
+      "frame": 40,
+      "sha256": "d481965f70694f8ff716b952c2e8296c695b1fd79d0711485358472da70a0e5e",
+      "eye": [
+        -596.556396484375,
+        10.4624382052571,
+        -72.123779296875
+      ]
+    },
+    {
+      "frame": 50,
+      "sha256": "7d10e280ff7d47592b9d7be8df477f9241ccb5d312fd2d3f6f3085d406c2de47",
+      "eye": [
+        -597.089111328125,
+        10.4517116863281,
+        -72.1241455078125
+      ]
+    },
+    {
+      "frame": 60,
+      "sha256": "a0e4357ce48db5654bd2d6859eaa45f60493f50bae639015d94da380a78f4a5c",
+      "eye": [
+        -597.621948242188,
+        10.4452885231003,
+        -72.1244506835938
+      ]
+    },
+    {
+      "frame": 70,
+      "sha256": "47ad227825a045de4f9753ffa3a2af26d64f5e4a6ef3bd699887ae293f55a4df",
+      "eye": [
+        -597.967895507813,
+        10.4512975169346,
+        -72.218505859375
+      ]
+    },
+    {
+      "frame": 80,
+      "sha256": "e78d750ef8c9644357d546ad6c59568c1a743a9d9b09bb22686079a60ddefa38",
+      "eye": [
+        -598.480590820313,
+        10.4525495734997,
+        -72.2290649414063
+      ]
+    },
+    {
+      "frame": 90,
+      "sha256": "4e7faea65d5d83e8fcc740b9d90a1fc4afa82bc6ba1f9bd8de3ea9f16727278b",
+      "eye": [
+        -598.7646484375,
+        10.4477481748909,
+        -72.3512573242188
+      ]
+    },
+    {
+      "frame": 100,
+      "sha256": "de7d3d6e62303e36395c2f79ad7c0cdc2a2ea9be784ec955891dac6082c5b966",
+      "eye": [
+        -598.978393554688,
+        10.4465358322486,
+        -72.4469604492188
+      ]
+    },
+    {
+      "frame": 110,
+      "sha256": "f37cff2c06503d7be47f25a88d777e8f7f51607c8a5b49fa0cc37db292ef86b9",
+      "eye": [
+        -599.454345703125,
+        10.4443352101371,
+        -72.4718017578125
+      ]
+    },
+    {
+      "frame": 120,
+      "sha256": "9011cec73433b48014dabcb020cd413482736c05b98a81487d90e2e102afb0d8",
+      "eye": [
+        -599.7001953125,
+        10.4488900601864,
+        -72.6159057617188
+      ]
+    },
+    {
+      "frame": 130,
+      "sha256": "09b9e8e8fd3c222f4e1239d22790a736986d13145433b7b4843caa839e4853a2",
+      "eye": [
+        -600.17822265625,
+        10.4459567819722,
+        -72.6430053710938
+      ]
+    },
+    {
+      "frame": 140,
+      "sha256": "4fc2042cd75ca1a454dcde1c563fba2ea143d40ed67abcac6010361165b1eb79",
+      "eye": [
+        -600.63720703125,
+        10.4380964459851,
+        -72.6798706054688
+      ]
+    },
+    {
+      "frame": 150,
+      "sha256": "444936a3e1697c4507c543e3965dbec57beb7e67742559e20a27be653e008551",
+      "eye": [
+        -600.860107421875,
+        10.4399432474747,
+        -72.8384399414063
+      ]
+    },
+    {
+      "frame": 160,
+      "sha256": "a4a6724746fffc0b3cff756d679623cba7c22ccf53543dec4d34da4a18ee6179",
+      "eye": [
+        -601.326293945313,
+        10.4429701366462,
+        -72.8717041015625
+      ]
+    },
+    {
+      "frame": 170,
+      "sha256": "48eebb43c78642173cf10f0d7de856c8611abaf05a9ccfa0d7ab21f384d95c80",
+      "eye": [
+        -601.859252929688,
+        10.437673738692,
+        -72.8720703125
+      ]
+    },
+    {
+      "frame": 180,
+      "sha256": "40dde09b279c3595d4bb296074147f19d5e42ecb1a7fd6461d52b99692cac095",
+      "eye": [
+        -602.391967773438,
+        10.4280008459464,
+        -72.8723754882813
+      ]
+    },
+    {
+      "frame": 190,
+      "sha256": "29048e934bd918388f96dc8fc63136603018a43aef5be6d96f8b9214aee8782d",
+      "eye": [
+        -602.885864257813,
+        10.4330315436237,
+        -72.8921508789063
+      ]
+    },
+    {
+      "frame": 200,
+      "sha256": "ebcbcf1be47bd17f9dc402b0612f45ca7c72e7f21f554739d231d6e00bffef16",
+      "eye": [
+        -603.211181640625,
+        10.4394534784369,
+        -73.0179443359375
+      ]
+    },
+    {
+      "frame": 210,
+      "sha256": "262fbbf1b5819ade57d012ea95523a9b5ef47f32c919c0d9dfd96019fc47210b",
+      "eye": [
+        -603.58056640625,
+        10.4312692871317,
+        -73.10302734375
+      ]
+    },
+    {
+      "frame": 220,
+      "sha256": "8113fdf663a7a3fd40e7761954e7a2f851977dbdf123adc05111b26334676fb1",
+      "eye": [
+        -603.882446289063,
+        10.4281782479957,
+        -73.2347412109375
+      ]
+    },
+    {
+      "frame": 230,
+      "sha256": "e24cfbdba0c733834fbd0825e43033942a0627b04727fe60355d8972843a1ec3",
+      "eye": [
+        -604.231201171875,
+        10.4267197921872,
+        -73.320556640625
+      ]
+    },
+    {
+      "frame": 240,
+      "sha256": "559c2793389122cb79ee19a35ee4305a68abc79b81b207b781bcc64a3c53f7f5",
+      "eye": [
+        -604.764038085938,
+        10.4340741722262,
+        -73.3208618164063
+      ]
+    },
+    {
+      "frame": 250,
+      "sha256": "e9411cd59f2fcdd8a46c7415a8f983a450930e09a35bcf96b0a6c9011608c92d",
+      "eye": [
+        -605.0791015625,
+        10.4297151016071,
+        -73.393798828125
+      ]
+    },
+    {
+      "frame": 260,
+      "sha256": "4bc5ffa59ab0f3b1f4f29120212764a0bf67a63745a71321de0a05e33ae51f45",
+      "eye": [
+        -605.48291015625,
+        10.4249351685867,
+        -73.4058227539063
+      ]
+    },
+    {
+      "frame": 270,
+      "sha256": "fba44575bc5608be050979c3ecdcf4b612a610b690bbb0cc425ded1f216f4d69",
+      "eye": [
+        -605.716674804688,
+        10.4244909398258,
+        -73.4631958007813
+      ]
+    },
+    {
+      "frame": 280,
+      "sha256": "4b025c043cde8e6511e576002560d7ee78f29ad1b35630f9fb409353fce26404",
+      "eye": [
+        -606.185424804688,
+        10.4243577858433,
+        -73.5089111328125
+      ]
+    },
+    {
+      "frame": 290,
+      "sha256": "f98aa8e25b143cb37cae8ede0de96dd0d147f9845cfbc1f8b6d0ea4af2c323b4",
+      "eye": [
+        -606.5107421875,
+        10.4301322393003,
+        -73.6133422851563
+      ]
+    },
+    {
+      "frame": 300,
+      "sha256": "16915698cc5a57e58a6df209d9ccfc7442df22f3d14bb5f2f3ec6cfcefdb15aa",
+      "eye": [
+        -606.74560546875,
+        10.4266396632884,
+        -73.7701416015625
+      ]
+    },
+    {
+      "frame": 310,
+      "sha256": "5c503d3efb89f3d2407c852747c0c61a7154fa005239c2cee4e7b01330362ccd",
+      "eye": [
+        -607.181762695313,
+        10.4189763767645,
+        -73.82275390625
+      ]
+    },
+    {
+      "frame": 320,
+      "sha256": "25c4c71f9395bf84c94c9e9f199d6769a4cc7eba69e201538cb4cc8dd7238745",
+      "eye": [
+        -607.378662109375,
+        10.4198798229918,
+        -73.9968872070313
+      ]
+    },
+    {
+      "frame": 330,
+      "sha256": "ef1349c37033238d24f6c9a611f8190a8e4dfae6657cec4df1e9c6231c78267e",
+      "eye": [
+        -607.7724609375,
+        10.4211022597738,
+        -74.0721435546875
+      ]
+    },
+    {
+      "frame": 340,
+      "sha256": "b789651d450a53d139bce3adee3af47601c5eeaedbdbd28ef90ceba2f6e74c99",
+      "eye": [
+        -608.232299804688,
+        10.4245431945892,
+        -74.109130859375
+      ]
+    },
+    {
+      "frame": 350,
+      "sha256": "29d512a45a7832a1ef5067cfe8f00954d4d269489bba0e80ca9e9768130f7b96",
+      "eye": [
+        -608.493774414063,
+        10.4196837004274,
+        -74.2454223632813
+      ]
+    },
+    {
+      "frame": 360,
+      "sha256": "c729a307defbe62248317f5af1dd575e2257787e914307b8c651c5ed62d1d37a",
+      "eye": [
+        -608.774291992188,
+        10.415734725073,
+        -74.36669921875
+      ]
+    },
+    {
+      "frame": 370,
+      "sha256": "792ee36e377cdff892f12732a7d8475052a4226400fcfc61a2bd349503a53fff",
+      "eye": [
+        -609.199340820313,
+        10.4147855779156,
+        -74.4212036132813
+      ]
+    },
+    {
+      "frame": 380,
+      "sha256": "caf97c122bc5aaaa8897f56b8b8feb5949c343f70deee9b9fafcc74ae8125294",
+      "eye": [
+        -609.62890625,
+        10.4206593235722,
+        -74.4735717773438
+      ]
+    },
+    {
+      "frame": 390,
+      "sha256": "eb9e0546ae7c62e8e3d35573582d89239c77a9d7ebd96572179b07b10d773cd7",
+      "eye": [
+        -609.964111328125,
+        10.4175145113841,
+        -74.5730590820313
+      ]
+    },
+    {
+      "frame": 400,
+      "sha256": "26326d17b56ec0b7bdb38c84ddbae06384abfd1a54fbd657e9a51b4cf6c55480",
+      "eye": [
+        -610.314697265625,
+        10.4120839666575,
+        -74.6642456054688
+      ]
+    },
+    {
+      "frame": 410,
+      "sha256": "3e89554a362801c4db8c7f95eea410e378c3d04ad063d28cc161fd5a4f4deaf9",
+      "eye": [
+        -610.54052734375,
+        10.4118745066226,
+        -74.8052978515625
+      ]
+    },
+    {
+      "frame": 420,
+      "sha256": "9a5cc5417446eccadb6c2919795aa11e240b83172ce1b2cb67c629db737e37a5",
+      "eye": [
+        -610.85888671875,
+        10.4124685944989,
+        -74.9104614257813
+      ]
+    },
+    {
+      "frame": 430,
+      "sha256": "e32b518ad9a83d3b109ec5bb01ef9f2e4402a2e65f2f170f7c9bbf9b24def542",
+      "eye": [
+        -611.356201171875,
+        10.4183760607411,
+        -74.9283447265625
+      ]
+    },
+    {
+      "frame": 440,
+      "sha256": "25c7b9d0578351713e3373b4752ef15f68c491a02df4ffdfe66fb61bbbc322ac",
+      "eye": [
+        -611.681518554688,
+        10.412622412201,
+        -75.0325927734375
+      ]
+    },
+    {
+      "frame": 450,
+      "sha256": "db75cf2a7080712dbd031d578d25dddbec912ff85e2b56173b60818cac2f5f82",
+      "eye": [
+        -611.848022460938,
+        10.4116256106645,
+        -75.13330078125
+      ]
+    },
+    {
+      "frame": 460,
+      "sha256": "fa023131f0ea237f9579bfce3a606c47439988344c600a00886b2bc5e2313fb1",
+      "eye": [
+        -612.192138671875,
+        10.4071481581777,
+        -75.2645874023438
+      ]
+    },
+    {
+      "frame": 470,
+      "sha256": "746284f3f57191b81534d47be056ffb358c4f2fe97c3465ef7e2b08da0cb8e79",
+      "eye": [
+        -612.708251953125,
+        10.4095436325297,
+        -75.28173828125
+      ]
+    },
+    {
+      "frame": 480,
+      "sha256": "49b728a8dea87f6d03d8c0f943df267ca3337bfc64d5fbbb18965f11e7388c35",
+      "eye": [
+        -613.110717773438,
+        10.4140775445849,
+        -75.3474731445313
+      ]
+    },
+    {
+      "frame": 490,
+      "sha256": "3e477b57013203d176ba657644279063b692dc48b68d44ce3f11427fa2ea2a3e",
+      "eye": [
+        -613.430908203125,
+        10.4094725213945,
+        -75.452392578125
+      ]
+    },
+    {
+      "frame": 500,
+      "sha256": "287c5128fb08286a9e3a85c89bc1c8e6bfac9552d6b4da85a89781116163cb30",
+      "eye": [
+        -613.7705078125,
+        10.4053964605555,
+        -75.49462890625
+      ]
+    },
+    {
+      "frame": 510,
+      "sha256": "5f3b19874caa7f2959801f1f61e1996ae13f3a52b4352e952575ccefe70e4564",
+      "eye": [
+        -614.098266601563,
+        10.4068404491991,
+        -75.5974731445313
+      ]
+    },
+    {
+      "frame": 520,
+      "sha256": "790a9b331a86a29ab5f63781fb38d614f2b68b71293f79937bf3cdcca50e6a14",
+      "eye": [
+        -614.41943359375,
+        10.4112996989861,
+        -75.7393188476563
+      ]
+    },
+    {
+      "frame": 530,
+      "sha256": "136fb0ee59d979eca5e3899d100efac4edc3acdd45bf10e9e0dbc3c7d6701dbc",
+      "eye": [
+        -614.756713867188,
+        10.4133303160779,
+        -75.881103515625
+      ]
+    },
+    {
+      "frame": 540,
+      "sha256": "36ed5d2f787d1bda62cf993496502bddfe07f1d4604cfa14b131f940f7a52b12",
+      "eye": [
+        -615.260131835938,
+        10.4033927908167,
+        -75.8814086914063
+      ]
+    },
+    {
+      "frame": 550,
+      "sha256": "8bf64b61b711c80e18ee4fc39181eb10ce4ddee61748ca73510b39795ff64e62",
+      "eye": [
+        -615.722900390625,
+        10.4049069695175,
+        -75.89990234375
+      ]
+    },
+    {
+      "frame": 560,
+      "sha256": "77d919e08e50207c68b6e60b6df9d9555f43ced4945ced73ddb0864beb00404d",
+      "eye": [
+        -615.990478515625,
+        10.4113295278512,
+        -76.0183715820313
+      ]
+    },
+    {
+      "frame": 570,
+      "sha256": "f312681aba5e53be5b318cea9c87ef0922bfc45e5d38defafe0c6fdce69c8f6e",
+      "eye": [
+        -616.316284179688,
+        10.4157166444929,
+        -76.10302734375
+      ]
+    },
+    {
+      "frame": 580,
+      "sha256": "c5f10b5154ed1c2d9be78363faef9f4cbb18898d27d3189ffbb8ab4f39b3058e",
+      "eye": [
+        -616.750122070313,
+        10.4081354942173,
+        -76.1727905273438
+      ]
+    },
+    {
+      "frame": 590,
+      "sha256": "1494b2f53b0e3a7cc6ff37c01942bf0f1506707d1e5c1d10b1c6b288586049c5",
+      "eye": [
+        -616.982543945313,
+        10.4098795959726,
+        -76.3218383789063
+      ]
+    },
+    {
+      "frame": 600,
+      "sha256": "67ce3c1a86083037b81d18e6b5407db4855bda58e22c08e3341b9027c4e096b4",
+      "eye": [
+        -617.44189453125,
+        10.4316922724247,
+        -76.3642578125
+      ]
+    },
+    {
+      "frame": 610,
+      "sha256": "2b7f285871beb10b2489cf904e611e160696456b7822ee6e3be8433aaafb4787",
+      "eye": [
+        -617.76611328125,
+        10.482696054969,
+        -76.4622802734375
+      ]
+    },
+    {
+      "frame": 620,
+      "sha256": "ead08f2ae4f6773fca302e2bada070078326eab3464b85677bbfe51db5ac90d1",
+      "eye": [
+        -618.248657226563,
+        10.5938979610801,
+        -76.4824829101563
+      ]
+    },
+    {
+      "frame": 630,
+      "sha256": "2b329823135c2dbe15cd7b893a9ee7dc262d8e84e36375162771c41515329266",
+      "eye": [
+        -618.609375,
+        10.7137695476413,
+        -76.5635986328125
+      ]
+    },
+    {
+      "frame": 640,
+      "sha256": "074ed61fae54db4769fd621ac599eddf970b4e218efc21e343e8fa50f0c45860",
+      "eye": [
+        -619.130859375,
+        10.8986816108227,
+        -76.5638427734375
+      ]
+    },
+    {
+      "frame": 650,
+      "sha256": "7873631c8159b4baf30ca9e6126b390e3c612fabfbbb3bce8ebf8c1097120700",
+      "eye": [
+        -619.654541015625,
+        11.1150354146957,
+        -76.5640869140625
+      ]
+    },
+    {
+      "frame": 660,
+      "sha256": "8ad73ca9ba0e582288a068eb09ab17668465fb4068102d01667930633568d4c3",
+      "eye": [
+        -619.996704101563,
+        11.2870342731476,
+        -76.6559448242188
+      ]
+    },
+    {
+      "frame": 670,
+      "sha256": "6937b5e2ae96e26c5dd06ffe22e6b025c8e5dd82184be67d5a5354420328f210",
+      "eye": [
+        -620.4013671875,
+        11.4339629784226,
+        -76.7169799804688
+      ]
+    },
+    {
+      "frame": 680,
+      "sha256": "77e61029426d3f06b72234c20e9d8fc7624ea7b10b111984b480fa4fab34e5bc",
+      "eye": [
+        -620.780029296875,
+        11.5578085109591,
+        -76.812255859375
+      ]
+    },
+    {
+      "frame": 690,
+      "sha256": "3622da817bcaa7f597a0e7f2e82d41a71183831a3c4365ad04252b753dd11b2b",
+      "eye": [
+        -621.204467773438,
+        11.7224038094282,
+        -76.8639526367188
+      ]
+    },
+    {
+      "frame": 700,
+      "sha256": "4bd2f9a7e253542e582907b571372c8e424bacc00d56a9fd7a9263fcd2c5acca",
+      "eye": [
+        -621.47412109375,
+        11.8159418925643,
+        -76.863525390625
+      ]
+    },
+    {
+      "frame": 710,
+      "sha256": "22229164c02333bd3f18f9d9e4e455ac678ab8dc89b552d6c197ef41827d9df7",
+      "eye": [
+        -621.8310546875,
+        11.9193126037717,
+        -76.9008178710938
+      ]
+    },
+    {
+      "frame": 720,
+      "sha256": "c143d1cdee41538ae1cb3b8bb664b59bd68c4515843b35e2cd4120ea670fa08d",
+      "eye": [
+        -622.09912109375,
+        12.0178473517299,
+        -77.0323486328125
+      ]
+    },
+    {
+      "frame": 730,
+      "sha256": "ba90c10f5755128cf2f9545b55cd35b2f9d3c6274f11b7d3251ca59291d50c5f",
+      "eye": [
+        -622.311279296875,
+        12.0771881230176,
+        -77.17041015625
+      ]
+    },
+    {
+      "frame": 740,
+      "sha256": "c64f80b0c86ecf759cf2f4eb844f6a70aed84c91b308b8f985adb93d6e677697",
+      "eye": [
+        -622.76806640625,
+        12.15798856318,
+        -77.2020874023438
+      ]
+    },
+    {
+      "frame": 750,
+      "sha256": "9b1cb91164a699265e09da29f2cc6efda9933233e33aa915576d98ae0d734db1",
+      "eye": [
+        -623.29443359375,
+        12.2708926200867,
+        -77.20263671875
+      ]
+    },
+    {
+      "frame": 760,
+      "sha256": "85b9460df054347301acc5b6ad621e0bb2a6ab661f96902ecea1ade1986444e3",
+      "eye": [
+        -623.592529296875,
+        12.353609085083,
+        -77.318359375
+      ]
+    },
+    {
+      "frame": 770,
+      "sha256": "7515fe2358ce5d2d9d5d4a37db331e2e9f70e9faef0fce4b7600231a724694e4",
+      "eye": [
+        -624.0458984375,
+        12.4433119222522,
+        -77.3556518554688
+      ]
+    },
+    {
+      "frame": 780,
+      "sha256": "7a08942e3823c1c017231275dcc0c13ea413b00b76f1f68976e52adcce113aa6",
+      "eye": [
+        -624.426147460938,
+        12.5146259814501,
+        -77.4362182617188
+      ]
+    },
+    {
+      "frame": 790,
+      "sha256": "145596326ff2896dce5d8cc9f04c8eb23c2a8daacfe8f1a90bca20bad928ea92",
+      "eye": [
+        -624.953979492188,
+        12.5770493969321,
+        -77.4364624023438
+      ]
+    },
+    {
+      "frame": 800,
+      "sha256": "a4db76083f94da14653b948c62e7857615afc55099efc1ddb4ce5011264ad745",
+      "eye": [
+        -625.481689453125,
+        12.6462827436626,
+        -77.4366455078125
+      ]
+    },
+    {
+      "frame": 810,
+      "sha256": "5ebd527380f20df5211374c844c3d01b4d7f6126f51a8bfc69ce3cba3d0347cb",
+      "eye": [
+        -626.00830078125,
+        12.7174516692758,
+        -77.43701171875
+      ]
+    },
+    {
+      "frame": 820,
+      "sha256": "7d7e4d094399b61266ea021341d9f5bd9c0fb917e0ac57060a319bb29f663b89",
+      "eye": [
+        -626.23046875,
+        12.7551036663353,
+        -77.5472412109375
+      ]
+    },
+    {
+      "frame": 830,
+      "sha256": "0c8ecc2cf755debb97bb283a550824fbca25b667232a95a63fed5fc0bb087fdd",
+      "eye": [
+        -626.528686523438,
+        12.7750910315663,
+        -77.665283203125
+      ]
+    }
+  ],
+  "assets": {
+    "hand": {
+      "version": 6,
+      "source": "tools/blender/gen_hand_rig.py",
+      "blender": "5.2.2 LTS",
+      "volume_correctives": {
+        "BareHand": {
+          "Fist": 0.005104533499698947,
+          "Shaft": 0.0025222503482892735,
+          "Trigger": 0.0021602972967708104,
+          "Support": 0.0025292503037675816,
+          "Bolt": 0.0023131222411379142
+        },
+        "LeatherGlove": {
+          "Fist": 0.00520780849836058,
+          "Shaft": 0.0027835760706217605,
+          "Trigger": 0.002281374721656625,
+          "Support": 0.003014198887222015,
+          "Bolt": 0.0028620209748329954
+        },
+        "BareHandLeft": {
+          "Fist": 0.005104533499698947,
+          "Shaft": 0.0025222503482892735,
+          "Trigger": 0.0021602972967708104,
+          "Support": 0.0025292503037675816,
+          "Bolt": 0.0023131222411379142
+        },
+        "LeatherGloveLeft": {
+          "Fist": 0.00520780849836058,
+          "Shaft": 0.0027835760706217605,
+          "Trigger": 0.002281374721656625,
+          "Support": 0.003014198887222015,
+          "Bolt": 0.0028620209748329954
+        }
+      },
+      "units": "metres",
+      "wrist_origin": [
+        0,
+        0,
+        0
+      ],
+      "forearm_axis": [
+        0,
+        0,
+        1
+      ],
+      "bones": [
+        "hand",
+        "index_01",
+        "index_02",
+        "index_03",
+        "middle_01",
+        "middle_02",
+        "middle_03",
+        "ring_01",
+        "ring_02",
+        "ring_03",
+        "little_01",
+        "little_02",
+        "little_03",
+        "thumb_01",
+        "thumb_02",
+        "thumb_03"
+      ],
+      "grips": [
+        "Open",
+        "Fist",
+        "Shaft",
+        "Trigger",
+        "Support",
+        "Bolt"
+      ],
+      "validation": {
+        "BareHand": {
+          "vertices": 13939,
+          "triangles": 27872,
+          "closed": true
+        },
+        "LeatherGlove": {
+          "vertices": 13939,
+          "triangles": 27872,
+          "closed": true
+        },
+        "BareHandLeft": {
+          "vertices": 13939,
+          "triangles": 27872,
+          "closed": true
+        },
+        "LeatherGloveLeft": {
+          "vertices": 13939,
+          "triangles": 27872,
+          "closed": true
+        }
+      },
+      "thumb_targets_godot": {
+        "Fist": [
+          -0.01319,
+          -0.04137,
+          -0.09882
+        ],
+        "Shaft": [
+          0,
+          -0.018,
+          -0.098
+        ],
+        "Bolt": [
+          -0.01,
+          -0.022,
+          -0.103
+        ],
+        "Trigger": [
+          -0.047,
+          -0.055,
+          -0.04
+        ],
+        "Support": [
+          -0.044,
+          -0.048,
+          -0.033
+        ]
+      },
+      "thumb_distal_length": 0.021954496145718913,
+      "sha256": "3eac0e0cc6e7b919dad52d39e8f32e96bf7e17dbfcf879ce4fe64db9afb8b1e0",
+      "generator_sha256": "7b56cf4dc69d40ddde140a9460d705644e039c47dd7ad82825b73b4d3823f839",
+      "material_source_sha256": "0c59ec4f0a96c284f24dc2f31536eb4ef45ee431af8725bdf235ed000d29d42f",
+      "license": "Project-authored original geometry and procedural textures; repository ownership"
+    },
+    "power_panel": {
+      "origin": "Project-authored original Blender geometry and painted graphics",
+      "units": "metres",
+      "triangles": 1806,
+      "draw_surfaces": 4,
+      "dimensions_m": [
+        0.48,
+        0.7,
+        0.19
+      ],
+      "generator": "tools/blender/gen_field_panel.py",
+      "sha256": "be1ab603f9eccaec2bf2cf2da483dfabe27291fd2da4e8f386e2a7d6f9295094",
+      "texture_sha256": "ba3e6ed5e890d95e5a669e704214fb758644b6fd45ec8ee4341727cdcda6aa08",
+      "license": "Original project-owned asset; system font is rasterized, not redistributed"
+    }
+  },
+  "source_sha256": {
+    "entities/player/player.gd": "a0ee10bcca207aa18f7e321122241e8839b406a32e1e4b8a220f13bc56c4b292",
+    "entities/player/survivor_hand_rig.gd": "4606f0416b281686a0f6365dd462ccc5a1b0839b6a58af612d8b0f10af8b34e0",
+    "entities/player/viewmodel.gd": "98aa32aaf5f732ceab761db35d433ff0ed2ed403155b83d35df18ed3c9fe4ed8",
+    "world/walk_surface.gd": "a3f489f8db35f11a1f9d9a64d7f4dd85cba46c7bd9d979d19825300a537f002c",
+    "world/walk_ribbon.gd": "87af352c87c274cfcdba70ccac9c2a774bc076f1a93b6c67d896d9c7e3509226",
+    "world/road_net.gd": "02bccad42c6c0ec57f1d22ddb1841be41147fc5c5fe683995d52dbad6c47c3d8",
+    "world/trail_net.gd": "4bdf1e43e022af92d0a11ac4e20c8be2568a904ea78a8c451c93459a862582b4",
+    "world/fire_lookout.gd": "5d412b47b3cbf2ae7164d301dae6b9278dc9475b195315a4046726db93346064",
+    "world/game_world.gd": "f514a367f16978812f6b5607a31bcab317e1fc9f74a4b31321e57e5787f7c401",
+    "world/storage_chest.gd": "9eeb961179c11e0dcb517c912c48415b39333b44e391ef0fdcae318bcbbcc79f",
+    "world/store.gd": "e3559d16fa03d6064489b86e4b7b98326f0bbcd2a147464dd47f32159443b438",
+    "systems/population.gd": "758c3c91b5e4c1141c08f23f469c026c502e2b0e31a45e5a217a1a8580dd1246",
+    "entities/animals/deer.gd": "614c7b72752fbe46d07a707431f98b4c869c977c7f66989636f36d3107c32664",
+    "entities/animals/wolf.gd": "aa44fd9ba9871b12d7acb9ecd851b273247335f1df1a47c8f60830a682b7a94d",
+    "entities/zombies/zombie.gd": "87a89ad5787f97298f2c338bbbd51672c01f7219906970dc9a7c9e61e0ec30bd",
+    "tests/survey_walking.gd": "64b794dfc485a0ac9febd0072b83ab137fffe437d092584229fe031225941e82",
+    "tests/test_walk_surfaces.gd": "4573ac25b971a732df19bbfc2cf2245430b0b57eedccaff70090da4abea0401a",
+    "tests/visual/capture_surface_review.gd": "f3c42a0a4d830c13a687e036881008ff8d59bb945ac1d8d08869197cbcf34363"
+  },
+  "evidence_sha256": {
+    "baseline.json": "3b0bd6af49e1c6b5f77a2c93f76948a1c0203a0d8f38bb1f8777a423da9466e2",
+    "candidate.json": "e89b4cbec63c71244f1e4ce4cc78ceed496d2b897fd77adc6eba1ac621ecd071",
+    "final/manifest.json": "add90a39beec058afa12e7f43369001af52a6f5a601934502d81e3935573753d",
+    "review/walking.gif": "853abe3cdf9578f1163ca8c7e08e3426a66c9fa288914e755ec454f0539e6029",
+    "review/hand-grips.png": "b2c91dcf2a27175be4b7f5f8a44b90fb59e7b52f7f9faa8fc92ab38058d328f9"
+  },
+  "limitations": [
+    "Survey samples walkable grades; cliffs and solid objects remain blockers.",
+    "Controller timing excludes renderer, AI and screenshot readback; no horde or GPU benchmark claim.",
+    "The road remains a steep remote service route; grading preserves existing geography.",
+    "The technician panel is an original visual asset, without a new maintenance mechanic.",
+    "Existing Terrain3D deprecation and shutdown resource warnings persist."
+  ]
+}

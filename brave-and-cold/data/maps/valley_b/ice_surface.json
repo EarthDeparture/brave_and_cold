@@ -1,0 +1,19 @@
+{
+  "source": "tools/terrain/repair_ice_surface.py",
+  "source_sha256": "3c18ebfe016edd5928b08aec815a5dcff6195d7e144c810af566fe87242b4909",
+  "inputs": {
+    "height.r16": "374467df4742c6358f8a2b11a3120b7481a9c477fc8835e4973fcd359f0bcc5b",
+    "water_mask.png": "5616fc303ab5a764e76e22bc2b4aa74e390b5cbce443eb6ea8a361dbf3c18e5e",
+    "water_level.r16": "943f4a2ebced9d1e12340a9820560261f1fdaae6f9452e6a103f51a88da1a0b3",
+    "water.json": "5e4e7d1c9136d31ba2d37ee31eac0fe43fc2d6cc3981bd04114b37f09100f99e"
+  },
+  "original_mask_pixels": 135623,
+  "invalid_original_levels": 9574,
+  "connected_basin_pixels": 207740,
+  "ice_mask_pixels": 218650,
+  "render_mask_pixels": 242477,
+  "bank_overlap_m": 3.0,
+  "support_overlap_m": 1.0,
+  "level_smoothing_sigma_m": 1.5,
+  "terrain_changed": false
+}

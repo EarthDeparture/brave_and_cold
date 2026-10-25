@@ -1,0 +1,17 @@
+{
+  "bones_per_hand": 17,
+  "meshes": 6,
+  "animations": 16,
+  "all_variant_vertices": 66622,
+  "all_variant_triangles": 120348,
+  "native_poses_checked": 60,
+  "native_self_intersections": 0,
+  "runtime_contact_cases": 25,
+  "maximum_sampled_solid_overlap_m": 0.0029521887190639973,
+  "actual_gpu_captures": 82,
+  "gpu": "NVIDIA GeForce GTX 1080 Ti",
+  "renderer": "forward_plus",
+  "runtime_hand_sha256": "6c8ba2b710faa1059ce5508cbd20ee5a87f793060c579b4d8fd9c8bfc504f5db",
+  "runtime_profiles_sha256": "b83dca720c5861570745ccc6c72adf7cc3b0e2453c739d688e05765a9e5fecdf",
+  "scope": "New hands live on existing rifle/tools; eight weapon presentations and reload clips, current inventory/ammunition rules retained."
+}

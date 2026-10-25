@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "origin": "Original local Blender/Pillow asset family, not an external provider package",
+  "authoring_path": "tools/blender/generated/winter_tree_diversity_v1",
+  "destination": "brave-and-cold/assets/environment_detail/tree_diversity",
+  "policy": "10 single-mesh near/far GLBs, rooted 1m source scale, no colliders, <=4200/1100 triangles, original 1024px alpha atlas",
+  "static_validation": "passed",
+  "copied_hashes": {
+    "winter_twigs.png": "4a083f75619571382e059bafd789e840d665debc99f1b6714e93efc99b35a7e9",
+    "winter_boughs_far.png": "d0f49c41e45d76d5613ce9a4c4d844e6c5b6bb3d209058f09060f6d336c66a53",
+    "winter_bark.png": "88f250538f6d61cffd351db9122d25c089961a2df2d559d52677dbd182b0cb0b",
+    "winter_bark_normal.png": "3daa9e0d9debf515c10c426822cf89ed3738cf07cf6a89f3fd003d76cc3a580e",
+    "manifest.json": "c20248662d4a0cf3d11808a2f59adad44cfb9a9077d07aca1a9e8a38ccd73bbf",
+    "texture_provenance.json": "eed37a926696d0b24bb3eeb6a7ad862ce10e0741765605966a17db21d22ed481",
+    "validation.json": "fd59a0bcbee01aa0a4420d8c434db248bf55385736cdaa6acf55e9086f968103",
+    "snow_pine_open.glb": "fd9813e47e4e150e5054992729c814ec8f7bba970bad24a93dd0874c6aae300e",
+    "snow_pine_open_far.glb": "945aa0f89f23ee3f3d256f87a224c6e095bf7f392193943ea1a644ba357e7bfe",
+    "snow_fir_full.glb": "08f90f310567fc3975ea5c185247fe86ad785977a7b082e155c200d5cb7320d5",
+    "snow_fir_full_far.glb": "a7635ffd9b89c60a06ea04a45c473105efc840c01a99eabc794b9435a1279ce6",
+    "snow_spruce_wind.glb": "b05bc808ab7e6a89af1d6b038762b7b22a29823b3562d0a9257148e2e34c66e2",
+    "snow_spruce_wind_far.glb": "315302243c46d4be1e6dc836575b43579a2c40b7f46e4fafe786c1410c12f2f1",
+    "snow_snag.glb": "77647c9bbb59b1ba6caa187f264b3c3e7f58f37110e21850ce50387b6d719d0e",
+    "snow_snag_far.glb": "02a09f1cc40c091b77c97c63c0c70652c4552b704790762411fb09bce883ac7a",
+    "winter_birch.glb": "22a5ac5cfc77dd57e477afda13674d30b9b75f70aaa6ebd77550a4713a336498",
+    "winter_birch_far.glb": "c1d4b84848cecf4bad2de3951e0c06ae9d3d98b29e821d2c2ad1a88d9ae07307"
+  },
+  "preserved_original_tree_hashes": {
+    "brave-and-cold/assets/environment_detail/trees/spruce_a.glb": "0be12658a0264cece02eca8b817ce5edf78dadec22e23088ced7adc0c3459ab8",
+    "brave-and-cold/assets/environment_detail/trees/spruce_a_far.glb": "876464802173407272c7cbcb1787c513933b173ab663ee652911f6c83683e5d7",
+    "brave-and-cold/assets/environment_detail/trees/spruce_b.glb": "c5c47a55df01fb2f688572ae1020473a7dba3960219951a635fd2b3810b0ea7b",
+    "brave-and-cold/assets/environment_detail/trees/spruce_b_far.glb": "3401e9d488b6d1a75626910426d7dab28d360c93d2c2c4f3a95fc77f13b550d5",
+    "brave-and-cold/assets/environment_detail/trees/spruce_c.glb": "0b92972747d68954d3d2cf1a61158e03f89e55daabc287e5e94a6229af26be41",
+    "brave-and-cold/assets/environment_detail/trees/spruce_c_far.glb": "5248c3cf262935b900959a4aed4d1155af6361c8b64e568c9a1fd6ff841de32c",
+    "brave-and-cold/assets/models/trees/spruce_a.glb": "75e347dd635e14f31a9b82e984cee1d5c41bb7c322eb4ee19867fa921e3d9f42",
+    "brave-and-cold/assets/models/trees/spruce_a_far.glb": "c2d4dbf3579f4afc075a8d5b28cdd1184f9932e6252ee733bf2f1ede65caebec",
+    "brave-and-cold/assets/models/trees/spruce_b.glb": "3134f4a0d419537d390821dce9fcb240c77e28fff614c56ce2d1873d4bb360f1",
+    "brave-and-cold/assets/models/trees/spruce_b_far.glb": "bb5c6474ccdb6c2cb07647d5ecad5029260fe6864097a8800d9f0fe9dc211fc1",
+    "brave-and-cold/assets/models/trees/spruce_c.glb": "ee21f28a096b1525b2744ae46c7ec2608c1bb9018189356ed04d7b622592ecd3",
+    "brave-and-cold/assets/models/trees/spruce_c_far.glb": "637410daa67c77a8d69e820b7927d084d2c48f53ff8646b90908131655bc802f"
+  },
+  "engine_import_and_art_review": "Recorded separately in engine_validation.json and review.md"
+}

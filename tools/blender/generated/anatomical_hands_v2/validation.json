@@ -1,0 +1,195 @@
+{
+  "glb": "passed",
+  "skins": 2,
+  "bones_per_hand": 17,
+  "inverse_bind_max_error": 2.680417925393641e-07,
+  "embedded_images": 3,
+  "meshes": {
+    "BareHand": {
+      "triangles": 29792,
+      "connected_components": 1,
+      "dimensions_m": [
+        0.13408413529396057,
+        0.032901483587920666,
+        0.2770330533385277
+      ],
+      "bounds_min": [
+        -0.09080404043197632,
+        -0.01812128908932209,
+        -0.182899609208107
+      ],
+      "bounds_max": [
+        0.04328009486198425,
+        0.014780194498598576,
+        0.09413344413042068
+      ],
+      "closed": true,
+      "skinned": true
+    },
+    "NailsRight": {
+      "triangles": 590,
+      "connected_components": 5,
+      "dimensions_m": [
+        0.1300785392522812,
+        0.0038647775072604418,
+        0.11459428071975708
+      ],
+      "bounds_min": [
+        -0.08773232996463776,
+        0.0023360613267868757,
+        -0.17968985438346863
+      ],
+      "bounds_max": [
+        0.04234620928764343,
+        0.0062008388340473175,
+        -0.06509557366371155
+      ],
+      "closed": true,
+      "skinned": true
+    },
+    "BareHandLeft": {
+      "triangles": 29792,
+      "connected_components": 1,
+      "dimensions_m": [
+        0.13408413529396057,
+        0.032901483587920666,
+        0.2770330533385277
+      ],
+      "bounds_min": [
+        -0.04328009486198425,
+        -0.01812128908932209,
+        -0.182899609208107
+      ],
+      "bounds_max": [
+        0.09080404043197632,
+        0.014780194498598576,
+        0.09413344413042068
+      ],
+      "closed": true,
+      "skinned": true
+    },
+    "NailsLeft": {
+      "triangles": 590,
+      "connected_components": 5,
+      "dimensions_m": [
+        0.1300785392522812,
+        0.0038647812325507402,
+        0.11459428071975708
+      ],
+      "bounds_min": [
+        -0.04234620928764343,
+        0.0023360576014965773,
+        -0.17968985438346863
+      ],
+      "bounds_max": [
+        0.08773232996463776,
+        0.0062008388340473175,
+        -0.06509557366371155
+      ],
+      "closed": true,
+      "skinned": true
+    }
+  },
+  "animations": {
+    "Open": {
+      "duration_s": 1.0,
+      "channels": {
+        "translation": 34,
+        "rotation": 34,
+        "scale": 34,
+        "weights": 2
+      },
+      "tracks": 104
+    },
+    "Relaxed": {
+      "duration_s": 1.0,
+      "channels": {
+        "translation": 34,
+        "rotation": 34,
+        "scale": 34,
+        "weights": 2
+      },
+      "tracks": 104
+    },
+    "Fist": {
+      "duration_s": 1.0,
+      "channels": {
+        "translation": 34,
+        "rotation": 34,
+        "scale": 34,
+        "weights": 2
+      },
+      "tracks": 104
+    },
+    "Shaft": {
+      "duration_s": 1.0,
+      "channels": {
+        "translation": 34,
+        "rotation": 34,
+        "scale": 34,
+        "weights": 2
+      },
+      "tracks": 104
+    },
+    "Trigger": {
+      "duration_s": 1.0,
+      "channels": {
+        "translation": 34,
+        "rotation": 34,
+        "scale": 34,
+        "weights": 2
+      },
+      "tracks": 104
+    },
+    "Support": {
+      "duration_s": 1.0,
+      "channels": {
+        "translation": 34,
+        "rotation": 34,
+        "scale": 34,
+        "weights": 2
+      },
+      "tracks": 104
+    },
+    "Bolt": {
+      "duration_s": 1.0,
+      "channels": {
+        "translation": 34,
+        "rotation": 34,
+        "scale": 34,
+        "weights": 2
+      },
+      "tracks": 104
+    },
+    "PinchReady": {
+      "duration_s": 1.0,
+      "channels": {
+        "translation": 34,
+        "rotation": 34,
+        "scale": 34,
+        "weights": 2
+      },
+      "tracks": 104
+    },
+    "Magazine": {
+      "duration_s": 1.0,
+      "channels": {
+        "translation": 34,
+        "rotation": 34,
+        "scale": 34,
+        "weights": 2
+      },
+      "tracks": 104
+    },
+    "FlexCycle": {
+      "duration_s": 2.5999999046325684,
+      "channels": {
+        "translation": 34,
+        "rotation": 34,
+        "scale": 34,
+        "weights": 2
+      },
+      "tracks": 104
+    }
+  }
+}

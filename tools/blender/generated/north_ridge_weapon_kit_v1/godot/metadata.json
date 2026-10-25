@@ -1,0 +1,1710 @@
+{
+  "ridge_scout_rifle": {
+    "kind": "weapon",
+    "description": "Straight-stock semi-automatic field rifle",
+    "dimensions_m": [
+      0.07949999906122684,
+      0.23600000143051147,
+      1.0938999950885773
+    ],
+    "bounds_min": [
+      -0.029999999329447746,
+      -0.09299999475479126,
+      -0.6800000071525574
+    ],
+    "bounds_max": [
+      0.0494999997317791,
+      0.14300000667572021,
+      0.4138999879360199
+    ],
+    "triangles": 6758,
+    "mesh_nodes": 14,
+    "materials": 6,
+    "glb": "godot/ridge_scout_rifle.glb",
+    "native": "source/ridge_scout_rifle.blend",
+    "glb_sha256": "7450f166231567279a11d8cc6d3d5f3809e91ddff7c50638795016da8a03cac0",
+    "native_sha256": "b762fe96002195c0b79787725b9c2ce0dda98de2c3dbe4b5f3e2a0d9ec86d1e6",
+    "nodes": [
+      "ridge_scout_rifle__Pivot_Bolt",
+      "ridge_scout_rifle__Pivot_BoltHandle",
+      "ridge_scout_rifle__Socket_BoltHand",
+      "ridge_scout_rifle__Pivot_ChargingHandle",
+      "ridge_scout_rifle__Pivot_Magazine",
+      "ridge_scout_rifle__Socket_MagazineHand",
+      "ridge_scout_rifle__Pivot_MagazineRelease",
+      "ridge_scout_rifle__Pivot_Safety",
+      "ridge_scout_rifle__Pivot_SpentCase",
+      "ridge_scout_rifle__Pivot_Trigger",
+      "ridge_scout_rifle__Socket_Aim",
+      "ridge_scout_rifle__Socket_Ejection",
+      "ridge_scout_rifle__Socket_HandL",
+      "ridge_scout_rifle__Socket_HandR",
+      "ridge_scout_rifle__Socket_MagazineInsert",
+      "ridge_scout_rifle__Socket_Muzzle",
+      "ridge_scout_rifle__Socket_TriggerFinger"
+    ],
+    "animations": {
+      "idle": {
+        "duration_s": 1.2,
+        "events": [],
+        "animated_nodes": [
+          "ridge_scout_rifle"
+        ]
+      },
+      "fire": {
+        "duration_s": 0.3,
+        "events": [
+          {
+            "time_s": 0.0,
+            "event": "muzzle_effect"
+          },
+          {
+            "time_s": 0.03333333333333333,
+            "event": "shot_recoil"
+          },
+          {
+            "time_s": 0.06666666666666667,
+            "event": "case_eject"
+          }
+        ],
+        "animated_nodes": [
+          "ridge_scout_rifle",
+          "ridge_scout_rifle__Pivot_Trigger",
+          "ridge_scout_rifle__Pivot_Bolt",
+          "ridge_scout_rifle__Pivot_ChargingHandle",
+          "ridge_scout_rifle__Pivot_SpentCase"
+        ]
+      },
+      "cycle": {
+        "duration_s": 0.9,
+        "events": [
+          {
+            "time_s": 0.16666666666666666,
+            "event": "case_eject"
+          },
+          {
+            "time_s": 0.7666666666666667,
+            "event": "action_closed"
+          }
+        ],
+        "animated_nodes": [
+          "ridge_scout_rifle__Pivot_Bolt",
+          "ridge_scout_rifle__Pivot_ChargingHandle",
+          "ridge_scout_rifle__Pivot_SpentCase"
+        ]
+      },
+      "reload_tactical": {
+        "duration_s": 2.4,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.4,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "ridge_scout_rifle__Pivot_Magazine",
+          "ridge_scout_rifle__Pivot_MagazineRelease",
+          "ridge_scout_rifle__Socket_HandL"
+        ]
+      },
+      "reload_empty": {
+        "duration_s": 3.0,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.6333333333333333,
+            "event": "action_closed"
+          },
+          {
+            "time_s": 3.0,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "ridge_scout_rifle__Pivot_Magazine",
+          "ridge_scout_rifle__Pivot_MagazineRelease",
+          "ridge_scout_rifle__Socket_HandL",
+          "ridge_scout_rifle__Pivot_Bolt",
+          "ridge_scout_rifle__Pivot_ChargingHandle",
+          "ridge_scout_rifle__Socket_HandR"
+        ]
+      },
+      "inspect": {
+        "duration_s": 2.0,
+        "events": [],
+        "animated_nodes": [
+          "ridge_scout_rifle"
+        ]
+      },
+      "equip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "ridge_scout_rifle"
+        ]
+      },
+      "unequip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "ridge_scout_rifle"
+        ]
+      }
+    }
+  },
+  "timber_bolt_carbine": {
+    "kind": "weapon",
+    "description": "Short timber-stock bolt carbine",
+    "dimensions_m": [
+      0.09400000236928463,
+      0.21716930717229843,
+      0.9638999700546265
+    ],
+    "bounds_min": [
+      -0.029999999329447746,
+      -0.07416930049657822,
+      -0.5899999737739563
+    ],
+    "bounds_max": [
+      0.06400000303983688,
+      0.14300000667572021,
+      0.37389999628067017
+    ],
+    "triangles": 6786,
+    "mesh_nodes": 14,
+    "materials": 6,
+    "glb": "godot/timber_bolt_carbine.glb",
+    "native": "source/timber_bolt_carbine.blend",
+    "glb_sha256": "996df77dbb333ae0fcc2ded641488700a9a9131b77daf69bfc0588b2af3a67e9",
+    "native_sha256": "40626d11b63ba142ef30a1636affa2da8813dd643b414206bf44073a73e43ee9",
+    "nodes": [
+      "timber_bolt_carbine__Pivot_Bolt",
+      "timber_bolt_carbine__Pivot_BoltHandle",
+      "timber_bolt_carbine__Socket_BoltHand",
+      "timber_bolt_carbine__Pivot_ChargingHandle",
+      "timber_bolt_carbine__Pivot_Magazine",
+      "timber_bolt_carbine__Socket_MagazineHand",
+      "timber_bolt_carbine__Pivot_MagazineRelease",
+      "timber_bolt_carbine__Pivot_Safety",
+      "timber_bolt_carbine__Pivot_SpentCase",
+      "timber_bolt_carbine__Pivot_Trigger",
+      "timber_bolt_carbine__Socket_Aim",
+      "timber_bolt_carbine__Socket_Ejection",
+      "timber_bolt_carbine__Socket_HandL",
+      "timber_bolt_carbine__Socket_HandR",
+      "timber_bolt_carbine__Socket_MagazineInsert",
+      "timber_bolt_carbine__Socket_Muzzle",
+      "timber_bolt_carbine__Socket_TriggerFinger"
+    ],
+    "animations": {
+      "idle": {
+        "duration_s": 1.2,
+        "events": [],
+        "animated_nodes": [
+          "timber_bolt_carbine"
+        ]
+      },
+      "fire": {
+        "duration_s": 0.3,
+        "events": [
+          {
+            "time_s": 0.0,
+            "event": "muzzle_effect"
+          },
+          {
+            "time_s": 0.03333333333333333,
+            "event": "shot_recoil"
+          }
+        ],
+        "animated_nodes": [
+          "timber_bolt_carbine",
+          "timber_bolt_carbine__Pivot_Trigger"
+        ]
+      },
+      "cycle": {
+        "duration_s": 0.9,
+        "events": [
+          {
+            "time_s": 0.16666666666666666,
+            "event": "case_eject"
+          },
+          {
+            "time_s": 0.7666666666666667,
+            "event": "action_closed"
+          }
+        ],
+        "animated_nodes": [
+          "timber_bolt_carbine__Pivot_BoltHandle",
+          "timber_bolt_carbine__Pivot_Bolt",
+          "timber_bolt_carbine__Socket_HandR",
+          "timber_bolt_carbine__Pivot_SpentCase"
+        ]
+      },
+      "reload_tactical": {
+        "duration_s": 2.4,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.4,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "timber_bolt_carbine__Pivot_Magazine",
+          "timber_bolt_carbine__Pivot_MagazineRelease",
+          "timber_bolt_carbine__Socket_HandL"
+        ]
+      },
+      "reload_empty": {
+        "duration_s": 3.0,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.6333333333333333,
+            "event": "action_closed"
+          },
+          {
+            "time_s": 3.0,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "timber_bolt_carbine__Pivot_Magazine",
+          "timber_bolt_carbine__Pivot_MagazineRelease",
+          "timber_bolt_carbine__Socket_HandL",
+          "timber_bolt_carbine__Pivot_Bolt",
+          "timber_bolt_carbine__Pivot_ChargingHandle",
+          "timber_bolt_carbine__Socket_HandR",
+          "timber_bolt_carbine__Pivot_BoltHandle"
+        ]
+      },
+      "inspect": {
+        "duration_s": 2.0,
+        "events": [],
+        "animated_nodes": [
+          "timber_bolt_carbine"
+        ]
+      },
+      "equip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "timber_bolt_carbine"
+        ]
+      },
+      "unequip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "timber_bolt_carbine"
+        ]
+      }
+    }
+  },
+  "ranger_box_rifle": {
+    "kind": "weapon",
+    "description": "Deep receiver box rifle",
+    "dimensions_m": [
+      0.07949999906122684,
+      0.2527155801653862,
+      1.0239000022411346
+    ],
+    "bounds_min": [
+      -0.029999999329447746,
+      -0.10971557348966599,
+      -0.6299999952316284
+    ],
+    "bounds_max": [
+      0.0494999997317791,
+      0.14300000667572021,
+      0.3939000070095062
+    ],
+    "triangles": 6606,
+    "mesh_nodes": 14,
+    "materials": 6,
+    "glb": "godot/ranger_box_rifle.glb",
+    "native": "source/ranger_box_rifle.blend",
+    "glb_sha256": "00df05f028d45a85d16365c32b84e7830ba5100e7bccf9d09263db61365750bf",
+    "native_sha256": "f0a24e5d522d49b9af24fd4fba6691ebb4cae585b9f939df2e4141ffddc7bfed",
+    "nodes": [
+      "ranger_box_rifle__Pivot_Bolt",
+      "ranger_box_rifle__Pivot_BoltHandle",
+      "ranger_box_rifle__Socket_BoltHand",
+      "ranger_box_rifle__Pivot_ChargingHandle",
+      "ranger_box_rifle__Pivot_Magazine",
+      "ranger_box_rifle__Socket_MagazineHand",
+      "ranger_box_rifle__Pivot_MagazineRelease",
+      "ranger_box_rifle__Pivot_Safety",
+      "ranger_box_rifle__Pivot_SpentCase",
+      "ranger_box_rifle__Pivot_Trigger",
+      "ranger_box_rifle__Socket_Aim",
+      "ranger_box_rifle__Socket_Ejection",
+      "ranger_box_rifle__Socket_HandL",
+      "ranger_box_rifle__Socket_HandR",
+      "ranger_box_rifle__Socket_MagazineInsert",
+      "ranger_box_rifle__Socket_Muzzle",
+      "ranger_box_rifle__Socket_TriggerFinger"
+    ],
+    "animations": {
+      "idle": {
+        "duration_s": 1.2,
+        "events": [],
+        "animated_nodes": [
+          "ranger_box_rifle"
+        ]
+      },
+      "fire": {
+        "duration_s": 0.3,
+        "events": [
+          {
+            "time_s": 0.0,
+            "event": "muzzle_effect"
+          },
+          {
+            "time_s": 0.03333333333333333,
+            "event": "shot_recoil"
+          },
+          {
+            "time_s": 0.06666666666666667,
+            "event": "case_eject"
+          }
+        ],
+        "animated_nodes": [
+          "ranger_box_rifle",
+          "ranger_box_rifle__Pivot_Trigger",
+          "ranger_box_rifle__Pivot_Bolt",
+          "ranger_box_rifle__Pivot_ChargingHandle",
+          "ranger_box_rifle__Pivot_SpentCase"
+        ]
+      },
+      "cycle": {
+        "duration_s": 0.9,
+        "events": [
+          {
+            "time_s": 0.16666666666666666,
+            "event": "case_eject"
+          },
+          {
+            "time_s": 0.7666666666666667,
+            "event": "action_closed"
+          }
+        ],
+        "animated_nodes": [
+          "ranger_box_rifle__Pivot_Bolt",
+          "ranger_box_rifle__Pivot_ChargingHandle",
+          "ranger_box_rifle__Pivot_SpentCase"
+        ]
+      },
+      "reload_tactical": {
+        "duration_s": 2.4,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.4,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "ranger_box_rifle__Pivot_Magazine",
+          "ranger_box_rifle__Pivot_MagazineRelease",
+          "ranger_box_rifle__Socket_HandL"
+        ]
+      },
+      "reload_empty": {
+        "duration_s": 3.0,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.6333333333333333,
+            "event": "action_closed"
+          },
+          {
+            "time_s": 3.0,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "ranger_box_rifle__Pivot_Magazine",
+          "ranger_box_rifle__Pivot_MagazineRelease",
+          "ranger_box_rifle__Socket_HandL",
+          "ranger_box_rifle__Pivot_Bolt",
+          "ranger_box_rifle__Pivot_ChargingHandle",
+          "ranger_box_rifle__Socket_HandR"
+        ]
+      },
+      "inspect": {
+        "duration_s": 2.0,
+        "events": [],
+        "animated_nodes": [
+          "ranger_box_rifle"
+        ]
+      },
+      "equip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "ranger_box_rifle"
+        ]
+      },
+      "unequip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "ranger_box_rifle"
+        ]
+      }
+    }
+  },
+  "brush_lever_rifle": {
+    "kind": "weapon",
+    "description": "Lever-action brush rifle with tubular fore-end",
+    "dimensions_m": [
+      0.07200054079294205,
+      0.2688649594783783,
+      0.9739000201225281
+    ],
+    "bounds_min": [
+      -0.03099999949336052,
+      -0.12586495280265808,
+      -0.6000000238418579
+    ],
+    "bounds_max": [
+      0.04100054129958153,
+      0.14300000667572021,
+      0.37389999628067017
+    ],
+    "triangles": 7050,
+    "mesh_nodes": 14,
+    "materials": 6,
+    "glb": "godot/brush_lever_rifle.glb",
+    "native": "source/brush_lever_rifle.blend",
+    "glb_sha256": "8cae97d3e99718104e3ffcbb84ddbe7b2e9669bbacc43ac44f7d55f49136cb22",
+    "native_sha256": "d8cc62784d0b3f8a051f14862fe060cc05867e4d66fa18d40c50d859a97db04d",
+    "nodes": [
+      "brush_lever_rifle__Pivot_Bolt",
+      "brush_lever_rifle__Pivot_BoltHandle",
+      "brush_lever_rifle__Socket_BoltHand",
+      "brush_lever_rifle__Pivot_ChargingHandle",
+      "brush_lever_rifle__Pivot_InsertRound",
+      "brush_lever_rifle__Pivot_Lever",
+      "brush_lever_rifle__Pivot_LoadingGate",
+      "brush_lever_rifle__Pivot_MagazineRelease",
+      "brush_lever_rifle__Pivot_Safety",
+      "brush_lever_rifle__Pivot_SpentCase",
+      "brush_lever_rifle__Pivot_Trigger",
+      "brush_lever_rifle__Socket_Aim",
+      "brush_lever_rifle__Socket_Ejection",
+      "brush_lever_rifle__Socket_HandL",
+      "brush_lever_rifle__Socket_HandR",
+      "brush_lever_rifle__Socket_LoadingGate",
+      "brush_lever_rifle__Socket_MagazineInsert",
+      "brush_lever_rifle__Socket_Muzzle",
+      "brush_lever_rifle__Socket_TriggerFinger"
+    ],
+    "animations": {
+      "idle": {
+        "duration_s": 1.2,
+        "events": [],
+        "animated_nodes": [
+          "brush_lever_rifle"
+        ]
+      },
+      "fire": {
+        "duration_s": 0.3,
+        "events": [
+          {
+            "time_s": 0.0,
+            "event": "muzzle_effect"
+          },
+          {
+            "time_s": 0.03333333333333333,
+            "event": "shot_recoil"
+          }
+        ],
+        "animated_nodes": [
+          "brush_lever_rifle",
+          "brush_lever_rifle__Pivot_Trigger"
+        ]
+      },
+      "cycle": {
+        "duration_s": 0.9,
+        "events": [
+          {
+            "time_s": 0.16666666666666666,
+            "event": "case_eject"
+          },
+          {
+            "time_s": 0.9,
+            "event": "action_closed"
+          }
+        ],
+        "animated_nodes": [
+          "brush_lever_rifle__Pivot_Lever",
+          "brush_lever_rifle__Pivot_Bolt",
+          "brush_lever_rifle__Socket_HandR",
+          "brush_lever_rifle__Pivot_SpentCase"
+        ]
+      },
+      "reload_start": {
+        "duration_s": 0.4666666666666667,
+        "events": [],
+        "animated_nodes": [
+          "brush_lever_rifle",
+          "brush_lever_rifle__Socket_HandL"
+        ]
+      },
+      "reload_insert": {
+        "duration_s": 0.9,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "round_inserted"
+          }
+        ],
+        "animated_nodes": [
+          "brush_lever_rifle",
+          "brush_lever_rifle__Pivot_InsertRound",
+          "brush_lever_rifle__Pivot_LoadingGate",
+          "brush_lever_rifle__Socket_HandL"
+        ]
+      },
+      "reload_end": {
+        "duration_s": 0.4666666666666667,
+        "events": [
+          {
+            "time_s": 0.4666666666666667,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "brush_lever_rifle",
+          "brush_lever_rifle__Socket_HandL"
+        ]
+      },
+      "inspect": {
+        "duration_s": 2.0,
+        "events": [],
+        "animated_nodes": [
+          "brush_lever_rifle"
+        ]
+      },
+      "equip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "brush_lever_rifle"
+        ]
+      },
+      "unequip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "brush_lever_rifle"
+        ]
+      }
+    }
+  },
+  "frontier_vented_rifle": {
+    "kind": "weapon",
+    "description": "Traditional stock with vented upper handguard",
+    "dimensions_m": [
+      0.08049999922513962,
+      0.23399999737739563,
+      1.0538999736309052
+    ],
+    "bounds_min": [
+      -0.03099999949336052,
+      -0.09099999070167542,
+      -0.6499999761581421
+    ],
+    "bounds_max": [
+      0.0494999997317791,
+      0.14300000667572021,
+      0.40389999747276306
+    ],
+    "triangles": 7462,
+    "mesh_nodes": 14,
+    "materials": 6,
+    "glb": "godot/frontier_vented_rifle.glb",
+    "native": "source/frontier_vented_rifle.blend",
+    "glb_sha256": "6d5f23650e5d0ce3ea28a008c55df71ff8af54c6cdad08c0a8cc58cae7af6e88",
+    "native_sha256": "24d750221ac1fd0be58a9d6ebc6e2ca2f76e710449f130b19d93069ac10a3c17",
+    "nodes": [
+      "frontier_vented_rifle__Pivot_Bolt",
+      "frontier_vented_rifle__Pivot_BoltHandle",
+      "frontier_vented_rifle__Socket_BoltHand",
+      "frontier_vented_rifle__Pivot_ChargingHandle",
+      "frontier_vented_rifle__Pivot_Magazine",
+      "frontier_vented_rifle__Socket_MagazineHand",
+      "frontier_vented_rifle__Pivot_MagazineRelease",
+      "frontier_vented_rifle__Pivot_Safety",
+      "frontier_vented_rifle__Pivot_SpentCase",
+      "frontier_vented_rifle__Pivot_Trigger",
+      "frontier_vented_rifle__Socket_Aim",
+      "frontier_vented_rifle__Socket_Ejection",
+      "frontier_vented_rifle__Socket_HandL",
+      "frontier_vented_rifle__Socket_HandR",
+      "frontier_vented_rifle__Socket_MagazineInsert",
+      "frontier_vented_rifle__Socket_Muzzle",
+      "frontier_vented_rifle__Socket_TriggerFinger"
+    ],
+    "animations": {
+      "idle": {
+        "duration_s": 1.2,
+        "events": [],
+        "animated_nodes": [
+          "frontier_vented_rifle"
+        ]
+      },
+      "fire": {
+        "duration_s": 0.3,
+        "events": [
+          {
+            "time_s": 0.0,
+            "event": "muzzle_effect"
+          },
+          {
+            "time_s": 0.03333333333333333,
+            "event": "shot_recoil"
+          },
+          {
+            "time_s": 0.06666666666666667,
+            "event": "case_eject"
+          }
+        ],
+        "animated_nodes": [
+          "frontier_vented_rifle",
+          "frontier_vented_rifle__Pivot_Trigger",
+          "frontier_vented_rifle__Pivot_Bolt",
+          "frontier_vented_rifle__Pivot_ChargingHandle",
+          "frontier_vented_rifle__Pivot_SpentCase"
+        ]
+      },
+      "cycle": {
+        "duration_s": 0.9,
+        "events": [
+          {
+            "time_s": 0.16666666666666666,
+            "event": "case_eject"
+          },
+          {
+            "time_s": 0.7666666666666667,
+            "event": "action_closed"
+          }
+        ],
+        "animated_nodes": [
+          "frontier_vented_rifle__Pivot_Bolt",
+          "frontier_vented_rifle__Pivot_ChargingHandle",
+          "frontier_vented_rifle__Pivot_SpentCase"
+        ]
+      },
+      "reload_tactical": {
+        "duration_s": 2.4,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.4,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "frontier_vented_rifle__Pivot_Magazine",
+          "frontier_vented_rifle__Pivot_MagazineRelease",
+          "frontier_vented_rifle__Socket_HandL"
+        ]
+      },
+      "reload_empty": {
+        "duration_s": 3.0,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.6333333333333333,
+            "event": "action_closed"
+          },
+          {
+            "time_s": 3.0,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "frontier_vented_rifle__Pivot_Magazine",
+          "frontier_vented_rifle__Pivot_MagazineRelease",
+          "frontier_vented_rifle__Socket_HandL",
+          "frontier_vented_rifle__Pivot_Bolt",
+          "frontier_vented_rifle__Pivot_ChargingHandle",
+          "frontier_vented_rifle__Socket_HandR"
+        ]
+      },
+      "inspect": {
+        "duration_s": 2.0,
+        "events": [],
+        "animated_nodes": [
+          "frontier_vented_rifle"
+        ]
+      },
+      "equip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "frontier_vented_rifle"
+        ]
+      },
+      "unequip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "frontier_vented_rifle"
+        ]
+      }
+    }
+  },
+  "north_service_rifle": {
+    "kind": "weapon",
+    "description": "Wood pistol-grip service rifle",
+    "dimensions_m": [
+      0.07949999906122684,
+      0.2816256880760193,
+      1.0639000236988068
+    ],
+    "bounds_min": [
+      -0.029999999329447746,
+      -0.13862568140029907,
+      -0.6600000262260437
+    ],
+    "bounds_max": [
+      0.0494999997317791,
+      0.14300000667572021,
+      0.40389999747276306
+    ],
+    "triangles": 7422,
+    "mesh_nodes": 14,
+    "materials": 6,
+    "glb": "godot/north_service_rifle.glb",
+    "native": "source/north_service_rifle.blend",
+    "glb_sha256": "9b652f530ab02a349e49a8f1f8172850ca74812ea59f0587d6ba3af75a490c26",
+    "native_sha256": "e72e9bc07178370215dc14880d613ddf44630429e8d90afc4ad580a77f972dd8",
+    "nodes": [
+      "north_service_rifle__Pivot_Bolt",
+      "north_service_rifle__Pivot_BoltHandle",
+      "north_service_rifle__Socket_BoltHand",
+      "north_service_rifle__Pivot_ChargingHandle",
+      "north_service_rifle__Pivot_Magazine",
+      "north_service_rifle__Socket_MagazineHand",
+      "north_service_rifle__Pivot_MagazineRelease",
+      "north_service_rifle__Pivot_Safety",
+      "north_service_rifle__Pivot_SpentCase",
+      "north_service_rifle__Pivot_Trigger",
+      "north_service_rifle__Socket_Aim",
+      "north_service_rifle__Socket_Ejection",
+      "north_service_rifle__Socket_HandL",
+      "north_service_rifle__Socket_HandR",
+      "north_service_rifle__Socket_MagazineInsert",
+      "north_service_rifle__Socket_Muzzle",
+      "north_service_rifle__Socket_TriggerFinger"
+    ],
+    "animations": {
+      "idle": {
+        "duration_s": 1.2,
+        "events": [],
+        "animated_nodes": [
+          "north_service_rifle"
+        ]
+      },
+      "fire": {
+        "duration_s": 0.3,
+        "events": [
+          {
+            "time_s": 0.0,
+            "event": "muzzle_effect"
+          },
+          {
+            "time_s": 0.03333333333333333,
+            "event": "shot_recoil"
+          },
+          {
+            "time_s": 0.06666666666666667,
+            "event": "case_eject"
+          }
+        ],
+        "animated_nodes": [
+          "north_service_rifle",
+          "north_service_rifle__Pivot_Trigger",
+          "north_service_rifle__Pivot_Bolt",
+          "north_service_rifle__Pivot_ChargingHandle",
+          "north_service_rifle__Pivot_SpentCase"
+        ]
+      },
+      "cycle": {
+        "duration_s": 0.9,
+        "events": [
+          {
+            "time_s": 0.16666666666666666,
+            "event": "case_eject"
+          },
+          {
+            "time_s": 0.7666666666666667,
+            "event": "action_closed"
+          }
+        ],
+        "animated_nodes": [
+          "north_service_rifle__Pivot_Bolt",
+          "north_service_rifle__Pivot_ChargingHandle",
+          "north_service_rifle__Pivot_SpentCase"
+        ]
+      },
+      "reload_tactical": {
+        "duration_s": 2.4,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.4,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "north_service_rifle__Pivot_Magazine",
+          "north_service_rifle__Pivot_MagazineRelease",
+          "north_service_rifle__Socket_HandL"
+        ]
+      },
+      "reload_empty": {
+        "duration_s": 3.0,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.6333333333333333,
+            "event": "action_closed"
+          },
+          {
+            "time_s": 3.0,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "north_service_rifle__Pivot_Magazine",
+          "north_service_rifle__Pivot_MagazineRelease",
+          "north_service_rifle__Socket_HandL",
+          "north_service_rifle__Pivot_Bolt",
+          "north_service_rifle__Pivot_ChargingHandle",
+          "north_service_rifle__Socket_HandR"
+        ]
+      },
+      "inspect": {
+        "duration_s": 2.0,
+        "events": [],
+        "animated_nodes": [
+          "north_service_rifle"
+        ]
+      },
+      "equip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "north_service_rifle"
+        ]
+      },
+      "unequip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "north_service_rifle"
+        ]
+      }
+    }
+  },
+  "compact_patrol_rifle": {
+    "kind": "weapon",
+    "description": "Wire folding-stock patrol rifle",
+    "dimensions_m": [
+      0.0822155587375164,
+      0.2920735329389572,
+      0.8770000040531158
+    ],
+    "bounds_min": [
+      -0.032715559005737305,
+      -0.149073526263237,
+      -0.5699999928474426
+    ],
+    "bounds_max": [
+      0.0494999997317791,
+      0.14300000667572021,
+      0.3070000112056732
+    ],
+    "triangles": 6982,
+    "mesh_nodes": 16,
+    "materials": 6,
+    "glb": "godot/compact_patrol_rifle.glb",
+    "native": "source/compact_patrol_rifle.blend",
+    "glb_sha256": "c0b21c60f0aa18a88a73a25d71136d879b4ffc9219bcca2307e74aa2eff56e30",
+    "native_sha256": "15938906d6716f2d441e989cf1279b795cbfa3c6772efaeefe88fca83524950b",
+    "nodes": [
+      "compact_patrol_rifle__Pivot_Bolt",
+      "compact_patrol_rifle__Pivot_BoltHandle",
+      "compact_patrol_rifle__Socket_BoltHand",
+      "compact_patrol_rifle__Pivot_ChargingHandle",
+      "compact_patrol_rifle__Pivot_FoldingStock",
+      "compact_patrol_rifle__Pivot_Magazine",
+      "compact_patrol_rifle__Socket_MagazineHand",
+      "compact_patrol_rifle__Pivot_MagazineRelease",
+      "compact_patrol_rifle__Pivot_Safety",
+      "compact_patrol_rifle__Pivot_SpentCase",
+      "compact_patrol_rifle__Pivot_Trigger",
+      "compact_patrol_rifle__Socket_Aim",
+      "compact_patrol_rifle__Socket_Ejection",
+      "compact_patrol_rifle__Socket_HandL",
+      "compact_patrol_rifle__Socket_HandR",
+      "compact_patrol_rifle__Socket_MagazineInsert",
+      "compact_patrol_rifle__Socket_Muzzle",
+      "compact_patrol_rifle__Socket_TriggerFinger"
+    ],
+    "animations": {
+      "idle": {
+        "duration_s": 1.2,
+        "events": [],
+        "animated_nodes": [
+          "compact_patrol_rifle"
+        ]
+      },
+      "fire": {
+        "duration_s": 0.3,
+        "events": [
+          {
+            "time_s": 0.0,
+            "event": "muzzle_effect"
+          },
+          {
+            "time_s": 0.03333333333333333,
+            "event": "shot_recoil"
+          },
+          {
+            "time_s": 0.06666666666666667,
+            "event": "case_eject"
+          }
+        ],
+        "animated_nodes": [
+          "compact_patrol_rifle",
+          "compact_patrol_rifle__Pivot_Trigger",
+          "compact_patrol_rifle__Pivot_Bolt",
+          "compact_patrol_rifle__Pivot_ChargingHandle",
+          "compact_patrol_rifle__Pivot_SpentCase"
+        ]
+      },
+      "cycle": {
+        "duration_s": 0.9,
+        "events": [
+          {
+            "time_s": 0.16666666666666666,
+            "event": "case_eject"
+          },
+          {
+            "time_s": 0.7666666666666667,
+            "event": "action_closed"
+          }
+        ],
+        "animated_nodes": [
+          "compact_patrol_rifle__Pivot_Bolt",
+          "compact_patrol_rifle__Pivot_ChargingHandle",
+          "compact_patrol_rifle__Pivot_SpentCase"
+        ]
+      },
+      "reload_tactical": {
+        "duration_s": 2.4,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.4,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "compact_patrol_rifle__Pivot_Magazine",
+          "compact_patrol_rifle__Pivot_MagazineRelease",
+          "compact_patrol_rifle__Socket_HandL"
+        ]
+      },
+      "reload_empty": {
+        "duration_s": 3.0,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.6333333333333333,
+            "event": "action_closed"
+          },
+          {
+            "time_s": 3.0,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "compact_patrol_rifle__Pivot_Magazine",
+          "compact_patrol_rifle__Pivot_MagazineRelease",
+          "compact_patrol_rifle__Socket_HandL",
+          "compact_patrol_rifle__Pivot_Bolt",
+          "compact_patrol_rifle__Pivot_ChargingHandle",
+          "compact_patrol_rifle__Socket_HandR"
+        ]
+      },
+      "inspect": {
+        "duration_s": 2.0,
+        "events": [],
+        "animated_nodes": [
+          "compact_patrol_rifle"
+        ]
+      },
+      "equip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "compact_patrol_rifle"
+        ]
+      },
+      "unequip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "compact_patrol_rifle"
+        ]
+      },
+      "stock_fold": {
+        "duration_s": 0.6,
+        "events": [
+          {
+            "time_s": 0.6,
+            "event": "stock_locked_folded"
+          }
+        ],
+        "animated_nodes": [
+          "compact_patrol_rifle__Pivot_FoldingStock"
+        ]
+      },
+      "stock_unfold": {
+        "duration_s": 0.6,
+        "events": [
+          {
+            "time_s": 0.6,
+            "event": "stock_locked_extended"
+          }
+        ],
+        "animated_nodes": [
+          "compact_patrol_rifle__Pivot_FoldingStock"
+        ]
+      }
+    }
+  },
+  "expedition_rifle": {
+    "kind": "weapon",
+    "description": "Full-size wooden pistol-grip expedition rifle",
+    "dimensions_m": [
+      0.07949999906122684,
+      0.2816256880760193,
+      1.113899976015091
+    ],
+    "bounds_min": [
+      -0.029999999329447746,
+      -0.13862568140029907,
+      -0.699999988079071
+    ],
+    "bounds_max": [
+      0.0494999997317791,
+      0.14300000667572021,
+      0.4138999879360199
+    ],
+    "triangles": 7838,
+    "mesh_nodes": 14,
+    "materials": 6,
+    "glb": "godot/expedition_rifle.glb",
+    "native": "source/expedition_rifle.blend",
+    "glb_sha256": "095f02095d816787640cbc0863625923e2e20644725d5de30b7dba455c38939f",
+    "native_sha256": "e9f9f47a2aff8b9d8395c75c98faa4b06d15bb26b65bb7390c35682e6d6af012",
+    "nodes": [
+      "expedition_rifle__Pivot_Bolt",
+      "expedition_rifle__Pivot_BoltHandle",
+      "expedition_rifle__Socket_BoltHand",
+      "expedition_rifle__Pivot_ChargingHandle",
+      "expedition_rifle__Pivot_Magazine",
+      "expedition_rifle__Socket_MagazineHand",
+      "expedition_rifle__Pivot_MagazineRelease",
+      "expedition_rifle__Pivot_Safety",
+      "expedition_rifle__Pivot_SpentCase",
+      "expedition_rifle__Pivot_Trigger",
+      "expedition_rifle__Socket_Aim",
+      "expedition_rifle__Socket_Ejection",
+      "expedition_rifle__Socket_HandL",
+      "expedition_rifle__Socket_HandR",
+      "expedition_rifle__Socket_MagazineInsert",
+      "expedition_rifle__Socket_Muzzle",
+      "expedition_rifle__Socket_TriggerFinger"
+    ],
+    "animations": {
+      "idle": {
+        "duration_s": 1.2,
+        "events": [],
+        "animated_nodes": [
+          "expedition_rifle"
+        ]
+      },
+      "fire": {
+        "duration_s": 0.3,
+        "events": [
+          {
+            "time_s": 0.0,
+            "event": "muzzle_effect"
+          },
+          {
+            "time_s": 0.03333333333333333,
+            "event": "shot_recoil"
+          },
+          {
+            "time_s": 0.06666666666666667,
+            "event": "case_eject"
+          }
+        ],
+        "animated_nodes": [
+          "expedition_rifle",
+          "expedition_rifle__Pivot_Trigger",
+          "expedition_rifle__Pivot_Bolt",
+          "expedition_rifle__Pivot_ChargingHandle",
+          "expedition_rifle__Pivot_SpentCase"
+        ]
+      },
+      "cycle": {
+        "duration_s": 0.9,
+        "events": [
+          {
+            "time_s": 0.16666666666666666,
+            "event": "case_eject"
+          },
+          {
+            "time_s": 0.7666666666666667,
+            "event": "action_closed"
+          }
+        ],
+        "animated_nodes": [
+          "expedition_rifle__Pivot_Bolt",
+          "expedition_rifle__Pivot_ChargingHandle",
+          "expedition_rifle__Pivot_SpentCase"
+        ]
+      },
+      "reload_tactical": {
+        "duration_s": 2.4,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.4,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "expedition_rifle__Pivot_Magazine",
+          "expedition_rifle__Pivot_MagazineRelease",
+          "expedition_rifle__Socket_HandL"
+        ]
+      },
+      "reload_empty": {
+        "duration_s": 3.0,
+        "events": [
+          {
+            "time_s": 0.6666666666666666,
+            "event": "magazine_removed"
+          },
+          {
+            "time_s": 1.2,
+            "event": "magazine_exchange_out_of_view"
+          },
+          {
+            "time_s": 1.8333333333333333,
+            "event": "magazine_seated"
+          },
+          {
+            "time_s": 2.6333333333333333,
+            "event": "action_closed"
+          },
+          {
+            "time_s": 3.0,
+            "event": "reload_complete"
+          }
+        ],
+        "animated_nodes": [
+          "expedition_rifle__Pivot_Magazine",
+          "expedition_rifle__Pivot_MagazineRelease",
+          "expedition_rifle__Socket_HandL",
+          "expedition_rifle__Pivot_Bolt",
+          "expedition_rifle__Pivot_ChargingHandle",
+          "expedition_rifle__Socket_HandR"
+        ]
+      },
+      "inspect": {
+        "duration_s": 2.0,
+        "events": [],
+        "animated_nodes": [
+          "expedition_rifle"
+        ]
+      },
+      "equip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "expedition_rifle"
+        ]
+      },
+      "unequip": {
+        "duration_s": 0.5333333333333333,
+        "events": [],
+        "animated_nodes": [
+          "expedition_rifle"
+        ]
+      }
+    }
+  },
+  "ridge_scout_rifle_spare_magazine": {
+    "kind": "reload_extra",
+    "description": "Matching detachable visual magazine / ridge_scout_rifle",
+    "dimensions_m": [
+      0.039000000804662704,
+      0.11371557228267193,
+      0.08397070690989494
+    ],
+    "bounds_min": [
+      -0.019500000402331352,
+      -0.10571557283401489,
+      -0.03947070240974426
+    ],
+    "bounds_max": [
+      0.019500000402331352,
+      0.007999999448657036,
+      0.04450000450015068
+    ],
+    "triangles": 972,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "glb": "godot/ridge_scout_rifle_spare_magazine.glb",
+    "native": "source/ridge_scout_rifle_spare_magazine.blend",
+    "glb_sha256": "2ef987da5c64bea3559c733d2f6b7159c94702eec5c148e3425d339d2f70dfc3",
+    "native_sha256": "c1ecaaaf7c20e263838f9dc20586fbf5572ede6de5c4a61757d95c6370a27588",
+    "nodes": [
+      "ridge_scout_rifle_spare_magazine__Socket_Hand",
+      "ridge_scout_rifle_spare_magazine__Socket_Insertion"
+    ],
+    "animations": {}
+  },
+  "timber_bolt_carbine_spare_magazine": {
+    "kind": "reload_extra",
+    "description": "Matching detachable visual magazine / timber_bolt_carbine",
+    "dimensions_m": [
+      0.039000000804662704,
+      0.09871557168662548,
+      0.08388685807585716
+    ],
+    "bounds_min": [
+      -0.019500000402331352,
+      -0.09071557223796844,
+      -0.03938685357570648
+    ],
+    "bounds_max": [
+      0.019500000402331352,
+      0.007999999448657036,
+      0.04450000450015068
+    ],
+    "triangles": 972,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "glb": "godot/timber_bolt_carbine_spare_magazine.glb",
+    "native": "source/timber_bolt_carbine_spare_magazine.blend",
+    "glb_sha256": "a83e09d452faa822364bd61d67caebb4f8d6152451568b4f2b1f5b32dbe1ab98",
+    "native_sha256": "3e6d031fbcc0a8048977e36b0d037cdd778c5547da5e6ebd4f81ba1c7fed626d",
+    "nodes": [
+      "timber_bolt_carbine_spare_magazine__Socket_Hand",
+      "timber_bolt_carbine_spare_magazine__Socket_Insertion"
+    ],
+    "animations": {}
+  },
+  "ranger_box_rifle_spare_magazine": {
+    "kind": "reload_extra",
+    "description": "Matching detachable visual magazine / ranger_box_rifle",
+    "dimensions_m": [
+      0.039000000804662704,
+      0.14371557347476482,
+      0.08408492431044579
+    ],
+    "bounds_min": [
+      -0.019500000402331352,
+      -0.1357155740261078,
+      -0.039584919810295105
+    ],
+    "bounds_max": [
+      0.019500000402331352,
+      0.007999999448657036,
+      0.04450000450015068
+    ],
+    "triangles": 972,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "glb": "godot/ranger_box_rifle_spare_magazine.glb",
+    "native": "source/ranger_box_rifle_spare_magazine.blend",
+    "glb_sha256": "eb32ba70b3959308846fedc2748d496f6f53509d2490160aecb7fc483169633c",
+    "native_sha256": "1161eb2fa46e1ff80de3d3efa8118f8b4939180abbcf381f9c53a6a7e820f528",
+    "nodes": [
+      "ranger_box_rifle_spare_magazine__Socket_Hand",
+      "ranger_box_rifle_spare_magazine__Socket_Insertion"
+    ],
+    "animations": {}
+  },
+  "frontier_vented_rifle_spare_magazine": {
+    "kind": "reload_extra",
+    "description": "Matching detachable visual magazine / frontier_vented_rifle",
+    "dimensions_m": [
+      0.039000000804662704,
+      0.11371557228267193,
+      0.08397070690989494
+    ],
+    "bounds_min": [
+      -0.019500000402331352,
+      -0.10571557283401489,
+      -0.03947070240974426
+    ],
+    "bounds_max": [
+      0.019500000402331352,
+      0.007999999448657036,
+      0.04450000450015068
+    ],
+    "triangles": 972,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "glb": "godot/frontier_vented_rifle_spare_magazine.glb",
+    "native": "source/frontier_vented_rifle_spare_magazine.blend",
+    "glb_sha256": "b04c1e8827af4cac6551658ffb4037f6600493a991d4e5fd83c28e3d77e47820",
+    "native_sha256": "7e62545b82008dc446988328ef0e83ec6a847c0fabea0fa03ac32279c3652e8d",
+    "nodes": [
+      "frontier_vented_rifle_spare_magazine__Socket_Hand",
+      "frontier_vented_rifle_spare_magazine__Socket_Insertion"
+    ],
+    "animations": {}
+  },
+  "north_service_rifle_spare_magazine": {
+    "kind": "reload_extra",
+    "description": "Matching detachable visual magazine / north_service_rifle",
+    "dimensions_m": [
+      0.039000000804662704,
+      0.133715583011508,
+      0.09382713213562965
+    ],
+    "bounds_min": [
+      -0.019500000402331352,
+      -0.12571558356285095,
+      -0.03932712972164154
+    ],
+    "bounds_max": [
+      0.019500000402331352,
+      0.007999999448657036,
+      0.05450000241398811
+    ],
+    "triangles": 972,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "glb": "godot/north_service_rifle_spare_magazine.glb",
+    "native": "source/north_service_rifle_spare_magazine.blend",
+    "glb_sha256": "37701d2821e626af2a4929f17f8660efe0297e06d8913d36a060b094070b7ee4",
+    "native_sha256": "30095d2299d854b6b21964e72f89d50305d11e1774946c9c915c8f7e1c5e387f",
+    "nodes": [
+      "north_service_rifle_spare_magazine__Socket_Hand",
+      "north_service_rifle_spare_magazine__Socket_Insertion"
+    ],
+    "animations": {}
+  },
+  "compact_patrol_rifle_spare_magazine": {
+    "kind": "reload_extra",
+    "description": "Matching detachable visual magazine / compact_patrol_rifle",
+    "dimensions_m": [
+      0.039000000804662704,
+      0.1637155544012785,
+      0.09395170584321022
+    ],
+    "bounds_min": [
+      -0.019500000402331352,
+      -0.15571555495262146,
+      -0.03945170342922211
+    ],
+    "bounds_max": [
+      0.019500000402331352,
+      0.007999999448657036,
+      0.05450000241398811
+    ],
+    "triangles": 972,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "glb": "godot/compact_patrol_rifle_spare_magazine.glb",
+    "native": "source/compact_patrol_rifle_spare_magazine.blend",
+    "glb_sha256": "0f1762a557379dc270d564d4bc12fcab903926c04ee655bb9db9e1a261403ecc",
+    "native_sha256": "8603e622346062217022206eac007c861127257a5a21944f91a9183dd4c26ed9",
+    "nodes": [
+      "compact_patrol_rifle_spare_magazine__Socket_Hand",
+      "compact_patrol_rifle_spare_magazine__Socket_Insertion"
+    ],
+    "animations": {}
+  },
+  "expedition_rifle_spare_magazine": {
+    "kind": "reload_extra",
+    "description": "Matching detachable visual magazine / expedition_rifle",
+    "dimensions_m": [
+      0.039000000804662704,
+      0.1637155544012785,
+      0.09395170584321022
+    ],
+    "bounds_min": [
+      -0.019500000402331352,
+      -0.15571555495262146,
+      -0.03945170342922211
+    ],
+    "bounds_max": [
+      0.019500000402331352,
+      0.007999999448657036,
+      0.05450000241398811
+    ],
+    "triangles": 972,
+    "mesh_nodes": 3,
+    "materials": 3,
+    "glb": "godot/expedition_rifle_spare_magazine.glb",
+    "native": "source/expedition_rifle_spare_magazine.blend",
+    "glb_sha256": "f65fad293cbdb41a841dafeabb22a03d44367c7a0d2d400344afb0644d931553",
+    "native_sha256": "9329d041ec9d85e27b014bd78f4c9a0c5c0371c8c1e8a53d45e934d46ad7c53c",
+    "nodes": [
+      "expedition_rifle_spare_magazine__Socket_Hand",
+      "expedition_rifle_spare_magazine__Socket_Insertion"
+    ],
+    "animations": {}
+  },
+  "visual_rifle_round": {
+    "kind": "reload_extra",
+    "description": "Fictional visual animation prop; not a real ammunition specification",
+    "dimensions_m": [
+      0.01080000028014183,
+      0.01080000028014183,
+      0.04970000311732292
+    ],
+    "bounds_min": [
+      -0.005400000140070915,
+      -0.005400000140070915,
+      -0.049000002443790436
+    ],
+    "bounds_max": [
+      0.005400000140070915,
+      0.005400000140070915,
+      0.000700000673532486
+    ],
+    "triangles": 264,
+    "mesh_nodes": 2,
+    "materials": 2,
+    "glb": "godot/visual_rifle_round.glb",
+    "native": "source/visual_rifle_round.blend",
+    "glb_sha256": "817d8a7336863c990a1305781b5a97ccdb77996a5acdb640f3fe4ab9d668520e",
+    "native_sha256": "a86ea4ec6af817e2fc413effebc47d51a81292233e711e9ac1a85e88644bf3e4",
+    "nodes": [
+      "visual_rifle_round__Socket_Pickup"
+    ],
+    "animations": {}
+  },
+  "visual_spent_case": {
+    "kind": "reload_extra",
+    "description": "Fictional visual animation prop; not a real ammunition specification",
+    "dimensions_m": [
+      0.01080000028014183,
+      0.01080000028014183,
+      0.03470000624656677
+    ],
+    "bounds_min": [
+      -0.005400000140070915,
+      -0.005400000140070915,
+      -0.034000005573034286
+    ],
+    "bounds_max": [
+      0.005400000140070915,
+      0.005400000140070915,
+      0.000700000673532486
+    ],
+    "triangles": 204,
+    "mesh_nodes": 1,
+    "materials": 1,
+    "glb": "godot/visual_spent_case.glb",
+    "native": "source/visual_spent_case.blend",
+    "glb_sha256": "0d3598f5f7c63a18b1373ce62766a1f388b9c276813eedbb48b49675e19cc7e5",
+    "native_sha256": "0a8c4a103c3c1d5f8027bb650c8f7717a2c13fb1efe12ff7b5d0fb1083451ff5",
+    "nodes": [
+      "visual_spent_case__Socket_Pickup"
+    ],
+    "animations": {}
+  },
+  "round_loading_strip": {
+    "kind": "reload_extra",
+    "description": "Fictional visual round carrier for handling/loot animations",
+    "dimensions_m": [
+      0.05700000002980232,
+      0.01080000028014183,
+      0.05350000225007534
+    ],
+    "bounds_min": [
+      -0.02850000001490116,
+      -0.005400000140070915,
+      -0.049000002443790436
+    ],
+    "bounds_max": [
+      0.02850000001490116,
+      0.005400000140070915,
+      0.0044999998062849045
+    ],
+    "triangles": 1428,
+    "mesh_nodes": 2,
+    "materials": 2,
+    "glb": "godot/round_loading_strip.glb",
+    "native": "source/round_loading_strip.blend",
+    "glb_sha256": "13314a641255600eb85d5c6257a56d82644cfc21e68007a3408b53d1bfe5560a",
+    "native_sha256": "1cf1c64e9ddcc4950ac5b7ef325675c10eb1d7087afb40170a131fc030f33911",
+    "nodes": [
+      "round_loading_strip__Socket_Hand"
+    ],
+    "animations": {}
+  }
+}

@@ -1,0 +1,522 @@
+{
+  "schema": 1,
+  "date": "2026-10-06",
+  "baseline_commit": "edb43c4466b08cc4a47eb6c92be6a1fac132d00a",
+  "scope": "Planning baseline only. No gameplay code, assets, map, clock parameters, or player saves modified. Candidate timings are arithmetic, not a tested runtime balance change.",
+  "source_sha256": {
+    "brave-and-cold/systems/game_clock.gd": "014d6af6b5d14370dbfce1f88ea3985d9ce5f2f4b94e59a60f4b8c0f8efde1c3",
+    "brave-and-cold/systems/needs.gd": "34ff3ae2a87aa77583de5103ff609b566f2742379886f237c3662fb5614071f2",
+    "brave-and-cold/systems/lookout_assignment.gd": "fc3ac643181dbd946ae22a508f7c49c96dc518c30ae4df8cb21848c9c262e32e",
+    "brave-and-cold/world/lookout_opening.gd": "611010c10fbf0e4ad4fe253e28c1d351a8de80cfb99bbfd485256ea7c4a91c78",
+    "brave-and-cold/world/first_week_collapse.gd": "52c394623f7bbc7c484cb04f9a3e76460004988359744cfc0b211f0a4987c715",
+    "brave-and-cold/world/first_week_route.gd": "4b6e8bb37e2c490b9d05db0b290554027b0beed3001f7573753460a862b1e505",
+    "brave-and-cold/entities/player/player.gd": "cbdcc65b9fcf167dbf955b6dd4f217b2d3671401a92569a2b50976f26aedd1a0",
+    "brave-and-cold/world/game_world.gd": "d67a8845e92fc66e0c0f4b31b6cbd9cb87e8a1038491b39416ebcb96b4a5f4fd",
+    "brave-and-cold/data/lookout_broadcasts.json": "4c3b1d4cae7cdf82ad283f2a1cff246fc7d7f9cb59647ba93453112aff70329a",
+    "brave-and-cold/data/lookout_site.json": "09dde66e0bc20ea85d0cdf8e948d9bc878f9ca97a3b25b37652b919c66773c8b"
+  },
+  "path_measurement": {
+    "sample_points": 256,
+    "stored_length_m": 570.5472,
+    "sampled_xz_length_m": 570.547242692481,
+    "sampled_xyz_length_m": 574.6716651848892,
+    "base_walk_m_per_s": 3.2,
+    "nominal_one_way_minutes_using_stored_length": 2.9716,
+    "nominal_return_minutes_using_stored_length": 5.9432,
+    "limitations": "Lookout access track only; excludes road-to-depot travel, tower stairs, acceleration, turns, snow, fatigue, encumbrance, exploration and interactions. Nominal distance/speed estimate, not observed play time."
+  },
+  "starting_resource_inventory": {
+    "home_plus_pack_food_kcal": 4250,
+    "crew_cache_food_kcal": 1300,
+    "total_food_kcal_including_cache": 5550,
+    "initial_body_calories_separate_from_stock": 2000,
+    "filled_water_litres_home_pack_cache": 3.0,
+    "initial_stove_game_hours": 2,
+    "wood_in_rack": 6,
+    "wood_in_pack": 2,
+    "stove_hours_per_wood": 2,
+    "total_initial_heat_game_hours_including_lit_stove": 18,
+    "limitations": "Counted setup quantities, excluding depot/town/clinic loot and harvesting. Total heat requires transporting fuel and stoking; matches and player decisions still matter."
+  },
+  "balance_profiles": [
+    {
+      "day_minutes": 30,
+      "game_seconds_per_real_second": 48.0,
+      "initial_stove_awake_minutes": 2.5,
+      "one_log_awake_minutes": 2.5,
+      "six_log_rack_awake_minutes": 15.0,
+      "total_initial_heat_awake_minutes": 22.5,
+      "first_infected_cohort_awake_minutes": 35.0,
+      "grid_failure_awake_minutes_range": [
+        60.0,
+        90.0
+      ],
+      "final_signoff_awake_minutes": 143.125,
+      "walk_10_real_minutes_warm_no_consumption": {
+        "elapsed_game_hours": 8.0,
+        "calories": 440.0,
+        "hydration_percent": 37.0,
+        "fatigue": 40.0
+      },
+      "walk_minutes_until_calories_reach_900": 7.051282051282052,
+      "walk_minutes_until_hydration_reaches_45": 8.333333333333334
+    },
+    {
+      "day_minutes": 48,
+      "game_seconds_per_real_second": 30.0,
+      "initial_stove_awake_minutes": 4.0,
+      "one_log_awake_minutes": 4.0,
+      "six_log_rack_awake_minutes": 24.0,
+      "total_initial_heat_awake_minutes": 36.0,
+      "first_infected_cohort_awake_minutes": 56.0,
+      "grid_failure_awake_minutes_range": [
+        96.0,
+        144.0
+      ],
+      "final_signoff_awake_minutes": 229.0,
+      "walk_10_real_minutes_warm_no_consumption": {
+        "elapsed_game_hours": 5.0,
+        "calories": 1025.0,
+        "hydration_percent": 55.0,
+        "fatigue": 25.0
+      },
+      "walk_minutes_until_calories_reach_900": 11.282051282051281,
+      "walk_minutes_until_hydration_reaches_45": 13.333333333333334
+    }
+  ],
+  "broadcast_timeline": [
+    {
+      "id": "public_d1_06",
+      "device": "public",
+      "title": "Morning weather",
+      "calendar_day": 1,
+      "calendar_hour": 6,
+      "elapsed_game_hours": 0.5,
+      "awake_minutes_30_min_day": 0.625,
+      "awake_minutes_48_min_day": 1.0
+    },
+    {
+      "id": "public_d1_12",
+      "device": "public",
+      "title": "Midday recap",
+      "calendar_day": 1,
+      "calendar_hour": 12,
+      "elapsed_game_hours": 6.5,
+      "awake_minutes_30_min_day": 8.125,
+      "awake_minutes_48_min_day": 13.0
+    },
+    {
+      "id": "public_d1_17",
+      "device": "public",
+      "title": "Distant incidents",
+      "calendar_day": 1,
+      "calendar_hour": 17,
+      "elapsed_game_hours": 11.5,
+      "awake_minutes_30_min_day": 14.375,
+      "awake_minutes_48_min_day": 23.0
+    },
+    {
+      "id": "public_d1_24",
+      "device": "public",
+      "title": "First overnight update",
+      "calendar_day": 1,
+      "calendar_hour": 24,
+      "elapsed_game_hours": 18.5,
+      "awake_minutes_30_min_day": 23.125,
+      "awake_minutes_48_min_day": 37.0
+    },
+    {
+      "id": "public_d2_06",
+      "device": "public",
+      "title": "Regional precautions",
+      "calendar_day": 2,
+      "calendar_hour": 6,
+      "elapsed_game_hours": 24.5,
+      "awake_minutes_30_min_day": 30.625,
+      "awake_minutes_48_min_day": 49.0
+    },
+    {
+      "id": "public_d2_12",
+      "device": "public",
+      "title": "Regional midday recap",
+      "calendar_day": 2,
+      "calendar_hour": 12,
+      "elapsed_game_hours": 30.5,
+      "awake_minutes_30_min_day": 38.125,
+      "awake_minutes_48_min_day": 61.0
+    },
+    {
+      "id": "public_d2_17",
+      "device": "public",
+      "title": "Town disruption",
+      "calendar_day": 2,
+      "calendar_hour": 17,
+      "elapsed_game_hours": 35.5,
+      "awake_minutes_30_min_day": 44.375,
+      "awake_minutes_48_min_day": 71.0
+    },
+    {
+      "id": "public_d2_24",
+      "device": "public",
+      "title": "Unexplained deaths",
+      "calendar_day": 2,
+      "calendar_hour": 24,
+      "elapsed_game_hours": 42.5,
+      "awake_minutes_30_min_day": 53.125,
+      "awake_minutes_48_min_day": 85.0
+    },
+    {
+      "id": "public_d3_06",
+      "device": "public",
+      "title": "Shelter advisory",
+      "calendar_day": 3,
+      "calendar_hour": 6,
+      "elapsed_game_hours": 48.5,
+      "awake_minutes_30_min_day": 60.625,
+      "awake_minutes_48_min_day": 97.0
+    },
+    {
+      "id": "public_d3_12",
+      "device": "public",
+      "title": "Shelter midday recap",
+      "calendar_day": 3,
+      "calendar_hour": 12,
+      "elapsed_game_hours": 54.5,
+      "awake_minutes_30_min_day": 68.125,
+      "awake_minutes_48_min_day": 109.0
+    },
+    {
+      "id": "public_d3_17",
+      "device": "public",
+      "title": "Northern isolation",
+      "calendar_day": 3,
+      "calendar_hour": 17,
+      "elapsed_game_hours": 59.5,
+      "awake_minutes_30_min_day": 74.375,
+      "awake_minutes_48_min_day": 119.0
+    },
+    {
+      "id": "public_d3_24",
+      "device": "public",
+      "title": "No relief convoy",
+      "calendar_day": 3,
+      "calendar_hour": 24,
+      "elapsed_game_hours": 66.5,
+      "awake_minutes_30_min_day": 83.125,
+      "awake_minutes_48_min_day": 133.0
+    },
+    {
+      "id": "public_d4_06",
+      "device": "public",
+      "title": "Independent survival",
+      "calendar_day": 4,
+      "calendar_hour": 6,
+      "elapsed_game_hours": 72.5,
+      "awake_minutes_30_min_day": 90.625,
+      "awake_minutes_48_min_day": 145.0
+    },
+    {
+      "id": "public_d4_12",
+      "device": "public",
+      "title": "Independent survival recap",
+      "calendar_day": 4,
+      "calendar_hour": 12,
+      "elapsed_game_hours": 78.5,
+      "awake_minutes_30_min_day": 98.125,
+      "awake_minutes_48_min_day": 157.0
+    },
+    {
+      "id": "public_d4_17",
+      "device": "public",
+      "title": "Shrinking information",
+      "calendar_day": 4,
+      "calendar_hour": 17,
+      "elapsed_game_hours": 83.5,
+      "awake_minutes_30_min_day": 104.375,
+      "awake_minutes_48_min_day": 167.0
+    },
+    {
+      "id": "public_d4_24",
+      "device": "public",
+      "title": "Station reserve warning",
+      "calendar_day": 4,
+      "calendar_hour": 24,
+      "elapsed_game_hours": 90.5,
+      "awake_minutes_30_min_day": 113.125,
+      "awake_minutes_48_min_day": 181.0
+    },
+    {
+      "id": "public_d5_06",
+      "device": "public",
+      "title": "Final operating day",
+      "calendar_day": 5,
+      "calendar_hour": 6,
+      "elapsed_game_hours": 96.5,
+      "awake_minutes_30_min_day": 120.625,
+      "awake_minutes_48_min_day": 193.0
+    },
+    {
+      "id": "public_d5_12",
+      "device": "public",
+      "title": "Final midday recap",
+      "calendar_day": 5,
+      "calendar_hour": 12,
+      "elapsed_game_hours": 102.5,
+      "awake_minutes_30_min_day": 128.125,
+      "awake_minutes_48_min_day": 205.0
+    },
+    {
+      "id": "public_d5_17",
+      "device": "public",
+      "title": "Preparing for silence",
+      "calendar_day": 5,
+      "calendar_hour": 17,
+      "elapsed_game_hours": 107.5,
+      "awake_minutes_30_min_day": 134.375,
+      "awake_minutes_48_min_day": 215.0
+    },
+    {
+      "id": "public_d5_24",
+      "device": "public",
+      "title": "Final signoff",
+      "calendar_day": 5,
+      "calendar_hour": 24,
+      "elapsed_game_hours": 114.5,
+      "awake_minutes_30_min_day": 143.125,
+      "awake_minutes_48_min_day": 229.0
+    },
+    {
+      "id": "dispatch_d1_08",
+      "device": "dispatch",
+      "title": "Assignment check",
+      "calendar_day": 1,
+      "calendar_hour": 8,
+      "elapsed_game_hours": 2.5,
+      "awake_minutes_30_min_day": 3.125,
+      "awake_minutes_48_min_day": 5.0
+    },
+    {
+      "id": "dispatch_d1_14",
+      "device": "dispatch",
+      "title": "Afternoon work check",
+      "calendar_day": 1,
+      "calendar_hour": 14,
+      "elapsed_game_hours": 8.5,
+      "awake_minutes_30_min_day": 10.625,
+      "awake_minutes_48_min_day": 17.0
+    },
+    {
+      "id": "dispatch_d1_20",
+      "device": "dispatch",
+      "title": "End of shift",
+      "calendar_day": 1,
+      "calendar_hour": 20,
+      "elapsed_game_hours": 14.5,
+      "awake_minutes_30_min_day": 18.125,
+      "awake_minutes_48_min_day": 29.0
+    },
+    {
+      "id": "dispatch_d2_08",
+      "device": "dispatch",
+      "title": "Travel precautions",
+      "calendar_day": 2,
+      "calendar_hour": 8,
+      "elapsed_game_hours": 26.5,
+      "awake_minutes_30_min_day": 33.125,
+      "awake_minutes_48_min_day": 53.0
+    },
+    {
+      "id": "dispatch_d2_14",
+      "device": "dispatch",
+      "title": "Delivery cancelled",
+      "calendar_day": 2,
+      "calendar_hour": 14,
+      "elapsed_game_hours": 32.5,
+      "awake_minutes_30_min_day": 40.625,
+      "awake_minutes_48_min_day": 65.0
+    },
+    {
+      "id": "dispatch_d2_20",
+      "device": "dispatch",
+      "title": "Town crew missing",
+      "calendar_day": 2,
+      "calendar_hour": 20,
+      "elapsed_game_hours": 38.5,
+      "awake_minutes_30_min_day": 48.125,
+      "awake_minutes_48_min_day": 77.0
+    },
+    {
+      "id": "dispatch_d3_08",
+      "device": "dispatch",
+      "title": "Working independently",
+      "calendar_day": 3,
+      "calendar_hour": 8,
+      "elapsed_game_hours": 50.5,
+      "awake_minutes_30_min_day": 63.125,
+      "awake_minutes_48_min_day": 101.0
+    },
+    {
+      "id": "dispatch_d3_14",
+      "device": "dispatch",
+      "title": "Conserve local power",
+      "calendar_day": 3,
+      "calendar_hour": 14,
+      "elapsed_game_hours": 56.5,
+      "awake_minutes_30_min_day": 70.625,
+      "awake_minutes_48_min_day": 113.0
+    },
+    {
+      "id": "dispatch_d3_20",
+      "device": "dispatch",
+      "title": "Dispatch thinning out",
+      "calendar_day": 3,
+      "calendar_hour": 20,
+      "elapsed_game_hours": 62.5,
+      "awake_minutes_30_min_day": 78.125,
+      "awake_minutes_48_min_day": 125.0
+    },
+    {
+      "id": "dispatch_d4_08",
+      "device": "dispatch",
+      "title": "Last dispatch call",
+      "calendar_day": 4,
+      "calendar_hour": 8,
+      "elapsed_game_hours": 74.5,
+      "awake_minutes_30_min_day": 93.125,
+      "awake_minutes_48_min_day": 149.0
+    }
+  ],
+  "diagnostics": [
+    {
+      "test": "test_lookout_assignment",
+      "log_path": "brave-and-cold/shots/opening-plan-2026-10-06/test_lookout_assignment.log",
+      "sha256": "3030bb3e694a18790ce447f2e30bb0976e40f4f3fa0a5e5d23dae441ef1fc693",
+      "pass_lines": 27,
+      "failures_or_script_errors": [],
+      "summaries": [
+        "LOOKOUT_ASSIGNMENT_TEST failures=0"
+      ],
+      "warning_lines": [],
+      "limitations": "Existing headless diagnostic; not a human playthrough, render assessment, or complete route-time measurement.",
+      "exit_code": 0,
+      "engine_error_lines": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store."
+      ],
+      "assertions_passed": true
+    },
+    {
+      "test": "test_radio_bulletins",
+      "log_path": "brave-and-cold/shots/opening-plan-2026-10-06/test_radio_bulletins.log",
+      "sha256": "04e04f4b38eae05730b06c1566f56be342c42615f328da3940ccc0507cc75f8f",
+      "pass_lines": 140,
+      "failures_or_script_errors": [],
+      "summaries": [
+        "RADIO_BULLETINS_TEST failures=0"
+      ],
+      "warning_lines": [
+        "WARNING: instance_reset_physics_interpolation() is deprecated.",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details)."
+      ],
+      "limitations": "Existing headless diagnostic; not a human playthrough, render assessment, or complete route-time measurement.",
+      "exit_code": 0,
+      "engine_error_lines": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "ERROR: String formatting error: unsupported format character."
+      ],
+      "assertions_passed": true
+    },
+    {
+      "test": "test_first_week_core",
+      "log_path": "brave-and-cold/shots/opening-plan-2026-10-06/test_first_week_core.log",
+      "sha256": "9637ab15afcdb15aa1efda7c9f8124675ff677af81def43551c7d5e415c59a59",
+      "pass_lines": 33,
+      "failures_or_script_errors": [],
+      "summaries": [
+        "FIRST_WEEK_CORE_TEST checks=33 failures=0"
+      ],
+      "warning_lines": [
+        "WARNING: instance_reset_physics_interpolation() is deprecated.",
+        "WARNING: 2 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: 7 ObjectDB instances were leaked at exit (run with `--verbose` for details)."
+      ],
+      "limitations": "Existing headless diagnostic; not a human playthrough, render assessment, or complete route-time measurement.",
+      "exit_code": 0,
+      "engine_error_lines": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store."
+      ],
+      "assertions_passed": true
+    },
+    {
+      "test": "test_first_week_story",
+      "log_path": "brave-and-cold/shots/opening-plan-2026-10-06/test_first_week_story.log",
+      "sha256": "fd319930d006b9e8cc670bb974c56b688e0acd3fe8f435ccf5e7dc6475c5956a",
+      "pass_lines": 38,
+      "failures_or_script_errors": [],
+      "summaries": [
+        "FIRST_WEEK_STORY_TEST checks=38 failures=0"
+      ],
+      "warning_lines": [
+        "WARNING: instance_reset_physics_interpolation() is deprecated.",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details)."
+      ],
+      "limitations": "Existing headless diagnostic; not a human playthrough, render assessment, or complete route-time measurement.",
+      "exit_code": 0,
+      "engine_error_lines": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store."
+      ],
+      "assertions_passed": true
+    },
+    {
+      "test": "test_opening_traversal",
+      "log_path": "brave-and-cold/shots/opening-plan-2026-10-06/test_opening_traversal.log",
+      "sha256": "1c167ff7119a60d8da4bc88dd88a74e61f9304b0a2fa61f41a2df7706e9fb7bd",
+      "pass_lines": 5,
+      "failures_or_script_errors": [],
+      "summaries": [
+        "OPENING_TRAVERSAL_TEST failures=0 free_cases=64 route_error=0.23762372136116"
+      ],
+      "warning_lines": [
+        "WARNING: instance_reset_physics_interpolation() is deprecated.",
+        "WARNING: 1 RID of type \"CanvasItem\" was leaked.",
+        "WARNING: 4 ObjectDB instances were leaked at exit (run with `--verbose` for details)."
+      ],
+      "limitations": "Existing headless diagnostic; not a human playthrough, render assessment, or complete route-time measurement.",
+      "exit_code": 0,
+      "engine_error_lines": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store."
+      ],
+      "assertions_passed": true
+    }
+  ],
+  "not_yet_verified": [
+    "human first-session engagement",
+    "full lookout-to-depot trip duration",
+    "runtime balance/audio compatibility of the 48-minute day",
+    "full moving-game performance at 1080p with live AI and weather",
+    "uninterrupted recorded player opening"
+  ],
+  "diagnostic_status": "All 243 assertions passed, but radio diagnostic also emits a project string-formatting error. This is not an error-free runtime acceptance.",
+  "observed_project_defects": [
+    {
+      "id": "opening-service-log-format",
+      "source": "brave-and-cold/world/lookout_opening.gd",
+      "line": 338,
+      "function": "read_log",
+      "evidence": "test_radio_bulletins.log:169-173",
+      "error": "String formatting error: unsupported format character.",
+      "cause": "The service-log text is formatted with two substitutions, while its literal hydration percentage contains an unescaped percent sign.",
+      "acceptance": "All assignment stages show their current task and actual depot directions, medical percentages remain readable, and the real read-log path produces no formatting error.",
+      "scope": "Recorded only; no code change made."
+    }
+  ],
+  "environment_errors": [
+    "Headless processes could not open the restricted user:// engine log and reported failure to read the root certificate store. Test stdout/stderr were captured in workspace files; neither message was treated as a gameplay assertion failure. No network request was attempted."
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "gameplay_and_pose_checks": 466,
+  "asset_checks": 111,
+  "failures": 0,
+  "suites": [
+    {
+      "suite": "town_life",
+      "checks": 47,
+      "failures": 0,
+      "log_sha256": "3281f9a5fdebd4395c8664e5d45f6237c06d27cc75242b807df0989638ab4ded"
+    },
+    {
+      "suite": "infected_skin",
+      "checks": 46,
+      "failures": 0,
+      "log_sha256": "d2adcb51b55d56963e2a826066ad36c3803b00914bf571d1830ef6ffaf1eb972"
+    },
+    {
+      "suite": "infected_gait",
+      "checks": 50,
+      "failures": 0,
+      "log_sha256": "7f0d63dc1dfb04a5e7bef890a7a3a87b194f9b544a68dd983764ee92a117a0a7"
+    },
+    {
+      "suite": "first_week_collapse",
+      "checks": 193,
+      "failures": 0,
+      "log_sha256": "7969f7b5cafbd81efbc41ebc7219a66fca62fa3660e0cc37f97426aa8b12d3b8"
+    },
+    {
+      "suite": "shift_work",
+      "checks": 28,
+      "failures": 0,
+      "log_sha256": "22bc9a1889dfd2598e0641fe11f64f8bea6d61ff12902bd6a36451bc34d48abd"
+    },
+    {
+      "suite": "lookout_opening",
+      "checks": 53,
+      "failures": 0,
+      "log_sha256": "63a24e90f59d1d32d055a69c8c506e2392e40e97b90befae8b73b2f4fee93d72"
+    },
+    {
+      "suite": "electrical_fieldwork",
+      "checks": 49,
+      "failures": 0,
+      "log_sha256": "16c4cc3687e5ed988ed74295235b67c5de4950233874df40fe8b14536be9321d"
+    }
+  ]
+}

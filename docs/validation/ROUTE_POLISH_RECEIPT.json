@@ -1,0 +1,495 @@
+{
+  "date": "2026-10-07",
+  "baseline": "8462bf3",
+  "branch": "codex/route-polish",
+  "rollback_tag": "checkpoint/pre-route-polish-2026-10-07",
+  "assertions_passed": 565,
+  "tests": {
+    "route_polish": {
+      "pass_assertions": 31,
+      "log": "brave-and-cold/shots/route-polish-2026-10-07/test_route_polish.log",
+      "sha256": "58940fd0c0bd8077b26576aa23ffcf8d225b3bb8e8759ee8e6eb07b8fb65e51e",
+      "native_exit_code": 0
+    },
+    "road_detail": {
+      "pass_assertions": 15,
+      "log": "brave-and-cold/shots/route-polish-2026-10-07/test_road_detail.log",
+      "sha256": "ba7e9aa205eca9a2e32d98fa83bbc2d7585d5377030d599d96020eaaa9953388",
+      "native_exit_code": 0
+    },
+    "walk_surfaces": {
+      "pass_assertions": 18,
+      "log": "brave-and-cold/shots/route-polish-2026-10-07/test_walk_surfaces.log",
+      "sha256": "a4f2da6039f10383498ba4fc73c62cd77c3f464a454c1c7f14db7310875b8524",
+      "native_exit_code": 0
+    },
+    "lookout_stair_turns": {
+      "pass_assertions": 91,
+      "log": "brave-and-cold/shots/route-polish-2026-10-07/test_lookout_stair_turns.log",
+      "sha256": "8ca2b7049d8f0a8ade3691291274fbba9d7ba9fd7afb05fcd8837dbadf1b11fa",
+      "native_exit_code": 0
+    },
+    "lookout_opening": {
+      "pass_assertions": 53,
+      "log": "brave-and-cold/shots/route-polish-2026-10-07/test_lookout_opening.log",
+      "sha256": "f9ac2d3c1315038edcd01f3064b6d5b7a0cce1d6efea08fcd488133c12a14430",
+      "native_exit_code": 0
+    },
+    "opening_traversal": {
+      "pass_assertions": 5,
+      "log": "brave-and-cold/shots/route-polish-2026-10-07/test_opening_traversal.log",
+      "sha256": "943028a88ac660d2ee929295fbbf012b2613eef57bb30bc8f1485ecb9335c639",
+      "native_exit_code": 0
+    },
+    "watch_walkie_door": {
+      "pass_assertions": 46,
+      "log": "brave-and-cold/shots/route-polish-2026-10-07/test_watch_walkie_door.log",
+      "sha256": "a6192ca50bf84acd164a6594eb69228d4b393e7de66508c21b5e0a452246ad50",
+      "native_exit_code": 0
+    },
+    "first_week_core": {
+      "pass_assertions": 33,
+      "log": "brave-and-cold/shots/route-polish-2026-10-07/test_first_week_core.log",
+      "sha256": "8bb5f9c2af95b9474dfb235d6acfda44f5c04c005de1ad68c39b4126440ab43c",
+      "native_exit_code": 0
+    },
+    "first_week_story": {
+      "pass_assertions": 38,
+      "log": "brave-and-cold/shots/route-polish-2026-10-07/test_first_week_story.log",
+      "sha256": "d8e06689095dd96dbf18632f3a52bfbca1de6791bfd93623795f3234867daab6",
+      "native_exit_code": 0
+    },
+    "first_week_collapse": {
+      "pass_assertions": 185,
+      "log": "brave-and-cold/shots/route-polish-2026-10-07/test_first_week_collapse.log",
+      "sha256": "43c96231cd6a0b98273baecbfc87d5616e9f3acd320d703f680692fbf820e2df",
+      "native_exit_code": 0
+    },
+    "opening_pacing": {
+      "pass_assertions": 50,
+      "log": "brave-and-cold/shots/route-polish-2026-10-07/test_opening_pacing.log",
+      "sha256": "e48c2d68aa27e3b8fc49872546c1acc5b397a3011ce0bec3a32fbf2a41008ab0",
+      "native_exit_code": 0
+    }
+  },
+  "shore": {
+    "crossings": 84,
+    "blocked_frames": 0,
+    "log_sha256": "a8400ce56e5eb161d89eb2d8b8397333de44b83ba3d396e06e0b599a08f39c65"
+  },
+  "trail_movement": {
+    "complete_traversals": 6,
+    "fps": [
+      30,
+      60,
+      120
+    ],
+    "max_contact_m": 1.525868623e-05,
+    "max_change_in_vertical_step_m": 0.0067043453455
+  },
+  "controlled_outing": {
+    "completed": true,
+    "failure": "",
+    "label": "route-polish",
+    "limitations": "Scripted fixed-step route with actual Player movement/collision, world survival/weather and population tick. Direct action callbacks and no menu/exploration time; other entity process/animation is frozen. Not human playtesting or a frame-time benchmark. No user save files used.",
+    "pace": 30.0,
+    "renderer": "",
+    "repair_stage": 3,
+    "samples": [
+      {
+        "calendar": "Day 1  05:30",
+        "calories": 1999.56666666667,
+        "completed_so_far": true,
+        "core_c": 37.0,
+        "distance_m": 0.559550816193223,
+        "fatigue": 0.0111111111111111,
+        "food_pack": 1,
+        "game_s": 8.0,
+        "hp": 100.0,
+        "position": [
+          528.501831054688,
+          326.839752197266,
+          -764.17529296875
+        ],
+        "real_s": 0.266666666666667,
+        "segment": "depart_room",
+        "stove_game_hours": 7.99777777777778,
+        "walkie_percent": 100,
+        "water": 84.9866666666667,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  05:40",
+        "calories": 1964.4458333334,
+        "completed_so_far": true,
+        "core_c": 37.0,
+        "distance_m": 64.7811603015289,
+        "fatigue": 0.911944444444442,
+        "food_pack": 1,
+        "game_s": 657.0,
+        "hp": 100.0,
+        "position": [
+          532.804626464844,
+          305.390838623047,
+          -764.562133789063
+        ],
+        "real_s": 21.9000000000002,
+        "segment": "stairs_down",
+        "stove_game_hours": 7.8175,
+        "walkie_percent": 100,
+        "water": 83.9055555555565,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  05:45",
+        "calories": 1953.0250000001,
+        "completed_so_far": true,
+        "core_c": 36.9784409902786,
+        "distance_m": 80.0535826096311,
+        "fatigue": 1.2311111111111,
+        "food_pack": 1,
+        "game_s": 922.0,
+        "hp": 100.0,
+        "position": [
+          517.967407226563,
+          304.701751708984,
+          -763.530578613281
+        ],
+        "real_s": 30.733333333334,
+        "segment": "cabinet_inspected",
+        "stove_game_hours": 7.74388888888889,
+        "walkie_percent": 99,
+        "water": 83.5127777777787,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  07:31",
+        "calories": 1606.84583333411,
+        "completed_so_far": true,
+        "core_c": 36.9967702555253,
+        "distance_m": 658.008225762285,
+        "fatigue": 10.1074999999999,
+        "food_pack": 1,
+        "game_s": 7313.0,
+        "hp": 100.0,
+        "position": [
+          549.005920410156,
+          250.547775268555,
+          -259.6669921875
+        ],
+        "real_s": 243.766666666655,
+        "segment": "main_road",
+        "stove_game_hours": 5.96861111111111,
+        "walkie_percent": 92,
+        "water": 72.8611111111217,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  07:44",
+        "calories": 1565.72500000086,
+        "completed_so_far": true,
+        "core_c": 36.976970509147,
+        "distance_m": 725.757236954756,
+        "fatigue": 11.1744444444438,
+        "food_pack": 1,
+        "game_s": 8098.0,
+        "hp": 100.0,
+        "position": [
+          572.965209960938,
+          253.632476806641,
+          -224.881759643555
+        ],
+        "real_s": 269.933333333332,
+        "segment": "depot_part_collected",
+        "stove_game_hours": 5.75055555555556,
+        "walkie_percent": 91,
+        "water": 71.5761111111227,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  09:48",
+        "calories": 1170.0416666683,
+        "completed_so_far": true,
+        "core_c": 36.7152306114931,
+        "distance_m": 1381.50497632392,
+        "fatigue": 21.3644444444455,
+        "food_pack": 1,
+        "game_s": 15494.0,
+        "hp": 100.0,
+        "position": [
+          517.9345703125,
+          304.696350097656,
+          -763.489501953125
+        ],
+        "real_s": 516.466666666854,
+        "segment": "cabinet_commissioned",
+        "stove_game_hours": 3.69611111111111,
+        "walkie_percent": 83,
+        "water": 59.3316666666897,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  10:03",
+        "calories": 1121.5291666684,
+        "completed_so_far": true,
+        "core_c": 36.5687331680474,
+        "distance_m": 1466.2703052276,
+        "fatigue": 22.6119444444465,
+        "food_pack": 1,
+        "game_s": 16397.0,
+        "hp": 100.0,
+        "position": [
+          528.218505859375,
+          326.839752197266,
+          -763.595886230469
+        ],
+        "real_s": 546.566666666827,
+        "segment": "returned_room",
+        "stove_game_hours": 3.44527777777778,
+        "walkie_percent": 82,
+        "water": 57.8333333333578,
+        "wood_pack": 2
+      }
+    ]
+  },
+  "outing_sha256": "3e3337a98dc19400999df9dbfbde4fcd73619c148588464a5cd1e411bc18e1cf",
+  "assets": {
+    "compound_gate": {
+      "triangles": 2158,
+      "materials": 4,
+      "dimensions_m": [
+        3.0299997478723752,
+        1.6389999389648438,
+        0.1420000035465554
+      ],
+      "source_export_verified": true
+    },
+    "service_marker": {
+      "triangles": 754,
+      "materials": 5,
+      "dimensions_m": [
+        0.25,
+        1.534000001847744,
+        0.1899999976158142
+      ],
+      "source_export_verified": true
+    },
+    "drain_headwall": {
+      "triangles": 996,
+      "materials": 4,
+      "dimensions_m": [
+        1.1200000047683716,
+        0.6310000047087669,
+        0.3590000211780161
+      ],
+      "source_export_verified": true
+    },
+    "shoulder_debris": {
+      "triangles": 184,
+      "materials": 2,
+      "dimensions_m": [
+        0.6421545254960241,
+        0.05000000074505806,
+        0.42237226391348975
+      ],
+      "source_export_verified": true
+    },
+    "graphics_verified": 5,
+    "foley_verified": [
+      "gate_latch",
+      "gate_hinge",
+      "gate_stop"
+    ]
+  },
+  "manifest_sha256": "e2b7183540bc7556ec9cdaf009f7b1cf46fe64db8efe1e3e3ce24cc3d1ae067c",
+  "source_sha256_lf": {
+    ".gitignore": "f15d635c74a0f652450293ef7ea9ce808f2abb0b976f75c2b2324219d35bccc8",
+    "brave-and-cold/world/refuge_boundary.gd": "cf84b1c23c2cb38739d00f7d741c7d542432f2f5cf835e5495d64022d7fff537",
+    "brave-and-cold/world/lookout_opening.gd": "c60fadb32c24e2e357a320099a03aca8b840ce60e65a765a874540193dcb9dbb",
+    "brave-and-cold/world/fire_lookout.gd": "569e247d4433217917beecd6e8d35e1a1aeb881f9cd39dc799bc0eddd4fd21d4",
+    "brave-and-cold/world/trail_net.gd": "67f328592074191bee6760c0131f2d1b9d897c4f0e610c9c23a6d9af2796c65d",
+    "brave-and-cold/world/road_net.gd": "159ca7d66032c2a721d23229166772c31d3a6d3bdfb70a691c1ef82c76d1cd61",
+    "brave-and-cold/world/game_world.gd": "06c958b19b5cf704fe0df186bcd9f81a367170496335615eff7705d979820faa",
+    "brave-and-cold/world/route_dressing.gd": "12bec1a658cd2d6f75044571a878c3c94304e5dd49db1e913715efaad672318c",
+    "brave-and-cold/world/winter_path_material.gd": "16fe6838db15a141b02c71780cab6545276369f7889e8de0e20746d66ea6dcff",
+    "brave-and-cold/world/shaders/winter_service_path.gdshader": "547c08dcf482c8132784f4ad5076d87049169a6baaaa26264b8dc4a8f71548ac",
+    "brave-and-cold/world/shaders/winter_road.gdshader": "31086f4db8554014a69ff8799214388d905ff76f0ec59d120fc632626db2e90b",
+    "brave-and-cold/tests/test_route_polish.gd": "1cd5d84fc0704c4f9b36158cc8f24d794ee419f20ef268c12aea8ae21dbf6a6d",
+    "brave-and-cold/tests/test_opening_traversal.gd": "60db213de60d8d171b686d9c4587f6aa68f0efa5d4bec9220c747ce30ba91251",
+    "brave-and-cold/tests/test_lookout_opening.gd": "618a9bf4c42f48487d476378fbc16ffc505c5c8c54debd6b50cc58a2859f2706",
+    "brave-and-cold/tests/measure_opening_route.gd": "97aafddbd4929810c6bcc1bc3db65188cccb127803413e0eb2074b89e52e18f1",
+    "brave-and-cold/tests/visual/capture_route_polish.gd": "b9554f3a33c3d758474ff0c141b58f23b233d43ba79fe6b40fcfcfd2c6d5bb8a",
+    "tools/blender/gen_route_graphics.py": "96cffac2b5554975992438d980a6f114eb739895f39c826586de028a96e19d4c",
+    "tools/blender/gen_route_detail.py": "52e46da39cf670bc41b630675e3a48d948472e9895408c7f9b6a1d2387635127",
+    "tools/audio/gen_route_foley.py": "e229ca60a7fb7d3f261134ec2b3585cc196b08eaf94bb6a38958e131e5c2e18b",
+    "tools/validate_route_assets.py": "6fdb9a80c1445ab5ff347632cebd8f04dce7de87ec5a2d6d43d09731ca440416",
+    "tools/record_route_validation.py": "1bd5783f0a51679d455c16db9e5a421fc31e4baf89f693dfca3758ffb771f240"
+  },
+  "render": {
+    "renderer": "Forward+ D3D12",
+    "gpu": "NVIDIA GeForce GTX 1080 Ti",
+    "viewport": [
+      1600,
+      900
+    ],
+    "capture_log_sha256": "f5936072f5bf8473e2a76ccff64180c6e569f8a3aa192a373b563e5cb2b7d10e",
+    "images": {
+      "road-180": {
+        "path": "brave-and-cold/shots/route-polish-2026-10-07/final/road-180.png",
+        "sha256": "aec2e38aaa66e4211966273722f73b2e103fce6de88ed7b22f63dafd5714ffb4",
+        "agent_visual_review": "accepted"
+      },
+      "road-360": {
+        "path": "brave-and-cold/shots/route-polish-2026-10-07/final/road-360.png",
+        "sha256": "1439cf134ebecbb72622142bd033d98775fa91545dad8cb58dfaa2c9d35dd125",
+        "agent_visual_review": "accepted"
+      },
+      "trail-4": {
+        "path": "brave-and-cold/shots/route-polish-2026-10-07/final/trail-4.png",
+        "sha256": "c1ff3f55e254116b08426f9eb0d8c39db04bc06fc4913a7a3576795154b92c49",
+        "agent_visual_review": "accepted"
+      },
+      "trail-75": {
+        "path": "brave-and-cold/shots/route-polish-2026-10-07/final/trail-75.png",
+        "sha256": "ff2f42a64c417fed08339848576e8e1d579d82fee9a9ab3c521bf88335f6b372",
+        "agent_visual_review": "accepted"
+      },
+      "trail-165": {
+        "path": "brave-and-cold/shots/route-polish-2026-10-07/final/trail-165.png",
+        "sha256": "73d8531aee93ab29e0e4fbf08a0e4d1fa779c6d6162bbd6b68e7e122173a757d",
+        "agent_visual_review": "accepted"
+      },
+      "trail-238": {
+        "path": "brave-and-cold/shots/route-polish-2026-10-07/final/trail-238.png",
+        "sha256": "5cae84fa19912f8169d8de6ecd6903ce6dfb8da4acbdac4cfb96cf896575c311",
+        "agent_visual_review": "accepted"
+      },
+      "trail-dusk": {
+        "path": "brave-and-cold/shots/route-polish-2026-10-07/final/trail-dusk.png",
+        "sha256": "6f08b81f1cfdb4968a9744a6a365d1cb801e3e65aa3fe877b23d73ec8db12ef8",
+        "agent_visual_review": "accepted"
+      },
+      "trail-storm-light": {
+        "path": "brave-and-cold/shots/route-polish-2026-10-07/final/trail-storm-light.png",
+        "sha256": "140a16f4277bd156a75d2fd8571da0d501c662cc1a0402ed8c0b84965e30ed44",
+        "agent_visual_review": "accepted"
+      },
+      "gate-closed": {
+        "path": "brave-and-cold/shots/route-polish-2026-10-07/final/gate-closed.png",
+        "sha256": "150c18d113eaed6608c03eb0b094e14485c4962f68c9111b7cfd0757229f6c5e",
+        "agent_visual_review": "accepted"
+      },
+      "gate-open": {
+        "path": "brave-and-cold/shots/route-polish-2026-10-07/final/gate-open.png",
+        "sha256": "722cf4a1402689f731fb2a1f512ead640ef0a430997fe4302095a86e5c9523bc",
+        "agent_visual_review": "accepted"
+      },
+      "service_marker": {
+        "path": "brave-and-cold/shots/route-polish-2026-10-07/final/service_marker.png",
+        "sha256": "e1b6af3009f4efcdd80ac6c5d4dbd02a94a2d2a5e37b0409b4f974e5262c523c",
+        "agent_visual_review": "accepted"
+      },
+      "drain_headwall": {
+        "path": "brave-and-cold/shots/route-polish-2026-10-07/final/drain_headwall.png",
+        "sha256": "91ec3b52cb99dd44b179d3f3f2e4493db2a7e405116cfa3fc885181b7ca1f2ae",
+        "agent_visual_review": "accepted"
+      },
+      "trail-settled-snow": {
+        "path": "brave-and-cold/shots/route-polish-2026-10-07/final/trail-settled-snow.png",
+        "sha256": "dc7805fe4b908626f3439567a19428f0732de8c7b99955f125cfa65aea47b29d",
+        "agent_visual_review": "accepted"
+      }
+    },
+    "gate_motion_frame_sha256": {
+      "gate-open-000.png": "a16a1a515c94742d9e6f44fe109b9e1d413e494b571031bb027457aad12674e5",
+      "gate-open-001.png": "6daebd84667ca8e72968d5458eb0e055a863ecf9b3e1eeb6b07fd59426639f02",
+      "gate-open-002.png": "67f1749459bbc9a6a3fd39f52fe8b3b2f8b4b52f7f3980ef14e81e7d1c544f01",
+      "gate-open-003.png": "ed89174c3653859c9e8fff4689954c620ee180ee2c180750f77d6d5706e9ea9d",
+      "gate-open-004.png": "662843f5baa5e5e128ee70630d8a3e05ef4c66f2e2273edc1e3444a9c00f170b",
+      "gate-open-005.png": "6253a743b1eee5a1d88e26d1bab518ba65827f82f6e260b03512eb08357ef47f",
+      "gate-open-006.png": "faf25cd97e6bbfd075d6adf9e2eb9ee336e5579fe1ca5afb8081139bf32310e6",
+      "gate-open-007.png": "86a33ef9f464aca5aba93d652b8b4b15fd3f73e9a15380956105c765cff219af",
+      "gate-open-008.png": "1fd0469799a43ff8e7038d276e29752daa64bfdd4969b76b135644b37e5fdc66",
+      "gate-open-009.png": "33ec13454d59a2a5ab53d0d6712c8d8f835e875c929838d848cea75c3ccf4146",
+      "gate-open-010.png": "863f9aab5ea1749a18a6c815dfb19cf9f6a06bf693348858da16ff14bb04c52c",
+      "gate-open-011.png": "4d4c6b0a2155acd92363c328b74cdb182fbd51d3dd57955ed7427dd9dc3e431a",
+      "gate-open-012.png": "14b5529122b28264b1d79d6010b752965adeb811a0ce46db95e68076dce53270",
+      "gate-open-013.png": "42f0702f4d6eaa805f626abe0a6af51dcd9af899fb8cb1185888df4e4f3efe1e",
+      "gate-open-014.png": "b30059bccbf46771f5ad1cebd3872cacb81586e27a1e4353c6be97464a491bb3",
+      "gate-open-015.png": "9541351b90b55bf43641578b97ca2f0dcae0ffbb65ef81479d9ac53a392933ee",
+      "gate-open-016.png": "1e26946b455b21271e144bb2871ee02dcb9bc3f26607a0e2bcac7f241689dfdd",
+      "gate-open-017.png": "c523b876ccac622efc7f64cf93fa49ca0c8df93dad7792d625b0ad2a50350eec",
+      "gate-open-018.png": "f1e81b0cd586e3568ad712168589663149b46eb91b3ffed2cf971c2e315ffb22",
+      "gate-open-019.png": "cfb73c53f9b3b1cd68bdde294481f85cc637162688846c026f7a65c3daa0e2ad",
+      "gate-open-020.png": "9659b2564d2c2496f07bcc52c7358ceceba76aae95e18f596b48d732ef2c23b6",
+      "gate-open-021.png": "7c97afed31c7a57075eb9180f81bd06aa4f9d57b04c849ab67330236013d0039",
+      "gate-open-022.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-023.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-024.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-025.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-026.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-027.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-028.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-029.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-030.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-031.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-032.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-033.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-034.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-035.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-036.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-037.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-038.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-039.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-040.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-open-041.png": "0136696c47d116c87579618100192f8667de9cb227d2540445ff0a5c8f371e46",
+      "gate-close-000.png": "b05119973f42f32b4bc5b90dc5f3f14b1795ca4a1a09045d4f3ec0c466c11578",
+      "gate-close-001.png": "bc0523929278e6dafd82ded5bad21393765a41ee2f4cc12ec974b51e6dbf19d6",
+      "gate-close-002.png": "e60d31f6ad0f1759a0c6ccf3ff9ce421eace9a6062025f7f9cbc0d00a50f4657",
+      "gate-close-003.png": "1136ddd91df7e0282324d5b8490d27aa4a28920254b189691ee29d6b66b79966",
+      "gate-close-004.png": "b13089f86078652d494aac1e3f97fa864c3cdb9ad91574777d0a2755ec5188e4",
+      "gate-close-005.png": "3df2ee16f1683a759b0202c962b9f595517b36e3ef99042c7d6c72a5c280a2f7",
+      "gate-close-006.png": "f83196e839ab703305104ef10f31f90ca01561d87ce9ba3b0d5bddb29b5ffc74",
+      "gate-close-007.png": "418757ecb8e8687c4ac2f499addfecf7344af89fcbbdc2a6179ac41194cd4144",
+      "gate-close-008.png": "6b3d3ada92c90d6d40ee4aa55095caab3d92859ec9d85b96592ec4114922b8b8",
+      "gate-close-009.png": "5952a3a8a90ff71522a28eca152c73e61dcf1b6723b8b910eaca3bcf6d1d7d46",
+      "gate-close-010.png": "5cd6576e683f07a895e455684ef1382d730a52074c9978ff07482af0c1c93d6b",
+      "gate-close-011.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-012.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-013.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-014.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-015.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-016.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-017.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-018.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-019.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-020.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-021.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-022.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-023.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-024.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-025.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-026.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-027.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-028.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-029.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-030.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-031.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-032.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-033.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-034.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-035.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-036.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-037.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-038.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-039.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-040.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb",
+      "gate-close-041.png": "61b304ec54fc6b6ef6d4c245508dc0701c6bd915e008141181252ea258ab50fb"
+    },
+    "scope": "Frozen player-camera captures and explicit gate advancement; synthetic settled-snow mask is labelled. No human-playtest or performance claim."
+  },
+  "review_artifacts": {
+    "ROUTE_POLISH_COMPARISON.jpg": "2a6e5025ee788b54704093a018ef1b45937468a875f62032b5098079dd8e371c",
+    "ROUTE_GATE_MOTION.gif": "b4c19d6ea459b827cd5f7e1acfb245dc10ea2cdd24c6bdfa0f83de224dd958eb"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "skillet_portion": {
+    "triangles": 2196,
+    "bytes": 352208,
+    "sha256": "81a5e79186bf7c9e428345a977f939cb7796bfa395534ad78ebc01316ebd3634",
+    "source": "tools/blender/generated/cooking/skillet_portion.blend",
+    "source_sha256": "eaa323b3484e6988c5d42765462ca8948bc0ac1751128b2a161b15f2cc82b17a",
+    "mesh_nodes": 3,
+    "bounds_min_xyz": [
+      -0.12800000607967377,
+      0.0,
+      -0.12800000607967377
+    ],
+    "bounds_max_xyz": [
+      0.12800000607967377,
+      0.049000002443790436,
+      0.3190000057220459
+    ],
+    "dimensions_m": [
+      0.25600001215934753,
+      0.049000002443790436,
+      0.44700001180171967
+    ]
+  },
+  "provenance": {
+    "license": "Original project-authored geometry and deterministic meat texture",
+    "units": "metres",
+    "blender": "5.2.2 LTS",
+    "seed": 7109
+  },
+  "generators": {
+    "gen_cooking.py": "0aceea615147cbbab6a42aa2972e42c44ea64bf5a5a693df7dd20e505d386694",
+    "gen_cooking_graphics.py": "3ac5b8715c856d7b939abfb2df6df3a2872f16b92418fae01f016b883f413f54",
+    "gen_first_week.py": "07e256fd2c532f62a0bb62a2b8db530f62e7a7668873473ac3dcf48ba2590667"
+  },
+  "graphics": {
+    "meat_marbling.png": "4721aba5815ceba7423befa26fa76eff353c6f0c660d1fd4595948c186e21a21",
+    "meat_seared.png": "02a423525b2823b9129714778040da74a62cf6940019cfb254687cd581d6ff8f"
+  }
+}

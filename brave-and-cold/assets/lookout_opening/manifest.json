@@ -1,0 +1,111 @@
+{
+  "relay_station": {
+    "bounds_blender_m": [
+      [
+        -1.3553502559661865,
+        -0.4918825626373291,
+        0.0
+      ],
+      [
+        1.2999999523162842,
+        2.3400001525878906,
+        9.699999809265137
+      ]
+    ],
+    "native_source": "tools/blender/generated/lookout_opening/relay_station.blend",
+    "triangles": 4746,
+    "mesh_groups": [
+      "FixedProps"
+    ],
+    "bytes": 1591308,
+    "sha256": "e6c62ed0bc06dd077d2f98b2c3a1c70d98a80c4f2aa95e0499a4c650e8fccd51"
+  },
+  "lookout_home_detail": {
+    "bounds_blender_m": [
+      [
+        -2.1901028156280518,
+        -1.7599999904632568,
+        0.07100000977516174
+      ],
+      [
+        2.275615930557251,
+        1.9000000953674316,
+        2.2125000953674316
+      ]
+    ],
+    "native_source": "tools/blender/generated/lookout_opening/lookout_home_detail.blend",
+    "triangles": 10750,
+    "mesh_groups": [
+      "Bedding",
+      "FixedProps",
+      "PantryFood",
+      "PantryFixed",
+      "HomeWood",
+      "StoveDetail",
+      "ServiceLog"
+    ],
+    "bytes": 2238808,
+    "sha256": "e47c20fb1fa8a21fdd2e60486306cf7233ef21d3f390c91f3be14aff54e26bb3"
+  },
+  "depot_reserved_case": {
+    "bounds_blender_m": [
+      [
+        -0.20000000298023224,
+        -0.20779423415660858,
+        0.0
+      ],
+      [
+        0.20000000298023224,
+        0.15950000286102295,
+        0.2409999966621399
+      ]
+    ],
+    "native_source": "tools/blender/generated/lookout_opening/depot_reserved_case.blend",
+    "triangles": 710,
+    "mesh_groups": [
+      "FixedProps"
+    ],
+    "bytes": 481520,
+    "sha256": "3ee30c3a7cbb3da3314510ac95afa5d35877589756a0ffd39bc21ddd15d16e3d"
+  },
+  "refuge_gate": {
+    "bounds_blender_m": [
+      [
+        -0.03500000014901161,
+        -0.041999999433755875,
+        0.12000000476837158
+      ],
+      [
+        3.0350000858306885,
+        0.03500000014901161,
+        1.7599999904632568
+      ]
+    ],
+    "native_source": "tools/blender/generated/lookout_opening/refuge_gate.blend",
+    "triangles": 1326,
+    "mesh_groups": [
+      "FixedProps"
+    ],
+    "bytes": 511496,
+    "sha256": "f98dc2e3d371251522c688a7c90465c26b15b4187012af56ae0c1a060c417967"
+  },
+  "source": {
+    "generator": "tools/blender/gen_lookout_opening.py",
+    "license": "Original project-authored geometry and graphics; no third-party assets",
+    "seed": 20261004,
+    "coordinate_units": "metres",
+    "runtime": "Godot GLB",
+    "blender": "5.2.2 LTS",
+    "generator_sha256": "02fbabbeca12618dd43d237f3f66fbfb1dfce8c41f10d0049c2a25f4c1383955",
+    "graphics_sha256": {
+      "battery.png": "9bb25cf56716a7fdc7cc8e1ecbbaf8fa933c40bf3d1360a84141faf6e76f7d42",
+      "cabinet.png": "910f6d17d1d55cb391fc1eb993a616095ed360748dafa3a6cb2429748d2a1004",
+      "cloth.png": "0c46a4fc7b13dfbadc316df9b1472fb917c7171e231242a4da342ba166ab63d5",
+      "gate.png": "6e26ab11a6a16beaf8ef9e8614e32c4cc4825ad8841fcf240813c30deb49dc85",
+      "hazard.png": "10638436b36350c7038e2e74ce2cc3c8b6adc0fb9b0e9e972fbab99800d29292",
+      "log.png": "3d7bbdda504ccd13878f3c262493412a92a3329dd1b6d1e7c0ea82c23a83c1d4",
+      "rations.png": "be18c51672fa9f7d9cda4f06c731e293fa7819d676cef85fcefe1ddbea65a6d2",
+      "reserved.png": "2e04a42470d2d7bb81ec65192a97c4488dcc57f13dbbe2d7f26b6d0e30da5c64"
+    }
+  }
+}

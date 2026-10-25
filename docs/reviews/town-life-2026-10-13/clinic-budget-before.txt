@@ -1,0 +1,9 @@
+BUDGET_WORLD clinic-encounter base viewmodel=0.05, story_route=0.60, food_tick=0.02, weather_sky=0.13, pop_tick=0.18, misc=0.13, snow=0.00, survival=0.14, actions=0.02, prompt=0.73
+BUDGET clinic-encounter base        p95= 32.56 frame= 16.36 render_cpu=  3.92 gpu= 14.61 process= 30.20 physics=  0.32 zombies= 2.41 anim= 0.92 active=60 draws= 1712 prims= 1340705 n=349
+BUDGET_WORLD clinic-encounter no_pop viewmodel=0.05, story_route=0.59, food_tick=0.02, weather_sky=0.12, pop_tick=0.01, misc=0.12, snow=0.00, survival=0.13, actions=0.02, prompt=0.71
+BUDGET clinic-encounter no_pop      p95= 16.46 frame= 14.95 render_cpu=  3.08 gpu= 14.62 process= 22.76 physics=  0.29 zombies= 0.00 anim= 0.00 active=60 draws= 1563 prims= 1123289 n=457
+BUDGET_WORLD clinic-encounter no_post viewmodel=0.05, story_route=0.54, food_tick=0.02, weather_sky=0.12, pop_tick=0.01, misc=0.11, snow=0.00, survival=0.13, actions=0.02, prompt=0.62
+BUDGET clinic-encounter no_post     p95= 15.00 frame= 11.48 render_cpu=  3.02 gpu= 10.94 process= 21.77 physics=  0.22 zombies= 0.50 anim= 0.27 active=60 draws= 1562 prims= 1198311 n=547
+BUDGET_WORLD clinic-encounter base viewmodel=0.05, story_route=0.58, food_tick=0.02, weather_sky=0.12, pop_tick=0.01, misc=0.12, snow=0.00, survival=0.13, actions=0.02, prompt=0.65
+BUDGET clinic-encounter base        p95= 20.19 frame= 14.92 render_cpu=  3.18 gpu= 14.61 process= 24.88 physics=  0.28 zombies= 0.56 anim= 0.31 active=60 draws= 1570 prims= 1202309 n=450
+BUDGET_COMPLETE

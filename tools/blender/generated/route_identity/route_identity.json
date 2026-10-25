@@ -1,0 +1,114 @@
+{
+  "source": "tools/blender/gen_route_identity.py",
+  "source_sha256": "752b7762d2e689839881b08b8a1a068b41663ed5fef2b589c775c1d3ac5101d1",
+  "graphics": "tools/route/generate_route_graphics.py",
+  "graphics_source_sha256": "aed41df790648d01a8619f72f1ecc69cbec463e2ecd7997b1ee1699ac5bda2bc",
+  "graphics_sha256": {
+    "beans.png": "0d0a9e5dc273ad7c5037cccf6b383b009c40a79510cfe863aafd8c2e32b18c79",
+    "home_0.png": "a2311fee6089e34ae01fe9505953505180dbe4000bc89853c99e2d832acf0130",
+    "home_1.png": "92f3f068c861de219badffc4daba37ec97b2f27c2e253f1bc3e4a12f815a7498",
+    "home_2.png": "c5cce34b55fd8f2bbcfd5ec5a8636180fce279e56b7f722e03bac3cb13c35234",
+    "home_3.png": "b917425274cc41bc69733721fb48938946ecc384fc9f4a8f6302dd7b1eabf932",
+    "home_4.png": "cb09bd8fb4e5402790f1f07809b9bca6f1ad5e01bb7923de24dab464a7a24b4d",
+    "hours.png": "a12ce240a60a6d41bd6540ee4bf8609da7403afbf2069301a8f48d8e8b3da8c6",
+    "ledger.png": "36ac3a90a7862cc8373fc6a8ba936e056dd4fbdc22acd9e288530a57f49ba505",
+    "maple_beans.png": "52daad60a07a8e2020a450ac7cea69602e575dae0a28804c19abf0fd0b879336",
+    "matches.png": "9d1b4caa354bae0307a1ec936187cf41a8cb2cc07977f1d6b40daaa7267a226c",
+    "medical.png": "42bb9ec908ded512356d8debdfad0e6f2a10875bcd4020f056b5411f94f6ab84",
+    "meter.png": "08483588aa0b521b86f9b429af95f32e966abaef651202e979a5ac787161e4e1",
+    "nails.png": "0b973c7e33c45ac192b6d0064fbd4f3e4cc5465aa7b0c8d9917515f7a1b970f1",
+    "radio.png": "e5c39bf7c4525883eb55cc5764475cc11b0723d3908284571b18b7f35e4da3d5",
+    "relay.png": "c870b10b0616f75bedfbd92cb58037cc24ef6cf7abde096095723176ab35e037",
+    "store_sign.png": "a512e2e04617bc8820b837cce7161efd1978eecbcd869bc15a290ea2eb099d18",
+    "tomato_beans.png": "465c3853d717453eaccf0720696ad2fc88cc2980f1be401167b60e7f396dfedf",
+    "workorder.png": "856a9024e0e9176d5b418cdb2a8f062e41e0995439446d2cbdbb4b51eeaa210c"
+  },
+  "license": "Original project-authored geometry and graphics",
+  "units": "metres",
+  "assets": {
+    "store_identity": {
+      "triangles": 308,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 91228,
+      "sha256": "579e1b8b3a0bcc657dd009f1c48e5f9e56db9b7d5de2497cc69a6206f04ab0dc"
+    },
+    "store_dressing": {
+      "triangles": 19474,
+      "mesh_groups": [
+        "ShelfStock",
+        "FixedProps",
+        "CounterStock",
+        "CrateStock"
+      ],
+      "bytes": 1977076,
+      "sha256": "e3f4de7175e61f72ff0b3aba78c0d7802ba93b5c0e7216e3a6f0626aa64b8002"
+    },
+    "lookout_workbench": {
+      "triangles": 2600,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 297308,
+      "sha256": "c0755c374f04c5ba9aeb4bf39598a1bfe5a29af3ef0a33922ab738afb7fd3213"
+    },
+    "home_identity_0": {
+      "triangles": 110,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 37640,
+      "sha256": "cd9af7f798aa1b68a057105c80982b8908f7c887345a94dbc008da4b82bfe4a6"
+    },
+    "home_identity_1": {
+      "triangles": 110,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 40164,
+      "sha256": "2ef76c2225ba48550029a33fe508b61105b706ead5ee4b82399e098b6314436e"
+    },
+    "home_identity_2": {
+      "triangles": 110,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 40632,
+      "sha256": "9421ac075874e4545303b21c391d46b7ae401b3d7caa23991cad46e6958c477a"
+    },
+    "home_identity_3": {
+      "triangles": 110,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 40352,
+      "sha256": "d8145439e1559e54c80fdd1686c7735273856b486237757856a875c9d79df24f"
+    },
+    "home_identity_4": {
+      "triangles": 110,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 40448,
+      "sha256": "9e45a6b37a5c88cef66de4ea20c7febf77a539f1797dc6bd3186f2ed60869950"
+    },
+    "lookout_wayfinding": {
+      "triangles": 218,
+      "mesh_groups": [
+        "FixedProps"
+      ],
+      "bytes": 384512,
+      "sha256": "43a7b253986cf5d7a9c6b35623673cdb6f6180d3ace91d31b4bfd0f5867080ac"
+    },
+    "store_shell": {
+      "triangles": 2518,
+      "mesh_groups": [
+        "store"
+      ],
+      "bytes": 176588,
+      "sha256": "dc14988543514a9994243d6e866f04c9ae7453f99d2b98c968b5ab492b1dc340"
+    }
+  },
+  "source_hash_encoding": "utf-8 LF"
+}

@@ -1,0 +1,79 @@
+{
+  "license": "Original project human and modeled eyelid animation; original master retained; winding inspected",
+  "source_native_sha256": "397faa6d514bf4448711cbef7970fe8fc787ae45f16a979c51afc7dba22f160b",
+  "source_generator_sha256": "632b3a0460d3ed582561cb88920cae9e874762debc6daaef6e1f63769300d7fb",
+  "native_sha256": "66ed61af1d602fe8fd42fdbf1c3e545f2300955fbb3e4367fa066e681b3338a6",
+  "generator_sha256": "370e81e09a4aa4651d0fafabda60a29b0556eaa4011aa0daff474234753975c5",
+  "blender": "5.2.2 LTS",
+  "normal_repairs": [
+    {
+      "object": "Eyes",
+      "reversed_faces": 0
+    },
+    {
+      "object": "Head",
+      "reversed_faces": 0
+    }
+  ],
+  "blink_vertices": 480,
+  "exports": [
+    {
+      "id": "rowan",
+      "triangles": 39588,
+      "surfaces": 9,
+      "modules": [
+        "Head",
+        "Eyes",
+        "Hands",
+        "Jacket",
+        "Trousers",
+        "Boots",
+        "Cap",
+        "Apron"
+      ],
+      "sha256": "1c6d5154f6538df1154a14e3450e6d1abb7e4743bc38f09e8d7796110233689b"
+    },
+    {
+      "id": "sam",
+      "triangles": 38542,
+      "surfaces": 7,
+      "modules": [
+        "Head",
+        "Eyes",
+        "Hands",
+        "Jacket",
+        "Trousers",
+        "Boots"
+      ],
+      "sha256": "68aacbe7f1a2c7927a9e7eb7f18dd04cb1703e1221248dc0f5a597d92f015ea4"
+    },
+    {
+      "id": "lin",
+      "triangles": 38542,
+      "surfaces": 7,
+      "modules": [
+        "Head",
+        "Eyes",
+        "Hands",
+        "Jacket",
+        "Trousers",
+        "Boots"
+      ],
+      "sha256": "0e6bbbd4717a07cbc077d8c707cc1d98270b0f6c6319a08fda66c1ab2fedd5ca"
+    },
+    {
+      "id": "infected_preview",
+      "triangles": 38542,
+      "surfaces": 7,
+      "modules": [
+        "Head",
+        "Eyes",
+        "Hands",
+        "Jacket",
+        "Trousers",
+        "Boots"
+      ],
+      "sha256": "2ef3b3a84d88a130f82e241b3ae46668b5dc72ef54d3d8de730c18a91e617053"
+    }
+  ]
+}

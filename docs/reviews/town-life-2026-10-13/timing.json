@@ -1,0 +1,82 @@
+{
+	"engine_arguments": [
+		"--script",
+		"res://tests/visual/benchmark_town_life.gd"
+	],
+	"gpu": "NVIDIA GeForce GTX 1080 Ti",
+	"renderer": "forward_plus",
+	"resolution": [
+		1920,
+		1080
+	],
+	"rows": [
+		{
+			"draws_median": 2149.0,
+			"frames": 473,
+			"gpu_median_ms": 12.0609998703003,
+			"median_ms": 12.399,
+			"p95_ms": 14.255,
+			"render_cpu_median_ms": 3.30900001525879,
+			"resident_nodes": 3,
+			"variant": "off",
+			"visible_centres_max": 0
+		},
+		{
+			"draws_median": 2157.0,
+			"frames": 487,
+			"gpu_median_ms": 11.7089996337891,
+			"median_ms": 12.035,
+			"p95_ms": 13.972,
+			"render_cpu_median_ms": 3.2720000743866,
+			"resident_nodes": 3,
+			"variant": "on",
+			"visible_centres_max": 1
+		},
+		{
+			"draws_median": 2147.0,
+			"frames": 481,
+			"gpu_median_ms": 11.7760000228882,
+			"median_ms": 12.148,
+			"p95_ms": 14.237,
+			"render_cpu_median_ms": 3.28399991989136,
+			"resident_nodes": 3,
+			"variant": "on",
+			"visible_centres_max": 1
+		},
+		{
+			"draws_median": 2116.0,
+			"frames": 478,
+			"gpu_median_ms": 12.0319995880127,
+			"median_ms": 12.335,
+			"p95_ms": 13.825,
+			"render_cpu_median_ms": 3.25699996948242,
+			"resident_nodes": 3,
+			"variant": "off",
+			"visible_centres_max": 0
+		},
+		{
+			"draws_median": 2103.0,
+			"frames": 469,
+			"gpu_median_ms": 12.0200004577637,
+			"median_ms": 12.352,
+			"p95_ms": 15.578,
+			"render_cpu_median_ms": 3.49600005149841,
+			"resident_nodes": 3,
+			"variant": "off",
+			"visible_centres_max": 0
+		},
+		{
+			"draws_median": 2120.0,
+			"frames": 484,
+			"gpu_median_ms": 11.7049999237061,
+			"median_ms": 12.056,
+			"p95_ms": 14.595,
+			"render_cpu_median_ms": 3.33100008964539,
+			"resident_nodes": 3,
+			"variant": "on",
+			"visible_centres_max": 1
+		}
+	],
+	"scope": "Same current quiet-day shop scene, resident visibility/processing on versus off. Six alternating eight-second runs with two-second warmup. Terrain, weather, post effects, props and anonymous reserve unchanged. Local diagnostic, uncontrolled host load; not a previous-commit comparison or minimum-spec acceptance.",
+	"seed": 20261004
+}

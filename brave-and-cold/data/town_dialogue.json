@@ -1,0 +1,16 @@
+{
+  "rowan": {
+    "name": "Rowan Bell",
+    "role": "North Ridge Supply",
+    "ordinary": "You must be the lookout technician. Mara called ahead. The marked relay case is yours. The counted supplies set out here are on the crew account; take what you need and leave the rest.",
+    "worried": "Still no delivery. I keep checking the same empty road. Your reserved equipment is here, though.",
+    "ill": "My brother came up from the city on Sunday. I stayed with him before you arrived. I thought it was the same fever everyone was talking about. Now I'm shaking too. Sam said to stop serving and keep away from people. Your cases are still marked.",
+    "topics": [
+      {"id":"relay","label":"The lookout equipment","ordinary":"The transfer relay is in the marked case. Fit it with your insulated kit and verify the cabinet afterwards. There's a matched winter controller here too; Mara's issue record lists the connectors and tested lead it needs.","worried":"Both reserved cases are still here. I haven't issued them to anybody else. The controller improves your own array; it won't bring the town supply back.","ill":"Marked case. The ledger has the rest. Please keep your distance."},
+      {"id":"delivery","label":"The supply delivery","ordinary":"The truck is expected tomorrow afternoon. Leave room for your return load. Nobody enjoys carrying water uphill twice.","worried":"The truck is due this afternoon. There's nothing new here yet. Lin's keeping the junction space clear.","ill":"It never came. The depot stopped answering. Don't wait for a fresh delivery."},
+      {"id":"town","label":"People in town","ordinary":"Sam keeps the clinic reserves counted. Lin is checking the entrance outside. We're a small place; somebody usually knows whose lights have gone out.","worried":"My brother is resting at home. He came up from the city on Sunday with this fever. The clinic has had more callers too. I don't know what's happening beyond this road.","ill":"Sam called to say people were hurt at the clinic. I can't get an answer at home now. Please don't go looking for my brother on my account."}
+    ]
+  },
+  "lin": {"name":"Lin Hu","role":"Supply runner","ordinary":"I'm checking the delivery space and the store entrance. Your marked service case is inside with Rowan.","topics":[{"id":"work","label":"The delivery","ordinary":"Tomorrow afternoon, if the truck gets through. These orders aren't new stock yet; Rowan has already set your relay aside."}]},
+  "sam": {"name":"Sam Roy","role":"Clinic nurse","ordinary":"Just checking the entrance before the next shift. The reserve dressings are inside. Take what you need and leave the rest for the next person.","topics":[{"id":"clinic","label":"The clinic reserves","ordinary":"The dressings and antiseptic are separate reserves. A bandage stops bleeding; it won't replace lost blood. Stay warm, fed and hydrated afterwards."}]}
+}

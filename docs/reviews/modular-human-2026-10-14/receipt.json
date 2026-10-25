@@ -1,0 +1,360 @@
+{
+  "scope": "Original local Blender assets, actual-byte and engine-pose checks, real captures and bounded local timing. No canonical/sealed package or user play acceptance. Anonymous population rollout and facial animation remain separate work.",
+  "started_from": "7822ca4",
+  "store_fix_commit": "d4f2497",
+  "asset_manifest": {
+    "license": "Original anatomy, geometry and procedural textures authored from an empty Blender scene; no imported meshes",
+    "blender": "5.2.2 LTS",
+    "units": "metres; Y up / -Z front after export",
+    "native_sha256": "397faa6d514bf4448711cbef7970fe8fc787ae45f16a979c51afc7dba22f160b",
+    "generator_sha256": "632b3a0460d3ed582561cb88920cae9e874762debc6daaef6e1f63769300d7fb",
+    "bones": [
+      "pelvis",
+      "spine",
+      "head",
+      "skin_zombie_leg_l",
+      "skin_zombie_knee_l",
+      "skin_zombie_arm_l",
+      "skin_zombie_elbow_l",
+      "skin_zombie_leg_r",
+      "skin_zombie_knee_r",
+      "skin_zombie_arm_r",
+      "skin_zombie_elbow_r",
+      "skin_zombie_ankle_l",
+      "skin_zombie_ankle_r",
+      "wrist_l",
+      "index_1_l",
+      "index_2_l",
+      "index_3_l",
+      "middle_1_l",
+      "middle_2_l",
+      "middle_3_l",
+      "ring_1_l",
+      "ring_2_l",
+      "ring_3_l",
+      "little_1_l",
+      "little_2_l",
+      "little_3_l",
+      "thumb_1_l",
+      "thumb_2_l",
+      "thumb_3_l",
+      "wrist_r",
+      "index_1_r",
+      "index_2_r",
+      "index_3_r",
+      "middle_1_r",
+      "middle_2_r",
+      "middle_3_r",
+      "ring_1_r",
+      "ring_2_r",
+      "ring_3_r",
+      "little_1_r",
+      "little_2_r",
+      "little_3_r",
+      "thumb_1_r",
+      "thumb_2_r",
+      "thumb_3_r"
+    ],
+    "modules": [
+      "Anatomy",
+      "Jacket",
+      "Trousers",
+      "Hands",
+      "Boots",
+      "Head",
+      "Eyes",
+      "Cap",
+      "Apron"
+    ],
+    "exports": [
+      {
+        "id": "rowan",
+        "triangles": 39588,
+        "surfaces": 9,
+        "modules": [
+          "Head",
+          "Eyes",
+          "Hands",
+          "Jacket",
+          "Trousers",
+          "Boots",
+          "Cap",
+          "Apron"
+        ],
+        "sha256": "0f94a72a9d20396aec6188fc774f2660d5fc6c0fb2a656329039856148b6f054"
+      },
+      {
+        "id": "sam",
+        "triangles": 38542,
+        "surfaces": 7,
+        "modules": [
+          "Head",
+          "Eyes",
+          "Hands",
+          "Jacket",
+          "Trousers",
+          "Boots"
+        ],
+        "sha256": "1b393c58376e7c2a5619e42e2e0902339b1b041fbe2922045b11cdc898094ae3"
+      },
+      {
+        "id": "lin",
+        "triangles": 38542,
+        "surfaces": 7,
+        "modules": [
+          "Head",
+          "Eyes",
+          "Hands",
+          "Jacket",
+          "Trousers",
+          "Boots"
+        ],
+        "sha256": "0150f8f4077e81de19c95d50626fcac0c915fe7b5d3aa2c613a6172a666d3e21"
+      },
+      {
+        "id": "infected_preview",
+        "triangles": 38542,
+        "surfaces": 7,
+        "modules": [
+          "Head",
+          "Eyes",
+          "Hands",
+          "Jacket",
+          "Trousers",
+          "Boots"
+        ],
+        "sha256": "5d9d7c8f2e60333f958528f9ef5d3ae06bafc18e06bee9cf2b54dab4d96ff3a4"
+      }
+    ],
+    "textures": {
+      "human_canvas_albedo.png": "18137853eb407bfdb97bc82ffcba629076c85b6e9b3724fb2c9a1622c35cf139",
+      "human_canvas_normal.png": "570af616bd7148d4b486e3713896779e40b3e6735ea2b7110a34f2ab88d45e54",
+      "human_eye_albedo.png": "9f03d5edeab028108c0dbfe09ff7ce2ae8a44ccfe8cdd332a14e417e4781673f",
+      "human_skin_albedo.png": "c9cb3da9d1ec226fae7a1c5b5dd9da5ecab5d2c851d1b8d1d517662f343ab770"
+    }
+  },
+  "source_hashes": {
+    "tools\\blender\\gen_modular_human.py": "632b3a0460d3ed582561cb88920cae9e874762debc6daaef6e1f63769300d7fb",
+    "tools\\blender\\render_modular_human.py": "684b3aff9b749b4f86b949cf64b6b4afc27704b5ce251e0796565efb3cdf4880",
+    "tools\\validate_modular_human.py": "705fc05775951f5fc7c18ecd464e352cb11020fd502bd1fe531dc50d44f5d388",
+    "brave-and-cold\\entities\\town_resident.gd": "950147bec9193c0ccb3c51ac07fc017c4d655fdeddcaa33b276a153a82f7fc7e",
+    "brave-and-cold\\tests\\test_town_life.gd": "40e58dfad58984a719d0cbcb33b30552f4b1f5c5b3106cf399c36e51cecc9581",
+    "brave-and-cold\\tests\\test_modular_human_skin.gd": "a64827bb5a52e3b5e87184d78ceb8ebdb9721cc1be10db73cc837b4e82eb133e",
+    "brave-and-cold\\tests\\test_modular_human_gait.gd": "bfd92e807f4160c3b8e5e355ae4c08ba23eeea9139da181099f6f07c8c79d2a9"
+  },
+  "captures": {
+    "blender-body-front.png": {
+      "source_size": [
+        720,
+        900
+      ],
+      "source_sha256": "6f1b56b35a25394fbbb40b80a28b8e36a5c30335b1d8d7364bd1a8b70f1e59b5",
+      "review_sha256": "80a8c939ca5fc85d8491bec3ac945ff3bc9efd8d7bf110a41b210858bfa40889"
+    },
+    "blender-body-three-quarter.png": {
+      "source_size": [
+        720,
+        900
+      ],
+      "source_sha256": "39fea5d2886262bb2070f33c963a05a3b8cb030e305899c0666c1c7fe0523619",
+      "review_sha256": "dcec81d3a2d0f610580ad96237c88c67d11acaac8ba23cd3fc91c31778b25630"
+    },
+    "blender-face-front.png": {
+      "source_size": [
+        720,
+        720
+      ],
+      "source_sha256": "b4165e2e2d4fc343340891d224e487edddd36817362bcd3b277632c3e16c79e6",
+      "review_sha256": "b9c0592182cd5780c52e6cd706b8d22d006e6d2a1fe4edc8945ab6a295442290"
+    },
+    "blender-face-profile.png": {
+      "source_size": [
+        720,
+        720
+      ],
+      "source_sha256": "2b04ddbd820ddc6dab465d611bcf249c535e23af0b96a0fe1734822ffadb4351",
+      "review_sha256": "24eae9a4993b1b17431f73d105456b441453accc0696fdcef8eb713c2f63076f"
+    },
+    "blender-hand.png": {
+      "source_size": [
+        720,
+        720
+      ],
+      "source_sha256": "559c27f87ac874d6e9369aab9c6969ea6978f560ac908c4e343ab88971cfeb28",
+      "review_sha256": "ae832b50e070859bba44e00548ce43ded020de140d6f031cda1162f230a848df"
+    },
+    "engine-clinic-worker.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "52e967fc331e7b1a44df81a9f3942b1775e660e704426ba545c3532cdcebfc15",
+      "review_sha256": "75c043d1d3f30a808fc13b0675812840f06be7d8765a2fd7130d31f66e2959f0"
+    },
+    "engine-closed-shop.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "6e6c7a973515dd575075570881bc1e5d5a58ae5efc988378d4ef9d20832e367e",
+      "review_sha256": "d320cafcbeaf03ef359e92fd4f8d6418d770e9f93766566adf20eb49720cfeb0"
+    },
+    "engine-conversation.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "861b66bb4ef552f9ef9e37457076ec4a1dbd0e55ebca29874b5c52daf53b9719",
+      "review_sha256": "a2ca747ce3eb06d34f3048284427841f177b199ee8c81b359606bfed845e3e45"
+    },
+    "engine-ill-counter.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "f7059db5b8d8d291723f7ab5dd4ef58f313a8c8cbff7682d65f767ef0a018c10",
+      "review_sha256": "8be4ad0d8d66de35d05317b137cdc99d91bf4765a440e1d40fb5fdbb9c4d07f8"
+    },
+    "engine-infected-counter.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "0d72f03af77da2fbcdbab3e7ace7be3364c775f747fb1005d2563ce1e5c0edd8",
+      "review_sha256": "715ef7da40cfd64835fb296e0136ea5ccce055afce0929c1b24b33e57a01e3e8"
+    },
+    "engine-infected-portrait.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "e27447cca6863b82249a4001e55c39f7b9a8d0ac6916c79ac78a340ca182f848",
+      "review_sha256": "f2b1327b63969d1035d89177695639a18db2785cf7c013d2ea0c08a34154825c"
+    },
+    "engine-ordinary-counter.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "73ad0c98ae93c5444661ab00b2d21f45281c573dc07083133b7b98bfd51d3d0a",
+      "review_sha256": "5407bbad6a6d4db6d7d7659eebad66fdb1fba3e38496940f9a0e768958b84cdd"
+    },
+    "engine-ordinary-face.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "a88b673a6e0de5cf367860d87ac62f9d81708d8d64d30936d2cbc5537a1b6159",
+      "review_sha256": "e70b77adec3a592721be75aabdbeaf6fba777c27ad1ed3fc43c2635ce1986e01"
+    },
+    "engine-ordinary-portrait.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "db8f97f638c4c28424d02197363f9132c4443ca2251645b45239b114a76ceb8f",
+      "review_sha256": "e2e60733a4ca4c59a370ec1bbbac22c38fe529eaa825e7cf0f5085c42a54a131"
+    },
+    "engine-physical-ledger.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "a361bb1d1976b58be594162c8f12a22cd4fda5953086a3a877f2a17fdec19f8b",
+      "review_sha256": "60b4adc015f680a537e305fc224b13a2f1515cd06e12c831ca8ae330fe6b4625"
+    },
+    "engine-supply-runner.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "9adaa44cfe258ab6cde161f11f33ab63bfd4c436f20d55fecfe812e3eb2571ba",
+      "review_sha256": "ee25d67529104d46f97c9bdfaf7b93e79155b6ce94fbe48e176e62e206b4da82"
+    },
+    "engine-terminal-owner.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "37af8914955ba6fcf207a18e4e4fdbd11ac66bdccbf6905191dcc2782d82a1c6",
+      "review_sha256": "aa07770a4ab159ef23608dd64a9dd1be5eb4529066411f5c973d3339f88182d9"
+    },
+    "engine-unresponsive.png": {
+      "source_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "7e37a4dca575bef7891381eb3d884239e6797df4afab1e2a223d131e32e6451a",
+      "review_sha256": "d8ddbeada889d1ccc27240a66517998bae3744f1d33ff8b4b9ce9d58c8d78573"
+    }
+  },
+  "gameplay_checks": 635,
+  "asset_checks": 176,
+  "suites": [
+    {
+      "suite": "modular-human-skin-rowan",
+      "checks": 49,
+      "failures": 0,
+      "log_sha256": "88c8ea7177724fe515dc84ad3a4ae0041c26834f730e2c6b9cbb469933911095"
+    },
+    {
+      "suite": "modular-human-skin-sam",
+      "checks": 49,
+      "failures": 0,
+      "log_sha256": "151c9e5b2ee67c59d52f1e9748d48a40f96e3b7f5739eb2bba7b2c59a558bb11"
+    },
+    {
+      "suite": "modular-human-skin-lin",
+      "checks": 49,
+      "failures": 0,
+      "log_sha256": "ca6b32d40a42313d4e607f2d2b1461f1c92f1fa70e2a498d8522888c44b17fc5"
+    },
+    {
+      "suite": "modular-human-skin-infected_preview",
+      "checks": 49,
+      "failures": 0,
+      "log_sha256": "ab6579aeaf2ff9b1dadfb06b083f787b6f8682fb389cbc73c71ea0aec4cea59b"
+    },
+    {
+      "suite": "modular-human-final-modular_human_gait",
+      "checks": 50,
+      "failures": 0,
+      "log_sha256": "21e7a8ce83836cad321c209e03b80966b9bb118fbc831946168ff7d2e786dd6b"
+    },
+    {
+      "suite": "modular-human-final-town_life",
+      "checks": 51,
+      "failures": 0,
+      "log_sha256": "d7fe0c1b51cf030cae75108a6fc648964f41d706ae90e1107c8b8dec15e4c12b"
+    },
+    {
+      "suite": "modular-human-final-infected_skin",
+      "checks": 46,
+      "failures": 0,
+      "log_sha256": "713bf1813d0b73f1bf9861577408356564952a69f8c16b3076d44a61a1bf6ecf"
+    },
+    {
+      "suite": "modular-human-final-infected_gait",
+      "checks": 50,
+      "failures": 0,
+      "log_sha256": "7f0d63dc1dfb04a5e7bef890a7a3a87b194f9b544a68dd983764ee92a117a0a7"
+    },
+    {
+      "suite": "modular-human-first-week",
+      "checks": 193,
+      "failures": 0,
+      "log_sha256": "d6f4047f1bd6a76520f97c4ca8af598e20e97da565a6b778293afa8a9a4cab19"
+    },
+    {
+      "suite": "modular-human-final-electrical",
+      "checks": 49,
+      "failures": 0,
+      "log_sha256": "c3734d0e6b8084f11069bf881774e7bbd0f581af95a95bb9231836dbb6b84c00"
+    }
+  ],
+  "timing_medians_ms": {
+    "on": 11.59,
+    "off": 11.86
+  },
+  "timing_log_sha256": "95ab3c910ba6045b1a2fda60ed522ed8a2f16c9e18f87b7fafdfe7e92cd4802f"
+}

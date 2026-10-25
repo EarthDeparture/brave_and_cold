@@ -1,3 +1,122 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+brave-and-cold/demo/
+tools/terrain/out/
+shots/
+tools/blender/__pycache__/
+
+# Python regenerates these locally; retain generators and source assets instead.
+__pycache__/
+*.pyc
+*.pyo
+tools/blender/generated/hand_rig/*.blend[0-9]
+
+brave-and-cold/build/
+
+# raw downloaded audio (licences / size): only processed clips under assets/audio are tracked
+audio_in/*
+!audio_in/.gitkeep
+
+tools/blender/generated/environment_detail/*.blend[0-9]
+
+tools/blender/generated/road_detail/*.blend[0-9]
+
+tools/blender/generated/hand_refinement/*.blend[0-9]
+tools/blender/generated/route_detail/*.blend[0-9]
+
+tools/blender/generated/route_identity/*.blend[0-9]
+
+tools/blender/generated/lookout_opening/*.blend[0-9]
+
+# Original procedural prop authoring: native packed source is tracked; exports live in assets.
+tools/blender/generated/survival_props/*.blend[0-9]
+tools/blender/generated/survival_props/*.glb
+tools/blender/generated/survival_props/tex/
+tools/blender/generated/fire_lookout.blend[0-9]
+tools/blender/generated/fire_lookout.glb
+tools/blender/generated/fire_lookout_geometry.json
+
+# Raw local speech; final filtered audio and manifests are tracked.
+tools/audio/generated/
+tools/blender/generated/field_walkie/*.blend[0-9]
+
+tools/blender/generated/first_week/*.blend[0-9]
+tools/blender/first_week_build.log
+tools/first_week_import.log
+
+tools/blender/generated/clinic/*.blend[0-9]
+tools/blender/generated/infected/*.blend[0-9]
+tools/blender/clinic_build.log
+tools/blender/infected_build.log
+
+tools/blender/generated/wristwatch/*.blend[0-9]
+tools/blender/watch_build.log
+
+/tools/blender/generated/maintenance/*.blend[0-9]
+/tools/blender/generated/maintenance/build.log
+
+/tools/blender/generated/city_letter/*.blend[0-9]
+/tools/blender/generated/city_letter/build.log
+/tools/blender/generated/clinic/build.log
+/tools/__pycache__/
+
+# Standalone field-kit preview caches and authoring backups.
+/tools/blender/generated/field_survival_kit_v1/*.log
+/tools/blender/generated/field_survival_kit_v1/*.blend[0-9]
+/tools/blender/generated/field_survival_kit_v1/source/*.blend[0-9]
+/tools/blender/generated/field_survival_kit_v1/godot/*.png
+/tools/blender/generated/field_survival_kit_v1/godot/*.import
+/tools/blender/generated/field_survival_kit_v1/*.zip
+
+# Standalone weapon-kit review caches, archives and authoring backups.
+/tools/blender/generated/north_ridge_weapon_kit_v1/*.log
+/tools/blender/generated/north_ridge_weapon_kit_v1/*.blend[0-9]
+/tools/blender/generated/north_ridge_weapon_kit_v1/source/*.blend[0-9]
+/tools/blender/generated/north_ridge_weapon_kit_v1/godot/*.png
+/tools/blender/generated/north_ridge_weapon_kit_v1/godot/*.import
+/tools/blender/generated/north_ridge_weapon_kit_v1/*.zip
+/tools/blender/generated/north_ridge_weapon_kit_v1/previews/iteration_review.png
+
+# Standalone anatomical-hand review caches and authoring backups.
+/tools/blender/anatomical_hands_*.log
+/tools/blender/generated/anatomical_hands_v2/*.blend[0-9]
+/tools/blender/generated/anatomical_hands_v2/*.zip
+/tools/blender/generated/anatomical_hands_v2/godot/*.png
+/tools/blender/generated/anatomical_hands_v2/godot/*.import
+/tools/blender/generated/anatomical_hands_v2/source/*.blend[0-9]
+/tools/blender/generated/live_hand_rig_v2/*.blend[0-9]
+/tools/blender/live_hand_rig_build.log
+/tools/blender/live_hand_pose_audit.log
+/tools/blender/runtime_contact*.log
+/tools/hand_weapon_*.log
+/tools/blender/generated/live_hand_rig_v2/*candidate*.json
+/tools/blender/generated/live_hand_rig_v2/contact_profiles.json
+
+# Original winter tree authoring: retain editable source, verified exports and reviews.
+/tools/blender/generated/winter_tree_diversity_v1/*.log
+/tools/blender/generated/winter_tree_diversity_v1/*.blend[0-9]
+
+# Editable electrical stock sources retained; Blender's numbered backups are local iterations.
+/tools/blender/generated/electrical_fieldwork/*.blend[0-9]
+
+# Original food rack sources retained; local authoring/import logs and backups excluded.
+/tools/blender/generated/food_preservation/*.blend[0-9]
+/tools/blender/generated/food_preservation/*.log
+
+# Cooking asset local build logs and numbered authoring backups.
+/tools/blender/generated/cooking/*.log
+/tools/blender/generated/cooking/*.blend[0-9]
+
+/tools/blender/generated/route_detail/*.log
+/tools/blender/generated/route_detail/*.blend[0-9]
+
+# Opening quality authoring: retain native sources; exclude local iteration logs/backups.
+/tools/blender/generated/forest-quality-build.log
+/tools/blender/generated/forest_quality/*.blend[0-9]
+/tools/blender/generated/infected_skin/*.blend[0-9]
+/tools/blender/generated/opening_props/*.blend[0-9]
+/tools/blender/generated/worker-detail-build.log
+/tools/blender/generated/worker_detail/*.blend[0-9]
+fonts_unused/

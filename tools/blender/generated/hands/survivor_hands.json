@@ -1,0 +1,228 @@
+{
+  "name": "survivor_hands",
+  "version": 2,
+  "units": "metres",
+  "wrists_godot": {
+    "vm_axe_r": [
+      0.075,
+      -0.005,
+      0.05
+    ],
+    "vm_rifle_r": [
+      0.105,
+      -0.007,
+      0.23
+    ],
+    "vm_rifle_l": [
+      -0.082,
+      -0.096,
+      -0.203
+    ],
+    "vm_bolt_r": [
+      0.14,
+      -0.058,
+      0.155
+    ],
+    "vm_fist_r": [
+      0,
+      0,
+      0
+    ],
+    "vm_fist_l": [
+      0,
+      0,
+      0
+    ]
+  },
+  "native_fist_forearm": [
+    0.0,
+    0.0,
+    1.0
+  ],
+  "sleeve_axis": [
+    0,
+    0,
+    1
+  ],
+  "sleeve_length": 0.52,
+  "source": "tools/blender/gen_survivor_hands.py",
+  "blender": "5.2.2 LTS",
+  "sha256": "7843ec29c5eb37ea8db6aeb8e67177b308bbfcc80d0b13fce02eaa79aa7ef5be",
+  "generator_sha256": "06bed8b99debf5d96e22fa4711833d1ec155ee67be00fa9e24fb7cb5fba6cb18",
+  "material_source": "tools/blender/hand_materials.py",
+  "material_source_sha256": "e86a7a8270b7ac1b2605d247e40ba0e2a7a60bd0e94ac2dd3187226fa6c81862",
+  "license": "Project-authored original geometry and procedural painted textures; repository ownership",
+  "design": "Smooth fused anatomy, fitted grips, weathered skin or stitched two-tone leather gloves, olive parka cuffs",
+  "negative_constraints": "No extracted game assets, no external texture dependencies, no paid providers, no floating knuckle decorations",
+  "validation": {
+    "vm_axe_r": {
+      "triangles": 16056,
+      "vertices": 8016,
+      "components": 1,
+      "nonmanifold_edges": 0,
+      "zero_area_faces": 0,
+      "bounds_godot": [
+        [
+          -0.038636643439531326,
+          0.08038351684808731
+        ],
+        [
+          -0.04120351001620293,
+          0.05910230800509453
+        ],
+        [
+          -0.03643482178449631,
+          0.06861015409231186
+        ]
+      ]
+    },
+    "vm_rifle_r": {
+      "triangles": 16072,
+      "vertices": 8038,
+      "components": 1,
+      "nonmanifold_edges": 0,
+      "zero_area_faces": 0,
+      "bounds_godot": [
+        [
+          -0.0340149886906147,
+          0.12128603458404541
+        ],
+        [
+          -0.06392005831003189,
+          0.05443163961172104
+        ],
+        [
+          0.023731086403131485,
+          0.24956613779067993
+        ]
+      ]
+    },
+    "vm_rifle_l": {
+      "triangles": 16028,
+      "vertices": 8016,
+      "components": 1,
+      "nonmanifold_edges": 0,
+      "zero_area_faces": 0,
+      "bounds_godot": [
+        [
+          -0.09924311935901642,
+          0.04037218913435936
+        ],
+        [
+          -0.1142057403922081,
+          0.02713709883391857
+        ],
+        [
+          -0.30515384674072266,
+          -0.18276219069957733
+        ]
+      ]
+    },
+    "vm_bolt_r": {
+      "triangles": 16028,
+      "vertices": 8016,
+      "components": 1,
+      "nonmanifold_edges": 0,
+      "zero_area_faces": 0,
+      "bounds_godot": [
+        [
+          0.03610629588365555,
+          0.15900716185569763
+        ],
+        [
+          -0.07690438628196716,
+          0.033586010336875916
+        ],
+        [
+          0.04488418251276016,
+          0.17280958592891693
+        ]
+      ]
+    },
+    "vm_fist_r": {
+      "triangles": 15972,
+      "vertices": 7984,
+      "components": 1,
+      "nonmanifold_edges": 0,
+      "zero_area_faces": 0,
+      "bounds_godot": [
+        [
+          -0.040144313126802444,
+          0.0573006197810173
+        ],
+        [
+          -0.05587035045027733,
+          0.02809329517185688
+        ],
+        [
+          -0.10937446355819702,
+          0.005982809700071812
+        ]
+      ]
+    },
+    "vm_fist_l": {
+      "triangles": 16004,
+      "vertices": 8000,
+      "components": 1,
+      "nonmanifold_edges": 0,
+      "zero_area_faces": 0,
+      "bounds_godot": [
+        [
+          -0.05744689702987671,
+          0.04014625772833824
+        ],
+        [
+          -0.055868957191705704,
+          0.027541527524590492
+        ],
+        [
+          -0.10947658121585846,
+          0.005988227669149637
+        ]
+      ]
+    },
+    "vm_sleeve_r": {
+      "triangles": 376,
+      "vertices": 192,
+      "components": 2,
+      "nonmanifold_edges": 0,
+      "zero_area_faces": 0,
+      "bounds_godot": [
+        [
+          -0.07400000095367432,
+          0.07400000095367432
+        ],
+        [
+          -0.06808000057935715,
+          0.06808000057935715
+        ],
+        [
+          0.0,
+          0.5199999809265137
+        ]
+      ]
+    },
+    "vm_sleeve_l": {
+      "triangles": 376,
+      "vertices": 192,
+      "components": 2,
+      "nonmanifold_edges": 0,
+      "zero_area_faces": 0,
+      "bounds_godot": [
+        [
+          -0.07400000095367432,
+          0.07400000095367432
+        ],
+        [
+          -0.06808000057935715,
+          0.06808000057935715
+        ],
+        [
+          0.0,
+          0.5199999809265137
+        ]
+      ]
+    }
+  },
+  "total_triangles": 96912
+}

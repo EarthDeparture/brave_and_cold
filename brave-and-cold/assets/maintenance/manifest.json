@@ -1,0 +1,37 @@
+{
+  "whetstone": {
+    "triangles": 376,
+    "bytes": 275836,
+    "sha256": "3d8cfc69018083c0e6d866aeb4eb872172561bf27a76b5bcddd75bd439072f40",
+    "source": "tools/blender/generated/maintenance/whetstone.blend",
+    "source_sha256": "8affcc615e7b4518808d5595dd8b0a32bb417dfdf1e721f223531da3b917ccae",
+    "mesh_nodes": 2
+  },
+  "sewing_kit": {
+    "triangles": 974,
+    "bytes": 209296,
+    "sha256": "b56de018fb2e1fba41fbd9d097de5ff865dffc86f3314a8ca5fad5f8fc3772a0",
+    "source": "tools/blender/generated/maintenance/sewing_kit.blend",
+    "source_sha256": "003585d3a4187f9ccfdc65c95c827f37232947a4ffc2795f28f6273fdd229713",
+    "mesh_nodes": 5
+  },
+  "dressing_roll": {
+    "triangles": 1080,
+    "bytes": 193748,
+    "sha256": "1b676c9e9f6d790747fa90d7870bfe1671a4b591992bdaaa7d5906e7a999aafa",
+    "source": "tools/blender/generated/maintenance/dressing_roll.blend",
+    "source_sha256": "ff5bc153efa5149fa36d7f90c547a9f60fc24e1e5f8a7872a61ead3fafd8bb94",
+    "mesh_nodes": 2
+  },
+  "provenance": {
+    "license": "Original project-authored geometry and printwork",
+    "blender": "5.2.2 LTS",
+    "units": "metres",
+    "generator_sha256": "bb542a23e8872c3ed7008fc3e592e43b376152a54c4fd3b2b64e05a49c115e7a"
+  },
+  "graphics": {
+    "cotton.png": "449ab626ac8ecec233c2a649ca88027fbe828c92db759cf58c6f298fc1f60d34",
+    "sewing.png": "6ee5dfecdc7b9c7780653507834806e0ab91f00535d44de9a41bcf1b3d0bb6fd",
+    "stone.png": "d428aede8ba8ceb0b848d47fc8d827aab7f557bd13d44761a157a3482b41921c"
+  }
+}

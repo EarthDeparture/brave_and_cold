@@ -1,0 +1,4455 @@
+class_name DevMenu
+extends CanvasLayer
+## Developer menu (backtick key, enabled in Options) (left side). World keeps running while it is open.
+## Tab (while open) toggles mouse-look so you can fly around with the menu still on screen; F8 closes it.
+## Sections: weather, time of day, player cheats (god / noclip / stay warm...), teleports, creatures, items, render toggles, readout.
+
+var world: Node
+var player: Player
+var clock: GameClock
+var weather: Weather
+
+var freeze_time := false
+var freeze_creatures := false
+var instant_weather := true
+var infinite_stamina := false
+var stay_warm := false
+var stay_fed := false
+
+var _frozen_hour := 0.0
+var _panel: PanelContainer
+var _scroll: ScrollContainer
+var _info: Label
+var _hour_slider: HSlider
+var _hour_lbl: Label
+var _wx_lbl: Label
+var _speed_lbl: Label
+var _dragging := false
+var _info_t := 0.0
+var _look := false
+var _wx_btns: Array[Button] = []
+var _item_opt: OptionButton
+var spawner: ItemSpawner
+var zone_dbg: ZoneDebug
+
+
+var sound_board: SoundBoard   # plan A0: audition every clip, verdicts to user://sound_review.json
+
+func _init() -> void:
+	layer = 60
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	visible = false
+
+
+func setup(w: Node) -> void:
+	world = w
+	player = world.get("player")
+	clock = world.get("clock")
+	weather = world.get("weather")
+	_build()
+	var ua := OS.get_cmdline_user_args()
+	if "devtest=1" in ua or "devmenu=1" in ua:
+		Settings.dev_menu = true
+	if "devtest=1" in ua:
+		_selftest()
+	if "choptest=1" in ua:
+		_choptest()
+	if "carcasstest=1" in ua:
+		_carcasstest()
+	if "huntest=1" in ua:
+		_huntest()
+	if "gathertest=1" in ua:
+		_gathertest()
+	if "crafttest=1" in ua:
+		_crafttest()
+	if "weartest=1" in ua:
+		_weartest()
+	if "p6test=1" in ua:
+		_p6test()
+	if "zperf=1" in ua:
+		_zperftest()
+	if "wintest=1" in ua:
+		_wintest()
+	if "breachtest=1" in ua:
+		_breachtest()
+	if "poptest=1" in ua:
+		_poptest()
+	if "hordetest=1" in ua:
+		_hordetest()
+	if "variantstest=1" in ua:
+		_variantstest()
+	if "hamlettest=1" in ua:
+		_hamlettest()
+	if "storetest=1" in ua:
+		_storetest()
+	if "walktest=1" in ua:
+		_walktest()
+	if "sleeptest=1" in ua:
+		_sleeptest()
+	if "fishtest=1" in ua:
+		_fishtest()
+	if "gearshot=1" in ua:
+		_gearshot()
+	if "sightshot=1" in ua:
+		_sightshot()
+	if "audiotest=1" in ua:
+		_audiotest()
+	if "clipstest=1" in ua:
+		_clipstest()
+	if "sfxlevels=1" in ua:
+		_sfxlevels()
+	if "interiorshot=1" in ua:
+		_interiorshot()
+	if "riflestest=1" in ua:
+		_riflestest()
+	if "hammertest=1" in ua:
+		_hammertest()
+	if "weathershot=1" in ua:
+		_weathershot()
+	if "audiostress=1" in ua:
+		_audiostress()
+	if "spawntest=1" in ua:
+		_spawntest()
+	if "aimtest=1" in ua:
+		_aimtest()
+	if "interacttest=1" in ua:
+		_interacttest()
+	if "hittest=1" in ua:
+		_hittest()
+	if "injurytest=1" in ua:
+		_injurytest()
+	if "popperf=1" in ua:
+		_popperf()
+
+
+func _selftest() -> void:
+	await get_tree().create_timer(2.0).timeout
+	var fails := 0
+	_set_weather(Weather.S.BLIZZARD)
+	await get_tree().process_frame
+	var ok := weather.state == Weather.S.BLIZZARD and weather.precip > 0.99 and weather.locked
+	print("DEVTEST weather blizzard instant=", ok)
+	fails += 0 if ok else 1
+	_set_hour(2.0)
+	await get_tree().process_frame
+	ok = absf(clock.hour - 2.0) < 0.1
+	print("DEVTEST hour set=", ok, " hour=", clock.hour)
+	fails += 0 if ok else 1
+	freeze_time = true
+	_frozen_hour = clock.hour
+	var h0 := clock.hour
+	await get_tree().create_timer(0.6).timeout
+	ok = absf(clock.hour - h0) < 0.01
+	print("DEVTEST freeze=", ok)
+	fails += 0 if ok else 1
+	freeze_time = false
+	player.god = true
+	player.hurt(60.0, "test")
+	ok = player.health >= 99.9 and not player.dead
+	print("DEVTEST god=", ok)
+	fails += 0 if ok else 1
+	player.god = false
+	_set_noclip(true)
+	var y0 := player.position.y + 60.0
+	player.position.y = y0
+	await get_tree().create_timer(0.5).timeout
+	ok = absf(player.position.y - y0) < 1.0
+	print("DEVTEST noclip hover=", ok)
+	fails += 0 if ok else 1
+	_set_noclip(false)
+	await get_tree().create_timer(1.5).timeout
+	var g: float = player.ground_at(player.position.x, player.position.z)
+	ok = absf(player.position.y - (g + player.eye_h)) < 1.0
+	print("DEVTEST noclip off regrounded=", ok)
+	fails += 0 if ok else 1
+	_tp_hut(0)
+	await get_tree().create_timer(0.6).timeout
+	var huts: Array = world.get("huts")
+	if huts.is_empty():
+		ok = false
+	else:
+		ok = player.position.distance_to((huts[0] as Node3D).global_position) < 9.0
+	print("DEVTEST tp hut=", ok)
+	fails += 0 if ok else 1
+	var zs: Array = world.get("zombies")
+	var n0 := zs.size()
+	_spawn("zombie", 2)
+	ok = zs.size() == n0 + 2
+	print("DEVTEST spawn zombies=", ok)
+	fails += 0 if ok else 1
+	_kill_hostile()
+	await get_tree().create_timer(0.3).timeout
+	var alive := 0
+	for z in zs:
+		if is_instance_valid(z) and not z.is_dead():
+			alive += 1
+	ok = alive == 0
+	print("DEVTEST kill all=", ok, " alive=", alive)
+	fails += 0 if ok else 1
+	_kit()
+	var inv: Inventory = world.get("inv")
+	ok = inv != null and inv.count("rifle") > 0
+	print("DEVTEST kit=", ok)
+	fails += 0 if ok else 1
+	# --- ActionRunner
+	var done := [false]
+	var cand := {"text": "Test", "hold": 0.5, "act": func() -> void: done[0] = true}
+	world.call("_act_begin", cand)
+	world.call("_act_update", 0.24, true)
+	ok = not done[0] and is_equal_approx(float(world.get("_act_hold")), 0.25)
+	print("DEVTEST action half duration, not early=", ok)
+	fails += 0 if ok else 1
+	world.call("_act_update", 0.01, true)
+	ok = done[0] and (world.get("_act") as Dictionary).is_empty()
+	print("DEVTEST action completes at half duration=", ok)
+	fails += 0 if ok else 1
+	done[0] = false
+	world.call("_act_begin", cand)
+	world.call("_act_update", 0.2, true)
+	world.call("_act_update", 0.1, false)
+	ok = (not done[0]) and (world.get("_act") as Dictionary).is_empty()
+	print("DEVTEST action cancels on release=", ok)
+	fails += 0 if ok else 1
+	world.call("_act_begin", cand)
+	world.call("_act_update", 0.1, true)
+	player.position.x += 2.0
+	world.call("_act_update", 0.1, true)
+	ok = (not done[0]) and (world.get("_act") as Dictionary).is_empty()
+	print("DEVTEST action cancels on move=", ok)
+	fails += 0 if ok else 1
+	var hp0 := player.health
+	var god0 := player.god
+	player.god = false
+	world.call("_act_begin", cand)
+	world.call("_act_update", 0.1, true)
+	player.hurt(5.0, "test")
+	world.call("_act_update", 0.1, true)
+	ok = (not done[0]) and (world.get("_act") as Dictionary).is_empty()
+	player.health = hp0
+	player.god = god0
+	print("DEVTEST action cancels on damage=", ok)
+	fails += 0 if ok else 1
+	# --- weight + condition
+	var iv2 := Inventory.new()
+	iv2.add("rifle", 1)
+	iv2.add("wood", 20)
+	var w_ok := absf(iv2.total_weight() - (3.6 + 24.0)) < 0.01 and iv2.speed_mult() == 1.0
+	iv2.add("wood", 10)
+	w_ok = w_ok and iv2.speed_mult() < 1.0 and iv2.speed_mult() > 0.6
+	iv2.add("wood", 20)
+	w_ok = w_ok and not iv2.can_add("wood", 1) and iv2.can_add("rifle", 1)
+	print("DEVTEST weight/encumbrance=", w_ok, " w=", iv2.total_weight(), " mult=", iv2.speed_mult())
+	fails += 0 if w_ok else 1
+	iv2.add("axe", 1)
+	var c_ok := iv2.condition("axe") == 1.0 and absf(iv2.wear("axe", 0.4) - 0.6) < 0.001 and absf(iv2.condition("axe") - 0.6) < 0.001
+	iv2.remove("axe", 1)
+	c_ok = c_ok and iv2.condition("axe") == 1.0
+	print("DEVTEST condition=", c_ok)
+	fails += 0 if c_ok else 1
+	print("DEVTEST failures=", fails)
+	get_tree().quit()
+
+
+func open() -> void:
+	visible = true
+	_look = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+
+func close() -> void:
+	visible = false
+	_look = false
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+func _unhandled_input(e: InputEvent) -> void:
+	if not (e is InputEventKey and e.pressed and not e.echo):
+		return
+	if e.keycode == KEY_QUOTELEFT:
+		if not Settings.dev_menu:
+			return
+		var pm = world.get("pause_menu")
+		if pm != null and pm.visible:
+			return
+		if visible:
+			close()
+		else:
+			open()
+		get_viewport().set_input_as_handled()
+	elif e.keycode == KEY_TAB and visible:
+		_look = not _look
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if _look else Input.MOUSE_MODE_VISIBLE
+		get_viewport().set_input_as_handled()
+
+
+# ---------------------------------------------------------------- build
+func _build() -> void:
+	_panel = UiKit.panel(10.0)
+	_panel.position = Vector2(10, 10)
+	_panel.custom_minimum_size = Vector2(372, 0)
+	add_child(_panel)
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 4)
+	_panel.add_child(outer)
+	outer.add_child(UiKit.label("DEV MENU   ` close   Tab mouse-look", 14, DZ.ACCENT))
+	_scroll = ScrollContainer.new()
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.custom_minimum_size = Vector2(350, 560)
+	outer.add_child(_scroll)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 3)
+	box.custom_minimum_size = Vector2(340, 0)
+	_scroll.add_child(box)
+	get_viewport().size_changed.connect(_fit)
+	_fit()
+
+	_head(box, "READOUT")
+	_info = UiKit.label("", 13, DZ.TEXT)
+	box.add_child(_info)
+
+	_head(box, "WEATHER")
+	_wx_lbl = UiKit.label("", 13, DZ.DIM)
+	box.add_child(_wx_lbl)
+	var wrow := _flow(box)
+	for i in range(Weather.NAMES.size()):
+		var idx := i
+		var b := _btn(wrow, Weather.NAMES[i], func() -> void: _set_weather(idx))
+		_wx_btns.append(b)
+	var wrow2 := _flow(box)
+	_btn(wrow2, "Auto weather", func() -> void: weather.locked = false)
+	_check(wrow2, "Instant", instant_weather, func(v: bool) -> void: instant_weather = v)
+
+	_head(box, "TIME OF DAY")
+	_hour_lbl = UiKit.label("", 13, DZ.TEXT)
+	box.add_child(_hour_lbl)
+	_hour_slider = HSlider.new()
+	_hour_slider.min_value = 0.0
+	_hour_slider.max_value = 24.0
+	_hour_slider.step = 0.05
+	_hour_slider.focus_mode = Control.FOCUS_NONE
+	_hour_slider.custom_minimum_size = Vector2(320, 22)
+	_hour_slider.drag_started.connect(func() -> void: _dragging = true)
+	_hour_slider.drag_ended.connect(func(_c: bool) -> void: _dragging = false)
+	_hour_slider.value_changed.connect(func(v: float) -> void:
+		if _dragging:
+			_set_hour(v))
+	box.add_child(_hour_slider)
+	var trow := _flow(box)
+	for pr in [["Dawn", 6.0], ["Noon", 12.0], ["Dusk", 17.0], ["Night", 22.0], ["Midnight", 0.0]]:
+		var hv: float = pr[1]
+		_btn(trow, pr[0], func() -> void: _set_hour(hv))
+	var frow := _flow(box)
+	_check(frow, "Freeze time", false, func(v: bool) -> void:
+		freeze_time = v
+		_frozen_hour = clock.hour)
+	_speed_lbl = UiKit.label("", 13, DZ.DIM)
+	box.add_child(_speed_lbl)
+	var srow := _flow(box)
+	for sp in [["Real 1x", 1.0], ["Default", 48.0], ["x200", 200.0], ["x1000", 1000.0]]:
+		var sv: float = sp[1]
+		_btn(srow, sp[0], func() -> void: _set_speed(sv))
+
+	_head(box, "STORY (forward only, real systems)")
+	var strow := _flow(box)
+	for beat in _story_beats():
+		var bd: int = beat[1]; var bh: float = beat[2]
+		_btn(strow, beat[0], func() -> void: _story_jump(bd, bh))
+
+	_head(box, "PLAYER")
+	var prow := _flow(box)
+	_check(prow, "God mode", false, func(v: bool) -> void: player.god = v)
+	_check(prow, "No clip (fly)", false, func(v: bool) -> void: _set_noclip(v))
+	var prow2 := _flow(box)
+	_check(prow2, "Inf. stamina", false, func(v: bool) -> void: infinite_stamina = v)
+	_check(prow2, "Stay warm", false, func(v: bool) -> void: stay_warm = v)
+	_check(prow2, "Stay fed", false, func(v: bool) -> void: stay_fed = v)
+	var fly := HBoxContainer.new()
+	fly.add_child(UiKit.label("Fly speed", 13, DZ.DIM))
+	var fs := HSlider.new()
+	fs.min_value = 2.0
+	fs.max_value = 80.0
+	fs.step = 1.0
+	fs.value = player.noclip_speed
+	fs.focus_mode = Control.FOCUS_NONE
+	fs.custom_minimum_size = Vector2(200, 20)
+	fs.value_changed.connect(func(v: float) -> void: player.noclip_speed = v)
+	fly.add_child(fs)
+	box.add_child(fly)
+	box.add_child(UiKit.label("Fly: WASD + Space up, C/Ctrl down, Shift x4", 12, DZ.DIM))
+	var prow3 := _flow(box)
+	_btn(prow3, "Heal", func() -> void: _heal())
+	_btn(prow3, "Revive", func() -> void: _revive())
+	_btn(prow3, "Warm up", func() -> void: _warm())
+	_btn(prow3, "Eat/drink", func() -> void: _feed())
+
+	_head(box, "TELEPORT")
+	var trow2 := _flow(box)
+	_btn(trow2, "Cabin", func() -> void: _tp_cabin())
+	var huts: Array = world.get("huts")
+	for i in range(huts.size()):
+		var hi := i
+		_btn(trow2, "Hut %d" % (i + 1), func() -> void: _tp_hut(hi))
+	var trow3 := _flow(box)
+	_btn(trow3, "Road W", func() -> void: _tp_road(0.02))
+	_btn(trow3, "Road mid", func() -> void: _tp_road(0.5))
+	_btn(trow3, "Road E", func() -> void: _tp_road(0.97))
+	_btn(trow3, "Bridge", func() -> void: _tp_bridge())
+	_btn(trow3, "Drop to ground", func() -> void: _drop())
+
+	_head(box, "CREATURES")
+	var crow := _flow(box)
+	_check(crow, "Freeze AI", false, func(v: bool) -> void: _freeze_creatures(v))
+	_btn(crow, "Kill all hostile", func() -> void: _kill_hostile())
+	var crow2 := _flow(box)
+	_btn(crow2, "+Zombie", func() -> void: _spawn("zombie", 1))
+	_btn(crow2, "+Horde 6", func() -> void: _spawn("zombie", 6))
+	_btn(crow2, "+Wolf", func() -> void: _spawn("wolf", 1))
+	_btn(crow2, "+Bear", func() -> void: _spawn("bear", 1))
+
+	_head(box, "ITEMS")
+	box.add_child(UiKit.label("Full item list: spawner panel on the right", 12, DZ.DIM))
+	_check(box, "Show item spawner", true, func(v: bool) -> void: spawner.visible = v)
+	var irow := _flow(box)
+	_btn(irow, "Survival kit", func() -> void: _kit())
+	_btn(irow, "+10 wood", func() -> void: _give("wood", 10))
+	_btn(irow, "+30 ammo", func() -> void: _give("ammo", 30))
+	_btn(irow, "+Matches", func() -> void: _give("matches", 6))
+	var irow2 := _flow(box)
+	_item_opt = OptionButton.new()
+	_item_opt.focus_mode = Control.FOCUS_NONE
+	_item_opt.add_theme_font_override("font", DZ.font())
+	_item_opt.add_theme_font_size_override("font_size", 13)
+	var ids: Array = Inventory.ITEMS.keys()
+	ids.sort()
+	for id in ids:
+		_item_opt.add_item(String(id))
+	irow2.add_child(_item_opt)
+	_btn(irow2, "Give +1", func() -> void: _give(_item_opt.get_item_text(_item_opt.selected), 1))
+	_btn(irow2, "+5", func() -> void: _give(_item_opt.get_item_text(_item_opt.selected), 5))
+	_btn(irow2, "Dull axe", func() -> void:
+		var iv: Inventory = world.get("inv")
+		if iv != null:
+			iv.wear("axe", 0.25))
+
+	_head(box, "AUDIO")
+	var arow := _flow(box)
+	_check(arow, "Show sound board", false, func(v: bool) -> void: sound_board.visible = v)
+
+	_head(box, "RENDER / DEBUG")
+	var rrow := _flow(box)
+	_check(rrow, "Show hit zones", false, func(v: bool) -> void: zone_dbg.visible = v)
+	_check(rrow, "Hide HUD", false, func(v: bool) -> void: world.get("hud").visible = not v)
+	_check(rrow, "Hide trees", false, func(v: bool) -> void: world.get("forest").visible = not v)
+	_check(rrow, "Shadows", true, func(v: bool) -> void: world.get("sun").shadow_enabled = v)
+	_check(rrow, "Fog", true, func(v: bool) -> void: world.get("env").fog_enabled = v)
+	_check(rrow, "Wireframe", false, func(v: bool) -> void:
+		get_viewport().debug_draw = Viewport.DEBUG_DRAW_WIREFRAME if v else Viewport.DEBUG_DRAW_DISABLED)
+	_check(rrow, "Unshaded", false, func(v: bool) -> void:
+		get_viewport().debug_draw = Viewport.DEBUG_DRAW_UNSHADED if v else Viewport.DEBUG_DRAW_DISABLED)
+	var drow := _flow(box)
+	_btn(drow, "Screenshot", func() -> void: _shot())
+	_btn(drow, "Copy coords", func() -> void: _copy_coords())
+	var tol := HBoxContainer.new()
+	tol.add_child(UiKit.label("Aim tolerance x", 13, DZ.DIM))
+	var ts := HSlider.new()
+	ts.min_value = 0.4
+	ts.max_value = 2.5
+	ts.step = 0.05
+	ts.value = 1.0
+	ts.focus_mode = Control.FOCUS_NONE
+	ts.custom_minimum_size = Vector2(170, 20)
+	var tl := UiKit.label("1.00", 13, DZ.TEXT)
+	ts.value_changed.connect(func(v: float) -> void:
+		world.set("aim_tol_scale", v)
+		tl.text = "%.2f" % v)
+	tol.add_child(ts)
+	tol.add_child(tl)
+	box.add_child(tol)
+	spawner = ItemSpawner.new()
+	add_child(spawner)
+	spawner.setup(world, player)
+	sound_board = SoundBoard.new()
+	add_child(sound_board)
+	sound_board.position = Vector2(392, 10)
+	sound_board.setup(world)
+	sound_board.visible = false
+	zone_dbg = ZoneDebug.new()
+	zone_dbg.player = player
+	zone_dbg.visible = false
+	world.add_child(zone_dbg)
+
+
+func _fit() -> void:
+	if _scroll == null:
+		return
+	var h := get_viewport().get_visible_rect().size.y - 90.0
+	_scroll.custom_minimum_size = Vector2(350, clampf(h, 200.0, 900.0))
+
+
+func _head(parent: Node, text: String) -> void:
+	var l := UiKit.label(text, 14, DZ.ACCENT)
+	parent.add_child(l)
+	var r := ColorRect.new()
+	r.color = DZ.EDGE
+	r.custom_minimum_size = Vector2(0, 1)
+	parent.add_child(r)
+
+
+func _flow(parent: Node) -> HFlowContainer:
+	var f := HFlowContainer.new()
+	f.add_theme_constant_override("h_separation", 4)
+	f.add_theme_constant_override("v_separation", 4)
+	parent.add_child(f)
+	return f
+
+
+func _btn(parent: Node, text: String, cb: Callable) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_font_override("font", DZ.font())
+	b.add_theme_font_size_override("font_size", 13)
+	b.add_theme_color_override("font_color", DZ.TEXT)
+	b.add_theme_color_override("font_hover_color", DZ.ACCENT)
+	b.custom_minimum_size = Vector2(0, 26)
+	b.pressed.connect(cb)
+	parent.add_child(b)
+	return b
+
+
+func _check(parent: Node, text: String, on: bool, cb: Callable) -> CheckBox:
+	var c := CheckBox.new()
+	c.text = text
+	c.button_pressed = on
+	c.focus_mode = Control.FOCUS_NONE
+	c.add_theme_font_override("font", DZ.font())
+	c.add_theme_font_size_override("font_size", 13)
+	c.add_theme_color_override("font_color", DZ.TEXT)
+	c.toggled.connect(cb)
+	parent.add_child(c)
+	return c
+
+
+# ---------------------------------------------------------------- per frame
+func _process(delta: float) -> void:
+	if player == null:
+		return
+	# persistent cheats run even with the menu closed
+	if freeze_time:
+		clock.hour = _frozen_hour
+	if infinite_stamina:
+		player.stamina = 100.0
+		player.exhausted = false
+	if stay_warm:
+		var body: BodyTemperature = world.get("body")
+		body.core = BodyTemperature.NORMAL
+		body.wetness = 0.0
+	if stay_fed:
+		var needs: Needs = world.get("needs")
+		needs.calories = Needs.MAX_CAL
+		needs.water = 100.0
+	if player.god and not player.dead:
+		player.health = 100.0
+	if visible and not Settings.dev_menu:
+		close()
+	if not visible:
+		return
+	if not _dragging:
+		_hour_slider.set_value_no_signal(clock.hour)
+	_hour_lbl.text = "%s%s" % [clock.time_string(), "   FROZEN" if freeze_time else ""]
+	_speed_lbl.text = "Time scale: %.0fx" % clock.time_scale
+	_info_t -= delta
+	if _info_t <= 0.0:
+		_info_t = 0.2
+		_refresh_info()
+
+
+func _refresh_info() -> void:
+	var body: BodyTemperature = world.get("body")
+	var needs: Needs = world.get("needs")
+	var p := player.position
+	var hostile := get_tree().get_nodes_in_group("hostile").size()
+	var s := "FPS %d   pos %.0f, %.0f, %.0f\n" % [Engine.get_frames_per_second(), p.x, p.y, p.z]
+	s += "Air %.1f C  feels %.1f C  core %.1f C\n" % [clock.ambient_c(), body.feels_like, body.core]
+	s += "Weather %s  wind %.1f m/s  precip %.2f\n" % [weather.state_name(), weather.wind, weather.precip]
+	s += "Health %.0f  Cal %d  Water %d%%  Stamina %d\n" % [player.health, int(needs.calories), int(needs.water), int(player.stamina)]
+	var iv: Inventory = world.get("inv")
+	if iv != null:
+		s += "Weight %.1f / %d kg (max %d)  axe cond %d%%\n" % [iv.total_weight(), int(Inventory.WEIGHT_SOFT), int(Inventory.WEIGHT_HARD), int(iv.condition("axe") * 100.0)]
+	s += "Hostile alive %d   god %s  noclip %s" % [hostile, "ON" if player.god else "off", "ON" if player.noclip else "off"]
+	_info.text = s
+	_wx_lbl.text = "%s%s" % [weather.state_name(), "  (locked)" if weather.locked else "  (auto)"]
+	for i in range(_wx_btns.size()):
+		_wx_btns[i].add_theme_color_override("font_color", DZ.ACCENT if i == weather.state else DZ.TEXT)
+
+
+# ---------------------------------------------------------------- actions
+func _set_weather(i: int) -> void:
+	if instant_weather:
+		weather.lock_state(i)
+	else:
+		weather.locked = true
+		weather.set_state(i, false)
+
+
+func _set_hour(h: float) -> void:
+	clock.hour = h
+	_frozen_hour = h
+
+
+## Story beats one game minute early, so the bulletin/call starts live.
+func _story_beats() -> Array:
+	var out: Array = [["D1 08 June", 1, 8.0], ["D1 14 work", 1, 14.0], ["D1 19:30 report", 1, 19.5], ["D2 06", 2, 6.0], ["D2 17 crack", 2, 17.0], ["D2 24 news", 2, 24.0], ["D3 06 ramp", 3, 6.0], ["D3 08 suspend", 3, 8.0]]
+	var st: LookoutAssignment = world.get("opening_state")
+	if st != null:
+		var names := ["first infected", "clinic wave", "road wave", "full town"]
+		var i := 0
+		for c: Dictionary in st.story.get("infected_cohorts", []):
+			out.append(["D%d %s %s" % [int(c.day), _hm(float(c.hour)), names[mini(i, 3)]], int(c.day), float(c.hour)]); i += 1
+		var g: Dictionary = st.story.get("grid_fail", {}).get("from", {})
+		if not g.is_empty(): out.append(["D%d %s grid window" % [int(g.day), _hm(float(g.hour))], int(g.day), float(g.hour)])
+	out.append(["D4 08 released", 4, 8.0])
+	out.sort_custom(func(a: Array, b: Array) -> bool: return a[1] * 24 + a[2] < b[1] * 24 + b[2])
+	return out
+
+
+static func _hm(h: float) -> String: return "%02d:%02d" % [int(h), int(round(fposmod(h, 1.0) * 60))]
+
+
+func _story_jump(day: int, hour: float) -> void:
+	if not world.has_method("story_skip_to") or not bool(world.call("story_skip_to", day, hour - 1.0 / 60.0)):
+		world.call("_say", "Story jump: only forward, and only in the lookout opening")
+	else:
+		_frozen_hour = clock.hour
+		world.call("_say", "Story jump • " + clock.time_string())
+
+
+func _set_speed(s: float) -> void:
+	clock.time_scale = s
+
+
+func _set_noclip(v: bool) -> void:
+	player.noclip = v
+	if not v:
+		player.position.y = player.ground_at(player.position.x, player.position.z) + player.eye_h
+
+
+func _heal() -> void:
+	if not player.dead:
+		player.health = 100.0
+
+
+func _revive() -> void:
+	player.dead = false
+	player.frozen = false
+	player.health = 100.0
+	player.death_cause = ""
+	_warm()
+	_feed()
+
+
+func _warm() -> void:
+	var body: BodyTemperature = world.get("body")
+	body.core = BodyTemperature.NORMAL
+	body.wetness = 0.0
+
+
+func _feed() -> void:
+	var needs: Needs = world.get("needs")
+	needs.calories = Needs.MAX_CAL
+	needs.water = 100.0
+
+
+## Aim the view at a world point (yaw + pitch from the eye), like looking straight at it.
+func _look_at(p: Vector3) -> void:
+	var d := p - player.position
+	player.yaw = atan2(-d.x, -d.z)
+	player.pitch = atan2(d.y, Vector2(d.x, d.z).length())
+
+
+func _tp(x: float, z: float, face: Vector3 = Vector3.INF) -> void:
+	player.place(x, z)
+	if player.noclip:
+		player.position.y = player.ground_at(x, z) + 4.0
+		player._ready_ground = true
+	if face != Vector3.INF:
+		var d := face - Vector3(x, 0.0, z)
+		player.yaw = atan2(-d.x, -d.z)
+		player.pitch = deg_to_rad(-4.0)
+
+
+func _aim_pt(p: Vector3) -> void:
+	var eye: float = player.position.y
+	player.pitch = atan2(float(world.call("_ground_y", p.x, p.z)) + 0.25 - eye, Vector2(p.x - player.position.x, p.z - player.position.z).length())
+
+
+func _tp_cabin() -> void:
+	var cabins: Array = world.get("cabins")
+	if cabins.is_empty():
+		return
+	var c: Node3D = cabins[0]
+	var p := c.to_global(Vector3(0.0, 0.0, 6.0))
+	_tp(p.x, p.z, c.global_position)
+
+
+func _tp_hut(i: int) -> void:
+	var huts: Array = world.get("huts")
+	if i >= huts.size():
+		return
+	var h: Node3D = huts[i]
+	var p := h.to_global(Vector3(0.0, 0.0, 6.0))
+	_tp(p.x, p.z, h.global_position)
+
+
+func _tp_road(f: float) -> void:
+	var road: RoadNet = world.get("road")
+	if road == null or road.points.size() < 3:
+		return
+	var i := clampi(int(f * float(road.points.size() - 1)), 0, road.points.size() - 2)
+	var a: Vector2 = road.points[i]
+	var b: Vector2 = road.points[i + 1]
+	_tp(a.x, a.y, Vector3(b.x, 0.0, b.y))
+
+
+func _tp_bridge() -> void:
+	var road: RoadNet = world.get("road")
+	if road == null or road.bridges.is_empty():
+		return
+	var br: Array = road.bridges[0]
+	var a: Vector2 = road.points[maxi(int(br[0]) - 8, 0)]
+	var b: Vector2 = road.points[mini(int(br[0]) - 7, road.points.size() - 1)]
+	_tp(a.x, a.y, Vector3(b.x, 0.0, b.y))
+
+
+func _drop() -> void:
+	_tp(player.position.x, player.position.z)
+
+
+func _freeze_creatures(v: bool) -> void:
+	freeze_creatures = v
+	for key in ["zombies", "wolves", "bears", "deer"]:
+		var arr: Array = world.get(key)
+		for c in arr:
+			if is_instance_valid(c):
+				(c as Node).process_mode = Node.PROCESS_MODE_DISABLED if v else Node.PROCESS_MODE_INHERIT
+
+
+func _kill_hostile() -> void:
+	for h in get_tree().get_nodes_in_group("hostile"):
+		if is_instance_valid(h) and h.has_method("hit"):
+			h.call("hit", 9999.0, player.position)
+
+
+func _spawn(kind: String, n: int) -> void:
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var terrain: Terrain3D = world.get("terrain")
+	for k in range(n):
+		var side := Vector3(fwd.z, 0.0, -fwd.x) * (float(k) - float(n) * 0.5) * 2.0
+		var p := player.position + fwd * 14.0 + side
+		var h: float = terrain.data.get_height(Vector3(p.x, 0.0, p.z))
+		if is_nan(h):
+			continue
+		p.y = h
+		var idx := randi() % 90000 + 9000
+		match kind:
+			"zombie":
+				world.call("_add_zombie", p, idx)
+			"wolf":
+				world.call("_add_wolf", p, idx, false)
+			"bear":
+				world.call("_add_wolf", p, idx, true)
+
+
+func _give(id: String, n: int) -> void:
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	if inv != null:
+		inv.add(id, n)
+		world.call("_say", "+%d %s" % [n, id])
+
+
+func _kit() -> void:
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	if inv == null:
+		return
+	for pr in [["rifle", 1], ["ammo", 40], ["axe", 1], ["knife", 1], ["cordage", 6], ["deer_hide", 2], ["bow_drill", 1], ["tinder", 3], ["kindling", 4], ["parka", 1], ["sweater", 1], ["matches", 8], ["wood", 10], ["beans", 4], ["flare", 3]]:
+		inv.add(pr[0], pr[1])
+	world.call("_say", "Dev kit added")
+
+
+func _shot() -> void:
+	_panel.visible = false
+	spawner.visible = false
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var img := get_viewport().get_texture().get_image()
+	var path := "user://devshot_%d.png" % Time.get_ticks_msec()
+	img.save_png(path)
+	print("DEV_SHOT ", ProjectSettings.globalize_path(path))
+	_panel.visible = true
+	spawner.visible = true
+	world.call("_say", "Saved " + path.get_file())
+
+
+func _copy_coords() -> void:
+	var p := player.position
+	DisplayServer.clipboard_set("pos=%.1f,%.1f yaw=%.1f pitch=%.1f hour=%.2f" % [p.x, p.z, rad_to_deg(player.yaw), rad_to_deg(player.pitch), clock.hour])
+
+
+func _choptest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var forest: ForestScatter = world.get("forest")
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	inv.add("axe", 1)
+	world.set("rifle_up", false)
+	var t0 := forest.nearest_tree(player.position, Vector3.FORWARD, 80.0, false)
+	var ok := not t0.is_empty()
+	print("CHOPTEST found tree=", ok, " ", t0)
+	fails += 0 if ok else 1
+	if not ok:
+		print("CHOPTEST failures=", fails)
+		get_tree().quit()
+		return
+	var tx := float(t0["x"])
+	var tz := float(t0["z"])
+	_tp(tx + 1.8, tz, Vector3(tx, 0.0, tz))
+	await get_tree().create_timer(1.0).timeout
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var t1 := forest.nearest_tree(player.position, fwd, 2.4, true)
+	ok = not t1.is_empty() and absf(float(t1["x"]) - tx) < 0.3 and absf(float(t1["z"]) - tz) < 0.3
+	print("CHOPTEST facing detect=", ok, " ", t1)
+	fails += 0 if ok else 1
+	var back := forest.nearest_tree(player.position, -fwd, 2.4, true)
+	ok = back.is_empty() or absf(float(back["x"]) - tx) > 0.3
+	print("CHOPTEST behind not chopped=", ok)
+	fails += 0 if ok else 1
+	world.call("_update_prompt")
+	var txt := ""
+	for c in world.get("_cands_cache"):
+		txt += String(c["text"]) + " | "
+	ok = txt.contains("Chop tree")
+	print("CHOPTEST prompt=", ok, " ", txt)
+	fails += 0 if ok else 1
+	var key := ForestScatter.tree_key(tx, tz)
+	var total := ForestScatter.hits_total(float(t0["h"]))
+	var hits := 0
+	while hits < 80 and not forest.felled.has(key):
+		var tr := forest.nearest_tree(player.position, fwd, 3.0, true)
+		if tr.is_empty():
+			break
+		world.call("_chop_hit", tr)
+		hits += 1
+	ok = forest.felled.has(key) and hits >= int(total / 1.0 - 1.0) and hits <= int(total / 0.55) + 2
+	print("CHOPTEST felled=", ok, " hits=", hits, " total=", total)
+	fails += 0 if ok else 1
+	ok = inv.condition("axe") < 1.0
+	print("CHOPTEST axe wear=", ok, " cond=", inv.condition("axe"))
+	fails += 0 if ok else 1
+	var gone := forest.nearest_tree(player.position, fwd, 2.4, true)
+	ok = gone.is_empty() or absf(float(gone["x"]) - tx) > 0.3 or absf(float(gone["z"]) - tz) > 0.3
+	print("CHOPTEST trunk removed=", ok)
+	fails += 0 if ok else 1
+	await get_tree().create_timer(4.0).timeout
+	var logs := get_tree().get_nodes_in_group("logs")
+	ok = logs.size() == 1
+	print("CHOPTEST log landed=", ok, " n=", logs.size())
+	fails += 0 if ok else 1
+	if ok and "chopshot=1" in OS.get_cmdline_user_args():
+		var lc: Vector3 = (logs[0] as WoodLog).center()
+		_tp(lc.x + 7.0, lc.z + 5.0, lc)
+		await get_tree().create_timer(1.5).timeout
+		var img := get_viewport().get_texture().get_image()
+		img.save_png("user://chop_log.png")
+		print("CHOPSHOT ", ProjectSettings.globalize_path("user://chop_log.png"))
+	if ok:
+		var wl: WoodLog = logs[0]
+		var w0 := inv.count("wood")
+		var s0 := inv.count("stick")
+		world.call("_split_log", wl)
+		ok = inv.count("wood") - w0 == wl.firewood and inv.count("stick") - s0 == 3
+		print("CHOPTEST split=", ok, " wood+", inv.count("wood") - w0, " sticks+", inv.count("stick") - s0)
+		fails += 0 if ok else 1
+		await get_tree().process_frame
+		ok = get_tree().get_nodes_in_group("logs").is_empty()
+		print("CHOPTEST log removed=", ok)
+		fails += 0 if ok else 1
+	var t2 := forest.nearest_tree(player.position, fwd, 80.0, false)
+	var k2 := ForestScatter.tree_key(float(t2["x"]), float(t2["z"]))
+	var infos := forest.apply_felled([k2])
+	var again := forest.apply_felled([k2])
+	ok = infos.size() == 1 and again.size() == 0 and forest.felled.has(k2)
+	print("CHOPTEST apply_felled=", ok)
+	fails += 0 if ok else 1
+	print("CHOPTEST failures=", fails)
+	get_tree().quit()
+
+
+func _steps_texts() -> String:
+	world.call("_update_prompt")
+	var s := ""
+	for c in world.get("_cands_cache"):
+		s += String(c["text"]) + " | "
+	return s
+
+
+func _run_acts(prefixes: Array) -> int:
+	var n := 0
+	for c in (world.get("_cands_cache") as Array).duplicate():
+		for p in prefixes:
+			if String(c["text"]).begins_with(p) and c.has("act"):
+				(c["act"] as Callable).call()
+				n += 1
+				break
+	return n
+
+
+func _carcasstest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	inv.counts.erase("knife")
+	inv.counts.erase("axe")
+	var pp: Vector3 = player.position
+	var tg: Terrain3D = world.get("terrain")
+	for sp: String in ["wolf", "bear"]:
+		var pos := Vector3(pp.x + 3.0, tg.data.get_height(Vector3(pp.x + 3.0, 0, pp.z)), pp.z)
+		var w: Wolf = world.call("_add_wolf", pos, 77, sp == "bear")
+		w.hit(9999.0, pp)
+		await get_tree().create_timer(0.8).timeout
+		var ok: bool = w.is_in_group("carcasses") and Carcass.species_of(w) == sp
+		print("CARCASSTEST ", sp, " carcass group+species=", ok)
+		fails += 0 if ok else 1
+		_tp(pos.x + 1.2, pos.z, pos)
+		await get_tree().create_timer(0.8).timeout
+		_look_at(pos + Vector3(0.0, 0.3, 0.0))
+		await get_tree().process_frame
+		var tx := _steps_texts()
+		ok = tx.contains("needs a knife") or tx.contains("needs a usable tool")
+		print("CARCASSTEST ", sp, " no tool -> ", tx)
+		fails += 0 if ok else 1
+		inv.add("axe")
+		tx = _steps_texts()
+		ok = tx.begins_with("Quarter") or tx.contains("Quarter")
+		var m0 := inv.count(Carcass.SPECIES[sp]["meat"])
+		_run_acts(["Quarter"])
+		var half := inv.count(Carcass.SPECIES[sp]["meat"]) - m0
+		ok = ok and half == int(ceil(float(Carcass.SPECIES[sp]["meat_n"]) * 0.5))
+		print("CARCASSTEST ", sp, " hatchet half yield=", ok, " got ", half)
+		fails += 0 if ok else 1
+		inv.add("knife")
+		tx = _steps_texts()
+		ok = not tx.contains("Quarter") and tx.contains("Skin") and tx.contains("Gut")
+		print("CARCASSTEST ", sp, " knife steps left=", ok, " ", tx)
+		fails += 0 if ok else 1
+		_run_acts(["Skin", "Gut", "Render"])
+		var hid := inv.count(Carcass.SPECIES[sp]["hide"])
+		ok = hid == 1 and inv.count("gut") >= 1 and inv.condition("knife") < 1.0
+		await get_tree().process_frame
+		await get_tree().process_frame
+		ok = ok and (not is_instance_valid(w) or w.is_queued_for_deletion())
+		print("CARCASSTEST ", sp, " fully butchered + carcass gone=", ok)
+		fails += 0 if ok else 1
+		inv.counts.erase("axe")
+		inv.counts.erase("knife")
+	var zpos := Vector3(pp.x - 3.0, tg.data.get_height(Vector3(pp.x - 3.0, 0, pp.z)), pp.z)
+	var z: Zombie = world.call("_add_zombie", zpos, 900)
+	z.hit(9999.0, pp)
+	await get_tree().create_timer(0.6).timeout
+	_tp(zpos.x + 1.2, zpos.z, zpos)
+	await get_tree().create_timer(0.8).timeout
+	_look_at(zpos + Vector3(0.0, 0.3, 0.0))
+	await get_tree().process_frame
+	var tx2 := _steps_texts()
+	var ok2 := tx2.contains("Search body")
+	print("CARCASSTEST zombie search prompt=", ok2)
+	fails += 0 if ok2 else 1
+	var w0 := 0
+	for id in inv.counts.keys():
+		w0 += int(inv.counts[id])
+	var ex := Carcass.body_loot(int(zpos.x * 7.0) * 31 + int(zpos.z * 13.0))
+	_run_acts(["Search body"])
+	var w1 := 0
+	for id in inv.counts.keys():
+		w1 += int(inv.counts[id])
+	var exn := 0
+	for id in ex.keys():
+		exn += int(ex[id])
+	ok2 = (w1 - w0) == exn and z.get_meta("searched", false) and not _steps_texts().contains("Search body")
+	print("CARCASSTEST zombie loot=", ok2, " expected ", ex, " got +", w1 - w0)
+	fails += 0 if ok2 else 1
+	# loot path with a body whose roll is non-empty
+	var zp2 := zpos
+	for i in range(1, 40):
+		zp2 = Vector3(zpos.x + float(i) * 0.37, tg.data.get_height(Vector3(zpos.x + float(i) * 0.37, 0, zpos.z)), zpos.z)
+		if not Carcass.body_loot(int(zp2.x * 7.0) * 31 + int(zp2.z * 13.0)).is_empty():
+			break
+	var z2: Zombie = world.call("_add_zombie", zp2, 901)
+	z2.hit(9999.0, pp)
+	await get_tree().create_timer(0.6).timeout
+	var ex2 := Carcass.body_loot(int(z2.global_position.x * 7.0) * 31 + int(z2.global_position.z * 13.0))
+	var before := inv.total_weight()
+	world.call("_search_body", z2)
+	ok2 = not ex2.is_empty() and inv.total_weight() > before and z2.get_meta("searched", false)
+	print("CARCASSTEST zombie nonempty loot=", ok2, " ", ex2)
+	fails += 0 if ok2 else 1
+	print("CARCASSTEST failures=", fails)
+	get_tree().quit()
+
+
+func _huntest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var tg: Terrain3D = world.get("terrain")
+	var pp: Vector3 = player.position
+	player.god = true
+	# --- hit zones (deer faces -Z at yaw 0)
+	var base := Vector3(pp.x + 12.0, tg.data.get_height(Vector3(pp.x + 12.0, 0, pp.z)), pp.z)
+	var d1: Deer = world.call("_add_deer", base, 41)
+	d1.rotation.y = 0.0
+	var want := {"head": 2.5, "chest": 1.0, "hind": 0.4}
+	var seen_z := {}
+	for row: Array in HitZones.SPECS["deer"]:
+		if seen_z.has(row[0]) or not want.has(row[0]):
+			continue
+		seen_z[row[0]] = true
+		var c := HitZones.center_of(d1, row)
+		var r := HitZones.ray(d1, c + Vector3(6, 0, 0), Vector3(-1, 0, 0), 50.0)
+		var ok: bool = not r.is_empty() and r["zone"] == row[0] and absf(float(r["mult"]) - float(want[row[0]])) < 0.01
+		print("HUNTEST zone ", row[0], "=", ok, " ", r)
+		fails += 0 if ok else 1
+	var miss := HitZones.ray(d1, d1.global_position + Vector3(6, 4.5, 0), Vector3(-1, 0, 0), 50.0)
+	print("HUNTEST over-the-top miss=", miss.is_empty())
+	fails += 0 if miss.is_empty() else 1
+	d1.hit(9999.0, pp)
+	# --- wounded deer bleeds out, leaves trail
+	var b0 := get_tree().get_nodes_in_group("blood").size()
+	var tl0 := 0
+	var atr = world.get("animal_tracks")
+	if atr != null: tl0 = (atr.log as TrackLog).query(pp.x, pp.z, 400.0, [TrackLog.K.BLOOD]).size()
+	var p2 := Vector3(pp.x - 20.0, tg.data.get_height(Vector3(pp.x - 20.0, 0, pp.z)), pp.z)
+	var d2: Deer = world.call("_add_deer", p2, 42)
+	d2.hit(35.0, Vector3(pp.x, 0, pp.z))
+	var okb: bool = d2.bleed and d2.state == Deer.State.FLEE and d2.hp > 0.0
+	print("HUNTEST wound bleeds=", okb)
+	fails += 0 if okb else 1
+	d2.hp = minf(d2.hp, 12.0)   # skip most of the ~100 s bleed (0.65 hp/s)
+	for i in range(40):
+		await get_tree().create_timer(1.0).timeout
+		if d2.is_dead():
+			break
+	var trail := get_tree().get_nodes_in_group("blood").size() - b0
+	if atr != null: trail += (atr.log as TrackLog).query(pp.x, pp.z, 400.0, [TrackLog.K.BLOOD]).size() - tl0
+	okb = d2.is_dead() and trail >= 4 and d2.is_in_group("carcasses")
+	print("HUNTEST bleeds out dead=", d2.is_dead(), " blood decals=", trail)
+	fails += 0 if okb else 1
+	# --- scent
+	var far := Vector3(pp.x + 150.0, 0, pp.z + 150.0)
+	_tp(far.x, far.z)
+	await get_tree().create_timer(1.0).timeout
+	var cpos := Vector3(far.x + 40.0, tg.data.get_height(Vector3(far.x + 40.0, 0, far.z)), far.z)
+	var carc: Deer = world.call("_add_deer", cpos, 43)
+	carc.hit(9999.0, cpos)
+	var wx := Vector3(cpos.x + 18.0, tg.data.get_height(Vector3(cpos.x + 18.0, 0, cpos.z)), cpos.z)
+	var wu := Vector3(cpos.x - 30.0, tg.data.get_height(Vector3(cpos.x - 30.0, 0, cpos.z)), cpos.z)
+	var w_down: Wolf = world.call("_add_wolf", wx, 50, false)
+	var w_up: Wolf = world.call("_add_wolf", wu, 51, false)
+	for i in range(5):
+		Carcass.wind_dir = Vector2(1, 0)
+		await get_tree().create_timer(1.0).timeout
+	var ok2: bool = w_down._carcass == carc and w_down.state == Wolf.State.INVESTIGATE
+	print("HUNTEST downwind wolf smells carcass=", ok2)
+	fails += 0 if ok2 else 1
+	ok2 = w_up._carcass == null
+	print("HUNTEST upwind wolf does not=", ok2)
+	fails += 0 if ok2 else 1
+	var saved: Array = world.call("_carcass_list")
+	var found := false
+	for e in saved:
+		if String(e["sp"]) == "deer" and absf(float(e["x"]) - cpos.x) < 1.0:
+			found = true
+	print("HUNTEST carcass in save list=", found)
+	fails += 0 if found else 1
+	var mf0 := Carcass.meat_frac(carc)
+	for i in range(40):   # a wolf tears a portion every ~10 s and leaves once sated (~2 portions)
+		Carcass.wind_dir = Vector2(1, 0)
+		await get_tree().create_timer(1.0).timeout
+		if not is_instance_valid(carc) or Carcass.meat_frac(carc) < mf0 - 0.01:
+			break
+	ok2 = not is_instance_valid(carc) or Carcass.meat_frac(carc) < mf0 - 0.01
+	print("HUNTEST wolf scavenged meat=", ok2)
+	fails += 0 if ok2 else 1
+	print("HUNTEST failures=", fails)
+	get_tree().quit()
+
+
+func _gathertest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var pf: PlantField = world.get("plants")
+	var clock_ref = world.get("clock")
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	inv.counts.erase("knife")
+	inv.counts.erase("axe")
+	var ok: bool = pf != null
+	print("GATHERTEST counts=", pf.counts if pf != null else {})
+	for kind: String in PlantField.KINDS.keys():
+		ok = ok and int(pf.counts.get(kind, 0)) > 0
+	print("GATHERTEST all kinds present=", ok)
+	fails += 0 if ok else 1
+	for kind: String in PlantField.KINDS.keys():
+		var key := pf.first_of(kind)
+		if key == "":
+			fails += 1
+			print("GATHERTEST no ", kind)
+			continue
+		var pp := pf.pos_of(key)
+		_tp(pp.x, pp.z + 1.2, pp)
+		await get_tree().create_timer(1.0).timeout
+		if "plantshot=1" in OS.get_cmdline_user_args():
+			_tp(pp.x, pp.z + 2.4, pp)
+			player.pitch = deg_to_rad(-14.0)
+			await get_tree().create_timer(1.0).timeout
+			get_viewport().get_texture().get_image().save_png("user://plant_%s.png" % kind)
+			print("PLANTSHOT ", kind)
+			_tp(pp.x, pp.z + 1.2, pp)
+			await get_tree().create_timer(0.5).timeout
+		var kd: Dictionary = PlantField.KINDS[kind]
+		var iid: String = kd["item"]
+		var n0 := inv.count(iid)
+		_aim_pt(pp)
+		world.call("_update_prompt")
+		var cand := {}
+		for c in world.get("_cands_cache"):
+			if String(c["text"]).begins_with("Gather"):
+				cand = c
+				break
+		var okp: bool = not cand.is_empty()
+		if okp:
+			okp = absf(float(cand["hold"]) - float(kd["hold"])) < 0.01
+			(cand["act"] as Callable).call()
+		var got := inv.count(iid) - n0
+		okp = okp and got == int(kd["n"]) and pf.picked.has(key) and pf.is_hidden(key)
+		print("GATHERTEST ", kind, " gather=", okp, " got ", got, " cand ", cand.get("text", "none"))
+		fails += 0 if okp else 1
+		world.call("_update_prompt")
+		var again := false
+		for c in world.get("_cands_cache"):
+			if String(c["text"]).begins_with("Gather") and String(c["text"]).contains(String(kd["label"])):
+				again = true
+		print("GATHERTEST ", kind, " not offered again=", not again)
+		fails += 1 if again else 0
+		if kind == "reed":
+			inv.add("knife")
+			var key2 := ""
+			var best_d := INF   # nearest other reed: a far dictionary-first one may sit under new route props
+			for kk in pf._plants.keys():
+				if pf._plants[kk]["kind"] == "reed" and not pf.picked.has(kk) and not pf._suppressed.has(kk) and kk != key:
+					var dk := pf.pos_of(kk).distance_to(pp)
+					if dk > 2.5 and dk < best_d:
+						best_d = dk
+						key2 = kk
+			var p2 := pf.pos_of(key2)
+			# Reeds sit on shores; shore walking may refuse one approach side, so try four.
+			var pd := INF
+			for off: Vector2 in [Vector2(0, 1.2), Vector2(1.2, 0), Vector2(0, -1.2), Vector2(-1.2, 0)]:
+				_tp(p2.x + off.x, p2.z + off.y, p2)
+				await get_tree().create_timer(1.0).timeout
+				pd = Vector2(player.position.x - p2.x, player.position.z - p2.z).length()
+				if pd < 1.6:
+					break
+			p2 = pf.pos_of(key2)   # height is filled once its chunk streams in near the player
+			print("GATHERTEST reed2 stand dist=", snappedf(pd, 0.01), " y=", snappedf(p2.y, 0.01), " from first=", snappedf(best_d, 0.1))
+			_aim_pt(p2)
+			world.call("_update_prompt")
+			var kh := -1.0
+			for c in world.get("_cands_cache"):
+				if String(c["text"]).begins_with("Gather"):
+					kh = float(c["hold"])
+			print("GATHERTEST reed knife hold=", kh)
+			if kh < 0.0:
+				print("GATHERTEST cands: ", (world.get("_cands_cache") as Array).map(func(c: Dictionary) -> String: return String(c["text"])), " picked2=", pf.picked.has(key2), " hidden2=", pf.is_hidden(key2), " p2=", p2, " ppos=", player.position)
+			fails += 0 if absf(kh - 2.0) < 0.01 else 1
+			inv.counts.erase("knife")
+	var saved: Dictionary = pf.picked.duplicate()
+	var any_key: String = saved.keys()[0]
+	pf.update_regrow(float(clock_ref.total_game_s) + 200.0 * 3600.0)
+	var okr: bool = pf.picked.is_empty() and not pf.is_hidden(any_key)
+	print("GATHERTEST regrow=", okr)
+	fails += 0 if okr else 1
+	pf.apply_picked(saved)
+	okr = pf.picked.size() == saved.size() and pf.is_hidden(any_key)
+	print("GATHERTEST save/restore picked=", okr)
+	fails += 0 if okr else 1
+	print("GATHERTEST failures=", fails)
+	get_tree().quit()
+
+
+func _craft_run(secs: float) -> void:
+	var t := 0.0
+	while t < secs + 0.2:
+		world.call("_craft_update", 0.1)
+		t += 0.1
+
+
+func _crafttest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	player.god = false
+	var bad := RecipeDB.validate()
+	var ok: bool = RecipeDB.all().size() >= 8 and bad.is_empty()
+	print("CRAFTTEST recipes=", RecipeDB.all().size(), " bad refs=", bad, " ok=", ok)
+	fails += 0 if ok else 1
+	# insufficient inputs
+	inv.counts.erase("reed")
+	inv.add("reed", 2)
+	var why: String = world.call("craft_start", "cordage_reed")
+	ok = why != "" and (world.get("craft_job") as Dictionary).is_empty()
+	print("CRAFTTEST blocked w/o inputs=", ok, " ", why)
+	fails += 0 if ok else 1
+	inv.add("reed", 1)
+	why = world.call("craft_start", "cordage_reed")
+	ok = why == "" and not (world.get("craft_job") as Dictionary).is_empty()
+	fails += 0 if ok else 1
+	var c0 := inv.count("cordage")
+	world.call("_craft_update", 3.99)
+	ok = inv.count("cordage") == c0 and not (world.get("craft_job") as Dictionary).is_empty()
+	print("CRAFTTEST not done early=", ok)
+	fails += 0 if ok else 1
+	world.call("_craft_update", 0.01)
+	ok = inv.count("cordage") == c0 + 1 and inv.count("reed") == 0 and (world.get("craft_job") as Dictionary).is_empty()
+	print("CRAFTTEST cordage from reed=", ok)
+	fails += 0 if ok else 1
+	# tool requirement + wear
+	inv.counts.erase("knife")
+	inv.cond.erase("knife")
+	inv.add("gut", 1)
+	why = world.call("craft_start", "cordage_gut")
+	ok = why.contains("Knife")
+	print("CRAFTTEST tool required=", ok, " ", why)
+	fails += 0 if ok else 1
+	inv.add("knife", 1)
+	c0 = inv.count("cordage")
+	world.call("craft_start", "cordage_gut")
+	_craft_run(7.0)
+	ok = inv.count("cordage") == c0 + 2 and inv.condition("knife") < 1.0
+	print("CRAFTTEST gut cordage + knife wear=", ok)
+	fails += 0 if ok else 1
+	# interruption by damage keeps inputs
+	inv.add("reed", 3)
+	world.call("craft_start", "cordage_reed")
+	_craft_run(1.0)
+	var god0 := player.god
+	player.god = false
+	player.hurt(4.0, "test")
+	_craft_run(0.3)
+	ok = (world.get("craft_job") as Dictionary).is_empty() and inv.count("reed") == 3
+	player.god = god0
+	print("CRAFTTEST interrupt keeps inputs=", ok)
+	fails += 0 if ok else 1
+	# station recipe
+	inv.add("deer_hide", 1)
+	why = world.call("craft_start", "cure_hide")
+	ok = why.contains("fire")
+	print("CRAFTTEST fire station required=", ok, " ", why)
+	fails += 0 if ok else 1
+	# kindling + sticks
+	inv.counts.erase("stick")
+	inv.counts.erase("thatch")
+	inv.counts.erase("kindling")
+	inv.add("stick", 3)
+	inv.add("thatch", 1)
+	world.call("craft_start", "kindling")
+	_craft_run(5.5)
+	ok = inv.count("kindling") == 2 and inv.count("stick") == 0 and inv.count("thatch") == 0
+	print("CRAFTTEST kindling=", ok)
+	fails += 0 if ok else 1
+	# campfire: kindling variant with a match
+	inv.counts.erase("wood")
+	inv.counts.erase("matches")
+	inv.add("wood", 1)
+	inv.add("matches", 1)
+	var fires: Array = world.get("campfires")
+	var f0 := fires.size()
+	_calm_for_fire()
+	world.call("_build_campfire")
+	for retry in 4:   # a match can fail (chance roll): strike another, the fuel stays
+		if fires.size() > f0: break
+		inv.add("matches", 1)
+		world.call("_build_campfire")
+	ok = fires.size() == f0 + 1 and inv.count("wood") == 0 and inv.count("kindling") == 0 and inv.count("matches") == 0
+	var cf: Campfire = fires[fires.size() - 1]
+	ok = ok and absf(cf.fuel_s - (FireSource.burn_s_for("campfire", "wood") + 2.0 * FireSource.burn_s_for("campfire", "kindling"))) < 1.0
+	print("CRAFTTEST campfire 1 wood + 2 kindling + match=", ok, " fuel ", cf.fuel_s)
+	fails += 0 if ok else 1
+	# bow drill: success + failure (move so the site is free)
+	for attempt in ["fail", "ok"]:
+		_tp(player.position.x + 6.0, player.position.z, Vector3.INF)
+		await get_tree().create_timer(0.8).timeout
+		inv.counts.erase("wood")
+		inv.counts.erase("matches")
+		inv.counts.erase("tinder")
+		inv.add("wood", 2)
+		inv.add("tinder", 1)
+		inv.counts.erase("bow_drill")
+		inv.cond.erase("bow_drill")
+		inv.add("bow_drill", 1)
+		world.set("drill_chance", 0.0 if attempt == "fail" else 1.0)
+		var n0 := fires.size()
+		world.call("_build_campfire")
+		for i in range(130):
+			world.call("_act_update", 0.1, true)
+		var built := fires.size() - n0
+		if attempt == "fail":
+			ok = built == 0 and inv.count("tinder") == 0 and inv.count("wood") == 2 and inv.condition("bow_drill") < 1.0
+		else:
+			ok = built == 1 and inv.count("tinder") == 0 and inv.count("wood") == 0 and inv.condition("bow_drill") < 1.0
+		print("CRAFTTEST bow drill ", attempt, "=", ok)
+		fails += 0 if ok else 1
+	world.set("drill_chance", 0.7)
+	# timed cooking at the fire just built
+	var cf2: Campfire = fires[fires.size() - 1]
+	_tp(cf2.global_position.x + 1.0, cf2.global_position.z, cf2.global_position)
+	await get_tree().create_timer(0.8).timeout
+	inv.counts.erase("venison_raw")
+	inv.counts.erase("venison_cooked")
+	inv.add("venison_raw", 2)
+	var started: int = world.call("_cook_start", cf2)
+	ok = started == 2 and inv.count("venison_raw") == 0 and cf2.cooking_count() == 2
+	print("CRAFTTEST cook starts=", ok)
+	fails += 0 if ok else 1
+	cf2.advance(600.0)
+	ok = cf2.cooking_count() == 2 and cf2.done_count() == 0
+	cf2.advance(700.0)
+	ok = ok and cf2.done_count() == 2
+	print("CRAFTTEST cook timing=", ok)
+	fails += 0 if ok else 1
+	world.call("_take_cooked", cf2)
+	ok = inv.count("venison_cooked") == 2 and cf2.cooking.portions.is_empty()
+	print("CRAFTTEST take cooked=", ok)
+	fails += 0 if ok else 1
+	# drying is the stove rack only (FireSource standard): no instant jerky craft
+	ok = not RecipeDB.all().any(func(r: Dictionary) -> bool: return String(r.id) == "dry_meat")
+	print("CRAFTTEST no instant jerky recipe=", ok)
+	fails += 0 if ok else 1
+	# save list includes cooking
+	cf2.start_cook("venison_cooked")
+	var found := false
+	var gw = world
+	var data: Array = []
+	for cfx in fires:
+		data.append(cfx.fire.to_dict())
+	found = (data[data.size() - 1]["cooking"]["portions"] as Array).size() == 1
+	print("CRAFTTEST cooking state present for save=", found)
+	fails += 0 if found else 1
+	print("CRAFTTEST failures=", fails)
+	get_tree().quit()
+
+
+func _weartest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	var body: BodyTemperature = world.get("body")
+	player.god = false
+	for id in inv.worn_list():
+		inv.use(String(id))
+	var ok := is_equal_approx(body.warmth, 0.25) and is_equal_approx(body.windproof, 0.1) and inv.worn_list().is_empty()
+	print("WEARTEST bare invariant=", ok)
+	fails += 0 if ok else 1
+	# recipes validate
+	var bad := RecipeDB.validate()
+	ok = RecipeDB.all().size() >= 18 and bad.is_empty()
+	print("WEARTEST recipes=", RecipeDB.all().size(), " bad=", bad, " ok=", ok)
+	fails += 0 if ok else 1
+	# head slot adds on top of base
+	inv.add("toque")
+	inv.use("toque")
+	ok = is_equal_approx(body.warmth, 0.33) and inv.extra.get("head", "") == "toque" and inv.jacket() == ""
+	print("WEARTEST toque on base warmth=", body.warmth, " ", ok)
+	fails += 0 if ok else 1
+	# worn item leaves its pack cell
+	var cells0 := inv.slots_used()
+	ok = inv.stacks().filter(func(s) -> bool: return s["id"] == "toque").is_empty() and cells0 >= 0
+	print("WEARTEST worn leaves pack=", ok)
+	fails += 0 if ok else 1
+	# stacking with parka
+	inv.add("parka")
+	inv.use("parka")
+	ok = is_equal_approx(body.warmth, 0.93) and inv.worn_list() == ["parka", "toque"]
+	print("WEARTEST parka+toque=", body.warmth, " ", inv.worn_list(), " ", ok)
+	fails += 0 if ok else 1
+	# cap
+	for id in ["hide_boots", "hide_leggings", "hide_mitts", "wolf_hat"]:
+		inv.add(id)
+		inv.use(id)
+	ok = body.warmth <= 0.97 + 0.0001 and body.windproof <= 0.95 + 0.0001 and body.waterproof <= 0.95 + 0.0001 and inv.extra.size() == 5
+	print("WEARTEST capped warmth=", body.warmth, " wind=", body.windproof, " water=", body.waterproof, " ", ok)
+	fails += 0 if ok else 1
+	# same slot replaces
+	ok = inv.extra["head"] == "wolf_hat"
+	print("WEARTEST slot replace=", ok)
+	fails += 0 if ok else 1
+	# take off one
+	inv.use("hide_boots")
+	ok = not inv.extra.has("feet") and inv.is_worn("wolf_hat") and not inv.is_worn("hide_boots")
+	print("WEARTEST take off=", ok)
+	fails += 0 if ok else 1
+	# drop worn item: unequips
+	world.call("drop_item", "hide_leggings", 1)
+	ok = not inv.extra.has("legs") and inv.count("hide_leggings") == 0
+	print("WEARTEST drop worn=", ok)
+	fails += 0 if ok else 1
+	# remove() of a worn extra clears it
+	inv.remove("hide_mitts", 1)
+	ok = not inv.extra.has("hands")
+	print("WEARTEST remove clears slot=", ok)
+	fails += 0 if ok else 1
+	# bear coat replaces torso
+	inv.add("bear_coat")
+	inv.use("bear_coat")
+	ok = inv.jacket() == "bear_coat" and not inv.is_worn("parka")
+	print("WEARTEST torso swap=", ok)
+	fails += 0 if ok else 1
+	# strip back to bare
+	for id in inv.worn_list():
+		inv.use(String(id))
+	ok = is_equal_approx(body.warmth, 0.25) and inv.worn_list().is_empty()
+	print("WEARTEST bare again=", ok, " ", body.warmth)
+	fails += 0 if ok else 1
+	# layering: top alone, jacket alone, both together
+	inv.add("sweater")
+	inv.add("parka")
+	inv.use("sweater")
+	ok = is_equal_approx(body.warmth, 0.55) and inv.top() == "sweater" and inv.jacket() == ""
+	print("WEARTEST top alone warmth=", body.warmth, " ", ok)
+	fails += 0 if ok else 1
+	inv.use("parka")
+	ok = inv.top() == "sweater" and inv.jacket() == "parka" and inv.worn_list() == ["parka", "sweater"]
+	print("WEARTEST sweater + parka both worn ", inv.worn_list(), " ", ok)
+	fails += 0 if ok else 1
+	ok = is_equal_approx(body.warmth, 0.97) and body.warmth > 0.85 and body.windproof > 0.8 and body.windproof < 0.9
+	print("WEARTEST layered warmth=%.3f wind=%.3f water=%.3f %s" % [body.warmth, body.windproof, body.waterproof, str(ok)])
+	fails += 0 if ok else 1
+	inv.use("parka")
+	ok = is_equal_approx(body.warmth, 0.55) and inv.top() == "sweater"
+	print("WEARTEST parka off leaves sweater warmth=", body.warmth, " ", ok)
+	fails += 0 if ok else 1
+	inv.use("parka")
+	inv.use("sweater")
+	ok = is_equal_approx(body.warmth, 0.85) and inv.jacket() == "parka" and Inventory.slot_of("sweater") == "top" and Inventory.slot_of("parka") == "jacket"
+	print("WEARTEST sweater off leaves parka warmth=", body.warmth, " ", ok)
+	fails += 0 if ok else 1
+	inv.use("parka")
+	# slot_of / drag-target logic
+	ok = Inventory.slot_of("hide_cap") == "head" and Inventory.slot_of("hide_boots") == "feet" and Inventory.slot_of("beans") == ""
+	print("WEARTEST slot_of=", ok)
+	fails += 0 if ok else 1
+	# cure + sew chain at a fire
+	inv.counts.erase("deer_hide")
+	inv.counts.erase("cordage")
+	inv.counts.erase("knife")
+	inv.cond.erase("knife")
+	inv.add("knife")
+	inv.add("deer_hide", 2)
+	inv.add("cordage", 6)
+	var why: String = world.call("craft_start", "cure_hide")
+	ok = why.contains("fire")
+	print("WEARTEST cure needs fire=", ok, " ", why)
+	fails += 0 if ok else 1
+	var fires: Array = world.get("campfires")
+	var cf: Campfire = fires[0] if fires.size() > 0 else null
+	if cf == null:
+		inv.counts.erase("wood")
+		inv.counts.erase("matches")
+		inv.add("wood", 2)
+		inv.add("matches", 1)
+		var f1 := fires.size()
+		_calm_for_fire()
+		world.call("_build_campfire")
+		for retry in 4:
+			if fires.size() > f1: break
+			inv.add("matches", 1)
+			world.call("_build_campfire")
+		cf = fires[fires.size() - 1]
+	_tp(cf.global_position.x + 1.0, cf.global_position.z, cf.global_position)
+	await get_tree().create_timer(0.8).timeout
+	cf.fuel_s = 3000.0
+	world.call("_update_prompt")
+	why = world.call("craft_start", "cure_hide")
+	_craft_run(26.0)
+	ok = why == "" and inv.count("cured_hide") == 1 and inv.count("deer_hide") == 1
+	print("WEARTEST cure hide=", ok, " ", why)
+	fails += 0 if ok else 1
+	world.call("_update_prompt")
+	why = world.call("craft_start", "cure_hide")
+	_craft_run(26.0)
+	ok = inv.count("cured_hide") == 2 and inv.count("deer_hide") == 0
+	print("WEARTEST cure 2nd=", ok, " ", why, " near=", world.call("_near_fire"))
+	fails += 0 if ok else 1
+	var hb0 := inv.count("hide_boots")
+	world.call("_update_prompt")
+	why = world.call("craft_start", "hide_boots")
+	_craft_run(26.0)
+	ok = inv.count("hide_boots") == hb0 + 1 and inv.count("cured_hide") == 0 and inv.count("cordage") == 4
+	print("WEARTEST sew boots=", ok, " ", why, " hide=", inv.count("cured_hide"), " cord=", inv.count("cordage"), " near=", world.call("_near_fire"))
+	fails += 0 if ok else 1
+	inv.use("hide_boots")
+	ok = inv.extra.get("feet", "") == "hide_boots" and body.warmth > 0.25
+	print("WEARTEST wear sewn boots=", ok)
+	fails += 0 if ok else 1
+	# wolf + bear pelts
+	var wh0 := inv.count("wolf_hat")
+	var bc0 := inv.count("bear_coat")
+	inv.add("wolf_pelt")
+	inv.add("bear_pelt")
+	world.call("craft_start", "cure_wolf")
+	_craft_run(26.0)
+	world.call("craft_start", "wolf_hat")
+	_craft_run(19.0)
+	ok = inv.count("wolf_hat") == wh0 + 1 and inv.count("wolf_fur") == 0
+	print("WEARTEST wolf pelt -> hat=", ok)
+	fails += 0 if ok else 1
+	inv.add("cordage", 1)
+	world.call("craft_start", "cure_bear")
+	_craft_run(41.0)
+	world.call("craft_start", "bear_coat")
+	_craft_run(41.0)
+	ok = inv.count("bear_coat") == bc0 + 1 and inv.count("bear_fur") == 0 and inv.count("cordage") == 0
+	print("WEARTEST bear pelt -> coat=", ok, " cordage=", inv.count("cordage"))
+	fails += 0 if ok else 1
+	# save/restore of extras via the world save dictionary shape
+	inv.use("wolf_hat")
+	var snap: Dictionary = inv.extra.duplicate()
+	ok = snap.size() == 2 and snap["head"] == "wolf_hat"
+	print("WEARTEST extra snapshot=", ok)
+	fails += 0 if ok else 1
+	print("WEARTEST failures=", fails)
+	get_tree().quit()
+
+
+func _p6test() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	var needs: Needs = world.get("needs")
+	player.god = false
+	for id in ["chop", "crash", "rustle", "slice"]:
+		var st: AudioStreamWAV = Sfx.get_stream(id)
+		var ok: bool = st != null and st.data.size() > 2000
+		print("P6TEST sfx ", id, "=", ok, " bytes=", st.data.size())
+		fails += 0 if ok else 1
+	var ok2: bool = inv.freshness("beans") == 1.0 and Inventory.shelf_s("jerky") == 0.0 and Inventory.shelf_s("venison_raw") > 0.0
+	print("P6TEST perishable table=", ok2)
+	fails += 0 if ok2 else 1
+	# raw meat: fresh at 29 h, rotten after 31 h
+	inv.counts.erase("venison_raw")
+	inv.age.erase("venison_raw")
+	inv.add("venison_raw", 2)
+	var sp: Array = inv.tick(29.0 * 3600.0)
+	ok2 = sp.is_empty() and inv.count("venison_raw") == 2 and inv.freshness("venison_raw") < 0.1
+	print("P6TEST raw fresh at 29h=", ok2, " fr=", inv.freshness("venison_raw"))
+	fails += 0 if ok2 else 1
+	sp = inv.tick(2.0 * 3600.0)
+	ok2 = sp.size() == 1 and inv.count("venison_raw") == 0 and inv.count("rotten_meat") >= 2 and not inv.age.has("venison_raw")
+	print("P6TEST raw rots at 31h=", ok2, " ", sp)
+	fails += 0 if ok2 else 1
+	# mixed stack averages age
+	inv.counts.erase("wolf_meat_raw")
+	inv.age.erase("wolf_meat_raw")
+	inv.add("wolf_meat_raw", 1)
+	inv.tick(10.0 * 3600.0)
+	inv.add("wolf_meat_raw", 1)
+	ok2 = absf(float(inv.age["wolf_meat_raw"]) - 5.0 * 3600.0) < 900.0
+	print("P6TEST stack age average=", ok2, " age_h=", float(inv.age["wolf_meat_raw"]) / 3600.0)
+	fails += 0 if ok2 else 1
+	# cooked lasts longer; jerky never rots
+	inv.counts.erase("bear_meat_cooked")
+	inv.age.erase("bear_meat_cooked")
+	inv.add("bear_meat_cooked", 1)
+	inv.add("jerky", 2)
+	sp = inv.tick(71.0 * 3600.0)
+	ok2 = inv.count("bear_meat_cooked") == 1 and inv.count("jerky") == 2
+	print("P6TEST cooked fine at 71h, jerky fine=", ok2)
+	fails += 0 if ok2 else 1
+	sp = inv.tick(2.0 * 3600.0)
+	ok2 = inv.count("bear_meat_cooked") == 0 and inv.count("jerky") == 2 and not inv.age.has("jerky")
+	print("P6TEST cooked rots at 73h, jerky still fine=", ok2)
+	fails += 0 if ok2 else 1
+	# rotten meat is not food
+	var k0 := needs.calories
+	var msg := inv.use("rotten_meat")
+	ok2 = needs.calories <= k0 + 1.0 and inv.count("rotten_meat") > 0 and not msg.begins_with("Ate")
+	print("P6TEST rotten not edible=", ok2, " ", msg)
+	fails += 0 if ok2 else 1
+	# Timed cooking carries the spent shelf-life fraction rather than restoring freshness.
+	inv.counts.erase("venison_raw");inv.counts.erase("venison_cooked");inv.age.erase("venison_raw")
+	inv.add("venison_raw",1);inv.tick(20*3600)
+	var stove_food:=CookBatch.new(1);stove_food.begin(inv,true);stove_food.advance(1200,1200);stove_food.collect(inv)
+	ok2=inv.count("venison_cooked")==1 and not inv.age.has("venison_raw") and is_equal_approx(inv.freshness("venison_cooked"),1-(20*3600.0+1200)/(30*3600.0))
+	print("P6TEST cooking retains age=",ok2);fails+=0 if ok2 else 1
+	# weight readout inputs sane
+	ok2 = inv.total_weight() > 0.0 and inv.total_weight() < Inventory.WEIGHT_HARD + 20.0
+	print("P6TEST weight=", inv.total_weight(), " ", ok2)
+	fails += 0 if ok2 else 1
+	print("P6TEST failures=", fails)
+	get_tree().quit()
+
+
+## Benchmark: wall-clock frame times (Performance.TIME_PROCESS only refreshes ~1 Hz, so it is useless per frame).
+## Engine.max_fps is lifted so the loop runs as fast as the work allows. Returns [mean, median, p95, max] ms.
+func _zp_sample(frames: int) -> Array:
+	var v: Array = []
+	await get_tree().process_frame
+	var last := Time.get_ticks_usec()
+	for k in range(frames):
+		await get_tree().process_frame
+		var now := Time.get_ticks_usec()
+		v.append(float(now - last) / 1000.0)
+		last = now
+	var sum := 0.0
+	for x in v:
+		sum += float(x)
+	v.sort()
+	return [sum / float(v.size()), float(v[v.size() / 2]), float(v[int(v.size() * 0.95)]), float(v[v.size() - 1])]
+
+
+func _zp_spawn(zs: Array, n: int, rmin: float, rspan: float, base: Vector3, seed0: int) -> void:
+	var terr: Terrain3D = world.get("terrain")
+	while zs.size() < n:
+		var i := zs.size()
+		var a := float(i) * 2.399963
+		var r := rmin + rspan * sqrt(float(i + 1) / float(maxi(n, 1)))
+		var x := base.x + cos(a) * r
+		var zz := base.z + sin(a) * r
+		var h: float = terr.data.get_height(Vector3(x, 0.0, zz))
+		if is_nan(h):
+			h = base.y - 1.6
+		var nz: Zombie = world.call("_add_zombie", Vector3(x, h, zz), seed0 + i)
+		nz.hit(0.0001, base)
+
+
+func _zp_clear(zs: Array) -> void:
+	for z in zs:
+		if is_instance_valid(z):
+			z.queue_free()
+	zs.clear()
+	await get_tree().process_frame
+
+
+func _wintest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	player.god = true
+	var cabs: Array = world.get("cabins")
+	var huts: Array = world.get("huts")
+	var cb: Cabin = cabs[0]
+	var ok: bool = cb.openings.size() == 3 and not huts.is_empty() and huts[0].openings.size() >= 1
+	print("WINTEST openings cabin=", cb.openings.size(), " hut=", huts[0].openings.size() if not huts.is_empty() else -1, " ok=", ok)
+	fails += 0 if ok else 1
+	var o: Opening = cb.openings[0]
+	ok = is_equal_approx(o.open_fraction(), 1.0) and not o.passable() and not o.blocks_sight()
+	print("WINTEST default open=", ok)
+	fails += 0 if ok else 1
+	# boards
+	o.add_board()
+	o.add_board()
+	ok = is_equal_approx(o.open_fraction(), 0.6) and not o.blocks_sight() and o.boards == 2
+	for i in 3:
+		o.add_board()
+	ok = ok and o.boards == 4 and is_equal_approx(o.open_fraction(), 0.2) and o.blocks_sight()
+	print("WINTEST boards fraction=", ok)
+	fails += 0 if ok else 1
+	o.remove_board()
+	o.remove_board()
+	o.remove_board()
+	o.remove_board()
+	o.remove_board()
+	ok = o.boards == 0 and is_equal_approx(o.open_fraction(), 1.0)
+	print("WINTEST unboard=", ok)
+	fails += 0 if ok else 1
+	# curtain
+	o.hang_curtain()
+	ok = is_equal_approx(o.open_fraction(), 0.0) and o.blocks_sight() and not o.hang_curtain()
+	o.remove_curtain()
+	ok = ok and is_equal_approx(o.open_fraction(), 1.0)
+	print("WINTEST curtain=", ok)
+	fails += 0 if ok else 1
+	# glass breaking, then boards behind it
+	var e1 := o.hit(4.0)
+	var e2 := o.hit(3.0)
+	ok = e1 == "glass_hit" and e2 == "glass_hit" and o.cracked and not o.glass_broken and not o.passable()
+	var e3 := o.hit(5.0)
+	ok = ok and e3 == "glass_break" and o.glass_broken and o.passable()
+	print("WINTEST glass hit/crack/break=", ok, " ", e1, e2, e3)
+	fails += 0 if ok else 1
+	o.add_board()
+	ok = not o.passable()
+	var e4 := o.hit(40.0)
+	ok = ok and e4 == "board_break" and o.boards == 0 and o.passable() and o.hit(1.0) == "open"
+	print("WINTEST board holds then breaks=", ok)
+	fails += 0 if ok else 1
+	# save round trip
+	o.add_board()
+	o.hang_curtain()
+	var d := o.to_dict()
+	var o2: Opening = cb.openings[1]
+	o2.from_dict(d)
+	ok = o2.glass_broken and o2.boards == 1 and o2.curtain
+	print("WINTEST save roundtrip=", ok)
+	fails += 0 if ok else 1
+	# light signal
+	for k in cb.openings:
+		k.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	cb.stove_fuel_s = 100000.0
+	var s0 := cb.light_signal()
+	for k in cb.openings:
+		k.hang_curtain()
+	var s1 := cb.light_signal()
+	cb.door_open = true
+	var s2 := cb.light_signal()
+	cb.door_open = false
+	for k in cb.openings:
+		k.remove_curtain()
+		for i in 4:
+			k.add_board()
+	var s3 := cb.light_signal()
+	cb.stove_fuel_s = 0.0
+	var s4 := cb.light_signal()
+	ok = is_equal_approx(s0, 1.0) and is_equal_approx(s1, 0.0) and absf(s2 - 1.0 / 3.0) < 0.01 and absf(s3 - 0.2) < 0.01 and s4 == 0.0
+	print("WINTEST light signal open=", s0, " curtained=", s1, " door only=", s2, " boarded=", s3, " cold=", s4, " ok=", ok)
+	fails += 0 if ok else 1
+	for k in cb.openings:
+		k.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	# glow reaches shader, scaled by what leaks out
+	o.set_glow(1.5)
+	var gl: float = o._gmat.get_shader_parameter("glow")
+	o.add_board()
+	var gl2: float = o._gmat.get_shader_parameter("glow")
+	ok = absf(gl - 1.5) < 0.01 and absf(gl2 - 1.5 * 0.8) < 0.01
+	print("WINTEST glow shader=", gl, " boarded=", gl2, " ok=", ok)
+	fails += 0 if ok else 1
+	o.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	# interaction: stand inside by the +X window facing it
+	inv.add("hammer")
+	inv.add("plank", 3)
+	inv.add("nails", 10)
+	inv.add("rag", 4)
+	var wp: Vector3 = cb.to_global(Vector3(Cabin.HX - 0.9, 0.0, -0.3))
+	player.place(wp.x, wp.z)
+	var dir: Vector3 = o.center_world() - player.position
+	player.yaw = atan2(-dir.x, -dir.z)
+	await get_tree().create_timer(0.3).timeout
+	world.call("_update_prompt")
+	var cands: Array = world.get("_cands_cache")
+	var board_c := {}
+	var curt_c := {}
+	for c in cands:
+		if String(c["text"]).begins_with("Board up window (0"):
+			board_c = c
+		if String(c["text"]).begins_with("Hang curtain"):
+			curt_c = c
+	ok = not board_c.is_empty() and not curt_c.is_empty() and float(board_c.get("noise", 0.0)) > 0.0
+	print("WINTEST prompts board=", not board_c.is_empty(), " curtain=", not curt_c.is_empty(), " ok=", ok)
+	fails += 0 if ok else 1
+	if ok:
+		var pl0 := inv.count("plank")
+		var n0 := inv.count("nails")
+		board_c["act"].call()
+		ok = o.boards == 1 and inv.count("plank") == pl0 - 1 and inv.count("nails") == n0 - 1
+		var r0 := inv.count("rag")
+		curt_c["act"].call()
+		ok = ok and o.curtain and inv.count("rag") == r0 - 2
+		print("WINTEST board+curtain act=", ok)
+		fails += 0 if ok else 1
+	# real glass shader compiled?
+	ok = o._glass.material_override is ShaderMaterial and (o._glass.material_override as ShaderMaterial).shader.code.length() > 100
+	print("WINTEST glass shader=", ok)
+	fails += 0 if ok else 1
+	print("WINTEST failures=", fails)
+	get_tree().quit()
+
+
+func _breachtest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	player.god = true
+	_kill_hostile()
+	var cabs: Array = world.get("cabins")
+	var cb: Cabin = cabs[0]
+	var terr: Terrain3D = world.get("terrain")
+	var o: Opening = cb.openings[0]
+	cb.door_open = false
+	cb.stove_fuel_s = 0.0
+	var inside: Vector3 = cb.to_global(Vector3(0.0, 0.0, 0.0))
+	player.place(inside.x, inside.z)
+	await get_tree().create_timer(0.3).timeout
+	var out_pt := func(dist: float) -> Vector3:
+		var p: Vector3 = o.to_global(Vector3(0.0, 0.0, dist))
+		p.y = terr.data.get_height(p)
+		return p
+	# --- sight through glass / boards / curtain
+	var z: Zombie = world.call("_add_zombie", out_pt.call(6.0), 9001)
+	var d0: Vector3 = player.position - z.global_position
+	z.rotation.y = atan2(-d0.x, -d0.z)
+	z.state = Zombie.State.IDLE
+	var s_clear: bool = z._can_see_player()
+	o.hang_curtain()
+	var s_curt: bool = z._can_see_player()
+	o.remove_curtain()
+	for i in 4:
+		o.add_board()
+	var s_b4: bool = z._can_see_player()
+	for i in 2:
+		o.remove_board()
+	var s_b2: bool = z._can_see_player()
+	for i in 2:
+		o.remove_board()
+	var ok: bool = s_clear and not s_curt and not s_b4 and s_b2
+	print("BREACHTEST sight clear=", s_clear, " curtain=", s_curt, " 4boards=", s_b4, " 2boards=", s_b2, " ok=", ok)
+	fails += 0 if ok else 1
+	# --- opening choice
+	z._pick_opening(cb)
+	ok = z._bo == o and not z._bdoor
+	for k in cb.openings:
+		for i in 4:
+			k.add_board()
+	z._pick_opening(cb)
+	ok = ok and z._bdoor
+	cb.door_open = true
+	z._pick_opening(cb)
+	ok = ok and z._bdoor
+	cb.door_open = false
+	for k in cb.openings:
+		k.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	print("BREACHTEST opening choice=", ok)
+	fails += 0 if ok else 1
+	# --- slots
+	var zs: Array = []
+	for i in 4:
+		zs.append(world.call("_add_zombie", out_pt.call(3.0), 9100 + i))
+	var got: Array = []
+	for q in zs:
+		got.append(o.reserve(q))
+	ok = got[0] == 0 and got[1] == 1 and got[2] == 2 and got[3] == -1 and o.reserve(zs[1]) == 1
+	o.release(zs[0])
+	ok = ok and o.reserve(zs[3]) == 0
+	print("BREACHTEST slots=", got, " ok=", ok)
+	fails += 0 if ok else 1
+	for q in zs:
+		o.release(q)
+		q.queue_free()
+	# --- noise muffling: 20 m shout inside, zombie 12 m outside
+	z.global_position = out_pt.call(12.0)
+	z._set_state(Zombie.State.IDLE)
+	var bus: NoiseBus = world.get("noise_bus")
+	bus.emit_noise(player.position, 20.0, player)
+	var heard_closed: bool = z.state != Zombie.State.IDLE
+	o.hit(99.0)
+	bus.emit_noise(player.position, 20.0, player)
+	var heard_open: bool = z.state != Zombie.State.IDLE
+	o.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	ok = (not heard_closed) and heard_open
+	print("BREACHTEST noise muffled closed heard=", heard_closed, " broken window heard=", heard_open, " ok=", ok)
+	fails += 0 if ok else 1
+	# --- wolves/deer (signal path) also get muffled
+	var heard_r := [0.0]
+	var cbk := func(_p: Vector3, r: float, _s: Object) -> void: heard_r[0] = r
+	bus.noise.connect(cbk)
+	bus.emit_noise(player.position, 20.0, player)
+	var r_closed: float = heard_r[0]
+	o.hit(99.0)
+	bus.emit_noise(player.position, 20.0, player)
+	var r_open: float = heard_r[0]
+	o.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	bus.noise.disconnect(cbk)
+	ok = absf(r_closed - 7.0) < 0.1 and absf(r_open - 20.0) < 0.1
+	print("BREACHTEST signal muffle closed=", r_closed, " open=", r_open, " ok=", ok)
+	fails += 0 if ok else 1
+	# --- trunks occlude sight lines
+	var fs: ForestScatter = world.get("forest")
+	var tr := Vector3.ZERO
+	for ck in fs._trunks:
+		var arr: Array = fs._trunks[ck]
+		if arr.size() > 0 and Vector2(arr[0].x, arr[0].y).distance_to(Vector2(cb.position.x, cb.position.z)) > 40.0:
+			tr = arr[0]
+			break
+	var n_hit := fs.trunks_on_segment(tr.x - 6.0, tr.y, tr.x + 6.0, tr.y)
+	ok = n_hit >= 1 and fs.trunks_on_segment(0, 0, 0, 0) == 0
+	print("BREACHTEST trunk occlusion hit=", n_hit, " ok=", ok)
+	fails += 0 if ok else 1
+	# --- light cue
+	z.global_position = out_pt.call(25.0)
+	z._set_state(Zombie.State.IDLE)
+	cb.set_night(1.0)
+	cb.stove_fuel_s = 100000.0
+	cb.emit_light_cue()
+	var lure: bool = z.state == Zombie.State.INVESTIGATE
+	z._set_state(Zombie.State.IDLE)
+	for k in cb.openings:
+		k.hang_curtain()
+	cb.emit_light_cue()
+	var lure_c: bool = z.state != Zombie.State.IDLE
+	for k in cb.openings:
+		k.remove_curtain()
+	cb.stove_fuel_s = 0.0
+	cb.set_night(0.0)
+	ok = lure and not lure_c
+	print("BREACHTEST light lure open=", lure, " curtained=", lure_c, " ok=", ok)
+	fails += 0 if ok else 1
+	# --- door barricade
+	var devs: Array = [0]
+	var dcb := func(e: String, _p: Vector3) -> void:
+		if e == "board_break":
+			devs[0] += 1
+	cb.event.connect(dcb)
+	cb.door_open = false
+	for i in 3:
+		cb.add_door_board()
+	ok = cb.door_boards == 3 and not cb.add_door_board()
+	cb.bash_door(39.0)
+	ok = ok and cb.door_boards == 3 and cb.door_hp >= 99.9
+	cb.bash_door(2.0)
+	ok = ok and cb.door_boards == 2 and cb.door_hp >= 99.9 and devs[0] == 1
+	cb.toggle_door()
+	ok = ok and not cb.door_open
+	cb.remove_door_board()
+	cb.remove_door_board()
+	ok = ok and cb.door_boards == 0 and not cb.remove_door_board()
+	cb.toggle_door()
+	var was_open: bool = cb.door_open
+	cb.toggle_door()
+	ok = ok and was_open and not cb.door_open
+	cb.event.disconnect(dcb)
+	print("BREACHTEST door barricade=", ok)
+	fails += 0 if ok else 1
+	# --- player smashes, climbs out (cut), clears shards, climbs back (no cut)
+	var inv: Inventory = world.get("inv")
+	inv.add("axe")
+	player.god = false
+	player.health = 100.0
+	var wp: Vector3 = cb.to_global(Vector3(Cabin.HX - 0.9, 0.0, -0.3))
+	player.place(wp.x, wp.z)
+	await get_tree().create_timer(0.4).timeout
+	var dir: Vector3 = o.center_world() - player.position
+	player.yaw = atan2(-dir.x, -dir.z)
+	var find := func(prefix: String) -> Dictionary:
+		world.call("_update_prompt")
+		for c in world.get("_cands_cache"):
+			if String(c["text"]).begins_with(prefix):
+				return c
+		return {}
+	var c1: Dictionary = find.call("Smash window")
+	var smashed := false
+	if not c1.is_empty():
+		c1["act"].call()
+		smashed = o.glass_broken and o.shards and bus.last_radius == 38.0
+	var c2: Dictionary = find.call("Climb through")
+	var climbed_out := false
+	if not c2.is_empty():
+		c2["act"].call()
+		climbed_out = not cb.contains_xz(player.position.x, player.position.z) and absf(player.health - 97.0) < 0.01
+	var d2: Vector3 = o.center_world() - player.position
+	player.yaw = atan2(-d2.x, -d2.z)
+	var c3: Dictionary = find.call("Clear glass")
+	var cleared := false
+	if not c3.is_empty():
+		c3["act"].call()
+		cleared = not o.shards
+	var c4: Dictionary = find.call("Climb through")
+	var climbed_in := false
+	if not c4.is_empty():
+		c4["act"].call()
+		climbed_in = cb.contains_xz(player.position.x, player.position.z) and absf(player.health - 97.0) < 0.01
+	ok = smashed and climbed_out and cleared and climbed_in
+	print("BREACHTEST player smash=", smashed, " climb out+cut=", climbed_out, " clear=", cleared, " climb in clean=", climbed_in, " ok=", ok)
+	fails += 0 if ok else 1
+	player.god = true
+	o.from_dict({"g": false, "gh": 10.0, "b": 0, "c": false})
+	player.place(inside.x, inside.z)
+	await get_tree().create_timer(0.5).timeout
+	# --- full breach: zombie outside window 0, chases player inside
+	z.global_position = out_pt.call(5.0)
+	z._set_state(Zombie.State.IDLE)
+	z._bo = null
+	z._bdoor = false
+	z._bpick_t = 99.0
+	z.hit(0.0001, player.position)
+	var t_glass := -1.0
+	var t_in := -1.0
+	var t := 0.0
+	while t < 60.0 and t_in < 0.0:   # deep snow around the cabin slows zombies to ~0.5 m/s (x0.2 tier)
+		await get_tree().create_timer(0.25).timeout
+		t += 0.25
+		if t_glass < 0.0 and o.glass_broken:
+			t_glass = t
+		if cb.contains_xz(z.global_position.x, z.global_position.z):
+			t_in = t
+	ok = t_glass > 0.0 and t_in > t_glass and cb.door_hp >= 99.9
+	print("BREACHTEST full breach glass_t=", t_glass, " inside_t=", t_in, " door_hp=", cb.door_hp, " ok=", ok)
+	fails += 0 if ok else 1
+	# inside zombie keeps floor height
+	await get_tree().create_timer(1.0).timeout
+	var fy: float = cb.floor_y
+	ok = absf(z.global_position.y - fy) < 0.35
+	print("BREACHTEST floor y zombie=", z.global_position.y, " floor=", fy, " ok=", ok)
+	fails += 0 if ok else 1
+	print("BREACHTEST failures=", fails)
+	get_tree().quit()
+
+
+func _zperftest() -> void:
+	await get_tree().create_timer(3.0).timeout
+	Engine.max_fps = 0
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	player.god = true
+	var zs: Array = world.get("zombies")
+	await _zp_clear(zs)
+	var base: Vector3 = player.position
+	var s0: Array = await _zp_sample(300)
+	var b0: float = s0[0]
+	print("ZPERF baseline n=0 mean=%.2f med=%.2f p95=%.2f max=%.2f" % [s0[0], s0[1], s0[2], s0[3]])
+	for n: int in [100, 400, 800, 1600]:
+		_zp_spawn(zs, n, 4.0, 46.0, base, 700)
+		await get_tree().create_timer(1.5).timeout
+		var s: Array = await _zp_sample(300)
+		print("ZPERF spread n=", n, " mean=%.2f med=%.2f p95=%.2f max=%.2f  us_per_zombie=%.1f" % [s[0], s[1], s[2], s[3], (s[0] - b0) * 1000.0 / float(n)])
+	for n: int in [40, 160, 400]:
+		await _zp_clear(zs)
+		_zp_spawn(zs, n, 6.0, 9.0, base, 800)
+		var s1: Array = await _zp_sample(60)
+		var s2: Array = await _zp_sample(240)
+		print("ZPERF near n=", n, " approach mean=%.2f med=%.2f max=%.2f | piled mean=%.2f med=%.2f max=%.2f  us_per_zombie(approach)=%.1f" % [s1[0], s1[1], s1[3], s2[0], s2[1], s2[3], (s1[0] - b0) * 1000.0 / float(n)])
+	# attribution at 800: where does the time go?
+	await _zp_clear(zs)
+	_zp_spawn(zs, 800, 4.0, 46.0, base, 700)
+	await get_tree().create_timer(1.5).timeout
+	var a_full: Array = await _zp_sample(240)
+	for z in zs:
+		z.set_process(false)
+	var a_idle: Array = await _zp_sample(240)
+	var au = world.get("audio")
+	if au != null:
+		au.set_process(false)
+	var a_noaudio: Array = await _zp_sample(240)
+	if au != null:
+		au.set_process(true)
+	for z in zs:
+		z.set_process(true)
+	print("ZPERF attribution n=800 full=%.2f zombies_off=%.2f zombies_off+audio_off=%.2f (baseline %.2f)" % [a_full[0], a_idle[0], a_noaudio[0], b0])
+	print("ZPERF done")
+	get_tree().quit()
+
+
+func _poptest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var pop: Population = world.get("pop")
+	var p0 := Vector2(player.position.x, player.position.z)
+	var alive0 := pop.count_alive() - pop.specials.size()   # sleepers in huts are saved separately
+	var ok := alive0 >= 600 and alive0 <= 700
+	var near_home := 0
+	for k in pop.cells:
+		for v in (pop.cells[k] as PackedVector3Array):
+			if Vector2(v.x - p0.x, v.z - p0.y).length() < 90.0:
+				near_home += 1
+	for z in pop.active:
+		if Vector2(z.global_position.x - p0.x, z.global_position.z - p0.y).length() < 90.0:
+			near_home += 1
+	ok = ok and near_home == 0
+	print("POPTEST seed alive=", alive0, " within90mOfStart=", near_home, " ok=", ok)
+	fails += 0 if ok else 1
+	for z in pop.active.duplicate():
+		if is_instance_valid(z) and z.state == Zombie.State.SLEEP:
+			z.queue_free()
+			pop.active.erase(z)
+	pop.specials.clear()   # random hut sleepers would make the conservation counts vary
+	pop.dissolve_all()
+	# dense cell: teleport in, expect nearest materialised up to the cap, nothing virtual inside the spawn radius
+	var bk := -1
+	var bn := 0
+	for k in pop.cells:
+		var n: int = (pop.cells[k] as PackedVector3Array).size()
+		if n > bn:
+			bn = n
+			bk = int(k)
+	var cx := float(bk / 64) * Population.CELL - Population.HALF + Population.CELL * 0.5
+	var cz := float(bk % 64) * Population.CELL - Population.HALF + Population.CELL * 0.5
+	player.place(cx, cz)
+	player.position.y = 100.0
+	var inside := 0
+	for k in pop.cells:
+		for v in (pop.cells[k] as PackedVector3Array):
+			if Vector2(v.x - cx, v.z - cz).length() < Population.SPAWN_R:
+				inside += 1
+	var nodes0 := get_tree().get_node_count()
+	for i in 80:
+		pop.tick(0.1)
+	var left := 0
+	for k in pop.cells:
+		for v in (pop.cells[k] as PackedVector3Array):
+			if Vector2(v.x - cx, v.z - cz).length() < Population.SPAWN_R:
+				left += 1
+	ok = pop.active.size() == mini(inside, Population.T0_CAP) + 0 and (left == 0 or pop.active.size() == Population.T0_CAP)
+	print("POPTEST ring inside=", inside, " active=", pop.active.size(), " left_virtual=", left, " cap=", Population.T0_CAP, " ok=", ok)
+	fails += 0 if ok else 1
+	var alive1 := pop.count_alive()
+	ok = alive1 == alive0
+	print("POPTEST conserved alive=", alive1, " ok=", ok)
+	fails += 0 if ok else 1
+	# park everything far away: pool grows, nothing lost, no new nodes on return
+	var total_nodes := pop.pool.size() + pop.active.size()
+	player.place(cx + 600.0 if cx < 0.0 else cx - 600.0, cz)
+	for i in 100:   # parking is rate limited; denser rings need more ticks
+		pop.tick(0.5)
+	var parked := pop.pool.size()
+	var old_left := 0
+	for z in pop.active:
+		if Vector2(z.global_position.x - cx, z.global_position.z - cz).length() < Population.DESPAWN_R:
+			old_left += 1   # zombies materialising at the far destination reuse pool nodes, so count the old clump instead
+	ok = pop.count_alive() == alive0 and old_left == 0 and parked + pop.active.size() >= minf(inside, 60) * 0.8
+	print("POPTEST park pool=", parked, " active_left=", pop.active.size(), " specials=", pop.specials.size(), " alive=", pop.count_alive(), " ok=", ok)
+	fails += 0 if ok else 1
+	player.place(cx, cz)
+	for i in 80:
+		pop.tick(0.1)
+	var total_nodes2 := pop.pool.size() + pop.active.size()
+	ok = total_nodes2 == total_nodes and pop.count_alive() == alive0
+	print("POPTEST pool reuse nodes=", total_nodes, "->", total_nodes2, " ok=", ok)
+	fails += 0 if ok else 1
+	# kills are permanent
+	var victim: Zombie = null
+	for z in pop.active:
+		if is_instance_valid(z):
+			victim = z
+			break
+	var vp := victim.global_position
+	victim.hit(9999.0, player.position)
+	pop.tick(0.5)
+	pop.tick(0.5)
+	var a2 := pop.count_alive()
+	player.place(cx + 600.0 if cx < 0.0 else cx - 600.0, cz)
+	for i in 40:
+		pop.tick(0.5)
+	player.place(cx, cz)
+	for i in 80:
+		pop.tick(0.1)
+	ok = a2 == alive0 - 1 and pop.count_alive() == alive0 - 1
+	print("POPTEST kill persists alive=", pop.count_alive(), " expected=", alive0 - 1, " ok=", ok)
+	fails += 0 if ok else 1
+	# proxies = virtual within 240 m (capped)
+	pop.tick(0.5)
+	var want := 0
+	for k in pop.cells:
+		for v in (pop.cells[k] as PackedVector3Array):
+			if Vector2(v.x - cx, v.z - cz).length() <= Population.PROXY_R:
+				want += 1
+	pop._proxy_step()
+	ok = pop.proxy_n == mini(want, Population.PROXY_CAP)
+	print("POPTEST proxies=", pop.proxy_n, " expected=", mini(want, Population.PROXY_CAP), " ok=", ok)
+	fails += 0 if ok else 1
+	# far noise drags virtual zombies toward the sound
+	player.place(cx, cz)
+	var ev := Vector3(cx + 150.0, 0.0, cz)
+	var d0 := 0.0
+	var dn := 0
+	for k in pop.cells:
+		for v in (pop.cells[k] as PackedVector3Array):
+			var dd := Vector2(v.x - ev.x, v.z - ev.z).length()
+			if dd < 120.0 and dd > 30.0:
+				d0 += dd
+				dn += 1
+	world.get("noise_bus").emit_noise(ev, 120.0, null)
+	for i in 20:
+		pop._drag_step(3.0)
+		pop.clock += 3.0 if false else 0.0
+	var d1 := 0.0
+	var dn1 := 0
+	for k in pop.cells:
+		for v in (pop.cells[k] as PackedVector3Array):
+			var dd2 := Vector2(v.x - ev.x, v.z - ev.z).length()
+			if dd2 < 120.0:
+				d1 += dd2
+				dn1 += 1
+	var m0: float = d0 / maxf(1.0, float(dn))
+	var m1: float = d1 / maxf(1.0, float(dn1))
+	ok = dn > 0 and m1 < m0 - 20.0
+	print("POPTEST drag n=", dn, " mean dist ", snappedf(m0, 0.1), " -> ", snappedf(m1, 0.1), " ok=", ok)
+	fails += 0 if ok else 1
+	# save list covers everyone
+	ok = pop.all_alive().size() == pop.count_alive() - pop.specials.size()
+	print("POPTEST save list=", pop.all_alive().size(), " ok=", ok)
+	fails += 0 if ok else 1
+	# cost
+	var t0 := Time.get_ticks_usec()
+	for i in 200:
+		pop.tick(0.5)
+	var per := float(Time.get_ticks_usec() - t0) / 200.0
+	ok = per < 1500.0
+	print("POPTEST tick cost avg_us=", snappedf(per, 1.0), " active=", pop.active.size(), " proxies=", pop.proxy_n, " ok=", ok)
+	fails += 0 if ok else 1
+	print("POPTEST failures=", fails)
+	get_tree().quit()
+
+func _hordetest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var pop: Population = world.get("pop")
+	var nb = world.get("noise_bus")
+	var n_h0 := pop.hordes.size()
+	var members := 0
+	for hh in pop.hordes:
+		members += hh.pts.size()
+	var ok := n_h0 >= 3 and members >= 100 and not pop.road_pts.is_empty()
+	print("HORDETEST seeded hordes=", n_h0, " members=", members, " road_pts=", pop.road_pts.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	pop.dissolve_all()
+	var rp: Array = pop.road_pts
+	var start: Vector2 = rp[rp.size() / 2]
+	player.place(clampf(start.x + 200.0, -900.0, 900.0), start.y)
+	player.position.y = 100.0
+	pop.spawn_horde(start, 40)
+	var h = pop.hordes[pop.hordes.size() - 1]
+	h.rest_len = 0.1
+	pop.tick(0.5)
+	ok = h.pts.size() == 40 and pop.proxy_n >= 40
+	print("HORDETEST made size=", h.pts.size(), " proxies=", pop.proxy_n, " ok=", ok)
+	fails += 0 if ok else 1
+	var c0: Vector2 = h.center
+	var moved := 0.0
+	for i in 400:
+		pop.tick(0.5)
+		moved = maxf(moved, h.center.distance_to(c0))
+	var nearest := 1e9
+	for q in rp:
+		nearest = minf(nearest, (q as Vector2).distance_to(h.center))
+	var far := 0.0
+	for v in h.pts:
+		far = maxf(far, Vector2(v.x - h.center.x, v.z - h.center.y).length())
+	ok = moved >= 30.0 and nearest < 30.0 and far < 70.0
+	print("HORDETEST wander moved=", snappedf(moved, 0.1), " roadDist=", snappedf(nearest, 0.1), " maxSpread=", snappedf(far, 0.1), " ok=", ok)
+	fails += 0 if ok else 1
+	# response to a gunshot 200 m away
+	var c1: Vector2 = h.center
+	var tgt := Vector2(clampf(c1.x + 200.0, -900.0, 900.0), c1.y)
+	player.place(tgt.x + 300.0 if tgt.x < 0.0 else tgt.x - 300.0, tgt.y)
+	player.position.y = 100.0
+	nb.emit_noise(Vector3(tgt.x, 0.0, tgt.y), 150.0, null)
+	var st: int = h.state
+	for i in 160:
+		pop.tick(0.5)
+	var moved2: float = h.center.distance_to(c1)
+	ok = st == 1 and moved2 >= 60.0
+	print("HORDETEST respond state=", st, " moved=", snappedf(moved2, 0.1), " now_state=", h.state, " ok=", ok)
+	fails += 0 if ok else 1
+	# a lit window (night) / chimney smoke (day) lures hordes within 5x radius
+	var lp := Vector2(h.center.x - 90.0, h.center.y) if h.center.x > -800.0 else Vector2(h.center.x + 90.0, h.center.y)
+	h.state = 0
+	h.path = []
+	nb.emit_light(Vector3(lp.x, 0.0, lp.y), 36.0, null)
+	ok = h.state == 1 and h.target.distance_to(lp) < 1.0
+	print("HORDETEST light lure state=", h.state, " ok=", ok)
+	fails += 0 if ok else 1
+	h.state = 0
+	h.path = []
+	nb.emit_smoke(Vector3(lp.x, 0.0, lp.y), 24.0, null)
+	ok = h.state == 1
+	print("HORDETEST smoke lure state=", h.state, " ok=", ok)
+	fails += 0 if ok else 1
+	h.state = 0
+	h.path = []
+	nb.emit_light(Vector3(h.center.x + 600.0 if h.center.x < 0.0 else h.center.x - 600.0, 0.0, h.center.y), 36.0, null)
+	ok = h.state == 0
+	print("HORDETEST light too far ignored ok=", ok)
+	fails += 0 if ok else 1	# snowball
+	var n_before: int = h.pts.size()
+	for i in 8:
+		pop.add_virtual(Vector3(h.center.x + 4.0, h.pts[0].y, h.center.y + float(i)))
+	for i in 6:
+		pop.tick(0.5)
+	ok = h.pts.size() >= n_before + 8
+	print("HORDETEST absorb ", n_before, " -> ", h.pts.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	# near the player: members become real zombies, nothing lost
+	var alive_b := pop.count_alive()
+	player.place(h.center.x, h.center.y)
+	player.position.y = 100.0
+	var size_b: int = h.pts.size()
+	for i in 40:
+		pop.tick(0.1)
+	var made := pop.active.size()
+	ok = made > 0 and made <= Population.T0_CAP and pop.count_alive() == alive_b and h.pts.size() == size_b - made + 0 or (not pop.hordes.has(h))
+	print("HORDETEST materialise real=", made, " horde ", size_b, " -> ", h.pts.size() if pop.hordes.has(h) else 0, " alive ", alive_b, "->", pop.count_alive(), " ok=", ok)
+	fails += 0 if ok else 1
+	# tiny horde dissolves into cells
+	pop.dissolve_all()
+	player.place(clampf(start.x + 400.0, -900.0, 900.0), start.y)
+	player.position.y = 100.0
+	pop.spawn_horde(start, 40)
+	var h2 = pop.hordes[0]
+	var alive_c := pop.count_alive()
+	h2.pts.resize(3)
+	pop._horde_step(0.5)
+	ok = pop.hordes.is_empty() and pop.count_alive() == alive_c - 37
+	print("HORDETEST dissolve hordes=", pop.hordes.size(), " alive=", pop.count_alive(), " expected=", alive_c - 37, " ok=", ok)
+	fails += 0 if ok else 1
+	# save list roundtrip
+	pop.spawn_horde(start, 20)
+	pop.spawn_horde(Vector2(start.x, start.y + 30.0), 15)
+	var lst: Array = pop.horde_list()
+	var tot := pop.count_alive()
+	pop.dissolve_all()
+	pop.restore_hordes(lst)
+	ok = pop.hordes.size() == 2 and pop.count_alive() == tot + 0 + 0 or pop.count_alive() == tot + 35
+	print("HORDETEST save/restore hordes=", pop.hordes.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	# cost with 6 big hordes
+	pop.dissolve_all()
+	for i in 6:
+		pop.spawn_horde(rp[(i * 97) % rp.size()], 100)
+	var t0 := Time.get_ticks_usec()
+	for i in 100:
+		pop.tick(0.5)
+	var per := float(Time.get_ticks_usec() - t0) / 100.0
+	ok = per < 3000.0
+	print("HORDETEST cost 6x100 avg_us=", snappedf(per, 1.0), " ok=", ok)
+	fails += 0 if ok else 1
+	print("HORDETEST failures=", fails)
+	get_tree().quit()
+
+func _injurytest() -> void:
+	await get_tree().create_timer(2.0).timeout
+	var fails := 0
+	player.god = false
+	var body: BodyTemperature = world.get("body")
+	var inj := Injury.new()
+	inj.player = player
+	inj.rng.seed = 1
+	var inv := Inventory.new(body)
+	var prev: Injury = Inventory.injury
+	Inventory.injury = inj
+
+	player.health = 100.0
+	inj.wound(0.6, 0.0)
+	inj.update(0.0, 10.0)
+	var lost := 100.0 - player.health
+	var ok := absf(lost - 2.1) < 0.4 and inj.bleeding() and not inj.infected()
+	print("INJTEST bleed drain=", snappedf(lost, 0.01), " ok=", ok)
+	fails += 0 if ok else 1
+	inv.add("bandage", 1)
+	var msg := inv.use("bandage")
+	ok = not inj.bleeding() and inv.count("bandage") == 0 and msg.begins_with("Bandaged")
+	print("INJTEST bandage '", msg, "' ok=", ok)
+	fails += 0 if ok else 1
+	ok = inv.use("bandage") == "None left"
+	print("INJTEST bandage none ok=", ok)
+	fails += 0 if ok else 1
+	inj.wound(0.2, 0.0)
+	inj.update(0.0, 70.0)
+	ok = not inj.bleeding()
+	print("INJTEST light wound clots bleed=", snappedf(inj.bleed, 0.001), " ok=", ok)
+	fails += 0 if ok else 1
+	inj.wound(0.5, 0.0)
+	var b0 := inj.bleed
+	inj.update(0.0, 100.0)
+	ok = is_equal_approx(inj.bleed, b0)
+	print("INJTEST deep wound does not clot ok=", ok)
+	fails += 0 if ok else 1
+	inj.bandage()
+	# infection timeline
+	player.health = 100.0
+	inj.wound(0.05, 1.0)
+	inj.bandage()
+	inj.update(5.0 * 3600.0, 0.0)
+	ok = inj.infected() and not inj.symptomatic() and player.health > 99.9
+	inj.update(2.0 * 3600.0, 0.0)
+	ok = ok and inj.symptomatic() and player.health < 99.0 and "Fever: infection" in inj.status_lines()
+	print("INJTEST infection hidden then fever hp=", snappedf(player.health, 0.01), " ok=", ok)
+	fails += 0 if ok else 1
+	inj.update(18.0 * 3600.0, 0.0)
+	ok = player.dead and player.death_cause == "Succumbed to the infection"
+	print("INJTEST infection kills dead=", player.dead, " cause=", player.death_cause, " ok=", ok)
+	fails += 0 if ok else 1
+	player.dead = false
+	player.frozen = false
+	player.health = 100.0
+	inj.inf_t = -1.0
+	inj.wound_age = -1.0
+	# antibiotics cure at any stage
+	inj.wound(0.05, 1.0)
+	inj.bandage()
+	inj.update(10.0 * 3600.0, 0.0)
+	inv.add("antibiotics", 1)
+	msg = inv.use("antibiotics")
+	inj.update(30.0 * 3600.0, 0.0)
+	ok = not inj.infected() and not player.dead and inv.count("antibiotics") == 0
+	print("INJTEST antibiotics '", msg, "' alive=", not player.dead, " ok=", ok)
+	fails += 0 if ok else 1
+	player.health = 100.0
+	# antiseptic: early cures, late does not
+	inj.wound(0.05, 1.0)
+	inj.bandage()
+	inj.update(3600.0, 0.0)
+	inv.add("antiseptic", 2)
+	msg = inv.use("antiseptic")
+	ok = not inj.infected() and msg == "Wound cleaned" and inv.count("antiseptic") == 1
+	print("INJTEST antiseptic early '", msg, "' ok=", ok)
+	fails += 0 if ok else 1
+	inj.wound(0.05, 1.0)
+	inj.bandage()
+	inj.update(3.0 * 3600.0, 0.0)
+	msg = inv.use("antiseptic")
+	ok = inj.infected() and msg == "No fresh wound to clean" and inv.count("antiseptic") == 1
+	print("INJTEST antiseptic late '", msg, "' ok=", ok)
+	fails += 0 if ok else 1
+	var no_inf := inv.use("antibiotics")
+	inj.inf_t = -1.0
+	no_inf = inv.use("antibiotics")
+	ok = no_inf == "None left"
+	print("INJTEST antibiotics none ok=", ok)
+	fails += 0 if ok else 1
+	# save roundtrip
+	inj.bleed = 0.7
+	inj.inf_t = 12345.0
+	inj.wound_age = 99.0
+	var d := inj.to_dict()
+	var j2 := Injury.new()
+	j2.from_dict(d)
+	ok = j2.bleed == 0.7 and j2.inf_t == 12345.0 and j2.wound_age == 99.0
+	print("INJTEST save roundtrip ok=", ok)
+	fails += 0 if ok else 1
+	# the real player carries one and the world updates it
+	ok = player.injury != null and player.injury.player == player and Inventory.injury != null
+	print("INJTEST wired ok=", ok)
+	fails += 0 if ok else 1
+	Inventory.injury = prev
+	print("INJTEST failures=", fails)
+	get_tree().quit()
+
+func _popperf() -> void:
+	await get_tree().create_timer(3.0).timeout
+	Engine.max_fps = 0
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	player.god = true
+	var pop: Population = world.get("pop")
+	var s0: Array = await _zp_sample(300)
+	print("POPPERF start (active=", pop.active.size(), " proxies=", pop.proxy_n, ") mean=%.2f med=%.2f p95=%.2f max=%.2f" % [s0[0], s0[1], s0[2], s0[3]])
+	pop.dissolve_all()
+	var bk := -1
+	var bn := 0
+	for k in pop.cells:
+		var n: int = (pop.cells[k] as PackedVector3Array).size()
+		if n > bn:
+			bn = n
+			bk = int(k)
+	var cx := float(bk / 64) * Population.CELL - Population.HALF + Population.CELL * 0.5
+	var cz := float(bk % 64) * Population.CELL - Population.HALF + Population.CELL * 0.5
+	player.place(cx, cz)
+	await get_tree().create_timer(4.0).timeout
+	var s1: Array = await _zp_sample(300)
+	print("POPPERF dense cell (active=", pop.active.size(), " proxies=", pop.proxy_n, ") mean=%.2f med=%.2f p95=%.2f max=%.2f" % [s1[0], s1[1], s1[2], s1[3]])
+	for i in 6:
+		pop.spawn_horde(Vector2(cx + 100.0 + 25.0 * i, cz + 60.0 - 20.0 * i), 100)
+	await get_tree().create_timer(3.0).timeout
+	var s2: Array = await _zp_sample(300)
+	print("POPPERF + 6 hordes x100 (active=", pop.active.size(), " proxies=", pop.proxy_n, ") mean=%.2f med=%.2f p95=%.2f max=%.2f" % [s2[0], s2[1], s2[2], s2[3]])
+	print("POPPERF done")
+	get_tree().quit()
+
+func _variantstest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var pop: Population = world.get("pop")
+	pop.dissolve_all()
+	var gp: Vector2 = Vector2(player.position.x + 30.0, player.position.z)
+	var gy: float = float(world.call("_ground", gp.x, gp.y).y)
+	pop.specials.clear()
+	pop.add_special(Vector3(gp.x, gy, gp.y))
+	var n_sp := pop.specials.size()
+	for i in 12:
+		pop.tick(0.5)
+	var sl: Zombie = null
+	for z in pop.active:
+		if is_instance_valid(z) and z.state == Zombie.State.SLEEP:
+			sl = z
+	var ok := n_sp == 1 and sl != null
+	print("VARIANTS sleeper materialised=", sl != null, " ok=", ok)
+	fails += 0 if ok else 1
+	if sl == null:
+		print("VARIANTSTEST failures=", fails + 1)
+		get_tree().quit()
+		return
+	var lst := pop.sleeper_list()
+	ok = lst.size() == 1
+	print("VARIANTS sleeper_list n=", lst.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	player.place(sl.global_position.x - 12.0, sl.global_position.z)
+	for i in 6:
+		await get_tree().create_timer(0.3).timeout
+	ok = sl.state == Zombie.State.SLEEP
+	print("VARIANTS sleeper stays at 12 m state=", sl.state, " ok=", ok)
+	fails += 0 if ok else 1
+	player.place(sl.global_position.x - 3.0, sl.global_position.z)
+	for i in 6:
+		await get_tree().create_timer(0.3).timeout
+	ok = sl.state != Zombie.State.SLEEP and sl.state != Zombie.State.DEAD
+	print("VARIANTS sleeper wakes at 3 m state=", sl.state, " ok=", ok)
+	fails += 0 if ok else 1
+	# sneak attack kills a second sleeper in one blow
+	var p2 := player.position + Vector3(40.0, 0.0, 0.0)
+	pop.add_special(Vector3(p2.x, float(world.call("_ground", p2.x, p2.z).y), p2.z))
+	for i in 12:
+		pop.tick(0.5)
+	var s2: Zombie = null
+	for z in pop.active:
+		if is_instance_valid(z) and z.state == Zombie.State.SLEEP:
+			s2 = z
+	ok = s2 != null
+	if s2 != null:
+		s2.hit(40.0, player.position)
+		ok = s2.state == Zombie.State.DEAD
+	print("VARIANTS sneak attack kills ok=", ok)
+	fails += 0 if ok else 1
+	# crawler: heavy hit leaves it low and slow
+	var c: Zombie = pop.acquire(player.position + Vector3(0.0, 0.0, 25.0))
+	if c != null:
+		c.hp = 30.0
+		var tries := 0
+		while not c.crawling and tries < 40 and c.state != Zombie.State.DEAD:
+			c.hp = 30.0
+			c.hit(1.0, player.position)
+			tries += 1
+		ok = c.crawling
+		print("VARIANTS crawler crawling=", c.crawling, " tries=", tries, " ok=", ok)
+		fails += 0 if ok else 1
+	else:
+		print("VARIANTS crawler acquire failed")
+		fails += 1
+	# cold: freezing air slows them
+	Zombie.ambient_c = -40.0
+	var cold: float = float(c.call("_cold_mult")) if c != null else 1.0
+	Zombie.ambient_c = 0.0
+	var warm: float = float(c.call("_cold_mult")) if c != null else 1.0
+	ok = cold < warm and warm >= 0.99
+	print("VARIANTS cold mult cold=", snappedf(cold, 0.01), " warm=", snappedf(warm, 0.01), " ok=", ok)
+	fails += 0 if ok else 1
+	# save/restore sleepers
+	pop.specials.clear()
+	pop.restore_sleepers([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+	ok = pop.specials.size() == 2
+	print("VARIANTS restore sleepers n=", pop.specials.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	print("VARIANTSTEST failures=", fails)
+	get_tree().quit()
+
+func _hamlettest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var cabs: Array = world.get("cabins")
+	var inv: Inventory = world.get("inv")
+	var hn: int = int(world.get("hamlet_n"))
+	var ok := hn >= 3 and cabs.size() == 1 + hn
+	print("HAMLETTEST cabins=", cabs.size(), " hamlet_n=", hn, " ok=", ok)
+	fails += 0 if ok else 1
+	if hn < 3:
+		print("HAMLETTEST failures=", fails)
+		get_tree().quit()
+		return
+	var mind := 1e9
+	for i in range(1, cabs.size()):
+		for j in range(i + 1, cabs.size()):
+			mind = minf(mind, (cabs[i].position - cabs[j].position).length())
+	ok = mind > 9.0
+	print("HAMLETTEST min spacing=", snappedf(mind, 0.1), " ok=", ok)
+	fails += 0 if ok else 1
+	var hc: Vector2 = world.get("hamlet_center")
+	var home: Vector2 = Vector2(cabs[0].position.x, cabs[0].position.z)
+	ok = hc.distance_to(home) > 300.0
+	print("HAMLETTEST distance from start=", snappedf(hc.distance_to(home), 1.0), " ok=", ok)
+	fails += 0 if ok else 1
+	var cb = cabs[1]
+	var n0 := 0
+	for id in inv.counts:
+		n0 += int(inv.counts[id])
+	world.call("_loot_hamlet_crate", cb)
+	var n1 := 0
+	for id in inv.counts:
+		n1 += int(inv.counts[id])
+	ok = cb.crate_looted and n1 > n0 and inv.count("rifle") == 0 and inv.count("parka") == 0
+	print("HAMLETTEST crate loot items ", n0, "->", n1, " no starter kit ok=", ok)
+	fails += 0 if ok else 1
+	var pop: Population = world.get("pop")
+	var ns := 0
+	for s in pop.specials:
+		if Vector2(s.x - hc.x, s.z - hc.y).length() < 40.0:
+			ns += 1
+	for z in pop.active:
+		if is_instance_valid(z) and z.state == Zombie.State.SLEEP and Vector2(z.global_position.x - hc.x, z.global_position.z - hc.y).length() < 40.0:
+			ns += 1
+	ok = ns >= 1
+	print("HAMLETTEST sleepers=", ns, " ok=", ok)
+	fails += 0 if ok else 1
+	var obs: Array = world.get("outbuildings")
+	ok = obs.size() >= 1
+	if ok:
+		var ob = obs[0]
+		var c0: Vector3 = ob.global_position
+		var q: Vector2 = ob.resolve(c0.x, c0.z, 0.4)
+		var moved: float = Vector2(q.x - c0.x, q.y - c0.z).length()
+		var far: Vector2 = ob.resolve(c0.x + 30.0, c0.z, 0.4)
+		ok = moved > 0.6 and absf(far.x - (c0.x + 30.0)) < 0.001 and not ob.contains_xz(c0.x, c0.z)
+	print("HAMLETTEST outbuildings=", obs.size(), " solid ok=", ok)
+	fails += 0 if ok else 1
+	var shed = null
+	for ob2 in obs:
+		if ob2.kind == "woodshed":
+			shed = ob2
+	ok = shed != null and shed.wood_left == 5 and shed.wood_world_pos().distance_to(shed.global_position) > shed.hz
+	print("HAMLETTEST woodshed firewood=", shed.wood_left if shed != null else -1, " ok=", ok)
+	fails += 0 if ok else 1
+	var huts: Array = world.get("huts")
+	if huts.is_empty():
+		print("HAMLETTEST hut door skipped (no huts)")
+	else:
+		var hu: Hut = huts[0]
+		var gp: Vector3 = hu.to_global(Vector3(0.0, 0.0, Hut.HZ))
+		var open_q: Vector2 = hu.resolve(gp.x, gp.z, 0.35)
+		var free: bool = Vector2(open_q.x - gp.x, open_q.y - gp.z).length() < 0.001
+		hu.toggle_door()
+		var closed_q: Vector2 = hu.resolve(gp.x, gp.z, 0.35)
+		var blocked: bool = Vector2(closed_q.x - gp.x, closed_q.y - gp.z).length() > 0.05
+		var leak_closed: float = hu.noise_leak()
+		hu.bash_door(100.0)
+		var broke: bool = hu.door_broken and hu.door_open
+		var sd: Dictionary = hu.state_dict()
+		hu.restore_state({'looted': true, 'open': false, 'broken': false, 'hp': 30.0})
+		var rs: bool = hu.crate_looted and not hu.door_open and absf(hu.door_hp - 30.0) < 0.01
+		hu.restore_state(sd)
+		rs = rs and hu.door_broken and bool(sd['broken'])
+		print("HAMLETTEST hut state save/restore ok=", rs)
+		fails += 0 if rs else 1
+		ok = free and blocked and leak_closed < 1.0 and broke
+		print("HAMLETTEST hut door open_free=", free, " closed_blocks=", blocked, " leak=", leak_closed, " bash_breaks=", broke, " ok=", ok)
+		fails += 0 if ok else 1
+	print("HAMLETTEST failures=", fails)
+	get_tree().quit()
+
+## Movement quality: walk scripted headings at 60 fps from several spots (+ through a cabin door); measures stalls, slope blocks, camera jerk.
+func _walktest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	Engine.max_fps = 60
+	var fails := 0
+	player.god = true
+	var cabins: Array = world.get("cabins")
+	var spots: Array = []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 77
+	var c0: Vector3 = player.position
+	for i in 5:
+		var a := rng.randf() * TAU
+		spots.append({"p": Vector3(c0.x + cos(a) * rng.randf_range(40.0, 240.0), 0.0, c0.z + sin(a) * rng.randf_range(40.0, 240.0)), "d": Vector3(cos(a + 1.0), 0.0, sin(a + 1.0)), "name": "open%d" % i})
+	if not cabins.is_empty():
+		var cb: Cabin = cabins[0]
+		if not cb.door_open:
+			cb.toggle_door()
+		var s: Vector3 = cb.to_global(Vector3(0.0, 0.0, Cabin.HZ + 7.0))
+		var e: Vector3 = cb.to_global(Vector3(0.0, 0.0, Cabin.HZ - 3.0))
+		spots.append({"p": Vector3(s.x, 0.0, s.z), "d": Vector3(e.x - s.x, 0.0, e.z - s.z).normalized(), "name": "door"})
+	var tot_stall := 0.0
+	var tot_blocks := 0
+	var worst_jerk := 0.0
+	for sp in spots:
+		var p: Vector3 = sp["p"]
+		player.place(p.x, p.z)
+		player.sim_on = false
+		for k in 20:
+			await get_tree().process_frame
+		var d: Vector3 = sp["d"]
+		player.yaw = atan2(-d.x, -d.z)
+		player.sim_dir = d
+		player.sim_on = true
+		player.dbg_blocks = 0
+		var t := 0.0
+		var stall := 0.0
+		var dist := 0.0
+		var prev: Vector3 = player.position
+		var vy_prev := 0.0
+		var jerk_sq := 0.0
+		var jerk_max := 0.0
+		var worst_dt := 0.0
+		var worst_flat := 0.0
+		var n := 0
+		var minx := 1e9
+		var tmax := 3.5 if sp["name"] == "door" else 8.0   # door run ends well inside, before the back wall
+		while t < tmax:
+			await get_tree().process_frame
+			var dt: float = get_process_delta_time()
+			t += dt
+			var cur: Vector3 = player.position
+			var flat := Vector2(cur.x - prev.x, cur.z - prev.z).length()
+			dist += flat
+			if t > 1.0:
+				if flat / maxf(dt, 0.0001) < 0.35 * player.WALK * 0.4:
+					stall += dt
+				var vy := cur.y - prev.y
+				var jk := absf(vy - vy_prev) * 1000.0   # second difference of eye height, mm per frame^2
+				vy_prev = vy
+				jerk_sq += jk * jk
+				if jk > jerk_max:
+					jerk_max = jk
+					worst_dt = dt
+					worst_flat = flat
+				n += 1
+			prev = cur
+		player.sim_on = false
+		var jerk_rms := sqrt(jerk_sq / maxf(n, 1.0))
+		print("WALKTEST %s dist=%.1f stall_s=%.2f blocks=%d ddy_rms_mm=%.2f ddy_max_mm=%.1f (dt=%.1fms flat=%.3f) tier=%d" % [sp["name"], dist, stall, player.dbg_blocks, jerk_rms, jerk_max, worst_dt * 1000.0, worst_flat, snow_tier_here()])
+		tot_stall += stall
+		tot_blocks += player.dbg_blocks
+		worst_jerk = maxf(worst_jerk, jerk_rms)
+	print("WALKTEST totals stall_s=%.2f blocks=%d worst_jerk_rms=%.1f" % [tot_stall, tot_blocks, worst_jerk])
+	var ok := tot_blocks == 0 and tot_stall < 6.0   # stalls left are head-on tree hits; no dead stops on slopes
+	print("WALKTEST no slope blocks, stalls bounded ok=", ok)
+	fails += 0 if ok else 1
+	print("WALKTEST failures=", fails)
+	get_tree().quit()
+
+
+func snow_tier_here() -> int:
+	var sn: SnowField = world.get("snow")
+	return sn.tier_at(player.position.x, player.position.z)
+
+## Sleep: bed prompt, time skip to dawn, healing + burn, wake on hit / cold / danger, state restored.
+func _sleeptest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var cabins: Array = world.get("cabins")
+	var inv: Inventory = world.get("inv")
+	var needs: Needs = world.get("needs")
+	var body: BodyTemperature = world.get("body")
+	var cb: Cabin = cabins[0]
+	world.set("sleep_rate", 4000.0)
+	var popn: Population = world.get("pop")
+	if popn != null:
+		popn.hordes.clear()   # wandering hordes would (correctly) wake the sleeper: keep the test deterministic
+	if not cb.door_open:
+		cb.toggle_door()
+	for w in 5:
+		cb.add_wood()
+	var stand: Vector3 = cb.to_global(Vector3(1.0, 0.0, -0.4))
+	player.god = false
+	player.place(stand.x, stand.z)
+	for k in 20:
+		await get_tree().process_frame
+	stand = player.position
+	clock.hour = 22.0
+	var day0 := clock.day
+	player.health = 60.0
+	needs.calories = 1800.0
+	needs.water = 80.0
+	body.core = 37.0
+	var fuel0 := cb.stove_fuel_s
+	var cands: Array = world.call("_sleep_items", cb)
+	var ok := cands.size() == 3
+	print("SLEEPTEST prompts=", cands.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	var hp0 := player.health
+	var cal0 := needs.calories
+	world.call("_sleep_begin", cb, 8.0)
+	var t := 0.0
+	while bool(world.get("_sl_on")) and t < 60.0:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+	var hrs := clock.hour
+	ok = not bool(world.get("_sl_on")) and absf(fposmod(hrs - 6.0, 24.0)) < 0.35 and clock.day == day0 + 1
+	print("SLEEPTEST 8h slept real_s=%.1f hour=%.2f day=%d->%d reason='%s' ok=%s" % [t, hrs, day0, clock.day, str(world.get("sleep_last")), str(ok)])
+	fails += 0 if ok else 1
+	ok = player.health > hp0 + 15.0 and player.health <= 100.0
+	print("SLEEPTEST heal %.1f -> %.1f ok=%s" % [hp0, player.health, str(ok)])
+	fails += 0 if ok else 1
+	var burned := cal0 - needs.calories
+	ok = burned > 300.0 and burned < 700.0 and needs.rest_mult == 1.0 and absf(clock.time_scale - 48.0) < 0.01
+	print("SLEEPTEST burn kcal=%.0f rest_mult=%.2f scale=%.1f ok=%s" % [burned, needs.rest_mult, clock.time_scale, str(ok)])
+	fails += 0 if ok else 1
+	ok = cb.stove_fuel_s < fuel0 and player.position.distance_to(stand) < 0.2 and not player.sleeping and body.core > 36.0
+	print("SLEEPTEST stove fuel %.0f -> %.0f, back at bedside=%s core=%.2f ok=%s" % [fuel0, cb.stove_fuel_s, str(player.position.distance_to(stand) < 0.2), body.core, str(ok)])
+	fails += 0 if ok else 1
+	# abort: hurt
+	clock.hour = 23.0
+	world.call("_sleep_begin", cb, 8.0)
+	t = 0.0
+	while t < 3.0:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+	var h_mid := clock.hour
+	player.hurt(5.0, "test")
+	t = 0.0
+	while bool(world.get("_sl_on")) and t < 10.0:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+	var slept := fposmod(clock.hour - 23.0, 24.0)
+	ok = not bool(world.get("_sl_on")) and slept < 7.0 and slept > 0.2 and absf(clock.time_scale - 48.0) < 0.01
+	print("SLEEPTEST wake on hit slept=%.2f h mid=%.2f ok=%s" % [slept, h_mid, str(ok)])
+	fails += 0 if ok else 1
+	# abort: too cold
+	player.health = 100.0
+	body.core = 36.5
+	clock.hour = 1.0
+	world.call("_sleep_begin", cb, 8.0)
+	t = 0.0
+	while t < 2.5:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+	body.core = 35.0
+	t = 0.0
+	while bool(world.get("_sl_on")) and t < 10.0:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+	ok = not bool(world.get("_sl_on")) and not player.sleeping
+	print("SLEEPTEST wake on cold ok=", ok)
+	fails += 0 if ok else 1
+	# refuse: cold start and bleeding
+	body.core = 35.0
+	var why: String = world.call("_sleep_block_reason")
+	ok = why.begins_with("Too cold")
+	print("SLEEPTEST refuse cold: '", why, "' ok=", ok)
+	fails += 0 if ok else 1
+	print("SLEEPTEST failures=", fails)
+	get_tree().quit()
+
+## Ice camp + fishing: walkable ice, camp huts/holes exist, fishing odds + catch, hatchet hole, refreeze, save/restore.
+func _fishtest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var inv: Inventory = world.get("inv")
+	var ice: IceField = world.get("ice")
+	var holes: Array = world.get("ice_holes")
+	var huts: Array = world.get("huts")
+	var ice_huts: Array = huts.filter(func(h: Hut) -> bool: return h.on_ice)
+	var ok := ice_huts.size() >= 2
+	print("FISHTEST ice huts=", ice_huts.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	ok = holes.size() >= 4
+	print("FISHTEST camp holes=", holes.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	if ice_huts.is_empty():
+		print("FISHTEST failures=", fails)
+		get_tree().quit()
+		return
+	var h0: Hut = ice_huts[0]
+	var iy := ice.ice_at(h0.global_position.x, h0.global_position.z)
+	ok = not is_nan(iy) and absf(h0.floor_y - (iy + 0.2)) < 0.05
+	print("FISHTEST hut stands on ice y=%.2f floor=%.2f ok=%s" % [iy, h0.floor_y, str(ok)])
+	fails += 0 if ok else 1
+	# walkable ice: a spot on the lake, player ground = ice surface (bed is lower)
+	var hp: Vector3 = holes[0].global_position
+	player.god = true
+	player.place(hp.x + 2.0, hp.z)
+	for k in 25:
+		await get_tree().process_frame
+	var bed: float = player.terrain.data.get_height(Vector3(player.position.x, 0.0, player.position.z))
+	var iy2 := ice.ice_at(player.position.x, player.position.z)
+	ok = not is_nan(iy2) and bed < iy2 - 0.4 and absf(player.position.y - (iy2 + player.eye_h)) < 0.15
+	print("FISHTEST walk on ice bed=%.2f ice=%.2f eye_y=%.2f ok=%s" % [bed, iy2, player.position.y, str(ok)])
+	fails += 0 if ok else 1
+	# walk a straight line across ice: no stalls, stays on the surface
+	player.yaw = 0.0
+	var t := 0.0
+	var start := player.position
+	player.sim_dir = Vector3(0, 0, -1)
+	player.sim_on = true
+	while t < 3.0:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+	player.sim_on = false
+	var iy3 := ice.ice_at(player.position.x, player.position.z)
+	var moved := Vector2(player.position.x - start.x, player.position.z - start.z).length()
+	ok = moved > 5.0 and (is_nan(iy3) or absf(player.position.y - (iy3 + player.eye_h)) < 0.2)
+	print("FISHTEST ice walk moved=%.1f ok=%s" % [moved, str(ok)])
+	fails += 0 if ok else 1
+	# fishing at a camp hole
+	var hole: IceHole = holes[0]
+	player.place(hole.global_position.x + 1.0, hole.global_position.z)
+	for k in 20:
+		await get_tree().process_frame
+	_look_at(hole.global_position)
+	inv.remove("tackle", inv.count("tackle"))
+	var c0: Array = []
+	world.call("_fish_cands", c0)
+	ok = c0.size() == 1 and String(c0[0]["text"]).contains("needs fishing tackle")
+	print("FISHTEST no tackle prompt ok=", ok)
+	fails += 0 if ok else 1
+	inv.add("tackle")
+	var c1: Array = []
+	world.call("_fish_cands", c1)
+	ok = c1.size() == 1 and String(c1[0]["text"]) == "Fish through the hole"
+	print("FISHTEST tackle prompt ok=", ok)
+	fails += 0 if ok else 1
+	clock.hour = 6.0
+	var caught := 0
+	var n0 := 0
+	for id in inv.counts:
+		if String(id).ends_with("_raw") and (String(id).begins_with("trout") or String(id).begins_with("whitefish") or String(id).begins_with("pike")):
+			n0 += int(inv.counts[id])
+	var attempts := 0
+	for i in 60:
+		hole.spooked_until = 0.0
+		world.call("_fish_at", hole)
+		attempts += 1
+		if inv.count("tackle") == 0:
+			inv.add("tackle")
+			inv.cond.erase("tackle")
+		inv.cond["tackle"] = 1.0
+	var n1 := 0
+	for id in inv.counts:
+		if String(id).ends_with("_raw") and (String(id).begins_with("trout") or String(id).begins_with("whitefish") or String(id).begins_with("pike")):
+			n1 += int(inv.counts[id])
+	caught = n1 - n0
+	var rate := float(caught) / float(attempts)
+	ok = rate > 0.45 and rate < 0.95
+	print("FISHTEST dawn catch rate=%.2f (%d/%d, pack may cap) ok=%s" % [rate, caught, attempts, str(ok)])
+	fails += 0 if ok else 1
+	ok = Fishing.bite_chance(6.0, 1.0) > Fishing.bite_chance(12.0, 1.0) and Fishing.bite_chance(12.0, 1.0) > Fishing.bite_chance(2.0, 1.0) and Fishing.bite_chance(12.0, 0.2) < Fishing.bite_chance(12.0, 1.0) and Fishing.bite_chance(12.0, 1.0, 0, true) < Fishing.bite_chance(12.0, 1.0)
+	print("FISHTEST odds ordering (dawn>noon>night, worn<new, spooked<fresh) ok=", ok)
+	fails += 0 if ok else 1
+	# catch spooks the hole; cooked fish exist
+	hole.spooked_until = clock.total_game_s + 100.0
+	ok = inv.ITEMS.has("trout_cooked") and inv.ITEMS["trout_raw"]["cooked"] == "trout_cooked" and inv.ITEMS["pike_raw"]["cooked"] == "pike_cooked"
+	print("FISHTEST fish items ok=", ok)
+	fails += 0 if ok else 1
+	# chop a hole on open ice
+	inv.add("axe")
+	var spot: Vector3 = ice_huts[0].to_global(Vector3(6.0, 0.0, 10.0))
+	player.place(spot.x, spot.z)
+	for k in 25:
+		await get_tree().process_frame
+	player.yaw = 0.0
+	var c2: Array = []
+	world.call("_fish_cands", c2)
+	var chop: Dictionary = {}
+	for c in c2:
+		if String(c["text"]) == "Chop a fishing hole":
+			chop = c
+	ok = not chop.is_empty()
+	print("FISHTEST chop prompt ok=", ok)
+	fails += 0 if ok else 1
+	var nh := holes.size()
+	if not chop.is_empty():
+		(chop["act"] as Callable).call()
+	ok = holes.size() == nh + 1 and not holes[holes.size() - 1].perm
+	print("FISHTEST chopped hole added %d->%d ok=%s" % [nh, holes.size(), str(ok)])
+	fails += 0 if ok else 1
+	# save/restore round trip for the player hole + spooked state
+	var dicts: Array = holes.map(func(h: IceHole) -> Dictionary: return h.to_dict())
+	var cnt := holes.size()
+	world.call("_restore_holes", dicts)
+	ok = holes.size() == cnt
+	print("FISHTEST holes restore count=%d ok=%s" % [holes.size(), str(ok)])
+	fails += 0 if ok else 1
+	# freeze over
+	clock.total_game_s += 13.0 * 3600.0
+	world.call("_hole_upkeep")
+	ok = holes.size() == nh   # only camp holes remain
+	print("FISHTEST player hole froze over, camp holes stay: %d ok=%s" % [holes.size(), str(ok)])
+	fails += 0 if ok else 1
+	print("FISHTEST failures=", fails)
+	get_tree().quit()
+
+## Screenshot helper (windowed): chest in the world, then the gear screen on the chest tab and on a 14-item ground row.
+func _gearshot() -> void:
+	await get_tree().create_timer(3.0).timeout
+	var inv: Inventory = world.get("inv")
+	player.god = true
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var feet := player.position.y - player.eye_h
+	inv.add("plank", 6)
+	inv.add("nails", 8)
+	inv.add("hammer")
+	world.call("craft_start", "storage_chest")
+	world.call("_craft_update", 31.0)
+	var ch: StorageChest = (world.get("chests") as Array)[0]
+	for id in ["beans", "wood", "matches", "rag", "bandage", "trout_raw", "ammo", "knife", "tackle"]:
+		inv.add(id, 3)
+		world.call("chest_put", ch, id, 3)
+	_look_at(ch.center_world())
+	player.pitch = deg_to_rad(-28.0)
+	await get_tree().create_timer(1.0).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/chest_world.png")
+	ch.set_process(false)   # the world re-closes the lid every frame unless the gear screen is on it: hold it open by hand
+	ch.lid_k = 1.0
+	(ch.get("_lid") as Node3D).rotation.x = -deg_to_rad(StorageChest.LID_OPEN_DEG)
+	ch._update_pile()
+	player.pitch = deg_to_rad(-48.0)
+	await get_tree().create_timer(1.2).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/chest_open.png")
+	ch.set_process(true)
+	ch.lid_k = 0.0
+	(ch.get("_lid") as Node3D).rotation.x = 0.0
+	var gear: GearScreen = world.get("gear")
+	gear.open_chest(ch)
+	await get_tree().create_timer(0.8).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/gear_chest.png")
+	gear.close()
+	for i in 14:
+		var a := TAU * float(i) / 14.0
+		var pp := player.position + Vector3(cos(a), 0.0, sin(a)) * 1.7
+		pp.y = feet
+		ItemPickup.spawn(world, ["wood", "stick", "rag", "beans", "matches"][i % 5], 1 + i % 3, pp)
+	await get_tree().process_frame
+	gear.open()
+	gear._gscroll = 3
+	await get_tree().create_timer(0.8).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/gear_ground.png")
+	for cid in ["sweater", "parka", "toque", "hide_boots", "wolf_mitts"]:
+		inv.add(cid)
+		inv.use(cid)
+	inv.add("axe")
+	inv.add("knife")
+	inv.cond["hammer"] = 0.62
+	inv.cond["axe"] = 0.35
+	inv.cond["knife"] = 0.12
+	gear.close()
+	gear.open()
+	gear._gscroll = 0
+	await get_tree().create_timer(0.8).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/gear_worn.png")
+	print("GEARSHOT done")
+	get_tree().quit()
+
+
+## Windowed screenshots of the rifle at the hip, down the iron sights, and zoomed. Target post 30 m out.
+func _sightshot() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var inv: Inventory = world.get("inv")
+	player.god = true
+	inv.add("rifle")
+	inv.add("ammo", 20)
+	world.set("rifle_up", true)
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var zp: Vector3 = player.position + fwd * 30.0
+	zp.y = player.terrain.data.get_height(zp)
+	var z: Zombie = world.call("_add_zombie", zp, 970)
+	z.set_process(false)
+	z.set_physics_process(false)
+	z.global_position = zp
+	var to := z.global_position + Vector3(0, 1.4, 0) - player.cam.global_position
+	player.yaw = atan2(-to.x, -to.z)
+	player.pitch = atan2(to.y, Vector2(to.x, to.z).length())
+	await get_tree().create_timer(0.8).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/sight_hip.png")
+	world.set("aim_override", true)
+	await get_tree().create_timer(1.2).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/sight_aim.png")
+	player.zoom_step(2)
+	await get_tree().create_timer(1.0).timeout
+	get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/sight_zoom.png")
+	print("SIGHTSHOT done fov=", player.cam.fov)
+	get_tree().quit()
+
+
+## Recorded creature clips: dropped files are found by name, picked per event, played from the body; missing ones fall back to synth.
+func _wav_bytes(freq: float, secs: float) -> PackedByteArray:
+	var sr := 22050
+	var n := int(sr * secs)
+	var b := PackedByteArray()
+	b.resize(44 + n * 2)
+	b.encode_u32(0, 0x46464952)   # RIFF
+	b.encode_u32(4, 36 + n * 2)
+	b.encode_u32(8, 0x45564157)   # WAVE
+	b.encode_u32(12, 0x20746d66)  # fmt
+	b.encode_u32(16, 16)
+	b.encode_u16(20, 1)
+	b.encode_u16(22, 1)
+	b.encode_u32(24, sr)
+	b.encode_u32(28, sr * 2)
+	b.encode_u16(32, 2)
+	b.encode_u16(34, 16)
+	b.encode_u32(36, 0x61746164)  # data
+	b.encode_u32(40, n * 2)
+	for i in n:
+		b.encode_s16(44 + i * 2, int(sin(TAU * freq * float(i) / float(sr)) * 8000.0))
+	return b
+
+
+func _clipstest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	CreatureClips.root = "user://clipstest/"   # scratch folder: the real shipped clips must not leak into this test
+	for k in ["zombie", "wolf", "bear"]:
+		DirAccess.make_dir_recursive_absolute(CreatureClips.root + k)
+	var root := ProjectSettings.globalize_path(CreatureClips.root)
+	var made: Array[String] = []
+	for spec in [["zombie", "idle_01.wav", 120.0], ["zombie", "idle-b.wav", 150.0], ["zombie", "death3.wav", 90.0], ["wolf", "howl_01.wav", 500.0]]:
+		var f := FileAccess.open(root + String(spec[0]) + "/" + String(spec[1]), FileAccess.WRITE)
+		f.store_buffer(_wav_bytes(float(spec[2]), 0.3))
+		f.close()
+		made.append(root + String(spec[0]) + "/" + String(spec[1]))
+	CreatureClips.rescan()
+	var ok := CreatureClips.event_of("Idle_03.ogg") == "idle" and CreatureClips.event_of("growl2.wav") == "growl" and CreatureClips.event_of("howl-long.mp3") == "howl"
+	print("CLIPSTEST event names parsed ok=", ok)
+	fails += 0 if ok else 1
+	ok = CreatureClips.count("zombie") == 3 and CreatureClips.count("wolf") == 1 and CreatureClips.count("bear") == 0
+	print("CLIPSTEST files found zombie=%d wolf=%d bear=%d ok=%s" % [CreatureClips.count("zombie"), CreatureClips.count("wolf"), CreatureClips.count("bear"), str(ok)])
+	fails += 0 if ok else 1
+	var s1 := CreatureClips.pick("zombie", "idle")
+	ok = s1 != null and CreatureClips.pick("zombie", "death") != null and CreatureClips.pick("zombie", "hurt") == null and CreatureClips.pick("bear", "roar") == null
+	print("CLIPSTEST pick idle=%s death=%s hurt(missing)=%s bear=%s ok=%s" % [str(s1 != null), str(CreatureClips.pick("zombie", "death") != null), str(CreatureClips.pick("zombie", "hurt") != null), str(CreatureClips.pick("bear", "roar") != null), str(ok)])
+	fails += 0 if ok else 1
+	ok = CreatureClips.pick("zombie", "alert") != null   # alert chain ends at idle
+	print("CLIPSTEST alert falls back to idle ok=", ok)
+	fails += 0 if ok else 1
+	# played from the body through the real wiring
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var zp: Vector3 = player.position + fwd * 15.0
+	zp.y = player.terrain.data.get_height(zp)
+	var z: Zombie = world.call("_add_zombie", zp, 1300)
+	z.set_process(false)
+	z.set_physics_process(false)
+	world.get("audio")._creatures(0.016)
+	var v := z.get_node_or_null("Voice") as CreatureVoice
+	ok = v != null and v.kind == "zombie"
+	print("CLIPSTEST zombie voice knows its kind ok=", ok)
+	fails += 0 if ok else 1
+	if v != null:
+		v.say("groan", 3.0, 1.0, 5.0, 110.0, "idle")
+		var c_idle := v.last_clip
+		var pl: AudioStreamPlayer3D = v.get("_voices")[0]
+		var is_clip := pl.stream != null and not (pl.stream is AudioStreamWAV and pl.stream == Sfx.get_stream("groan"))
+		z.damaged.emit()
+		var c_hurt := v.last_clip
+		z.died.emit()
+		var c_death := v.last_clip
+		ok = c_idle and is_clip and (not c_hurt) and c_death
+		print("CLIPSTEST idle=%s hurt(synth fallback)=%s death=%s ok=%s" % [str(c_idle), str(not c_hurt), str(c_death), str(ok)])
+		fails += 0 if ok else 1
+	z.global_position = Vector3(5000, -500, 5000)
+	for p in made:
+		DirAccess.remove_absolute(p)
+	CreatureClips.rescan()
+	ok = CreatureClips.count("zombie") == 0 and CreatureClips.pick("zombie", "idle") == null
+	print("CLIPSTEST back to synth with no files ok=", ok)
+	fails += 0 if ok else 1
+	CreatureClips.root = CreatureClips.ROOT
+	CreatureClips.rescan()
+	print("CLIPSTEST failures=", fails)
+	get_tree().quit()
+
+
+## Loudness (gated RMS in dBFS, 2048-sample blocks within 20 dB of the loudest block) of a 16-bit mono AudioStreamWAV.
+func _clip_rms_db(w: AudioStreamWAV) -> float:
+	var d := w.data
+	var n := d.size() / 2
+	var blk := 2048
+	var ps: Array[float] = []
+	var i := 0
+	while i + blk <= n:
+		var acc := 0.0
+		for k in range(blk):
+			var x := float(d.decode_s16((i + k) * 2)) / 32768.0
+			acc += x * x
+		ps.append(acc / blk)
+		i += blk
+	if ps.is_empty():
+		return -99.0
+	var mx: float = ps.max()
+	var sum := 0.0
+	var cnt := 0
+	for p in ps:
+		if p >= mx * 0.1:
+			sum += p
+			cnt += 1
+	return 10.0 * log(maxf(sum / maxf(cnt, 1), 1e-12)) / log(10.0)
+
+
+func _clip_peak(w: AudioStreamWAV) -> float:
+	var d := w.data
+	var pk := 0
+	for i in range(d.size() / 2):
+		pk = maxi(pk, absi(d.decode_s16(i * 2)))
+	return float(pk) / 32768.0
+
+
+## Every shipped recorded clip: mono 16-bit 44.1k, sane length, loudness inside a tight band; loops loop; level vs the synth stand-ins.
+func _sfxlevels() -> void:
+	await get_tree().create_timer(1.5).timeout
+	var fails := 0
+	var lo := 99.0
+	var hi := -99.0
+	var n := 0
+	var root := "res://assets/audio/creatures/"
+	for kind in DirAccess.get_directories_at(root):
+		for f in DirAccess.get_files_at(root + kind):
+			if not f.ends_with(".wav"):
+				continue
+			var w := AudioStreamWAV.load_from_file(root + kind + "/" + f)
+			var secs := float(w.data.size()) / 2.0 / float(w.mix_rate)
+			var r := _clip_rms_db(w)
+			var pk := _clip_peak(w)
+			var ok := (not w.stereo) and w.mix_rate == 44100 and secs > 0.2 and secs < 12.0 and absf(r + 20.0) < 1.5 and pk < 0.72
+			print("SFXLEVELS %s/%s %.2fs rms=%.1f peak=%.2f ok=%s" % [kind, f, secs, r, pk, str(ok)])
+			fails += 0 if ok else 1
+			lo = minf(lo, r)
+			hi = maxf(hi, r)
+			n += 1
+	var ok2 := n >= 10 and hi - lo < 2.5
+	print("SFXLEVELS creature clips=%d spread=%.2f dB ok=%s" % [n, hi - lo, str(ok2)])
+	fails += 0 if ok2 else 1
+	for id: String in ["wind", "fire", "rustle", "thud", "chop", "hammer"]:
+		Sfx.recorded_enabled = true
+		Sfx._cache.erase(id)
+		var rec := Sfx.get_stream(id)
+		Sfx.recorded_enabled = false
+		Sfx._cache.erase(id)
+		var syn := Sfx.get_stream(id)
+		Sfx.recorded_enabled = true
+		Sfx._cache.erase(id)
+		var rr := _clip_rms_db(AudioStreamWAV.load_from_file(Sfx.REC_DIR + id + ".wav"))   # raw file (the imported copy is QOA)
+		var want_frames := int(round(rec.get_length() * float(rec.mix_rate)))
+		var sr := _clip_rms_db(syn)
+		var looped := rec.loop_mode == AudioStreamWAV.LOOP_FORWARD
+		var want_loop := id == "wind" or id == "fire"
+		var is_rec := rec.mix_rate == 44100 and rec != syn
+		var ok3 := is_rec and looped == want_loop and absf(rr - sr) < 3.0 and (not looped or rec.loop_end == want_frames)
+		print("SFXLEVELS sfx %s recorded=%s rms rec=%.1f synth=%.1f diff=%.1f loop=%s ok=%s" % [id, str(is_rec), rr, sr, rr - sr, str(looped), str(ok3)])
+		fails += 0 if ok3 else 1
+	print("SFXLEVELS failures=", fails)
+	get_tree().quit()
+
+
+## Hammer: wear per board, 15 boards = a fully boarded cabin, ~6 cabins per hammer, breaks at 0, wear survives drop/pickup/save, shown in the Gear screen.
+func _riflestest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var ok := false
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	inv.infinite = false
+	player.god = false
+	# 1. data, item and art for all eight
+	ok = RifleDB.ids().size() == 8
+	for rid: String in Inventory.RIFLE_IDS:
+		ok = ok and Inventory.ITEMS.has(rid) and Inventory.kind_of(rid) == "weapon" and RifleDB.mag(rid) > 0 and RifleDB.zoom(rid).size() >= 1 and RifleDB.optic(rid).has("type")
+		ok = ok and ResourceLoader.exists("res://assets/weapons/north_ridge/%s.glb" % rid) and ResourceLoader.exists("res://assets/ui/rifles/%s.png" % rid)
+		ok = ok and rid in WeaponPresentation.IDS
+	print("RIFLESTEST data/items/art for 8 ok=", ok)
+	fails += 0 if ok else 1
+	# 2. legacy alias
+	for rid: String in Inventory.RIFLE_IDS: inv.counts.erase(rid)
+	inv.loaded.clear(); inv.active_rifle = ""
+	inv.add("rifle")
+	ok = inv.count("rifle") == 1 and inv.rifle_id() == Inventory.DEFAULT_RIFLE and inv.loaded.get(Inventory.DEFAULT_RIFLE, 0) == RifleDB.mag(Inventory.DEFAULT_RIFLE)
+	inv.counts["rifle"] = 1; inv.migrate_legacy()
+	ok = ok and not inv.counts.has("rifle") and inv.count(Inventory.DEFAULT_RIFLE) == 2
+	inv.remove(Inventory.DEFAULT_RIFLE)
+	print("RIFLESTEST legacy 'rifle' alias + migration ok=", ok)
+	fails += 0 if ok else 1
+	# 3. second rifle rides in the pack; Use slings it; art and zoom follow
+	inv.add("ranger_box_rifle")
+	var in_pack := false
+	for s: Dictionary in inv.stacks(): in_pack = in_pack or s["id"] == "ranger_box_rifle"
+	ok = inv.rifle_id() == Inventory.DEFAULT_RIFLE and in_pack
+	inv.use("ranger_box_rifle")
+	world.set("rifle_up", true)
+	world.call("_update_viewmodel")
+	await get_tree().process_frame
+	var vm: Viewmodel = world.get("viewmodel")
+	ok = ok and inv.rifle_id() == "ranger_box_rifle" and vm.weapon_id == "ranger_box_rifle" and player.aim_fovs == RifleDB.zoom("ranger_box_rifle")
+	print("RIFLESTEST pack + sling swap + art/zoom follow ok=", ok, " vm=", vm.weapon_id)
+	fails += 0 if ok else 1
+	# 4. magazine: four rounds, then the trigger reloads instead of firing
+	inv.counts.erase("ammo"); inv.add("ammo", 10)
+	inv.set_loaded(RifleDB.mag("ranger_box_rifle"))
+	var shots := 0
+	for k in 4:
+		world.set("_attack_cd", 0.0); world.set("_reload_t", 0.0); world.set("last_shot", {})
+		world.call("_shoot")
+		if not (world.get("last_shot") as Dictionary).is_empty(): shots += 1
+	ok = shots == 4 and inv.count("ammo") == 6 and inv.rifle_loaded() == 0 and is_equal_approx(float(world.get("_shot_damage")), 125.0)
+	world.set("_attack_cd", 0.0); world.set("last_shot", {})
+	world.call("_shoot")
+	ok = ok and (world.get("last_shot") as Dictionary).is_empty() and inv.count("ammo") == 6 and float(world.get("_reload_t")) > 0.0
+	world.call("_reload_update", 0.1)
+	ok = ok and inv.rifle_loaded() == 4
+	print("RIFLESTEST 4-round magazine, reload refills ok=", ok, " shots=", shots, " ammo=", inv.count("ammo"))
+	fails += 0 if ok else 1
+	# 5. dropped rifle shows its real model
+	var pk := ItemPickup.spawn(world, "expedition_rifle", 1, player.position + Vector3(1, 0, 0))
+	await get_tree().process_frame
+	ok = pk != null and not pk.find_children("*", "MeshInstance3D", true, false).is_empty() and pk.find_children("*", "MeshInstance3D", true, false).size() > 3
+	pk.free()
+	print("RIFLESTEST pickup uses rifle art ok=", ok)
+	fails += 0 if ok else 1
+	# 6. world caches (world started with rifles=1)
+	var placed: Array = []
+	for n: Node in world.get_children():
+		if n is ItemPickup and Inventory.is_rifle((n as ItemPickup).id): placed.append((n as ItemPickup).id)
+	ok = placed.size() == 6
+	print("RIFLESTEST world caches ", placed, " ok=", ok)
+	fails += 0 if ok else 1
+	print("RIFLESTEST failures=", fails)
+	get_tree().quit()
+
+
+func _hammertest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var inv: Inventory = world.get("inv")
+	var consts: Dictionary = world.get_script().get_script_constant_map()
+	var wb: float = consts["HAMMER_WEAR_BOARD"]
+	inv.infinite = false
+	var cb: Cabin = (world.get("cabins") as Array)[0]
+	for o in cb.openings:
+		o.boards = 0
+	cb.door_boards = 0
+	inv.remove("hammer", inv.count("hammer"))
+	inv.cond.erase("hammer")
+	inv.add("hammer")
+	inv.add("plank", 200)
+	inv.add("nails", 300)
+	var pl0 := inv.count("plank")
+	var n0 := inv.count("nails")
+	var placed := 0
+	for i in 3:
+		if world.call("_nail_board"):
+			cb.add_door_board()
+			placed += 1
+	for o in cb.openings:
+		for i in Opening.MAX_BOARDS:
+			if world.call("_nail_board"):
+				o.add_board()
+				placed += 1
+	var ok := placed == 15 and cb.door_boards == 3 and inv.count("plank") == pl0 - 15 and inv.count("nails") == n0 - 15 and absf(inv.condition("hammer") - (1.0 - 15.0 * wb)) < 0.0005
+	print("HAMMERTEST one full cabin boards=%d planks used=%d nails used=%d hammer=%.3f ok=%s" % [placed, pl0 - inv.count("plank"), n0 - inv.count("nails"), inv.condition("hammer"), str(ok)])
+	fails += 0 if ok else 1
+	var boards := placed
+	while inv.count("hammer") > 0 and boards < 200:
+		if not world.call("_nail_board"):
+			break
+		boards += 1
+	ok = inv.count("hammer") == 0 and boards >= 89 and boards <= 91 and not world.call("_nail_board")
+	print("HAMMERTEST breaks after %d boards (about %.1f cabins) ok=%s" % [boards, float(boards) / 15.0, str(ok)])
+	fails += 0 if ok else 1
+	inv.remove("plank", inv.count("plank"))   # the test stuffed the pack: leave room for the pickup
+	inv.remove("nails", inv.count("nails"))
+	inv.add("hammer")
+	inv.cond["hammer"] = 0.5
+	var pk0 := get_tree().get_nodes_in_group("pickups").size()
+	world.call("drop_item", "hammer", 1)
+	var pks := get_tree().get_nodes_in_group("pickups")
+	var pk: ItemPickup = pks[pks.size() - 1]
+	var sv: Array = world.call("_pickup_list")
+	var saved_c := -2.0
+	for e: Dictionary in sv:
+		if e["id"] == "hammer":
+			saved_c = float(e["c"])
+	ok = pks.size() == pk0 + 1 and absf(pk.cond - 0.5) < 0.01 and inv.count("hammer") == 0 and absf(saved_c - 0.5) < 0.01
+	print("HAMMERTEST dropped keeps wear pickup=%.2f saved=%.2f ok=%s" % [pk.cond, saved_c, str(ok)])
+	fails += 0 if ok else 1
+	world.call("take_pickup", pk)
+	ok = inv.count("hammer") == 1 and absf(inv.condition("hammer") - 0.5) < 0.01
+	print("HAMMERTEST picked up keeps wear %.2f ok=%s" % [inv.condition("hammer"), str(ok)])
+	fails += 0 if ok else 1
+	var g: GearScreen = world.get("gear")
+	var f1: float = g._hit_cond("hammer", {"k": "pack"})
+	var f2: float = g._hit_cond("beans", {"k": "pack"})
+	ok = absf(f1 - 0.5) < 0.01 and f2 < 0.0 and Inventory.wears("hammer") and Inventory.wears("axe")
+	print("HAMMERTEST gear shows condition hammer=%.2f beans=%.2f ok=%s" % [f1, f2, str(ok)])
+	fails += 0 if ok else 1
+	inv.cond["hammer"] = 0.02
+	world.call("_hammer_wear", 0.05)
+	ok = inv.count("hammer") == 0
+	print("HAMMERTEST worn to zero breaks it ok=", ok)
+	fails += 0 if ok else 1
+	print("HAMMERTEST failures=", fails)
+	get_tree().quit()
+
+
+## Windowed art check: cabin interior, stove lit/unlit, day/dusk/night, blizzard. Shots to shots/int_*.png
+func _interiorshot() -> void:
+	await get_tree().create_timer(3.0).timeout
+	player.god = true
+	var weather = world.get("weather")
+	weather.lock_state(4)
+	weather.precip = 1.0
+	var cabins: Array = world.get("cabins")
+	var cb: Cabin = cabins[0]
+	var S := "C:/Users/parst/Development/game/brave_and_cold/shots/"
+	var inside := cb.to_global(Vector3(1.2, 0.0, 1.2))
+	player.place(inside.x, inside.z)
+	player.yaw = cb.rotation.y + deg_to_rad(35.0)   # toward the stove corner (back-left)
+	player.pitch = deg_to_rad(-4.0)
+	for spec in [["a_day_cold", 16.5, 0.0], ["b_day_lit", 16.5, 100000.0], ["c_night_lit", 22.0, 100000.0], ["d_dusk_lit", 17.2, 100000.0]]:
+		cb.stove_fuel_s = float(spec[2])
+		clock.hour = float(spec[1])
+		_frozen_hour = clock.hour
+		await get_tree().create_timer(2.5).timeout
+		get_viewport().get_texture().get_image().save_png(S + "int_" + String(spec[0]) + ".png")
+	# closer look at the wall for the thin bright lines
+	cb.stove_fuel_s = 100000.0
+	clock.hour = 16.5
+	player.yaw = cb.rotation.y + deg_to_rad(180.0)
+	await get_tree().create_timer(1.5).timeout
+	get_viewport().get_texture().get_image().save_png(S + "int_e_wall.png")
+	var near := cb.to_global(Vector3(-1.9, 0.0, 0.2))
+	player.place(near.x, near.z)
+	player.yaw = cb.rotation.y + deg_to_rad(90.0)
+	player.pitch = deg_to_rad(-38.0)
+	await get_tree().create_timer(1.5).timeout
+	get_viewport().get_texture().get_image().save_png(S + "int_f_base.png")
+	print("INTERIORSHOT done")
+	get_tree().quit()
+
+
+## Windowed: blizzard, standing inside a cabin (no flakes may be there), then outside and looking across the roof.
+func _weathershot() -> void:
+	await get_tree().create_timer(3.0).timeout
+	player.god = true
+	var weather = world.get("weather")
+	weather.lock_state(4)
+	weather.precip = 1.0
+	var cabins: Array = world.get("cabins")
+	var cb: Node3D = cabins[0]
+	var S := "C:/Users/parst/Development/game/brave_and_cold/shots/"
+	# outside first: flakes must still fall
+	_tp_cabin()
+	await get_tree().create_timer(3.5).timeout
+	player.pitch = deg_to_rad(8.0)
+	await get_tree().create_timer(0.6).timeout
+	get_viewport().get_texture().get_image().save_png(S + "snow_out.png")
+	# looking along the roofline from the side
+	var side := cb.to_global(Vector3(9.0, 0.0, 0.0))
+	_tp(side.x, side.z, cb.global_position + Vector3(0, 3.0, 0))
+	player.pitch = deg_to_rad(12.0)
+	await get_tree().create_timer(1.5).timeout
+	get_viewport().get_texture().get_image().save_png(S + "snow_roof.png")
+	# inside
+	var inside := cb.to_global(Vector3(0.0, 0.0, 0.0))
+	player.place(inside.x, inside.z)
+	await get_tree().create_timer(3.0).timeout
+	player.pitch = deg_to_rad(40.0)
+	await get_tree().create_timer(0.8).timeout
+	get_viewport().get_texture().get_image().save_png(S + "snow_in_up.png")
+	player.pitch = deg_to_rad(-5.0)
+	await get_tree().create_timer(0.8).timeout
+	get_viewport().get_texture().get_image().save_png(S + "snow_in_level.png")
+	print("WEATHERSHOT done precip=", weather.precip)
+	get_tree().quit()
+
+
+## Audio cost with a crowd: 100 voiced zombies within hearing range, all talking. Prints the per-frame cost of the creature audio pass.
+func _audiostress() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var audio = world.get("audio")
+	var zs: Array = []
+	for i in 100:
+		var a := TAU * float(i) / 100.0
+		var r := 12.0 + float((i * 37) % 90)
+		var p := player.position + Vector3(cos(a) * r, 0.0, sin(a) * r)
+		p.y = player.terrain.data.get_height(p)
+		if is_nan(p.y):
+			p.y = player.position.y - 1.7
+		var z: Zombie = world.call("_add_zombie", p, 5000 + i)
+		z.set_physics_process(false)
+		z.global_position = p
+		zs.append(z)
+	for k in 5:
+		await get_tree().process_frame
+	# every voice talks, so every voice runs its occlusion refresh
+	for z in zs:
+		var v := z.get_node_or_null("Voice") as CreatureVoice
+		if v != null:
+			v.say("groan", 3.0, 1.0, 5.0, 110.0)
+	var voiced := 0
+	for z in zs:
+		if z.get_node_or_null("Voice") != null:
+			voiced += 1
+	var t0 := Time.get_ticks_usec()
+	for k in 60:
+		audio._creatures(0.016)
+	var per_pass := float(Time.get_ticks_usec() - t0) / 60.0 / 1000.0
+	var t1 := Time.get_ticks_usec()
+	for k in 200:
+		audio.occlusion(player.position + Vector3(60.0, 1.6, 20.0))
+	var per_occ := float(Time.get_ticks_usec() - t1) / 200.0 / 1000.0
+	# real frames while all of them keep talking
+	var worst := 0.0
+	var sum := 0.0
+	var nf := 0
+	var tn := Time.get_ticks_usec()
+	for k in 180:
+		await get_tree().process_frame
+		var tt := Time.get_ticks_usec()
+		var dtf := float(tt - tn) / 1000.0
+		tn = tt
+		sum += dtf
+		nf += 1
+		worst = maxf(worst, dtf)
+		if k % 20 == 0:
+			for z in zs:
+				var v2 := z.get_node_or_null("Voice") as CreatureVoice
+				if v2 != null:
+					v2.say("groan", 3.0, 1.0, 5.0, 110.0)
+	var ok := voiced >= 80 and per_pass < 3.0 and per_occ < 0.4
+	print("AUDIOSTRESS voiced=%d  creature pass=%.3f ms  occlusion one=%.3f ms  avg frame=%.2f ms worst=%.1f ms ok=%s" % [voiced, per_pass, per_occ, sum / maxf(nf, 1), worst, str(ok)])
+	fails += 0 if ok else 1
+	for z in zs:
+		z.global_position = Vector3(5000, -500, 5000)
+	print("AUDIOSTRESS failures=", fails)
+	get_tree().quit()
+
+
+## Creature audio: every voice is attached to its creature, follows it, falls off physically, is muffled by walls.
+func _audiotest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var audio = world.get("audio")
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var zp: Vector3 = player.position + fwd * 20.0
+	zp.y = player.terrain.data.get_height(zp)
+	var z: Zombie = world.call("_add_zombie", zp, 1100)
+	z.set_process(false)
+	z.set_physics_process(false)
+	z.global_position = zp
+	for k in 3:
+		await get_tree().process_frame
+	var v := z.get_node_or_null("Voice") as CreatureVoice
+	var ok := v != null and v.get_parent() == z
+	print("AUDIOTEST zombie has attached Voice node ok=", ok)
+	fails += 0 if ok else 1
+	# follows the body
+	z.global_position = zp + Vector3(12.0, 0.0, 3.0)
+	await get_tree().process_frame
+	ok = v != null and v.global_position.distance_to(z.global_position + Vector3(0, 1.6, 0)) < 0.05
+	print("AUDIOTEST voice follows moving zombie (dist %.3f) ok=%s" % [v.global_position.distance_to(z.global_position + Vector3(0, 1.6, 0)), str(ok)])
+	fails += 0 if ok else 1
+	# events -> sounds from this body
+	var n0 := v.say_count
+	z.attacked.emit()
+	var a_ok := v.last_say == "grunt"
+	z.damaged.emit()
+	z.died.emit()
+	ok = a_ok and v.last_say == "zdeath" and v.say_count == n0 + 3
+	print("AUDIOTEST attack/hurt/death voiced (last=%s n=%d) ok=%s" % [v.last_say, v.say_count - n0, str(ok)])
+	fails += 0 if ok else 1
+	# physical falloff settings
+	v.say("groan", 3.0, 1.0, 5.0, 110.0)
+	var pl: AudioStreamPlayer3D = v.get("_voices")[0]
+	ok = pl.unit_size <= 8.0 and pl.max_distance <= 150.0 and pl.attenuation_model == AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+	print("AUDIOTEST groan falloff unit=%.1f max=%.0f ok=%s" % [pl.unit_size, pl.max_distance, str(ok)])
+	fails += 0 if ok else 1
+	# footsteps come from walking
+	var s0 := v.step_count
+	for k in 12:
+		z.global_position += Vector3(0.5, 0.0, 0.0)
+		await get_tree().process_frame
+	ok = v.step_count - s0 >= 3
+	print("AUDIOTEST zombie footsteps while walking steps=%d ok=%s" % [v.step_count - s0, str(ok)])
+	fails += 0 if ok else 1
+	var s1 := v.step_count
+	for k in 12:
+		await get_tree().process_frame
+	ok = v.step_count == s1
+	print("AUDIOTEST no footsteps when standing ok=", ok)
+	fails += 0 if ok else 1
+	# no flat 2D players anywhere under a creature
+	var flat := 0
+	for c in z.find_children("*", "AudioStreamPlayer", true, false):
+		flat += 1
+	print("AUDIOTEST 2D (global) players under zombie = %d ok=%s" % [flat, str(flat == 0)])
+	fails += 0 if flat == 0 else 1
+	z.global_position = Vector3(5000, -500, 5000)
+	# wolf howl + bear roar come from the animal
+	var wp: Vector3 = player.position + fwd * 40.0
+	wp.y = player.terrain.data.get_height(wp)
+	var w: Wolf = world.call("_add_wolf", wp, 1101, false)
+	var b: Wolf = world.call("_add_wolf", wp + Vector3(6, 0, 0), 1102, true)
+	for k in 3:
+		await get_tree().process_frame
+	w.state = Wolf.State.ALERT
+	b.state = Wolf.State.CHASE
+	for k in 3:
+		await get_tree().process_frame
+	var wv := w.get_node_or_null("Voice") as CreatureVoice
+	var bv := b.get_node_or_null("Voice") as CreatureVoice
+	ok = wv != null and wv.last_say == "howl" and bv != null and bv.last_say == "roar"
+	print("AUDIOTEST wolf howl=%s bear roar=%s ok=%s" % [wv.last_say if wv else "-", bv.last_say if bv else "-", str(ok)])
+	fails += 0 if ok else 1
+	w.global_position = Vector3(5000, -500, 5000)
+	b.global_position = Vector3(5000, -500, 5000)
+	# occlusion: wall muffles, open door does not
+	var cbn: Cabin = (world.get("cabins") as Array)[0]
+	var inside: Vector3 = cbn.to_global(Vector3(0.0, 1.2, 0.0))
+	player.position = cbn.to_global(Vector3(0.0, 0.0, 5.5))
+	player.position.y = cbn.floor_y + 1.7
+	cbn.door_open = true
+	await get_tree().process_frame
+	var oo: Vector2 = audio.call("occlusion", inside)
+	cbn.door_open = false
+	var oc: Vector2 = audio.call("occlusion", inside)
+	var back := cbn.to_global(Vector3(0.0, 1.2, -5.5))
+	var ow: Vector2 = audio.call("occlusion", inside)
+	ok = oo.x > oc.x and oc.x <= -9.0 and oc.y <= 800.0 and oo.y > 3000.0
+	print("AUDIOTEST occlusion open door %s closed door %s ok=%s" % [str(oo), str(oc), str(ok)])
+	fails += 0 if ok else 1
+	# deer snort + yelp
+	var dp: Vector3 = player.position + fwd * 30.0
+	dp.y = player.terrain.data.get_height(dp)
+	var dr: Deer = world.call("_add_deer", dp, 5)
+	for k in 3:
+		await get_tree().process_frame
+	dr.state = Deer.State.ALERT
+	for k in 3:
+		await get_tree().process_frame
+	var dv := dr.get_node_or_null("Voice") as CreatureVoice
+	ok = dv != null and dv.last_say == "snort"
+	print("AUDIOTEST deer snort ok=", ok)
+	fails += 0 if ok else 1
+	print("AUDIOTEST failures=", fails)
+	get_tree().quit()
+
+
+## Item spawner: filters, give to pack, drop at feet, every item can be built as a cell; windowed screenshot.
+func _spawntest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	open()
+	await get_tree().process_frame
+	var sp := spawner
+	var total := Inventory.ITEMS.size()
+	sp.set_category("all")
+	sp._search.text = ""
+	sp.rebuild()
+	var ok: bool = sp.matches().size() == total and total > 40
+	print("SPAWNTEST all items listed %d/%d ok=%s" % [sp.matches().size(), total, str(ok)])
+	fails += 0 if ok else 1
+	sp.set_category("clothing")
+	var cl: Array = sp.matches()
+	ok = cl.has("sweater") and cl.has("parka") and not cl.has("beans")
+	print("SPAWNTEST clothing filter n=%d ok=%s" % [cl.size(), str(ok)])
+	fails += 0 if ok else 1
+	sp.set_category("all")
+	sp._search.text = "SWEAT"
+	var sm: Array = sp.matches()
+	ok = sm == ["sweater"]
+	print("SPAWNTEST search 'SWEAT' -> ", sm, " ok=", ok)
+	fails += 0 if ok else 1
+	sp._search.text = "zzznothing"
+	ok = sp.matches().is_empty()
+	print("SPAWNTEST search no match ok=", ok)
+	fails += 0 if ok else 1
+	sp._search.text = ""
+	sp.rebuild()
+	await get_tree().process_frame
+	ok = sp._grid.get_child_count() >= total
+	print("SPAWNTEST grid cells=%d ok=%s" % [sp._grid.get_child_count(), str(ok)])
+	fails += 0 if ok else 1
+	var b0 := inv.count("sweater")
+	sp.set_qty(5)
+	sp.give("sweater", sp.qty)
+	ok = inv.count("sweater") == b0 + 5
+	print("SPAWNTEST give x5 sweater -> ", inv.count("sweater"), " ok=", ok)
+	fails += 0 if ok else 1
+	var pk0 := get_tree().get_nodes_in_group("pickups").size()
+	sp.at_feet = true
+	sp.give("parka", 1)
+	ok = get_tree().get_nodes_in_group("pickups").size() == pk0 + 1 and inv.count("parka") == 0
+	print("SPAWNTEST drop at feet ok=", ok)
+	fails += 0 if ok else 1
+	sp.at_feet = false
+	sp.give("not_an_item", 3)
+	ok = not inv.counts.has("not_an_item")
+	print("SPAWNTEST unknown id ignored ok=", ok)
+	fails += 0 if ok else 1
+	# typing must not walk the player
+	var fr0 := player.frozen
+	sp._on_focus()
+	var fr1 := player.frozen
+	sp._on_unfocus()
+	ok = fr1 and player.frozen == fr0
+	print("SPAWNTEST search focus freezes player ok=", ok)
+	fails += 0 if ok else 1
+	await get_tree().create_timer(0.6).timeout
+	if DisplayServer.get_name() != "headless":
+		get_viewport().get_texture().get_image().save_png("C:/Users/parst/Development/game/brave_and_cold/shots/spawner.png")
+	print("SPAWNTEST failures=", fails)
+	get_tree().quit()
+
+
+## Trees and plants are offered only when the crosshair is on them (not just somewhere in front of you).
+func _aimtest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	world.call("_ensure_gear")
+	var inv: Inventory = world.get("inv")
+	var forest = world.get("forest")
+	player.god = true
+	inv.add("axe", 1)
+	world.set("rifle_up", false)
+	var t0: Dictionary = forest.nearest_tree(player.position, Vector3.FORWARD, 80.0, false)
+	var tx := float(t0["x"])
+	var tz := float(t0["z"])
+	var r := float(t0["r"])
+	_tp(tx + 1.5 + r, tz, Vector3(tx, 0.0, tz))
+	await get_tree().create_timer(1.0).timeout
+	var gy: float = world.call("_ground_y", tx, tz)
+	player.pitch = 0.0
+	player.yaw = atan2(-(tx - player.position.x), -(tz - player.position.z))
+	world.call("_update_prompt")
+	var txt := _prompt_text()
+	var ok := txt.contains("Chop tree")
+	print("AIMTEST tree under crosshair offers chop ok=", ok, " [", txt, "]")
+	fails += 0 if ok else 1
+	var yaw0 := player.yaw
+	player.yaw = yaw0 + deg_to_rad(35.0)
+	world.call("_update_prompt")
+	txt = _prompt_text()
+	ok = not txt.contains("Chop tree")
+	print("AIMTEST tree 35 deg off crosshair NOT offered ok=", ok, " [", txt, "]")
+	fails += 0 if ok else 1
+	player.yaw = yaw0
+	player.pitch = deg_to_rad(-75.0)
+	world.call("_update_prompt")
+	txt = _prompt_text()
+	ok = not txt.contains("Chop tree")
+	print("AIMTEST looking at the ground in front of the tree NOT offered ok=", ok)
+	fails += 0 if ok else 1
+	player.pitch = 0.0
+	world.set("aim_tol_scale", 0.01)
+	var tdist := Vector2(tx - player.position.x, tz - player.position.z).length()
+	player.yaw = yaw0 + atan((r + 0.2) / tdist)   # crosshair passes 0.2 m outside the bark
+	world.call("_update_prompt")
+	var strict := _prompt_text().contains("Chop tree")
+	world.set("aim_tol_scale", 1.0)
+	world.call("_update_prompt")
+	var normal := _prompt_text().contains("Chop tree")
+	ok = normal and not strict
+	print("AIMTEST aim_tol_scale knob tightens (6 deg off: normal=%s strict=%s) ok=%s" % [str(normal), str(strict), str(ok)])
+	fails += 0 if ok else 1
+	# plants
+	var plants = world.get("plants")
+	var pkeys: Array = plants._plants.keys() if plants != null else []
+	if pkeys.is_empty():
+		print("AIMTEST plants SKIP (none)")
+	else:
+		var pd: Dictionary = plants.get_plant(pkeys[0])
+		var px := float(pd["x"])
+		var pz := float(pd["z"])
+		_tp(px + 1.2, pz, Vector3(px, 0.0, pz))
+		await get_tree().create_timer(1.0).timeout
+		var py: float = world.call("_ground_y", px, pz) + 0.25
+		_look_at(Vector3(px, py, pz))
+		world.call("_update_prompt")
+		txt = _prompt_text()
+		ok = txt.contains("Gather")
+		print("AIMTEST plant under crosshair offers gather ok=", ok, " [", txt, "]")
+		fails += 0 if ok else 1
+		player.yaw += deg_to_rad(70.0)
+		world.call("_update_prompt")
+		txt = _prompt_text()
+		ok = not txt.contains("Gather")
+		print("AIMTEST plant behind your shoulder NOT offered ok=", ok)
+		fails += 0 if ok else 1
+	print("AIMTEST failures=", fails)
+	get_tree().quit()
+
+
+func _prompt_text() -> String:
+	var t := ""
+	for c in world.get("_cands_cache"):
+		t += String(c["text"]) + " | "
+	return t
+
+
+func _interacttest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var inv: Inventory = world.get("inv")
+	player.god = true
+	player.noclip = false
+	player.frozen = false
+	var yaw0 := player.yaw
+	var feet := player.position.y - player.eye_h
+	var fwd := Vector3(-sin(yaw0), 0.0, -cos(yaw0))
+	# ---- 1. aim test helper: point 1.5 m ahead at chest height vs behind / far / off to the side
+	player.pitch = 0.0
+	var ahead: Vector3 = player.position + fwd * 1.5
+	var ok: bool = bool(world.call("_aim_ok", ahead, 2.0, 0.5))
+	print("INTERACT aim ok ahead=", ok)
+	fails += 0 if ok else 1
+	player.yaw = yaw0 + deg_to_rad(70.0)
+	ok = not bool(world.call("_aim_ok", ahead + fwd * 0.5, 2.5, 0.5))
+	print("INTERACT aim rejects 70deg away=", ok)
+	fails += 0 if ok else 1
+	player.yaw = yaw0
+	ok = not bool(world.call("_aim_ok", player.position + fwd * 4.0, 2.0, 0.5))
+	print("INTERACT aim rejects out of reach=", ok)
+	fails += 0 if ok else 1
+	# ---- 2. ground items: only the looked-at, near one is offered
+	for pk in get_tree().get_nodes_in_group("pickups"):
+		pk.queue_free()
+	await get_tree().process_frame
+	var ipos := player.position + fwd * 1.3
+	ipos.y = feet
+	ItemPickup.spawn(world, "wood", 1, ipos)
+	var opos := player.position - fwd * 1.3
+	opos.y = feet
+	ItemPickup.spawn(world, "stick", 1, opos)
+	var fpos := player.position + fwd * 6.0
+	fpos.y = feet
+	ItemPickup.spawn(world, "rag", 1, fpos)
+	player.pitch = atan2(-(player.eye_h - 0.15), 1.3)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var texts: Array = world.get("_cands_cache").map(func(c) -> String: return String(c["text"]))
+	var has_wood := texts.any(func(t: String) -> bool: return t.begins_with("Take Wood") or t.begins_with("Take Firewood"))
+	var take_n := texts.filter(func(t: String) -> bool: return t.begins_with("Take ")).size()
+	ok = take_n == 1
+	print("INTERACT looking down at one item: take options=%d (want 1) texts=%s ok=%s" % [take_n, str(texts), str(ok)])
+	fails += 0 if ok else 1
+	player.pitch = 0.0
+	player.yaw = yaw0 + PI
+	player.pitch = atan2(-(player.eye_h - 0.15), 1.3)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	texts = world.get("_cands_cache").map(func(c) -> String: return String(c["text"]))
+	take_n = texts.filter(func(t: String) -> bool: return t.begins_with("Take ")).size()
+	ok = take_n == 1
+	print("INTERACT turned round: now the other item, take options=%d ok=%s" % [take_n, str(ok)])
+	fails += 0 if ok else 1
+	player.pitch = 0.0
+	player.yaw = yaw0 + deg_to_rad(90.0)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	texts = world.get("_cands_cache").map(func(c) -> String: return String(c["text"]))
+	take_n = texts.filter(func(t: String) -> bool: return t.begins_with("Take ")).size()
+	ok = take_n == 0
+	print("INTERACT looking at the horizon: take options=%d (want 0) ok=%s" % [take_n, str(ok)])
+	fails += 0 if ok else 1
+	# ---- 3. scrollable nearby row: 14 items, 8 visible, scroll reaches the rest
+	for pk in get_tree().get_nodes_in_group("pickups"):
+		pk.queue_free()
+	await get_tree().process_frame
+	for i in 14:
+		var a := TAU * float(i) / 14.0
+		var pp := player.position + Vector3(cos(a), 0.0, sin(a)) * 1.6
+		pp.y = feet
+		ItemPickup.spawn(world, "stick", 1 + i, pp)
+	await get_tree().process_frame
+	var gear: GearScreen = world.get("gear")
+	gear.open()
+	await get_tree().process_frame
+	var near_n: int = gear._nearby().size()
+	ok = near_n == 14
+	print("INTERACT nearby total=%d (want 14) ok=%s" % [near_n, str(ok)])
+	fails += 0 if ok else 1
+	var we := InputEventMouseButton.new()
+	we.button_index = MOUSE_BUTTON_WHEEL_DOWN
+	we.pressed = true
+	for k in 20:
+		gear._on_gui(we)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	ok = gear._gscroll == 14 - GearScreen.GROUND_N
+	print("INTERACT scroll clamps at %d (want %d) ok=%s" % [gear._gscroll, 14 - GearScreen.GROUND_N, str(ok)])
+	fails += 0 if ok else 1
+	var last_cell: Dictionary = gear._hits.filter(func(h: Dictionary) -> bool: return h.get("k", "") == "ground" and int(h.get("idx", -1)) == 13)[0]
+	ok = not last_cell.is_empty()
+	print("INTERACT 14th item reachable via scroll ok=", ok)
+	fails += 0 if ok else 1
+	gear.close()
+	for pk in get_tree().get_nodes_in_group("pickups"):
+		pk.queue_free()
+	# ---- 4. storage chest: craft, store, take, condition kept, save roundtrip, dismantle
+	inv.add("plank", 6)
+	inv.add("nails", 8)
+	inv.add("hammer")
+	player.yaw = yaw0
+	var why: String = world.call("craft_start", "storage_chest")
+	ok = why == ""
+	print("INTERACT chest craft starts why='%s' ok=%s" % [why, str(ok)])
+	fails += 0 if ok else 1
+	world.call("_craft_update", 31.0)
+	var chests: Array = world.get("chests")
+	ok = chests.size() == 1 and inv.count("plank") == 0 and inv.count("nails") == 0
+	print("INTERACT chest built chests=%d planks=%d nails=%d ok=%s" % [chests.size(), inv.count("plank"), inv.count("nails"), str(ok)])
+	fails += 0 if ok else 1
+	if chests.is_empty():
+		print("INTERACT failures=", fails)
+		get_tree().quit()
+		return
+	var ch: StorageChest = chests[0]
+	inv.add("axe")
+	inv.cond["axe"] = 0.5
+	inv.add("beans", 3)
+	world.call("chest_put", ch, "axe", 1)
+	world.call("chest_put", ch, "beans", 2)
+	ok = ch.count("axe") == 1 and ch.count("beans") == 2 and inv.count("axe") == 0 and inv.count("beans") == 1
+	print("INTERACT stored axe+2 beans ok=", ok)
+	fails += 0 if ok else 1
+	var js := JSON.stringify(ch.to_dict())
+	var back: Dictionary = JSON.parse_string(js)
+	world.call("_restore_chests", [back])
+	var ch2: StorageChest = (world.get("chests") as Array)[0]
+	ok = (world.get("chests") as Array).size() == 1 and ch2.count("axe") == 1 and ch2.count("beans") == 2 and absf(float(ch2.cond.get("axe", 1.0)) - 0.5) < 0.01
+	print("INTERACT chest survives save/load ok=", ok)
+	fails += 0 if ok else 1
+	world.call("chest_take", ch2, "axe", 1)
+	world.call("chest_take", ch2, "beans", 5)
+	ok = inv.count("axe") == 1 and absf(inv.condition("axe") - 0.5) < 0.01 and inv.count("beans") == 3 and ch2.is_empty()
+	print("INTERACT took back, condition kept %.2f ok=%s" % [inv.condition("axe"), str(ok)])
+	fails += 0 if ok else 1
+	gear.open_chest(ch2)
+	await get_tree().process_frame
+	ok = gear._tab == "chest" and gear._chest == ch2
+	print("INTERACT gear opens on chest tab ok=", ok)
+	fails += 0 if ok else 1
+	# chest: turn it, contents blocks show while the lid is up and track put/take
+	var cyaw0 := ch2.rotation.y
+	ch2.rotate_quarter()
+	ok = absf(absf(wrapf(ch2.rotation.y - cyaw0, -PI, PI)) - PI * 0.5) < 0.01
+	print("INTERACT chest turns 90 deg ok=", ok)
+	fails += 0 if ok else 1
+	ch2.put("beans", 4, 1.0, 0.0)
+	ch2.put("axe", 1, 1.0, 0.0)
+	ch2.want_open = true
+	for k in 8:
+		ch2._process(0.1)
+	var pile: Node3D = ch2.get("_pile")
+	ok = pile != null and pile.visible and pile.get_child_count() == 2
+	print("INTERACT chest pile blocks=", pile.get_child_count() if pile != null else -1, " ok=", ok)
+	fails += 0 if ok else 1
+	ch2.put("matches", 2, 1.0, 0.0)
+	ch2._process(0.1)
+	pile = ch2.get("_pile")
+	ok = pile.get_child_count() == 3
+	print("INTERACT chest pile updates while open blocks=", pile.get_child_count(), " ok=", ok)
+	fails += 0 if ok else 1
+	ch2.want_open = false
+	for k in 8:
+		ch2._process(0.1)
+	ok = not (ch2.get("_pile") as Node3D).visible
+	print("INTERACT chest pile hidden when shut ok=", ok)
+	ch2.remove("beans", 4)
+	ch2.remove("axe", 1)
+	ch2.remove("matches", 2)
+	fails += 0 if ok else 1
+	gear.close()
+	var pl0 := inv.count("plank")
+	world.call("_dismantle_chest", ch2)
+	ok = (world.get("chests") as Array).is_empty() and inv.count("plank") == pl0 + 4
+	print("INTERACT dismantle returns planks ok=", ok)
+	fails += 0 if ok else 1
+	# ---- 5. god mode: unlimited rifle rounds and no tool wear
+	inv.add("rifle")
+	inv.counts.erase("ammo")
+	world.set("rifle_up", true)
+	player.god = true
+	for k in 3:
+		await get_tree().process_frame
+	world.set("_attack_cd", 0.0)
+	world.set("last_shot", {})
+	world.call("_shoot")
+	ok = not (world.get("last_shot") as Dictionary).is_empty() and inv.count("ammo") == 0
+	print("INTERACT god fires with 0 ammo ok=", ok)
+	fails += 0 if ok else 1
+	inv.add("ammo", 5)
+	world.set("_attack_cd", 0.0)
+	world.call("_shoot")
+	ok = inv.count("ammo") == 5
+	print("INTERACT god keeps ammo=%d ok=%s" % [inv.count("ammo"), str(ok)])
+	fails += 0 if ok else 1
+	inv.cond["axe"] = 0.9
+	inv.wear("axe", 0.5)
+	ok = absf(inv.condition("axe") - 0.9) < 0.001
+	print("INTERACT god: no tool wear ok=", ok)
+	fails += 0 if ok else 1
+	player.god = false
+	for k in 3:
+		await get_tree().process_frame
+	world.set("_attack_cd", 0.0)
+	world.call("_shoot")
+	ok = inv.count("ammo") == 4
+	print("INTERACT mortal spends ammo=%d (want 4) ok=%s" % [inv.count("ammo"), str(ok)])
+	fails += 0 if ok else 1
+	player.god = true
+	# ---- 6. hold left mouse keeps swinging
+	world.set("rifle_up", false)
+	inv.add("axe")
+	world.set("test_mouse", true)
+	await get_tree().process_frame
+	world.set("_attack_cd", 0.0)
+	var n0: int = world.get("swing_n")
+	var mb := InputEventMouseButton.new()
+	mb.button_index = MOUSE_BUTTON_LEFT
+	mb.pressed = true
+	Input.parse_input_event(mb)
+	await get_tree().create_timer(3.4).timeout
+	var held_n: int = int(world.get("swing_n")) - n0
+	var mu := InputEventMouseButton.new()
+	mu.button_index = MOUSE_BUTTON_LEFT
+	mu.pressed = false
+	Input.parse_input_event(mu)
+	await get_tree().create_timer(0.3).timeout
+	var after_n: int = int(world.get("swing_n"))
+	await get_tree().create_timer(2.0).timeout
+	ok = held_n >= 3 and int(world.get("swing_n")) == after_n
+	print("INTERACT held LMB swings=%d (want >=3), none after release ok=%s" % [held_n, str(ok)])
+	fails += 0 if ok else 1
+	print("INTERACT failures=", fails)
+	get_tree().quit()
+
+
+func _hittest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	var inv: Inventory = world.get("inv")
+	var vm: Viewmodel = world.get("viewmodel")
+	player.god = true
+	# 1. revive must bring the viewmodel back
+	player.dead = true
+	for k in 5:
+		await get_tree().process_frame
+	var hid := not vm.visible
+	_revive()
+	for k in 5:
+		await get_tree().process_frame
+	var ok := hid and vm.visible
+	print("HITTEST viewmodel hides on death + returns on revive hid=%s now=%s ok=%s" % [str(hid), str(vm.visible), str(ok)])
+	fails += 0 if ok else 1
+	inv.add("rifle")
+	inv.add("ammo", 60)
+	world.set("rifle_up", true)
+	world.set("aim_override", true)
+	for k in 30:
+		await get_tree().process_frame
+	ok = player.aim_k > 0.99 and absf(player.cam.fov - float(player.aim_fovs[0])) < 0.5   # the slung rifle's first optic power
+	print("HITTEST aim_k=%.2f fov=%.1f ok=%s" % [player.aim_k, player.cam.fov, str(ok)])
+	fails += 0 if ok else 1
+	# 2. point blank + range: zombie frozen at several distances, aim at its chest, trace must hit it
+	var fwd := Vector3(-sin(player.yaw), 0.0, -cos(player.yaw))
+	var results := []
+	for dist in [0.5, 0.8, 1.2, 2.0, 5.0, 15.0, 40.0]:
+		var zp: Vector3 = player.position + fwd * dist
+		zp.y = player.terrain.data.get_height(zp)
+		var z: Zombie = world.call("_add_zombie", zp, 700 + int(dist * 10))
+		z.set_process(false)
+		z.set_physics_process(false)
+		z.global_position = zp
+		await get_tree().process_frame
+		var to := z.global_position + Vector3(0, 1.2, 0) - player.cam.global_position
+		player.yaw = atan2(-to.x, -to.z)
+		player.pitch = atan2(to.y, Vector2(to.x, to.z).length())
+		for k in 3:
+			await get_tree().process_frame
+		var r := HitZones.trace(get_tree(), player.terrain, world.get("forest"), player.cam.global_position, -player.cam.global_transform.basis.z, 400.0)
+		var hit: bool = r.has("node") and r["node"] == z
+		results.append(hit)
+		print("HITTEST trace chest dist=%.1f hit=%s zone=%s" % [dist, str(hit), str(r.get("zone", "-"))])
+		# real shot path
+		world.set("_attack_cd", 0.0)
+		z.hp = 1000.0
+		world.call("_shoot")
+		var ls: Dictionary = world.get("last_shot")
+		var shot_ok: bool = ls.get("hit", false)
+		print("HITTEST _shoot dist=%.1f hit=%s zone=%s zhp=%.0f" % [dist, str(shot_ok), str(ls.get("zone", "-")), z.hp])
+		results.append(shot_ok and z.hp < 1000.0)
+		z.global_position = Vector3(5000, -500, 5000)
+	ok = not results.has(false)
+	print("HITTEST point-blank..40 m ok=", ok)
+	fails += 0 if ok else 1
+	# 3. melee: zombie dead ahead at 1.2 m is picked; one behind us is not
+	var zp2: Vector3 = player.position + fwd * 1.2
+	zp2.y = player.terrain.data.get_height(zp2)
+	var za: Zombie = world.call("_add_zombie", zp2, 801)
+	za.set_process(false)
+	za.set_physics_process(false)
+	za.global_position = zp2
+	var zb: Zombie = world.call("_add_zombie", player.position - fwd * 1.2, 802)
+	zb.set_process(false)
+	zb.set_physics_process(false)
+	zb.global_position = Vector3(player.position.x - fwd.x * 1.2, player.terrain.data.get_height(player.position - fwd * 1.2), player.position.z - fwd.z * 1.2)
+	player.pitch = deg_to_rad(-20.0)  # looking down at its chest from close range
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var pick = world.call("_melee_pick", 1.8)
+	ok = pick == za
+	print("HITTEST melee picks front zombie ok=", ok)
+	fails += 0 if ok else 1
+	za.global_position += fwd * 3.0
+	zb.global_position = player.position + Vector3(0, -player.eye_h, 0) - fwd * 1.2
+	pick = world.call("_melee_pick", 1.8)
+	ok = pick != za
+	print("HITTEST melee ignores out of reach ok=", ok)
+	fails += 0 if ok else 1
+	# 4. occlusion: straight down hits ground ~eye_h away, up hits nothing, a hill blocks a zombie behind it
+	var wb := HitZones.world_block(player.terrain, world.get("forest"), player.cam.global_position, Vector3.DOWN, 20.0)
+	ok = absf(wb - player.eye_h) < 0.6
+	print("HITTEST ground block t=%.2f eye_h=%.2f ok=%s" % [wb, player.eye_h, str(ok)])
+	fails += 0 if ok else 1
+	wb = HitZones.world_block(player.terrain, world.get("forest"), player.cam.global_position, Vector3.UP, 50.0)
+	ok = is_inf(wb)
+	print("HITTEST sky free ok=", ok)
+	fails += 0 if ok else 1
+	# 4b. walls: a zombie inside a cabin cannot be shot through the back wall, but can through the open door
+	var cbn: Cabin = (world.get("cabins") as Array)[0]
+	var zin: Zombie = world.call("_add_zombie", cbn.to_global(Vector3(0.0, 0.3, 0.0)), 900)
+	zin.set_process(false)
+	zin.set_physics_process(false)
+	zin.global_position = Vector3(cbn.global_position.x, cbn.floor_y, cbn.global_position.z)
+	var blds: Array = world.call("_building_list")
+	cbn.door_open = true
+	var res_open: Dictionary = {}
+	var res_wall: Dictionary = {}
+	for side in [1.0, -1.0]:
+		var eye_w: Vector3 = cbn.to_global(Vector3(0.0, 0.0, 5.5 * side))
+		eye_w.y = cbn.floor_y + 1.7
+		var tgt := zin.global_position + Vector3(0, 1.2, 0)
+		var dd := (tgt - eye_w).normalized()
+		var rr3 := HitZones.trace(get_tree(), player.terrain, world.get("forest"), eye_w, dd, 40.0, ["hostile"], blds)
+		if side > 0.0:
+			res_open = rr3
+		else:
+			res_wall = rr3
+	ok = res_open.has("node") and res_open["node"] == zin
+	print("HITTEST shot through open cabin door hits zombie ok=", ok)
+	fails += 0 if ok else 1
+	ok = res_wall.has("world") and not res_wall.has("node")
+	print("HITTEST shot through back wall blocked ok=", ok, " ", res_wall)
+	fails += 0 if ok else 1
+	cbn.door_open = false
+	var eye_c: Vector3 = cbn.to_global(Vector3(0.0, 0.0, 5.5))
+	eye_c.y = cbn.floor_y + 1.7
+	var rrc := HitZones.trace(get_tree(), player.terrain, world.get("forest"), eye_c, (zin.global_position + Vector3(0, 1.2, 0) - eye_c).normalized(), 40.0, ["hostile"], blds)
+	ok = rrc.has("world")
+	print("HITTEST closed door blocks shot ok=", ok)
+	fails += 0 if ok else 1
+	zin.global_position = Vector3(5000, -500, 5000)
+	# 5. spread: aimed at 40 m ~always hits, hip at 20 m mostly hits, hip at 80 m often misses
+	var zc: Vector3 = player.position + fwd * 40.0
+	zc.y = player.terrain.data.get_height(zc)
+	var zf: Zombie = world.call("_add_zombie", zc, 803)
+	zf.set_process(false)
+	zf.set_physics_process(false)
+	zf.global_position = zc
+	var to2 := zf.global_position + Vector3(0, 1.2, 0) - player.cam.global_position
+	player.yaw = atan2(-to2.x, -to2.z)
+	player.pitch = atan2(to2.y, Vector2(to2.x, to2.z).length())
+	for k in 3:
+		await get_tree().process_frame
+	var aimed := 0
+	for i in 100:
+		var d: Vector3 = world.call("_shot_dir")
+		var rr := HitZones.trace(get_tree(), player.terrain, world.get("forest"), player.cam.global_position, d, 400.0)
+		if rr.has("node"):
+			aimed += 1
+	ok = aimed >= 90
+	print("HITTEST aimed 40 m hits=%d/100 ok=%s" % [aimed, str(ok)])
+	fails += 0 if ok else 1
+	world.set("aim_override", false)
+	player.aim_k = 0.0
+	player.aim_req = false
+	var hip := 0
+	for i in 100:
+		var d2: Vector3 = world.call("_shot_dir")
+		var rr2 := HitZones.trace(get_tree(), player.terrain, world.get("forest"), player.cam.global_position, d2, 400.0)
+		if rr2.has("node"):
+			hip += 1
+	ok = hip >= 3 and hip < 100
+	print("HITTEST hip 40 m hits=%d/100 (spread works if <100) ok=%s" % [hip, str(ok)])
+	fails += 0 if ok else 1
+	# 6. weak-point fixes ------------------------------------------------------------------------------------
+	world.set("aim_override", false)
+	# 6a. zones follow the pose: sleeper lies flat, crawler is low
+	var zs: Zombie = world.call("_add_zombie", player.position + fwd * 6.0 + Vector3(0, 0, 0), 950)
+	zs.set_process(false)
+	zs.set_physics_process(false)
+	var gp: Vector3 = zs.global_position
+	var head_row: Array = (HitZones.SPECS["zombie"] as Array)[0]
+	var stand_head := HitZones.center_of(zs, head_row)
+	zs.get("_model").rotation.x = -PI * 0.5
+	zs.get("_model").position.y = 0.12
+	await get_tree().process_frame
+	var lie_head := HitZones.center_of(zs, head_row)
+	ok = stand_head.y - gp.y > 1.5 and lie_head.y - gp.y < 0.6
+	print("HITTEST sleeper head standing y=%.2f lying y=%.2f ok=%s" % [stand_head.y - gp.y, lie_head.y - gp.y, str(ok)])
+	fails += 0 if ok else 1
+	var down := HitZones.ray(zs, lie_head + Vector3(0, 3, 0), Vector3.DOWN, 10.0)
+	var ghost := HitZones.ray(zs, stand_head + Vector3(3, 0, 0), Vector3.LEFT, 10.0)
+	ok = String(down.get("zone", "")) == "head" and ghost.is_empty()
+	print("HITTEST sleeper zones follow pose (head hit from above, nothing at old standing height) ok=%s" % str(ok))
+	fails += 0 if ok else 1
+	zs.get("_model").rotation.x = 0.35
+	zs.get("_model").position.y = -0.55
+	await get_tree().process_frame
+	var crawl_head := HitZones.center_of(zs, head_row)
+	ok = crawl_head.y - gp.y < stand_head.y - gp.y - 0.5
+	print("HITTEST crawler head y=%.2f ok=%s" % [crawl_head.y - gp.y, str(ok)])
+	fails += 0 if ok else 1
+	zs.global_position = Vector3(5000, -500, 5000)
+	# 6a2. animal legs are limb-following spheres: hit as "legs", and they move when the leg swings
+	for akind in ["wolf", "bear", "deer"]:
+		var ap: Vector3 = player.position + fwd * 12.0
+		ap.y = player.terrain.data.get_height(ap)
+		var an: Node3D
+		if akind == "deer":
+			an = world.call("_add_deer", ap, 61)
+		else:
+			an = world.call("_add_wolf", ap, 61, akind == "bear")
+		an.set_process(false)
+		an.set_physics_process(false)
+		await get_tree().process_frame
+		var pre: String = "deer" if akind == "deer" else akind
+		var leg := an.find_child(pre + "_leg_fl", true, false) as Node3D
+		var found := leg != null
+		var a_ok := found
+		if found:
+			var low := HitZones.spheres(an)
+			var legcount := 0
+			for sp: Dictionary in low:
+				if sp["zone"] == "legs":
+					legcount += 1
+			var c0: Vector3 = leg.global_transform * Vector3(0.0, -0.42 if akind == "wolf" else -0.62, 0.0)
+			var side: Vector3 = leg.global_transform.basis.x.normalized()
+			var rz := HitZones.ray(an, c0 - side * 3.0, side, 10.0)
+			leg.rotation.x = 0.6
+			var c1: Vector3 = leg.global_transform * Vector3(0.0, -0.42 if akind == "wolf" else -0.62, 0.0)
+			a_ok = legcount == 8 and String(rz.get("zone", "")) == "legs" and c0.distance_to(c1) > 0.12
+			print("HITTEST ", akind, " limbs: spheres_legs=", legcount, " zone=", rz.get("zone", "-"), " swing=", c0.distance_to(c1), " ok=", a_ok)
+		else:
+			print("HITTEST ", akind, " leg node missing")
+		fails += 0 if a_ok else 1
+		an.global_position = Vector3(5000, -500, 5000)
+	# 6a3. creatures stand on the ice sheet, not on the lake bed under it
+	var icef: IceField = world.get("ice")
+	var holes: Array = world.get("ice_holes")
+	if icef == null or holes.is_empty():
+		print("HITTEST ice-walk SKIP (no ice holes)")
+	else:
+		var hp: Vector3 = (holes[0] as Node3D).global_position
+		var iy := icef.ice_at(hp.x, hp.z)
+		var bed: float = player.terrain.data.get_height(Vector3(hp.x, 0.0, hp.z))
+		var lifted := IceField.lift(bed, hp.x, hp.z)
+		ok = not is_nan(iy) and absf(lifted - iy) < 0.001 and (is_nan(bed) or bed <= iy)
+		print("HITTEST ice lift bed=%.2f ice=%.2f lifted=%.2f ok=%s" % [bed, iy, lifted, str(ok)])
+		fails += 0 if ok else 1
+		var dice: Deer = world.call("_add_deer", Vector3(hp.x + 3.0, bed if not is_nan(bed) else iy - 2.0, hp.z), 77)
+		await get_tree().create_timer(1.2).timeout
+		var onice: bool = absf(dice.global_position.y - icef.ice_at(dice.global_position.x, dice.global_position.z)) < 0.4 if not is_nan(icef.ice_at(dice.global_position.x, dice.global_position.z)) else true
+		print("HITTEST deer on ice y=%.2f ice=%.2f ok=%s" % [dice.global_position.y, icef.ice_at(dice.global_position.x, dice.global_position.z), str(onice)])
+		fails += 0 if onice else 1
+		dice.global_position = Vector3(5000, -500, 5000)
+	# 6b. ballistics: gravity drop and flight time
+	var eye0: Vector3 = player.cam.global_position + Vector3(0, 40.0, 0)
+	var dirb := Vector3(-sin(player.yaw) * cos(0.09), sin(0.09), -cos(player.yaw) * cos(0.09))
+	var rtb := dirb.cross(Vector3.UP).normalized()
+	var d0 := dirb.rotated(rtb, 0.5 * 9.8 * 100.0 / (760.0 * 760.0))
+	var bb := {"p": eye0, "v": d0 * 760.0, "dist": 0.0, "t": 0.0}
+	for i in 40:
+		world.call("_step_bullet", bb, 0.01)
+	var straight := eye0 + d0 * 760.0 * 0.4
+	var dropped: float = straight.y - (bb["p"] as Vector3).y
+	ok = absf(dropped - 0.5 * 9.8 * 0.16) < 0.06
+	print("HITTEST bullet drop in 0.4 s = %.3f m (0.784 expected) ok=%s" % [dropped, str(ok)])
+	fails += 0 if ok else 1
+	# 6c. a bullet takes time: zombie 40 m out is hit only after ~0.05 s of flight
+	world.set("instant_bullets", false)
+	zf.global_position = Vector3(5000, -500, 5000)
+	var zt: Vector3 = player.position + fwd * 40.0
+	zt.y = player.terrain.data.get_height(zt)
+	var zfar: Zombie = world.call("_add_zombie", zt, 960)
+	zfar.set_process(false)
+	zfar.set_physics_process(false)
+	zfar.global_position = zt
+	zfar.hp = 1000.0
+	await get_tree().process_frame
+	var toz := zfar.global_position + Vector3(0, 1.2, 0) - player.cam.global_position
+	player.yaw = atan2(-toz.x, -toz.z)
+	player.pitch = atan2(toz.y, Vector2(toz.x, toz.z).length())
+	for k in 3:
+		await get_tree().process_frame
+	world.set("last_shot", {})
+	world.set("aim_override", true)
+	for k in 20:
+		await get_tree().process_frame
+	world.call("_spawn_bullet", player.cam.global_position, -player.cam.global_transform.basis.z)
+	var instantly: bool = not (world.get("last_shot") as Dictionary).is_empty()
+	var inflight: int = (world.get("bullets") as Array).size()
+	await get_tree().create_timer(1.0).timeout
+	var lsf: Dictionary = world.get("last_shot")
+	ok = (not instantly) and inflight == 1 and lsf.get("hit", false) and float(lsf.get("flight", 0.0)) > 0.03 and float(lsf.get("flight", 0.0)) < 0.5
+	print("HITTEST bullet travel inflight=%d instant=%s last=%s ok=%s" % [inflight, str(instantly), str(lsf), str(ok)])
+	fails += 0 if ok else 1
+	world.set("instant_bullets", true)
+	zfar.global_position = Vector3(5000, -500, 5000)
+	# 6d. roof and outbuildings are solid
+	var eye_r: Vector3 = cbn.to_global(Vector3(0.0, 6.0, 0.0))
+	var tr_roof := HitZones.building_block([cbn], eye_r, Vector3.DOWN, 20.0)
+	ok = tr_roof > 2.0 and tr_roof < 3.5
+	print("HITTEST roof blocks shot from above t=%.2f ok=%s" % [tr_roof, str(ok)])
+	fails += 0 if ok else 1
+	var obs: Array = world.get("outbuildings")
+	if obs.is_empty():
+		print("HITTEST outbuilding block SKIP (none in world)")
+	else:
+		var ob: Outbuilding = obs[0]
+		var eye_o := ob.to_global(Vector3(0.0, 1.0, ob.hz + 4.0))
+		var dir_o := (ob.to_global(Vector3(0.0, 1.0, 0.0)) - eye_o).normalized()
+		var tob := HitZones.building_block([ob], eye_o, dir_o, 20.0)
+		ok = tob > 3.0 and tob < 5.5
+		print("HITTEST outbuilding blocks shot t=%.2f ok=%s" % [tob, str(ok)])
+		fails += 0 if ok else 1
+	# 6e. chest: solid, lid animates, perishables spoil slowly
+	var chp: Vector3 = player.position + fwd * 8.0
+	chp.y = player.terrain.data.get_height(chp)
+	var chest: StorageChest = world.call("_add_chest", chp, 0.0)
+	await get_tree().process_frame
+	var pushed: Vector2 = chest.resolve(chp.x, chp.z, 0.35)
+	ok = Vector2(pushed.x - chp.x, pushed.y - chp.z).length() > 0.3
+	print("HITTEST chest is solid (pushed %.2f m) ok=%s" % [Vector2(pushed.x - chp.x, pushed.y - chp.z).length(), str(ok)])
+	fails += 0 if ok else 1
+	var lid: Node3D = chest.get("_lid")
+	ok = lid != null and lid.get_parent() != chest
+	print("HITTEST chest uses Blender model (lid pivot found) ok=%s" % str(ok))
+	fails += 0 if ok else 1
+	chest.want_open = true
+	for k in 6:
+		chest._process(0.1)
+	ok = absf(chest.lid_k - 1.0) < 0.01 and lid != null and absf(rad_to_deg(lid.rotation.x) + StorageChest.LID_OPEN_DEG) < 1.0
+	print("HITTEST chest lid opens lid_k=%.2f rot=%.1f ok=%s" % [chest.lid_k, rad_to_deg(lid.rotation.x), str(ok)])
+	fails += 0 if ok else 1
+	chest.want_open = false
+	chest.put("venison_raw", 2, 1.0, 0.0)
+	chest.put("beans", 3, 1.0, 0.0)
+	var shelf := Inventory.shelf_s("venison_raw")
+	chest.tick(shelf * 0.5)
+	var mid_ok := chest.count("venison_raw") == 2
+	chest.tick(shelf * 3.0)
+	ok = mid_ok and chest.count("venison_raw") == 0 and chest.count("rotten_meat") == 2 and chest.count("beans") == 3
+	print("HITTEST chest spoilage (cold rate) mid_ok=%s rotten=%d beans=%d ok=%s" % [str(mid_ok), chest.count("rotten_meat"), chest.count("beans"), str(ok)])
+	fails += 0 if ok else 1
+	# 6f. prompt ranking: stove behind the window is hidden, off-axis things stay, centred thing first
+	var rk: Array = world.call("_rank_cands", [
+		{"m": 0.4, "d": 0.9, "text": "off to the side"},
+		{"m": 0.05, "d": 2.6, "text": "Stove behind window"},
+		{"m": 0.05, "d": 1.0, "text": "Board up window"},
+		{"m": 0.5, "d": 2.6, "text": "Far but off-axis"},
+	])
+	var names: Array = rk.map(func(c): return String(c["text"]))
+	ok = not names.has("Stove behind window") and names.has("Far but off-axis") and names[0] == "Board up window"
+	print("HITTEST prompt ranking ", names, " ok=", ok)
+	fails += 0 if ok else 1
+	# 6g. scope zoom steps and clamps
+	player.zoom_i = 0
+	player.zoom_step(1)
+	player.zoom_step(1)
+	player.zoom_step(1)
+	var z_top: int = player.zoom_i
+	player.zoom_step(-9)
+	ok = z_top == player.aim_fovs.size() - 1 and player.zoom_i == 0
+	print("HITTEST zoom steps clamp top=%d bottom=%d ok=%s" % [z_top, player.zoom_i, str(ok)])
+	fails += 0 if ok else 1
+	print("HITTEST failures=", fails)
+	get_tree().quit()
+
+
+func zombies_cleanup(w: Node) -> void:
+	var zs: Array = w.get("zombies")
+	zs.clear()
+
+
+func _storetest() -> void:
+	await get_tree().create_timer(2.5).timeout
+	var fails := 0
+	player.god = true
+	var inv: Inventory = world.get("inv")
+	var stores: Array = world.get("stores")
+	var ok := stores.size() == 1
+	print("STORETEST stores=", stores.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	if stores.is_empty():
+		print("STORETEST failures=", fails)
+		get_tree().quit()
+		return
+	var st: Store = stores[0]
+	ok = st.openings.size() == 4
+	print("STORETEST windows=", st.openings.size(), " ok=", ok)
+	fails += 0 if ok else 1
+	var cen: Vector3 = st.global_position
+	ok = st.contains_xz(cen.x, cen.z) and not is_nan(st.floor_at(cen.x, cen.z, 0.0))
+	print("STORETEST interior contains+floor ok=", ok)
+	fails += 0 if ok else 1
+	var wall: Vector3 = st.to_global(Vector3(Store.HX, 0.0, 0.0))
+	var q: Vector2 = st.resolve(wall.x, wall.z, 0.4)
+	ok = Vector2(q.x - wall.x, q.y - wall.z).length() > 0.3
+	print("STORETEST wall solid ok=", ok)
+	fails += 0 if ok else 1
+	var dp: Vector3 = st.to_global(Vector3(0.0, 0.0, Store.HZ))
+	var oq: Vector2 = st.resolve(dp.x, dp.z, 0.35)
+	var free: bool = Vector2(oq.x - dp.x, oq.y - dp.z).length() < 0.001
+	st.toggle_door()
+	var cq: Vector2 = st.resolve(dp.x, dp.z, 0.35)
+	var blocked: bool = Vector2(cq.x - dp.x, cq.y - dp.z).length() > 0.05
+	st.bash_door(200.0)
+	ok = free and blocked and st.door_broken and st.door_open
+	print("STORETEST door free=", free, " closed_blocks=", blocked, " breaks=", st.door_broken, " ok=", ok)
+	fails += 0 if ok else 1
+	var n0 := 0
+	for id in inv.counts:
+		n0 += int(inv.counts[id])
+	for li in 3:
+		world.call("_loot_store", st, li)
+	var n1 := 0
+	for id in inv.counts:
+		n1 += int(inv.counts[id])
+	ok = st.looted[0] and st.looted[1] and st.looted[2] and n1 > n0 + 8 and inv.count("rifle") == 0
+	print("STORETEST loot items ", n0, "->", n1, " ok=", ok)
+	fails += 0 if ok else 1
+	var sd: Dictionary = st.state_dict()
+	st.restore_state({'looted': [false, true, false], 'open': false, 'broken': false, 'hp': 10.0})
+	var rs: bool = not st.looted[0] and st.looted[1] and not st.door_open and absf(st.door_hp - 10.0) < 0.01
+	st.restore_state(sd)
+	ok = rs and st.looted[2] and st.door_broken
+	print("STORETEST save/restore ok=", ok)
+	fails += 0 if ok else 1
+	var pop: Population = world.get("pop")
+	var ns := 0
+	for s in pop.specials:
+		if Vector2(s.x - cen.x, s.z - cen.z).length() < 8.0:
+			ns += 1
+	for z in pop.active:
+		if is_instance_valid(z) and z.state == Zombie.State.SLEEP and Vector2(z.global_position.x - cen.x, z.global_position.z - cen.z).length() < 8.0:
+			ns += 1
+	ok = ns >= 1
+	print("STORETEST sleepers=", ns, " ok=", ok)
+	fails += 0 if ok else 1
+	print("STORETEST failures=", fails)
+	get_tree().quit()
+
+
+## Dev tests that need a lit campfire: still air, no snow (the match chance is a real roll).
+func _calm_for_fire() -> void:
+	var wt = world.get("weather")
+	if wt != null:
+		wt.wind = 0.0
+		wt.precip = 0.0

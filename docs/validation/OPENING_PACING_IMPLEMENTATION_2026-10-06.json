@@ -1,0 +1,521 @@
+{
+  "schema": 1,
+  "date": "2026-10-06",
+  "branch": "codex/opening-pacing",
+  "rollback_checkpoint": {
+    "tag": "checkpoint/pre-opening-pacing-2026-10-06",
+    "commit": "edb43c4"
+  },
+  "status": "P0 implementation candidate delivered; unfamiliar-player acceptance and P1-P4 outstanding",
+  "scope": "New-run opening pace and heat, clock/save/radio/sleep compatibility, service-log formatting, bounded diagnostics. No geometry, map, asset, movement or survival coefficient changes.",
+  "selected_candidate": {
+    "base_game_seconds_per_real_second": 30,
+    "awake_day_real_minutes": 48,
+    "initial_stove_game_hours": 8,
+    "stored_logs": 6,
+    "carried_logs": 2,
+    "hours_per_log": 2,
+    "total_initial_heat_if_all_logs_fed_game_hours": 24
+  },
+  "legacy_policy": "Saves missing clock pace metadata keep rate 48; saved pace and fuel are preserved, calendar/deadlines are not rerolled. New non-assignment survival runs stay rate 48. Explicit launch speed overrides remain available.",
+  "route_comparison": {
+    "baseline": {
+      "raw_receipt_sha256": "baa71a3ec7cef81216ed35a3b2ddd786c8d34aab3242492cecc99859d999e910",
+      "raw_log_sha256": "da003863e0d0ee15753a379d55116038c5166f6302abc38529fcf9cd1b565d1d",
+      "measurement": {
+        "completed": true,
+        "failure": "",
+        "label": "baseline",
+        "limitations": "Scripted fixed-step route with actual Player movement/collision, world survival/weather and population tick. Direct action callbacks and no menu/exploration time; other entity process/animation is frozen. Not human playtesting or a frame-time benchmark. No user save files used.",
+        "pace": 48.0,
+        "renderer": "",
+        "repair_stage": 3,
+        "samples": [
+          {
+            "calendar": "Day 1  05:30",
+            "calories": 1999.30666666667,
+            "completed_so_far": true,
+            "core_c": 37.0,
+            "distance_m": 0.559550816193223,
+            "fatigue": 0.0177777777777778,
+            "food_pack": 1,
+            "game_s": 12.8,
+            "hp": 100.0,
+            "position": [
+              528.501831054688,
+              326.839752197266,
+              -764.17529296875
+            ],
+            "real_s": 0.266666666666667,
+            "segment": "depart_room",
+            "stove_game_hours": 1.99644444444444,
+            "walkie_percent": 100,
+            "water": 84.9786666666666,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  05:47",
+            "calories": 1943.11333333339,
+            "completed_so_far": true,
+            "core_c": 37.0,
+            "distance_m": 64.7811603015289,
+            "fatigue": 1.4591111111111,
+            "food_pack": 1,
+            "game_s": 1051.20000000001,
+            "hp": 100.0,
+            "position": [
+              532.804626464844,
+              305.465881347656,
+              -764.562133789063
+            ],
+            "real_s": 21.9000000000002,
+            "segment": "stairs_down",
+            "stove_game_hours": 1.70799999999993,
+            "walkie_percent": 99,
+            "water": 83.2488888888868,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  05:54",
+            "calories": 1924.84000000007,
+            "completed_so_far": true,
+            "core_c": 36.9415792292039,
+            "distance_m": 80.0535826096311,
+            "fatigue": 1.96977777777775,
+            "food_pack": 1,
+            "game_s": 1475.19999999998,
+            "hp": 100.0,
+            "position": [
+              517.967407226563,
+              304.701751708984,
+              -763.530578613281
+            ],
+            "real_s": 30.733333333334,
+            "segment": "cabinet_inspected",
+            "stove_game_hours": 1.59022222222213,
+            "walkie_percent": 99,
+            "water": 82.620444444442,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  08:45",
+            "calories": 1370.95333333391,
+            "completed_so_far": true,
+            "core_c": 36.9857904964873,
+            "distance_m": 658.008225762285,
+            "fatigue": 16.1720000000018,
+            "food_pack": 1,
+            "game_s": 11700.8000000016,
+            "hp": 100.0,
+            "position": [
+              549.005920410156,
+              250.547775268555,
+              -259.6669921875
+            ],
+            "real_s": 243.766666666655,
+            "segment": "main_road",
+            "stove_game_hours": 0.0,
+            "walkie_percent": 87,
+            "water": 65.5777777777545,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  09:05",
+            "calories": 1305.16000000063,
+            "completed_so_far": true,
+            "core_c": 36.9468368747349,
+            "distance_m": 725.757236954756,
+            "fatigue": 17.8791111111132,
+            "food_pack": 1,
+            "game_s": 12956.8000000018,
+            "hp": 100.0,
+            "position": [
+              572.965209960938,
+              253.632476806641,
+              -224.881759643555
+            ],
+            "real_s": 269.933333333332,
+            "segment": "depot_part_collected",
+            "stove_game_hours": 0.0,
+            "walkie_percent": 86,
+            "water": 63.5217777777521,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  12:23",
+            "calories": 557.786666667506,
+            "completed_so_far": true,
+            "core_c": 34.1068438252118,
+            "distance_m": 1381.50497632392,
+            "fatigue": 35.115711111113,
+            "food_pack": 1,
+            "game_s": 24790.399999995,
+            "hp": 100.0,
+            "position": [
+              517.9345703125,
+              304.696350097656,
+              -763.489501953125
+            ],
+            "real_s": 516.466666666854,
+            "segment": "cabinet_commissioned",
+            "stove_game_hours": 0.0,
+            "walkie_percent": 72,
+            "water": 43.9306666666178,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  12:47",
+            "calories": 444.046666667508,
+            "completed_so_far": true,
+            "core_c": 32.8459906090055,
+            "distance_m": 1466.2703052276,
+            "fatigue": 37.4111111111105,
+            "food_pack": 1,
+            "game_s": 26235.1999999937,
+            "hp": 100.0,
+            "position": [
+              528.218505859375,
+              326.839752197266,
+              -763.595886230469
+            ],
+            "real_s": 546.566666666827,
+            "segment": "returned_room",
+            "stove_game_hours": 0.0,
+            "walkie_percent": 70,
+            "water": 41.5333333332816,
+            "wood_pack": 2
+          }
+        ]
+      }
+    },
+    "candidate": {
+      "raw_receipt_sha256": "618997b901f778cbc2148445845d032ba43fa0dff668011f911a061f84c96d7b",
+      "raw_log_sha256": "4fa8dc504f02598cb6ebb357c13cc6f6946195c4d17e5473c455b7fce87d5430",
+      "measurement": {
+        "completed": true,
+        "failure": "",
+        "label": "candidate",
+        "limitations": "Scripted fixed-step route with actual Player movement/collision, world survival/weather and population tick. Direct action callbacks and no menu/exploration time; other entity process/animation is frozen. Not human playtesting or a frame-time benchmark. No user save files used.",
+        "pace": 30.0,
+        "renderer": "",
+        "repair_stage": 3,
+        "samples": [
+          {
+            "calendar": "Day 1  05:30",
+            "calories": 1999.56666666667,
+            "completed_so_far": true,
+            "core_c": 37.0,
+            "distance_m": 0.559550816193223,
+            "fatigue": 0.0111111111111111,
+            "food_pack": 1,
+            "game_s": 8.0,
+            "hp": 100.0,
+            "position": [
+              528.501831054688,
+              326.839752197266,
+              -764.17529296875
+            ],
+            "real_s": 0.266666666666667,
+            "segment": "depart_room",
+            "stove_game_hours": 7.99777777777778,
+            "walkie_percent": 100,
+            "water": 84.9866666666667,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  05:40",
+            "calories": 1964.4458333334,
+            "completed_so_far": true,
+            "core_c": 37.0,
+            "distance_m": 64.7811603015289,
+            "fatigue": 0.911944444444442,
+            "food_pack": 1,
+            "game_s": 657.0,
+            "hp": 100.0,
+            "position": [
+              532.804626464844,
+              305.465881347656,
+              -764.562133789063
+            ],
+            "real_s": 21.9000000000002,
+            "segment": "stairs_down",
+            "stove_game_hours": 7.8175,
+            "walkie_percent": 100,
+            "water": 83.9055555555565,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  05:45",
+            "calories": 1953.0250000001,
+            "completed_so_far": true,
+            "core_c": 36.9784409902786,
+            "distance_m": 80.0535826096311,
+            "fatigue": 1.2311111111111,
+            "food_pack": 1,
+            "game_s": 922.0,
+            "hp": 100.0,
+            "position": [
+              517.967407226563,
+              304.701751708984,
+              -763.530578613281
+            ],
+            "real_s": 30.733333333334,
+            "segment": "cabinet_inspected",
+            "stove_game_hours": 7.74388888888889,
+            "walkie_percent": 99,
+            "water": 83.5127777777787,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  07:31",
+            "calories": 1606.84583333411,
+            "completed_so_far": true,
+            "core_c": 36.9967702555253,
+            "distance_m": 658.008225762285,
+            "fatigue": 10.1074999999999,
+            "food_pack": 1,
+            "game_s": 7313.0,
+            "hp": 100.0,
+            "position": [
+              549.005920410156,
+              250.547775268555,
+              -259.6669921875
+            ],
+            "real_s": 243.766666666655,
+            "segment": "main_road",
+            "stove_game_hours": 5.96861111111111,
+            "walkie_percent": 92,
+            "water": 72.8611111111217,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  07:44",
+            "calories": 1565.72500000086,
+            "completed_so_far": true,
+            "core_c": 36.976970509147,
+            "distance_m": 725.757236954756,
+            "fatigue": 11.1744444444438,
+            "food_pack": 1,
+            "game_s": 8098.0,
+            "hp": 100.0,
+            "position": [
+              572.965209960938,
+              253.632476806641,
+              -224.881759643555
+            ],
+            "real_s": 269.933333333332,
+            "segment": "depot_part_collected",
+            "stove_game_hours": 5.75055555555556,
+            "walkie_percent": 91,
+            "water": 71.5761111111227,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  09:48",
+            "calories": 1170.0416666683,
+            "completed_so_far": true,
+            "core_c": 36.7152306114931,
+            "distance_m": 1381.50497632392,
+            "fatigue": 21.3644444444455,
+            "food_pack": 1,
+            "game_s": 15494.0,
+            "hp": 100.0,
+            "position": [
+              517.9345703125,
+              304.696350097656,
+              -763.489501953125
+            ],
+            "real_s": 516.466666666854,
+            "segment": "cabinet_commissioned",
+            "stove_game_hours": 3.69611111111111,
+            "walkie_percent": 83,
+            "water": 59.3316666666897,
+            "wood_pack": 2
+          },
+          {
+            "calendar": "Day 1  10:03",
+            "calories": 1121.5291666684,
+            "completed_so_far": true,
+            "core_c": 36.5687331680474,
+            "distance_m": 1466.2703052276,
+            "fatigue": 22.6119444444465,
+            "food_pack": 1,
+            "game_s": 16397.0,
+            "hp": 100.0,
+            "position": [
+              528.218505859375,
+              326.839752197266,
+              -763.595886230469
+            ],
+            "real_s": 546.566666666827,
+            "segment": "returned_room",
+            "stove_game_hours": 3.44527777777778,
+            "walkie_percent": 82,
+            "water": 57.8333333333578,
+            "wood_pack": 2
+          }
+        ]
+      }
+    }
+  },
+  "diagnostics": [
+    {
+      "id": "test_opening_pacing",
+      "pass_assertions": 50,
+      "result": "OPENING_PACING_TEST checks=50 failures=0",
+      "log_sha256": "2436dd647b6df1c4677c049b7655beb14ebe7a22f1c3eca4ec3ed10af3aa6930",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "test_radio_bulletins",
+      "pass_assertions": 141,
+      "result": "RADIO_BULLETINS_TEST failures=0",
+      "log_sha256": "6b57447f42328af356725a2e4ca7a8530425fbeb3ea90739778b174d2682d6d0",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "test_lookout_opening",
+      "pass_assertions": 53,
+      "result": "LOOKOUT_OPENING_TEST failures=0",
+      "log_sha256": "df06c65a819a1fa6e31aa24bff99d7121e17c78c2151172c0ec08630864b849b",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "test_first_week_core",
+      "pass_assertions": 33,
+      "result": "FIRST_WEEK_CORE_TEST checks=33 failures=0",
+      "log_sha256": "8f93c598c0703ad2981c9e3479b32a50d57bbbed101ec4e4466fddc9b518ef24",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 2 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: 7 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "test_first_week_story",
+      "pass_assertions": 38,
+      "result": "FIRST_WEEK_STORY_TEST checks=38 failures=0",
+      "log_sha256": "90df3676f54369e56b062040ac9d6fec9fc5f1a7210ece6402ec601c5501e756",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "test_watch_walkie_door",
+      "pass_assertions": 46,
+      "result": "WATCH_WALKIE_DOOR_TEST checks=46 failures=0",
+      "log_sha256": "9ace4d972e8da61e92e6d5b88456e3fdd2009b79217e82fd34aa515198996313",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 2 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: 7 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "test_lookout_stair_turns",
+      "pass_assertions": 91,
+      "result": "STAIR_TURN_TEST failures=0",
+      "log_sha256": "8ca2b7049d8f0a8ade3691291274fbba9d7ba9fd7afb05fcd8837dbadf1b11fa",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "radio-baseline",
+      "pass_assertions": 141,
+      "result": "RADIO_BULLETINS_TEST failures=0",
+      "log_sha256": "1a3dc57a7b1e2961e4731cc9c5bc38dc2831121b99296b636fc8b223dec02394",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    }
+  ],
+  "total_pass_assertions": 593,
+  "overnight_fixture": "Separate evening fixture at 21:00, three game hours residual heat, 1112 kcal, 57% water and fatigue 50. Actual one-bean/one-water consumption and four finite logs (two pack/two rack) prepare eight-hour sleep. Warm/fed/hydrated/rested completion and restored awake pace asserted. Not a continuous day-one playthrough.",
+  "captures": {
+    "renderer": "Vulkan Forward+",
+    "gpu": "NVIDIA GeForce GTX 1080 Ti",
+    "inspection": "Service log at 1280x720 and 800x600, starting gear/watch, heated interior. UI/layout verification; no new graphics or performance claim.",
+    "files": [
+      {
+        "path": "brave-and-cold/shots/opening-pacing-2026-10-06/service-log-1280.png",
+        "sha256": "02c439109909d2fc12c654bdb808b0237bc5cc6b5af6fc34a8499cc755cc9d65"
+      },
+      {
+        "path": "brave-and-cold/shots/opening-pacing-2026-10-06/service-log-800.png",
+        "sha256": "20f0f77b169ba736d63f38ea1ed13cb7ff3fd4dc71c1c15b14bd233b3a742bd5"
+      },
+      {
+        "path": "brave-and-cold/shots/opening-pacing-2026-10-06/starting-gear.png",
+        "sha256": "7aa7649a19f2ded79c4e20c2f14fad48165ac2ef4ee0086edcafd1433fd61572"
+      },
+      {
+        "path": "brave-and-cold/shots/opening-pacing-2026-10-06/starting-home.png",
+        "sha256": "4013cc7ecfde20a38499f502abc9e5d7ed44f75e331fc215b9e6dff4c59438ca"
+      }
+    ]
+  },
+  "source_hash_convention": "SHA-256 of UTF-8 text with LF newlines, no BOM. Logs and images hashed as exact bytes.",
+  "source_hashes": {
+    "brave-and-cold/systems/game_clock.gd": "2c6f96ecce3991317e5b67da9d3585d6a0f5ed943d1538dfe4279dbccb1a578e",
+    "brave-and-cold/world/game_world.gd": "f56859d07a11cfffdf33a3c5ec560c023ec21040b00a19a6cdad4217873a1cca",
+    "brave-and-cold/world/lookout_opening.gd": "b0490e7b3a58bf2fc0e40093916163e628ce02c024e5707cf771ffe5dd1a3ddd",
+    "brave-and-cold/tests/test_opening_pacing.gd": "f961eb831f7248f4e3a7ea858fdc903b8af5d962d9799a7a2af6dc01381e6b80",
+    "brave-and-cold/tests/test_radio_bulletins.gd": "798441363236026c174b2b6cde5cbb0eacd526b73abb1049ac5cf62a581fb163",
+    "brave-and-cold/tests/test_lookout_opening.gd": "553edf82945f6ddb3a6a910c1590b4a1f2bb5ee63aa23cd97d21d485ef15173a",
+    "brave-and-cold/tests/test_watch_walkie_door.gd": "b81bd73b322aa73e26f0b3b5be2ac0592f6d2e96c96fb586b20fa069774c14f9",
+    "brave-and-cold/tests/measure_opening_route.gd": "ddfc963528e9812af55b2b9e9e9881f9e85f68010f1831daa936fdc5cbee150e",
+    "brave-and-cold/tests/visual/capture_opening_pacing.gd": "6e33fa289e8de33034fcd3efe4af670c9fae3713bcba418f2cb75264fd00e277",
+    "brave-and-cold/tests/measure_opening_route.gd.uid": "addea14e13885444561224a2c247b4f37d33b5732fec915ac6cacdca1adaabb4",
+    "brave-and-cold/tests/test_opening_pacing.gd.uid": "34e65c3c1a1436fecfc85902b46afb2cbf0da07a9adb182fed0462ec5f44c7b8",
+    "brave-and-cold/tests/visual/capture_opening_pacing.gd.uid": "15bcca822ff29704a7e9061342efe0038ac92cf9862a15da936d28c554930698"
+  },
+  "original_baseline_receipt_sha256": "69ea795d4462b000f961eb3b50913056df102916aa2b62a75347c81eb2fccb90",
+  "limitations": [
+    "Familiar scripted route, not human playtesting; no orientation, menu, exploration or optional stops.",
+    "Actual Player movement/collision and world survival/weather/population ticks; individual entity processing/animation frozen.",
+    "Separate sleep fixture, not a full measured opening-to-overnight sequence.",
+    "No target-hardware performance evidence. Existing exit leaks and restricted-environment log/certificate warnings recorded.",
+    "User saves untouched. No remote push. P1-P4 asset/story/animation/atmosphere production remains outstanding.",
+    "Longer calendar delays collapse in awake real time and still requires human pacing review."
+  ],
+  "editor_import": {
+    "exit_code": 0,
+    "clean": false,
+    "scripts_registered": true,
+    "log_sha256": "5283c85c35b0b536b391405c3452eabdd8a259ad55d413003aaee2f9be90507b",
+    "limitation": "Godot user/editor cache/settings paths are outside writable roots. Unchanged Terrain3D editor plugin DoubleSlider._ready (addons/terrain_3d/src/double_slider.gd:25) receives nil editor setting during plugin initialization. This is separate from passing runtime diagnostics, and not a clean editor-import claim. Addon unchanged."
+  }
+}

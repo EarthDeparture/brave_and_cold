@@ -1,0 +1,63 @@
+{
+  "stove_drying_rack": {
+    "triangles": 6414,
+    "bytes": 574864,
+    "sha256": "fb908191be68039700f72956cb34218a79e57cebf6cc1b15c293a93445a68d2a",
+    "source": "tools/blender/generated/food_preservation/stove_drying_rack.blend",
+    "source_sha256": "8ae1801bfeb8bde230b7180a7637316cfc1d18a63059cc97da1509ceb0300cb7",
+    "mesh_nodes": 14,
+    "bounds_min_xyz": [
+      -0.27900001406669617,
+      -0.04999998211860657,
+      -0.17099998891353607
+    ],
+    "bounds_max_xyz": [
+      0.27900001406669617,
+      0.8055000305175781,
+      0.16899999976158142
+    ],
+    "dimensions_m": [
+      0.5580000281333923,
+      0.8555000126361847,
+      0.3399999886751175
+    ]
+  },
+  "dried_portion": {
+    "triangles": 528,
+    "bytes": 296680,
+    "sha256": "a1b5eb3fcdd72ec0a30c216ded23acd359f18813289ce0399645187e69a624ef",
+    "source": "tools/blender/generated/food_preservation/dried_portion.blend",
+    "source_sha256": "390540f122cb00ded09757bb7c2e71cb9cf2f41a729567e6f4bf78b6b5d545f2",
+    "mesh_nodes": 1,
+    "bounds_min_xyz": [
+      -0.06299490481615067,
+      0.0,
+      -0.013652444817125797
+    ],
+    "bounds_max_xyz": [
+      0.06454935669898987,
+      0.20999999344348907,
+      0.013647114858031273
+    ],
+    "dimensions_m": [
+      0.12754426151514053,
+      0.20999999344348907,
+      0.02729955967515707
+    ]
+  },
+  "provenance": {
+    "license": "Original project-authored geometry and deterministic printwork/fibre textures; no third-party assets",
+    "seed": 7108,
+    "units": "metres",
+    "blender": "5.2.2 LTS"
+  },
+  "generators": {
+    "gen_food_preservation.py": "9ac6768155b0a1edab22365b72f193c3c8973a78b0dd20fd9d6efbc81efb7c3b",
+    "gen_food_graphics.py": "f7d4189d31913b91b284c23921808213727925998b78dc63917678f27d8c093f",
+    "gen_first_week.py": "07e256fd2c532f62a0bb62a2b8db530f62e7a7668873473ac3dcf48ba2590667"
+  },
+  "graphics": {
+    "dried_fibres.png": "828dc712ed39b497725db538159acc8ecc8dcd1aea5a467e13079e7428acb3f0",
+    "rack_plate.png": "ff990f75abca19cb297bc84baf08d0bc77a2c598698e338a91699afac120b0f1"
+  }
+}

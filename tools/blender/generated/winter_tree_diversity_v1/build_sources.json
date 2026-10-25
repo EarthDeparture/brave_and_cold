@@ -1,0 +1,16 @@
+{
+  "source_scripts": {
+    "tools/blender/gen_winter_tree_atlas.py": "cf064ac41821547435f93e088be3a33d0c3d4013d347f91f71437f068efd608e",
+    "tools/blender/gen_winter_tree_diversity.py": "47d50398a99e63a03d94da527da5d605059c029190f467053d79bb54a89e4384",
+    "tools/blender/validate_winter_trees.py": "24e305fc5b0805153a4749f95b34a3c2746cc732c7ba3b09c3db7f845ac00800",
+    "tools/blender/verify_winter_tree_native.py": "5948ce1cacfdde5a82d6e0d1f6ab6268f4e4e07129e7b274ef802612ad08ff43",
+    "tools/blender/package_winter_tree_review.py": "6eed89f9122c0762cda94834a636e2773cd1e18cf46dc0be9e90c3b4aa3c137d"
+  },
+  "runtime_sources": {
+    "world/forest_scatter.gd": "1c0ddc0af99e575f4b158e0823077ab7806f0fc2840b03cc711630c1b310a929",
+    "world/game_world.gd": "d67a8845e92fc66e0c0f4b31b6cbd9cb87e8a1038491b39416ebcb96b4a5f4fd",
+    "world/shaders/boreal_detail.gdshader": "4ecfbb788d1966790409ff8cde5bd23ef4b8b5bffd1ce996ead60c18093edf2c",
+    "tests/test_tree_diversity.gd": "d5cd920544c1cd9687da78c438dbc05cfffc2ac2f8f3da901bb76f55deb9ace7",
+    "tests/visual/tree_diversity_review.gd": "9ed092e4db82fffdc44ad35a27b7eda7e200c0c06a9004d9907274a72d8af511"
+  }
+}

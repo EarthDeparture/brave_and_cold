@@ -1,0 +1,370 @@
+{
+  "date": "2026-10-07",
+  "baseline": "d3a9f87",
+  "branch": "codex/hunt-cooking",
+  "rollback_tag": "checkpoint/pre-hunt-cooking-2026-10-07",
+  "gameplay_assertions": 676,
+  "diagnostics": {
+    "hunt_cooking": {
+      "pass_assertions": 50,
+      "log": "brave-and-cold/shots/hunt-cooking-2026-10-07/test_hunt_cooking.log",
+      "sha256": "a62449ee21181c9ef8fa511c844006addbc7e2912e2ae6443bb5a4633ca918b4",
+      "native_exit_code": 0
+    },
+    "food_preservation": {
+      "pass_assertions": 69,
+      "log": "brave-and-cold/shots/hunt-cooking-2026-10-07/test_food_preservation.log",
+      "sha256": "fa990c9c50679004e7206f635f9fa24ea0830f3c6a94d5c645a3fef3761b1578",
+      "native_exit_code": 0
+    },
+    "electrical_fieldwork": {
+      "pass_assertions": 49,
+      "log": "brave-and-cold/shots/hunt-cooking-2026-10-07/test_electrical_fieldwork.log",
+      "sha256": "b80d41730f4e5b2c36472991fd46b13bfd5bc9389dae6d51a2483b002cd1362c",
+      "native_exit_code": 0
+    },
+    "solar_recovery": {
+      "pass_assertions": 29,
+      "log": "brave-and-cold/shots/hunt-cooking-2026-10-07/test_solar_recovery.log",
+      "sha256": "1ef086e22ea96d1ba5da57603b0e9fa70bd33202faa98acc6c035e9ab91576f4",
+      "native_exit_code": 0
+    },
+    "lookout_assignment": {
+      "pass_assertions": 27,
+      "log": "brave-and-cold/shots/hunt-cooking-2026-10-07/test_lookout_assignment.log",
+      "sha256": "3030bb3e694a18790ce447f2e30bb0976e40f4f3fa0a5e5d23dae441ef1fc693",
+      "native_exit_code": 0
+    },
+    "lookout_opening": {
+      "pass_assertions": 53,
+      "log": "brave-and-cold/shots/hunt-cooking-2026-10-07/test_lookout_opening.log",
+      "sha256": "a6cd70e3fa4d44cdf27f3266ef5cb89aac768e0e451878c7ee471f2282d6d6f3",
+      "native_exit_code": 0
+    },
+    "watch_walkie_door": {
+      "pass_assertions": 46,
+      "log": "brave-and-cold/shots/hunt-cooking-2026-10-07/test_watch_walkie_door.log",
+      "sha256": "1a71af5f9d2c4cfdefcbfae4c1376b859473e8116f14cbbbe03bc9fd2ace2a04",
+      "native_exit_code": 0
+    },
+    "radio_bulletins": {
+      "pass_assertions": 141,
+      "log": "brave-and-cold/shots/hunt-cooking-2026-10-07/test_radio_bulletins.log",
+      "sha256": "cb15b029095b4f859ea22807fc0c57dadd43ef1ee365a8e72bac79aed635f664",
+      "native_exit_code": 0
+    },
+    "first_week_core": {
+      "pass_assertions": 33,
+      "log": "brave-and-cold/shots/hunt-cooking-2026-10-07/test_first_week_core.log",
+      "sha256": "a36405d2d508c59966fb766993fc78730a11a8e1c69c1612b291e31d41395a00",
+      "native_exit_code": 0
+    },
+    "first_week_story": {
+      "pass_assertions": 38,
+      "log": "brave-and-cold/shots/hunt-cooking-2026-10-07/test_first_week_story.log",
+      "sha256": "34f55e2bd2d731810d327822c500d2df43dba2f4681341d5b704f88f7eecd822",
+      "native_exit_code": 0
+    },
+    "opening_pacing": {
+      "pass_assertions": 50,
+      "log": "brave-and-cold/shots/hunt-cooking-2026-10-07/test_opening_pacing.log",
+      "sha256": "ee4891104200d0e803876254e0ae129822c105f81fbdfc2e7a1d0ec6b42ce079",
+      "native_exit_code": 0
+    },
+    "lookout_stair_turns": {
+      "pass_assertions": 91,
+      "log": "brave-and-cold/shots/hunt-cooking-2026-10-07/test_lookout_stair_turns.log",
+      "sha256": "8ca2b7049d8f0a8ade3691291274fbba9d7ba9fd7afb05fcd8837dbadf1b11fa",
+      "native_exit_code": 0
+    }
+  },
+  "p6_checks": {
+    "passed": 13,
+    "log_sha256": "875c81e07bd9f773deaa90e912c6bce57a442b4a65954e2286f34141a0f3e273"
+  },
+  "rollback_copy_tests": {
+    "passed": 3,
+    "log_sha256": "231723deef2a0b09547cb0e8428e065e8993964532323ce7413de74478073b6b"
+  },
+  "controlled_outing": {
+    "ammo_spent": 1,
+    "completed": true,
+    "failure": "",
+    "food_message": "Ate Dried Venison (+900 kcal)",
+    "knife_condition": 0.98,
+    "limitations": "Controlled static deer, supplied rifle/three rounds/knife and direct aimed action selection. Actual ballistic trace, Player collision, survival/weather clock, finite fuel, harvesting/cooking/preservation. Entity AI frozen; does not measure natural prey availability, search time, pursuit, predator danger or human difficulty. No user save files used.",
+    "raw_remaining": 5,
+    "samples": [
+      {
+        "calendar": "Day 1  05:30",
+        "calories": 1999.56666666667,
+        "completed_so_far": true,
+        "core_c": 37.0,
+        "distance_m": 0.559550816193223,
+        "fatigue": 0.0111111111111111,
+        "food_pack": 1,
+        "game_s": 8.0,
+        "hp": 100.0,
+        "position": [
+          528.501831054688,
+          326.839752197266,
+          -764.17529296875
+        ],
+        "real_s": 0.266666666666667,
+        "segment": "depart_room",
+        "stove_game_hours": 7.99777777777778,
+        "walkie_percent": 100,
+        "water": 84.9866666666667,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  05:45",
+        "calories": 1951.12083333343,
+        "completed_so_far": true,
+        "core_c": 37.0,
+        "distance_m": 84.7283401405439,
+        "fatigue": 1.25361111111111,
+        "food_pack": 1,
+        "game_s": 903.0,
+        "hp": 100.0,
+        "position": [
+          533.942993164063,
+          304.876800537109,
+          -757.510192871094
+        ],
+        "real_s": 30.1000000000007,
+        "segment": "outside_gate",
+        "stove_game_hours": 7.74916666666667,
+        "walkie_percent": 99,
+        "water": 83.4955555555569,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  05:45",
+        "calories": 1951.12083333343,
+        "completed_so_far": true,
+        "core_c": 37.0,
+        "distance_m": 84.7283401405439,
+        "fatigue": 1.25361111111111,
+        "food_pack": 1,
+        "game_s": 903.0,
+        "hp": 100.0,
+        "position": [
+          533.942993164063,
+          304.876800537109,
+          -757.510192871094
+        ],
+        "real_s": 30.1000000000007,
+        "segment": "ballistic_kill",
+        "stove_game_hours": 7.74916666666667,
+        "walkie_percent": 99,
+        "water": 83.4955555555569,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  05:50",
+        "calories": 1909.97916666679,
+        "completed_so_far": true,
+        "core_c": 36.9438627380959,
+        "distance_m": 92.1152483648621,
+        "fatigue": 1.58416666666665,
+        "food_pack": 1,
+        "game_s": 1201.0,
+        "hp": 100.0,
+        "position": [
+          538.0498046875,
+          304.429595947266,
+          -751.370239257813
+        ],
+        "real_s": 40.0333333333336,
+        "segment": "harvested",
+        "stove_game_hours": 7.66638888888889,
+        "walkie_percent": 99,
+        "water": 83.0822222222233,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  06:18",
+        "calories": 1821.00416666697,
+        "completed_so_far": true,
+        "core_c": 36.9939019023098,
+        "distance_m": 179.957051205682,
+        "fatigue": 3.8847222222225,
+        "food_pack": 1,
+        "game_s": 2883.0,
+        "hp": 100.0,
+        "position": [
+          527.952880859375,
+          326.839752197266,
+          -763.196166992188
+        ],
+        "real_s": 96.0999999999971,
+        "segment": "returned_stove",
+        "stove_game_hours": 7.19916666666667,
+        "walkie_percent": 97,
+        "water": 80.3144444444477,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  06:38",
+        "calories": 1795.30416666706,
+        "completed_so_far": true,
+        "core_c": 37.0,
+        "distance_m": 180.013246654766,
+        "fatigue": 4.91194444444488,
+        "food_pack": 1,
+        "game_s": 4115.0,
+        "hp": 100.0,
+        "position": [
+          527.91357421875,
+          326.839752197266,
+          -763.236328125
+        ],
+        "real_s": 137.166666666661,
+        "segment": "cooked",
+        "stove_game_hours": 6.85694444444444,
+        "walkie_percent": 96,
+        "water": 78.9449999999987,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  08:39",
+        "calories": 1644.05416666761,
+        "completed_so_far": true,
+        "core_c": 37.0,
+        "distance_m": 180.013246654766,
+        "fatigue": 10.9619444444427,
+        "food_pack": 1,
+        "game_s": 11375.0,
+        "hp": 100.0,
+        "position": [
+          527.91357421875,
+          326.839752197266,
+          -763.236328125
+        ],
+        "real_s": 379.166666666753,
+        "segment": "preserved",
+        "stove_game_hours": 4.84027777777778,
+        "walkie_percent": 87,
+        "water": 70.8783333333049,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  08:39",
+        "calories": 2500.0,
+        "completed_so_far": true,
+        "core_c": 37.0,
+        "distance_m": 180.013246654766,
+        "fatigue": 10.9619444444427,
+        "food_pack": 1,
+        "game_s": 11375.0,
+        "hp": 100.0,
+        "position": [
+          527.91357421875,
+          326.839752197266,
+          -763.236328125
+        ],
+        "real_s": 379.166666666753,
+        "segment": "ate",
+        "stove_game_hours": 4.84027777777778,
+        "walkie_percent": 87,
+        "water": 70.8783333333049,
+        "wood_pack": 2
+      }
+    ],
+    "stove_fuel_game_s_spent": 11375.0
+  },
+  "outing_json_sha256": "37acd981dc03d6015ac57457118aa34509a37af9c8e419fdf785af23959eea91",
+  "outing_log_sha256": "546c5dee143db06e27455428e0d966a6140c5b5be3866fcb54182f31f45549e0",
+  "assets": {
+    "triangles": 2196,
+    "materials": 3,
+    "textures": 1,
+    "dimensions_m": [
+      0.25600001215934753,
+      0.049000002443790436,
+      0.44700001180171967
+    ],
+    "source_export_graphics_verified": true
+  },
+  "manifest_sha256": "7cf5f65600665315d55cdbb197e37e260dabff1587bc32b29d84fc0ba3270886",
+  "source_sha256_lf": {
+    "brave-and-cold/systems/cook_batch.gd": "83430de14e7e67a9e868c80b0b1ffaa1daaadaa2feacdf72caf83cb5a336795e",
+    "brave-and-cold/systems/carcass.gd": "e3389996f21c8b4bc30f20094ef9c9690abe76e2aaf5c3c72fe704335372758d",
+    "brave-and-cold/systems/inventory.gd": "88a8f89d3531f6e26191295e03d6cc9c8174671317d5473684b764834295368f",
+    "brave-and-cold/entities/animals/deer.gd": "fc24e9895ffe805c7b7154884af954817ceb8a961f760dfbd8dd7c90911a8ef3",
+    "brave-and-cold/entities/animals/wolf.gd": "e5c651cef74bc7a3b425ce41d6423a379bcdcf414c1a012a4e795b3a05a8573f",
+    "brave-and-cold/world/cook_display.gd": "67a0db5d092ea03e9dc25886f0a733c4d21d03c39896429a8815b0f41f043bf3",
+    "brave-and-cold/world/cabin.gd": "d2adab4d30129223e8747d5c50799f328856dcb2146ea9cc996f74711547c6ae",
+    "brave-and-cold/world/game_world.gd": "259c3cca5411d2861f58bf9c7693851b7704d3d291c027e56cd518449a19c378",
+    "brave-and-cold/world/lookout_opening.gd": "ac0f6b4a4a46cc495e5ac68db848fb4d387566e71cbe74b8ad793a3c5edbf567",
+    "brave-and-cold/ui/dev_menu.gd": "99dbd0770a0b8e5f41602c3e4b5465135304496a09a37c023983a502f2ef65c6",
+    "brave-and-cold/tests/test_hunt_cooking.gd": "1ebda84fb0547422a7ce6b350cfb4ef33ec2d3e48503afa9635dcc95d0b52e82",
+    "brave-and-cold/tests/test_food_preservation.gd": "54afe03d065a470e5ddd18dce5d8dbdcf55d73db8547ea4e7fd4dbe4971f5ddf",
+    "brave-and-cold/tests/measure_hunt_cooking.gd": "bf6346215bde290edec27541952d51e23709c20264c2900b112007d77d1ebe0d",
+    "brave-and-cold/tests/measure_opening_route.gd": "ddfc963528e9812af55b2b9e9e9881f9e85f68010f1831daa936fdc5cbee150e",
+    "brave-and-cold/tests/visual/capture_hunt_cooking.gd": "f0e985a5b47aca606431ccfb1b365f17dd8a5f0b63a5954a99d14c70230b5008",
+    "tools/blender/gen_cooking.py": "0aceea615147cbbab6a42aa2972e42c44ea64bf5a5a693df7dd20e505d386694",
+    "tools/blender/gen_cooking_graphics.py": "3ac5b8715c856d7b939abfb2df6df3a2872f16b92418fae01f016b883f413f54",
+    "tools/validate_cooking_assets.py": "8993d7cf052fcde81a2441de3514649030e8d8fbc31b98b31cdc113153474f9c",
+    "tools/export_cooking_rollback.py": "582dd6354793176d7fa2ddd16ee97a19e9c9c95d5599a6f21f47ae11e6e480be",
+    "tools/test_export_cooking_rollback.py": "14214d5e34bec724333ebba5681647dfd822a8f2dad6a2d1b20677b03b2acf49"
+  },
+  "render": {
+    "renderer": "Vulkan Forward+",
+    "gpu": "NVIDIA GeForce GTX 1080 Ti",
+    "viewport": [
+      1600,
+      900
+    ],
+    "capture_log_sha256": "8d9a26bae26aebd6736818bcce7c181b00bbe4f524d56a81a707b4bd1163f35d",
+    "images": {
+      "cabin-empty": {
+        "path": "brave-and-cold/shots/hunt-cooking-2026-10-07/cabin-empty.png",
+        "sha256": "4d2da08c387191a51ec72d84a6c77ab7b66ebc47a794201e3d46cbd7b659a7f9",
+        "agent_visual_review": "accepted"
+      },
+      "cabin-raw": {
+        "path": "brave-and-cold/shots/hunt-cooking-2026-10-07/cabin-raw.png",
+        "sha256": "0052c2ef788f32591039861df32773422c014d7fea5e6da59d3b3da4ea2673cc",
+        "agent_visual_review": "accepted"
+      },
+      "cabin-cooked": {
+        "path": "brave-and-cold/shots/hunt-cooking-2026-10-07/cabin-cooked.png",
+        "sha256": "6bf5773df223cc0cfd96b802467f9aa2e6b9a765695cf0616f296009c8d45d96",
+        "agent_visual_review": "accepted"
+      },
+      "cabin-collected": {
+        "path": "brave-and-cold/shots/hunt-cooking-2026-10-07/cabin-collected.png",
+        "sha256": "863a688899d67a0022e68c6c3a7252d719a17b8eb200c1c190b502eea7a2e64e",
+        "agent_visual_review": "accepted"
+      },
+      "lookout-raw": {
+        "path": "brave-and-cold/shots/hunt-cooking-2026-10-07/lookout-raw.png",
+        "sha256": "655df1742e82765cbb2c8d120cf755146137e98c177be6a4000b95096d1ca523",
+        "agent_visual_review": "accepted"
+      },
+      "lookout-cooked": {
+        "path": "brave-and-cold/shots/hunt-cooking-2026-10-07/lookout-cooked.png",
+        "sha256": "b7f3912c02dadf36c6c3d16856900ec1556a69da83b9faf55488d8d6abfb5571",
+        "agent_visual_review": "accepted"
+      },
+      "lookout-night-fire": {
+        "path": "brave-and-cold/shots/hunt-cooking-2026-10-07/lookout-night-fire.png",
+        "sha256": "dbe5191ddb897f59db6d0e75d4de46f402d1b022419cf6e4b6eb032a2c8bec86",
+        "agent_visual_review": "accepted"
+      },
+      "lookout-spoiled": {
+        "path": "brave-and-cold/shots/hunt-cooking-2026-10-07/lookout-spoiled.png",
+        "sha256": "bd7d053bd026bb780eed2dc6ddbc10802aa2eccfa9b382ad5459225d888c7d8b",
+        "agent_visual_review": "accepted"
+      }
+    },
+    "scope": "Frozen player-camera views; no moving AI, human playtesting or performance claim"
+  },
+  "rejected_candidates": [
+    "Cabin pans below authored stove top",
+    "Cooked food retained raw-red hue"
+  ],
+  "preexisting_diagnostics": "Restricted user/editor log/cache paths, certificate-store output, Terrain3D editor DoubleSlider nil/int error and shutdown resource warnings"
+}

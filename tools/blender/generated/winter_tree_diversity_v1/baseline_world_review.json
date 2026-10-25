@@ -1,0 +1,189 @@
+{
+	"atmosphere": "winter",
+	"capture_script": "tests/visual/capture_atmosphere.gd",
+	"captures": [
+		{
+			"cloud_coverage": 0.35,
+			"eye": [
+				525.01220703125,
+				326.839782714844,
+				-762.275024414063
+			],
+			"file": "res://shots/tree_diversity/baseline/clear-lookout.png",
+			"fog_density": 0.000549999997019768,
+			"fov": 75.0,
+			"hour": 12.0,
+			"id": "clear-lookout",
+			"inside": 0.0,
+			"median_ms": 9.898,
+			"overcast": 0.0,
+			"p99_ms": 11.498,
+			"particle_tint": "(0.92, 0.95, 1.0, 1.0)",
+			"sha256": "242563bc91bd1961124006071fbae3199653c82cd06555aefcd2570a793e36c2",
+			"sun_energy": 1.45000004768372,
+			"target": [
+				0.0,
+				85.0,
+				0.0
+			],
+			"weather": "clear"
+		},
+		{
+			"cloud_coverage": 0.35,
+			"eye": [
+				-120.0,
+				8.4338264465332,
+				133.0
+			],
+			"file": "res://shots/tree_diversity/baseline/clear-forest.png",
+			"fog_density": 0.000549999997019768,
+			"fov": 75.0,
+			"hour": 12.0,
+			"id": "clear-forest",
+			"inside": 0.0,
+			"median_ms": 8.013,
+			"overcast": 0.0,
+			"p99_ms": 9.654,
+			"particle_tint": "(0.92, 0.95, 1.0, 1.0)",
+			"sha256": "51ef556b9745bfede1e21b2585830f5b92cb6f80758f5e12a4feea09f6e62ba9",
+			"sun_energy": 1.45000004768372,
+			"target": [
+				-160.0,
+				10.7338266372681,
+				50.0
+			],
+			"weather": "clear"
+		},
+		{
+			"cloud_coverage": 0.35,
+			"eye": [
+				-126.5,
+				8.23195934295654,
+				142.5
+			],
+			"file": "res://shots/tree_diversity/baseline/clear-bough.png",
+			"fog_density": 0.000549999997019768,
+			"fov": 75.0,
+			"hour": 12.0,
+			"id": "clear-bough",
+			"inside": 0.0,
+			"median_ms": 7.317,
+			"overcast": 0.0,
+			"p99_ms": 8.356,
+			"particle_tint": "(0.92, 0.95, 1.0, 1.0)",
+			"sha256": "628b9715a4e0b88e765f0cac8e6b1e5080371330b8e931ee13653fc017b40f01",
+			"sun_energy": 1.45000004768372,
+			"target": [
+				-133.5,
+				13.7865581512451,
+				133.5
+			],
+			"weather": "clear"
+		},
+		{
+			"cloud_coverage": 0.7,
+			"eye": [
+				-120.0,
+				8.4338264465332,
+				133.0
+			],
+			"file": "res://shots/tree_diversity/baseline/overcast-forest.png",
+			"fog_density": 0.00097350002033636,
+			"fov": 75.0,
+			"hour": 12.0,
+			"id": "overcast-forest",
+			"inside": 0.0,
+			"median_ms": 8.135,
+			"overcast": 0.55,
+			"p99_ms": 9.289,
+			"particle_tint": "(0.788, 0.84, 0.9065, 1.0)",
+			"sha256": "8c3024d8f4e1b81f06016240857bae01d367703aff53611dbb78eb4057a35ae2",
+			"sun_energy": 0.708325028419495,
+			"target": [
+				-160.0,
+				10.7338266372681,
+				50.0
+			],
+			"weather": "overcast"
+		},
+		{
+			"cloud_coverage": 0.35,
+			"eye": [
+				-120.0,
+				8.4338264465332,
+				133.0
+			],
+			"file": "res://shots/tree_diversity/baseline/dusk-forest.png",
+			"fog_density": 0.000705276092048734,
+			"fov": 75.0,
+			"hour": 17.2,
+			"id": "dusk-forest",
+			"inside": 0.0,
+			"median_ms": 6.8,
+			"overcast": 0.0,
+			"p99_ms": 7.82,
+			"particle_tint": "(0.9194, 0.9494, 0.9995, 1.0)",
+			"sha256": "863fa23c79b124fd2086efd5ba56102922eea97beb8d61f948a0854bb7ae3daa",
+			"sun_energy": 1.02299082279205,
+			"target": [
+				-160.0,
+				10.7338266372681,
+				50.0
+			],
+			"weather": "dusk"
+		}
+	],
+	"cloud_offset": [
+		0.17,
+		0.08
+	],
+	"detail": "winter",
+	"driver": "vulkan",
+	"engine": "4.7.2-stable (official)",
+	"forest_diversity": "baseline",
+	"forest_lod_draw_groups": 1536,
+	"gpu": "NVIDIA GeForce GTX 1080 Ti",
+	"particle_seed": 42,
+	"population": "disabled for isolated renderer comparison",
+	"render_settings": {
+		"msaa": 2,
+		"ssao": true,
+		"sun_bias": 0.0399999991059303,
+		"sun_normal_bias": 0.649999976158142,
+		"sun_shadow_distance": 300.0,
+		"tonemap": 3
+	},
+	"resolution": [
+		1600,
+		900
+	],
+	"schema": 1,
+	"source_hashes": {
+		"res://assets/environment_detail/textures/provenance.json": "ad33924d5c14d889eb9b148a2d0b90fae90bb198f3c40076324dbc7449a3ecee",
+		"res://assets/environment_detail/trees/provenance.json": "9973eda4d390881999012fbb582b60b1852e59f3e46bccd2b1cf09423b7406bb",
+		"res://assets/environment_detail/viewmodel/provenance.json": "d220c1e14f1d3fcd58135f9f9161e94d44aa9f7286ce315a5c8b2d259884470f",
+		"res://assets/textures/atmosphere/cloud_fields.png": "ed492188352f194d407b42c6dd534061d0057f636ac5382fe40428a125ca3d73",
+		"res://data/terrain/terrain_environment_assets.tres": "0808ac4e2c06d3d80b30d8b0c5ca176c28e19808b01b85b8356d58db552c01c1",
+		"res://data/terrain/terrain_winter_assets.tres": "e943273e93d14b903ec78bd8a98feae7c17b04fca87fea4010a29b3083df38d5",
+		"res://systems/weather.gd": "3cf04d3abf273a310ad5d9c6ca1018744f8276c1708bd7527efa1a3abf699508",
+		"res://world/atmosphere_rig.gd": "4ead758339e38287ef930481ed08b2e06c815a8970d932ac89b6b4fc2f3e8ce8",
+		"res://world/forest_scatter.gd": "1c0ddc0af99e575f4b158e0823077ab7806f0fc2840b03cc711630c1b310a929",
+		"res://world/game_world.gd": "d67a8845e92fc66e0c0f4b31b6cbd9cb87e8a1038491b39416ebcb96b4a5f4fd",
+		"res://world/shaders/boreal_detail.gdshader": "4ecfbb788d1966790409ff8cde5bd23ef4b8b5bffd1ce996ead60c18093edf2c",
+		"res://world/shaders/frozen_water.gdshader": "bf1cc6c7ff69d85c533a12a0f427f9f5261e0ca7b8a0c6c9ac0bef3c57259b0c",
+		"res://world/shaders/winter_sky.gdshader": "8b00b9894b6f049b969b55bd5e70d109ec132d00778f3b69dfc055c01010daa0",
+		"res://world/shaders/winter_snow.gdshader": "379348f5b53593b1f40b89adf67430a652efe49dfc20d97bcf37d276266e1286",
+		"res://world/shaders/winter_timber.gdshader": "9dd6c296e53cb9c1904c037cdf69106dfd2aa7828d44d6cdd214d0daaa2fda72",
+		"res://world/shaders/winter_vapour.gdshader": "08a4e11853faa2cb9711700aa4ce92ad9123b5ca7aecb2777ff995b14d86c78f",
+		"res://world/sky_rig.gd": "3f08cdf22b4300372265fad4cec216e258da45778e9ff94b7d59e6ac87fe20b8",
+		"res://world/snow_fall.gd": "b01918e5d15e9643a8b1f2c225bd0ab5c31242d6cb0fef1bedd0cc4b4e5bfa50",
+		"res://world/weather_presentation.gd": "178ade64407ca3447132d942bd05dfaa3a7c7d6c44bc807a93adae7055a3e0c6"
+	},
+	"tree_asset_receipt": "61c68d47adb0cd2aaa4ea9071f03b285a3ade1e4657b65944ccb2b39804f16a6",
+	"tree_variants": {
+		"spruce_a": 38068,
+		"spruce_b": 37936,
+		"spruce_c": 38018
+	},
+	"wind_phase_s": 120
+}

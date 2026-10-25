@@ -1,0 +1,19 @@
+{
+  "field_watch": {
+    "triangles": 750,
+    "bytes": 50560,
+    "sha256": "f340291f8ca42bdb4e5701432089508edbf34cf66051145b62253c6586667f2b",
+    "source": "tools/blender/generated/wristwatch/field_watch.blend",
+    "source_sha256": "1e5fe1b1b0fbed2d1b31d117ca330aab2be7719c32d06037b191cc56bef48c81",
+    "mesh_nodes": 5
+  },
+  "provenance": {
+    "license": "Original project-authored geometry/printwork",
+    "blender": "5.2.2 LTS",
+    "units": "metres",
+    "generator_sha256": "f8d304252ec190944f06cb9d37320d386ca1ceda65e2e56428a6d09f7ee672a1"
+  },
+  "graphics": {
+    "dial.png": "5ba661fbd9644ec899b8ad611ca266adf73453ea0b34dbd789aac2a17dd45319"
+  }
+}

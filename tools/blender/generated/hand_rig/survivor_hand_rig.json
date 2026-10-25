@@ -1,0 +1,96 @@
+{
+  "version": 3,
+  "source": "tools/blender/gen_hand_rig.py",
+  "blender": "5.2.2 LTS",
+  "units": "metres",
+  "wrist_origin": [
+    0,
+    0,
+    0
+  ],
+  "forearm_axis": [
+    0,
+    0,
+    1
+  ],
+  "bones": [
+    "hand",
+    "index_01",
+    "index_02",
+    "index_03",
+    "middle_01",
+    "middle_02",
+    "middle_03",
+    "ring_01",
+    "ring_02",
+    "ring_03",
+    "little_01",
+    "little_02",
+    "little_03",
+    "thumb_01",
+    "thumb_02",
+    "thumb_03"
+  ],
+  "grips": [
+    "Open",
+    "Fist",
+    "Shaft",
+    "Trigger",
+    "Support",
+    "Bolt"
+  ],
+  "validation": {
+    "BareHand": {
+      "vertices": 13939,
+      "triangles": 27872,
+      "closed": true
+    },
+    "LeatherGlove": {
+      "vertices": 13939,
+      "triangles": 27872,
+      "closed": true
+    },
+    "BareHandLeft": {
+      "vertices": 13939,
+      "triangles": 27872,
+      "closed": true
+    },
+    "LeatherGloveLeft": {
+      "vertices": 13939,
+      "triangles": 27872,
+      "closed": true
+    }
+  },
+  "thumb_targets_godot": {
+    "Fist": [
+      -0.01319,
+      -0.04137,
+      -0.09882
+    ],
+    "Shaft": [
+      0,
+      -0.018,
+      -0.098
+    ],
+    "Bolt": [
+      -0.01,
+      -0.022,
+      -0.103
+    ],
+    "Trigger": [
+      -0.047,
+      -0.055,
+      -0.04
+    ],
+    "Support": [
+      -0.044,
+      -0.048,
+      -0.033
+    ]
+  },
+  "thumb_distal_length": 0.021954496145718913,
+  "sha256": "c6146718090e9ff4385d8226009058f99e34413b3275ba5c055d3f81e18b6f04",
+  "generator_sha256": "2453217582c45f3e465060a75e20cd0aab7aeb34c10746923d89d9adecd1e108",
+  "material_source_sha256": "69ab4f13646b33e947de506b836b2c48b212497a2510ca55c34596f736a87204",
+  "license": "Project-authored original geometry and procedural textures; repository ownership"
+}

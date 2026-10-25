@@ -1,0 +1,174 @@
+{
+  "schema": 2,
+  "name": "fire_lookout",
+  "seed": 2103,
+  "units": "metres",
+  "up_axis": "Godot +Y",
+  "roof_height": 25.54,
+  "original_roof_height": 12.77,
+  "floor_y": 21.41,
+  "deck_half": [
+    3.8,
+    3.3
+  ],
+  "cabin_half": [
+    2.7,
+    2.2
+  ],
+  "deck_height": 21.41,
+  "deck_bounds": [
+    -3.8,
+    -3.3,
+    3.8,
+    3.3
+  ],
+  "room_bounds": [
+    -2.7,
+    -2.2,
+    2.7,
+    2.2
+  ],
+  "door_width": 1.1,
+  "supports": [
+    [
+      -2.95,
+      -2.45,
+      0.3
+    ],
+    [
+      -2.95,
+      2.45,
+      0.3
+    ],
+    [
+      2.95,
+      -2.45,
+      0.3
+    ],
+    [
+      2.95,
+      2.45,
+      0.3
+    ],
+    [
+      3.4,
+      -2.9,
+      0.2
+    ],
+    [
+      3.4,
+      2.9,
+      0.2
+    ],
+    [
+      6.8,
+      -2.9,
+      0.2
+    ],
+    [
+      6.8,
+      2.9,
+      0.2
+    ]
+  ],
+  "door": {
+    "x": 0,
+    "z": 2.19,
+    "width": 1.1,
+    "hinge_x": -0.55,
+    "leaf_mesh": "lookout_door",
+    "open_degrees": 105
+  },
+  "stove": {
+    "center": [
+      -1.65,
+      21.41,
+      1.2
+    ],
+    "yaw_degrees": 126.02737338510362
+  },
+  "stairs": {
+    "flights": 10,
+    "steps_per_flight": 12,
+    "riser": 0.17841666666666667,
+    "run": 0.3,
+    "width": 1.1,
+    "lane_x": [
+      4.45,
+      5.8,
+      4.45,
+      5.8,
+      4.45,
+      5.8,
+      4.45,
+      5.8,
+      4.45,
+      5.8
+    ],
+    "z_start": [
+      1.8,
+      -1.8,
+      1.8,
+      -1.8,
+      1.8,
+      -1.8,
+      1.8,
+      -1.8,
+      1.8,
+      -1.8
+    ],
+    "z_end": [
+      -1.8,
+      1.8,
+      -1.8,
+      1.8,
+      -1.8,
+      1.8,
+      -1.8,
+      1.8,
+      -1.8,
+      1.8
+    ],
+    "landing_x": [
+      3.7,
+      6.5
+    ],
+    "landing_depth": 0.8,
+    "landing_z": [
+      -2.2,
+      2.2,
+      -2.2,
+      2.2,
+      -2.2,
+      2.2,
+      -2.2,
+      2.2,
+      -2.2,
+      2.2
+    ],
+    "standing_clearance_m": 2.0,
+    "support_planes_z": [
+      -2.9,
+      2.9
+    ],
+    "rail_end_inset_m": 0.32,
+    "joined_inner_noses": 9,
+    "visual_landing_x": [
+      3.64,
+      6.56
+    ],
+    "visual_landing_depth": 0.84
+  },
+  "mesh_objects": 8,
+  "triangles": 13430,
+  "vertices": 26844,
+  "material_count": 8,
+  "file_bytes": 1054520,
+  "sha256": "b215142fdd7ef4ebf67eeedf02812612e2f41d60bb54d5481f2bc52c8cfc38e1",
+  "source": "Original procedural geometry: tools/blender/gen_fire_lookout.py",
+  "generator_sha256": "ee526b52df6e4cf43aef2f7a4c9812bc955856d74156758294cbafe90a8d7871",
+  "license": "Project-authored original asset; same ownership as repository",
+  "blender_version": "5.2.2 LTS",
+  "design": "Winter forestry lookout on timber stilts, glazed elevated room, snow hip roof, continuous switchback access, muted wood/green/blue palette",
+  "negative_constraints": "No copied meshes/textures, no terrain edits, no external paid generation, no more than 15000 triangles"
+}

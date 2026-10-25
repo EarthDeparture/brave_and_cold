@@ -1,0 +1,22 @@
+{
+  "iterations_per_repeat": 10000,
+  "label": "baseline",
+  "samples": [
+    {
+      "clinic_refresh_call_us": 22.3,
+      "repeat": 1,
+      "skin_call_us": 7.3884
+    },
+    {
+      "clinic_refresh_call_us": 23.6735,
+      "repeat": 2,
+      "skin_call_us": 7.4852
+    },
+    {
+      "clinic_refresh_call_us": 20.9849,
+      "repeat": 3,
+      "skin_call_us": 6.5502
+    }
+  ],
+  "scope": "Isolated script calls on actual imported models. Refresh call cost is separate from its event frequency. No GPU, frame-time or complete-game claim."
+}

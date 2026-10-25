@@ -1,0 +1,90 @@
+{
+  "_doc": "One fire standard (FireSource). Fuel burn = fuels[id].stove_min * type.efficiency game minutes. A new stove anywhere = a type here + an anchor in its building. Embers: after the fuel runs out the fire smoulders ember_min; fuel added then relights without a match.",
+  "fuels": {
+    "wood": {
+      "stove_min": 120
+    },
+    "plank": {
+      "stove_min": 60
+    },
+    "kindling": {
+      "stove_min": 16
+    },
+    "stick": {
+      "stove_min": 10
+    }
+  },
+  "types": {
+    "wood_stove": {
+      "name": "stove",
+      "efficiency": 1.0,
+      "max_fuel_h": 12,
+      "ember_min": 60,
+      "stoke_hold_s": 2.0,
+      "cook_slots": 2,
+      "rack": true,
+      "heat": {
+        "kind": "room",
+        "room_w": 60,
+        "near_w": 340,
+        "near_r": 3.0,
+        "ramp_s": 300
+      },
+      "light_r": 36,
+      "smoke_r": 24
+    },
+    "campfire": {
+      "name": "fire",
+      "efficiency": 0.5,
+      "max_fuel_h": 6,
+      "ember_min": 20,
+      "stoke_hold_s": 2.0,
+      "cook_slots": 4,
+      "rack": false,
+      "heat": {
+        "kind": "radial",
+        "near_w": 480,
+        "radius": 7.0,
+        "ramp_s": 900
+      },
+      "light_r": 60,
+      "smoke_r": 30
+    },
+    "box_stove": {
+      "name": "stove",
+      "efficiency": 0.9,
+      "max_fuel_h": 8,
+      "ember_min": 45,
+      "stoke_hold_s": 2.0,
+      "cook_slots": 1,
+      "rack": false,
+      "heat": {
+        "kind": "room",
+        "room_w": 50,
+        "near_w": 300,
+        "near_r": 2.0,
+        "ramp_s": 300
+      },
+      "light_r": 30,
+      "smoke_r": 22
+    },
+    "pot_belly": {
+      "name": "stove",
+      "efficiency": 1.0,
+      "max_fuel_h": 10,
+      "ember_min": 60,
+      "stoke_hold_s": 2.0,
+      "cook_slots": 2,
+      "rack": false,
+      "heat": {
+        "kind": "room",
+        "room_w": 60,
+        "near_w": 320,
+        "near_r": 2.5,
+        "ramp_s": 300
+      },
+      "light_r": 36,
+      "smoke_r": 24
+    }
+  }
+}

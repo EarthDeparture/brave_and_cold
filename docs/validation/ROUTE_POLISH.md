@@ -1,0 +1,17 @@
+# Route polish validation — 2026-10-07
+
+565 assertions pass across 11 assertion-based scripts, plus the shoreline diagnostic. The new route suite checks gate request/angle/collision agreement, occupied sweeps, reversal, resumption, mid-motion restoration, old-save behavior, original audio, gradual weather state, actual world save/load, texture tangents, every trail triangle's support, shoulder clearance and prop collision.
+
+Actual Player movement covers the complete 570m surveyed trail in both directions at 30, 60 and 120 FPS. Maximum foot/support difference is 0.0000153m; maximum change in consecutive camera vertical steps is 0.006705m. The rendered trail and support agree within 0.0000311m at every triangle centroid. Existing walking checks also pass 192 road-route samples, complete 2.56km road traversals in both directions, 84 shoreline crossings with zero blocked frames, and stair ascent/descent/turns.
+
+A separate fixed-step outing starts in the living room, descends the tower, operates the gate, inspects the cabinet, walks to North Ridge Supply, collects the reserved relay, returns, installs and verifies it, and climbs back inside. It completes about 1.47km in 546.57 simulated real seconds (4.55 game hours at 30x). Health remains 100; the final core temperature is 36.57°C, water 57.83%, calories 1,121.53 and stove reserve 3.45 game hours. This covers direct action callbacks and excludes exploration/menu time. Survival, weather and population bookkeeping advance; other entity animations/process loops are frozen. It is scripted traversal, not human playtesting or an FPS benchmark.
+
+Thirteen 1600×900 Godot Forward+ D3D12 views were inspected on the GTX 1080 Ti, alongside 84 frames of opening and closing gate motion. The matched before/after views retain camera and lighting settings. A separate synthetic 90% settled-snow view verifies material readability after snow cover. The GIF is a silent, resized review of actual captured frames.
+
+Rejected iterations included a hard trail outline, excessive dark patches, a folded ribbon endpoint, obstructed prop placement, a disconnected drain, and a square-looking drainage opening. The accepted outlet has a genuine circular opening, pipe lining, snow lip, lighter textured concrete and a downhill surface bed. The former free-yard test point (-8,2) was inside the existing solar rack; that fixture now samples clear ground at (-8,4). The gate passage fixture also steps back from the outward swing before opening it.
+
+Independent validation checks native/GLB hashes, actual transformed bounds and triangle counts, material limits, embedded images against Godot-extracted PNGs, original graphics, and PCM foley hashes/duration/levels. Asset production used the existing Blender/Python workflow because game-dev CLI is unavailable. No canonical game-dev package verification is claimed.
+
+Restricted user/editor log and shader-cache paths, certificate-store messages, Terrain3D's editor DoubleSlider error, Blender thumbnail-cache output and shutdown resource warnings are environmental/existing diagnostics. Runtime test and capture logs contain no script or shader compilation errors.
+
+See `ROUTE_POLISH_RECEIPT.json` for hashed evidence, `ROUTE_POLISH_COMPARISON.jpg` for matched views, and `ROUTE_GATE_MOTION.gif` for the swing. Raw logs and captures are local under `brave-and-cold/shots/route-polish-2026-10-07/`. The prior playable state is retained at `checkpoint/pre-route-polish-2026-10-07`.

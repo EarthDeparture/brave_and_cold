@@ -1,0 +1,30 @@
+{
+  "license": "Original project source, geometry and procedural maps; no external inputs",
+  "units": "metres",
+  "source_sha256": "25b3c33f10624aae23e62ed169b6f46db6b7709233ceef511b5bb4db283eb436",
+  "native_sha256": "77d61934093daef718c078e275b29485e645c2dbc809f6ea414bd394e194e1ff",
+  "generator_sha256": "52e9aaf1fde3f2e91f83f66ae748e2ebea3f1c8e181275436c96553b74389e8b",
+  "blender": "5.2.2 LTS",
+  "models": [
+    {
+      "id": "rowan_shopkeeper",
+      "triangles": 18574,
+      "surfaces": 10,
+      "sha256": "28d9c03f3a2c8a8c94e33e40528b35e472daa1d1fa3c2fac0b088dee4270c8c1"
+    },
+    {
+      "id": "sam_clinic",
+      "triangles": 17790,
+      "surfaces": 7,
+      "sha256": "b892e9da722856820ab1bf06dbf6a4ed21125c95201f28289fcddc12e3937f12"
+    },
+    {
+      "id": "lin_runner",
+      "triangles": 17790,
+      "surfaces": 7,
+      "sha256": "d861f11cb06b65576f6d656b5d4eb04c782fb970eff9f2202af7da587f2159cb"
+    }
+  ],
+  "ledger_sha256": "e5eb4d12d06888de37e72d8765f4a1dbcef0ac81a49a649fc3302d67375585ce",
+  "ledger_native_sha256": "378d35e109890e4f3247a99d7f78f7f6aa41ed674c572c2bda9fc290c57ba57a"
+}

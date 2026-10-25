@@ -1,0 +1,461 @@
+{
+  "schema": 1,
+  "date": "2026-10-06",
+  "branch": "codex/solar-recovery",
+  "rollback_checkpoint": {
+    "tag": "checkpoint/pre-solar-recovery-2026-10-06",
+    "commit": "f951ed3867d78ccf797a2ff619e845ccb31de458"
+  },
+  "status": "Zero-charge repair, first compound solar source and maintenance implemented. Parts checkpoints/farming planned only.",
+  "baseline_reproduction": {
+    "original_power_source_commit": "f951ed3",
+    "original_source_sha256": "fc3ac643181dbd946ae22a508f7c49c96dc518c30ae4df8cb21848c9c262e32e",
+    "log_sha256": "e8a3c2aa7c6b4d0481f085db50708ae29bc51795cf623148df86079f117d03d2",
+    "verification_succeeded": false,
+    "forced_completed_repair_charge_wh": 0,
+    "powered": false,
+    "method": "Isolated original script loaded after removing only its class_name to avoid registration collision. No user save used."
+  },
+  "behaviour": {
+    "verify_from_empty": true,
+    "grants_charge_on_verify": false,
+    "generation_independent_of_output_and_repeater_switches": true,
+    "reserve_capacity_wh": 144,
+    "resume_outputs_wh": 12,
+    "solar_nameplate_w": 120,
+    "efficiency": 0.78,
+    "overcast_peak_reduction": 0.94,
+    "calendar_daylight_hours": [
+      6,
+      18
+    ],
+    "snow_accumulation_per_full_precip_hour": 0.03,
+    "grid_policy": "Existing 24 W mains charger retains priority while the town grid is alive. Local PV supplies post-grid charging through a commissioned circuit. No grid/transmitter deadline changes.",
+    "legacy_policy": "Missing solar state enables the additive physical array with healthy controller and no new stored energy; infer recovery hold for an empty pack. Preserve pace, calendar, finite stock and all deadlines."
+  },
+  "asset_validation": {
+    "triangles": 6306,
+    "materials": 7,
+    "textures": 2,
+    "mesh_nodes": 8,
+    "bounds_min_xyz": [
+      -1.2100000381469727,
+      0.1525000035762787,
+      -0.5099999904632568
+    ],
+    "bounds_max_xyz": [
+      1.2200000286102295,
+      2.1143786907196045,
+      0.5879999995231628
+    ],
+    "bytes": 491760,
+    "native_and_print_hashes_verified": true,
+    "runtime_extracted_textures_verified": true,
+    "embedded_textures": true
+  },
+  "asset_manifest": {
+    "relay_solar_array": {
+      "triangles": 6306,
+      "bytes": 491760,
+      "sha256": "ad93737c1801bbe0c98c90fac96bc8692aa7597d65269e23a52e344b93103638",
+      "source": "tools/blender/generated/lookout_solar/relay_solar_array.blend",
+      "source_sha256": "77eac2df0ced8238ba6c637869ea8788dbd561bc7b9d396722bffba7adfbd411",
+      "mesh_nodes": 8,
+      "measured_bounds_min_xyz": [
+        -1.2100000381469727,
+        0.1525000035762787,
+        -0.5099999904632568
+      ],
+      "measured_bounds_max_xyz": [
+        1.2200000286102295,
+        2.1143786907196045,
+        0.5879999995231628
+      ],
+      "measured_dimensions_m": [
+        2.430000066757202,
+        1.9618786871433258,
+        1.0979999899864197
+      ],
+      "rated_w": 120,
+      "snow_nodes": [
+        "SnowLeft",
+        "SnowRight"
+      ],
+      "collisions": "Runtime physical-rack rectangle plus surveyed foot extensions; no ground slab."
+    },
+    "provenance": {
+      "license": "Original project-authored geometry and generated printwork",
+      "seed": 7106,
+      "units": "metres",
+      "blender": "5.2.2 LTS",
+      "generator_sha256": "e8ab10c8d71997c97c86f42618575ea480c62148e56da61e8292e2ba7e453753",
+      "graphics_generator_sha256": "f267f9fb5a2c69a780f34d68e0c21b0b42b0797828203d4a775285d02da00cc0"
+    },
+    "graphics": {
+      "pv_cells.png": "26048e668f9ca46881db7eb38588cc58c932f5121d21a96c1bd7bbb4edc161c3",
+      "charger_plate.png": "e45e192bd84327d4978eb0e67403e1b7797cec4a87dbdd6051bbf1eef88a33fc"
+    }
+  },
+  "asset_manifest_sha256": "0b841f70883973e177264f7f16b170381d86d4fcc97d3be1aee44914eb03302d",
+  "placement": {
+    "tower_local_xz": [
+      -8.5,
+      2.2
+    ],
+    "collision_rect_local_xywh": [
+      -9.78,
+      1.66,
+      2.56,
+      1.14
+    ],
+    "ground": "Discrete foot extensions to surveyed terrain; no slab or grading.",
+    "corridor": "Full cabinet (-9,-4.65) to yard (-5,4) clears footprint with .35 m player tolerance."
+  },
+  "diagnostics": [
+    {
+      "id": "test_solar_recovery",
+      "pass_assertions": 29,
+      "result": "SOLAR_RECOVERY_TEST checks=29 failures=0",
+      "log_sha256": "7f141a588657d170126d99315972c46cd7af39ee950cebffb14129e2ce6bc90a",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 2 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: 7 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "test_lookout_assignment",
+      "pass_assertions": 27,
+      "result": "LOOKOUT_ASSIGNMENT_TEST failures=0",
+      "log_sha256": "3030bb3e694a18790ce447f2e30bb0976e40f4f3fa0a5e5d23dae441ef1fc693",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store."
+      ]
+    },
+    {
+      "id": "test_lookout_opening",
+      "pass_assertions": 53,
+      "result": "LOOKOUT_OPENING_TEST failures=0",
+      "log_sha256": "ab121185503ec433c7837805304bcca1aca01ac88eb13c5a6e629b706ef3d5ce",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "test_watch_walkie_door",
+      "pass_assertions": 46,
+      "result": "WATCH_WALKIE_DOOR_TEST checks=46 failures=0",
+      "log_sha256": "90143c2b633aee7a62b787139b96cc0d2c9bdbdaf40b20a04cfb98907ad3ba03",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 2 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: 7 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "test_radio_bulletins",
+      "pass_assertions": 141,
+      "result": "RADIO_BULLETINS_TEST failures=0",
+      "log_sha256": "f8c6a4fbe68c3bf8a721f84cfa1acdfecae22726d6009e42325b78b905ecc407",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "test_first_week_core",
+      "pass_assertions": 33,
+      "result": "FIRST_WEEK_CORE_TEST checks=33 failures=0",
+      "log_sha256": "2bad5ca1a5a8cfbc71a838983e70ad3b51ad2bb0a092b6478967e7c50fc701e8",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 2 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: 7 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "test_first_week_story",
+      "pass_assertions": 38,
+      "result": "FIRST_WEEK_STORY_TEST checks=38 failures=0",
+      "log_sha256": "a03fa52869b6890ebf9212b91094f21c5073466ced371419e7e6d2d7a75127f1",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "test_opening_pacing",
+      "pass_assertions": 50,
+      "result": "OPENING_PACING_TEST checks=50 failures=0",
+      "log_sha256": "e6b3906d443c88c8591245ab332dbb3b9b92b8208bd0597fd2399611ccd11bc0",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: 10 ObjectDB instances were leaked at exit (run with `--verbose` for details).",
+        "WARNING: 3 RIDs of type \"CanvasItem\" were leaked.",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    },
+    {
+      "id": "test_lookout_stair_turns",
+      "pass_assertions": 91,
+      "result": "STAIR_TURN_TEST failures=0",
+      "log_sha256": "8ca2b7049d8f0a8ade3691291274fbba9d7ba9fd7afb05fcd8837dbadf1b11fa",
+      "environment_or_existing_diagnostics": [
+        "ERROR: Failed to open log file for writing: user://logs/godot.log",
+        "ERROR: Failed to read the root certificate store.",
+        "WARNING: instance_reset_physics_interpolation() is deprecated."
+      ]
+    }
+  ],
+  "total_pass_assertions": 508,
+  "actual_controller_route": {
+    "completed": true,
+    "failure": "",
+    "label": "solar-candidate",
+    "limitations": "Scripted fixed-step route with actual Player movement/collision, world survival/weather and population tick. Direct action callbacks and no menu/exploration time; other entity process/animation is frozen. Not human playtesting or a frame-time benchmark. No user save files used.",
+    "pace": 30.0,
+    "renderer": "",
+    "repair_stage": 3,
+    "samples": [
+      {
+        "calendar": "Day 1  05:30",
+        "calories": 1999.56666666667,
+        "completed_so_far": true,
+        "core_c": 37.0,
+        "distance_m": 0.559550816193223,
+        "fatigue": 0.0111111111111111,
+        "food_pack": 1,
+        "game_s": 8.0,
+        "hp": 100.0,
+        "position": [
+          528.501831054688,
+          326.839752197266,
+          -764.17529296875
+        ],
+        "real_s": 0.266666666666667,
+        "segment": "depart_room",
+        "stove_game_hours": 7.99777777777778,
+        "walkie_percent": 100,
+        "water": 84.9866666666667,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  05:40",
+        "calories": 1964.4458333334,
+        "completed_so_far": true,
+        "core_c": 37.0,
+        "distance_m": 64.7811603015289,
+        "fatigue": 0.911944444444442,
+        "food_pack": 1,
+        "game_s": 657.0,
+        "hp": 100.0,
+        "position": [
+          532.804626464844,
+          305.465881347656,
+          -764.562133789063
+        ],
+        "real_s": 21.9000000000002,
+        "segment": "stairs_down",
+        "stove_game_hours": 7.8175,
+        "walkie_percent": 100,
+        "water": 83.9055555555565,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  05:45",
+        "calories": 1953.0250000001,
+        "completed_so_far": true,
+        "core_c": 36.9784409902786,
+        "distance_m": 80.0535826096311,
+        "fatigue": 1.2311111111111,
+        "food_pack": 1,
+        "game_s": 922.0,
+        "hp": 100.0,
+        "position": [
+          517.967407226563,
+          304.701751708984,
+          -763.530578613281
+        ],
+        "real_s": 30.733333333334,
+        "segment": "cabinet_inspected",
+        "stove_game_hours": 7.74388888888889,
+        "walkie_percent": 99,
+        "water": 83.5127777777787,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  07:31",
+        "calories": 1606.84583333411,
+        "completed_so_far": true,
+        "core_c": 36.9967702555253,
+        "distance_m": 658.008225762285,
+        "fatigue": 10.1074999999999,
+        "food_pack": 1,
+        "game_s": 7313.0,
+        "hp": 100.0,
+        "position": [
+          549.005920410156,
+          250.547775268555,
+          -259.6669921875
+        ],
+        "real_s": 243.766666666655,
+        "segment": "main_road",
+        "stove_game_hours": 5.96861111111111,
+        "walkie_percent": 92,
+        "water": 72.8611111111217,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  07:44",
+        "calories": 1565.72500000086,
+        "completed_so_far": true,
+        "core_c": 36.976970509147,
+        "distance_m": 725.757236954756,
+        "fatigue": 11.1744444444438,
+        "food_pack": 1,
+        "game_s": 8098.0,
+        "hp": 100.0,
+        "position": [
+          572.965209960938,
+          253.632476806641,
+          -224.881759643555
+        ],
+        "real_s": 269.933333333332,
+        "segment": "depot_part_collected",
+        "stove_game_hours": 5.75055555555556,
+        "walkie_percent": 91,
+        "water": 71.5761111111227,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  09:48",
+        "calories": 1170.0416666683,
+        "completed_so_far": true,
+        "core_c": 36.7152306114931,
+        "distance_m": 1381.50497632392,
+        "fatigue": 21.3644444444455,
+        "food_pack": 1,
+        "game_s": 15494.0,
+        "hp": 100.0,
+        "position": [
+          517.9345703125,
+          304.696350097656,
+          -763.489501953125
+        ],
+        "real_s": 516.466666666854,
+        "segment": "cabinet_commissioned",
+        "stove_game_hours": 3.69611111111111,
+        "walkie_percent": 83,
+        "water": 59.3316666666897,
+        "wood_pack": 2
+      },
+      {
+        "calendar": "Day 1  10:03",
+        "calories": 1121.5291666684,
+        "completed_so_far": true,
+        "core_c": 36.5687331680474,
+        "distance_m": 1466.2703052276,
+        "fatigue": 22.6119444444465,
+        "food_pack": 1,
+        "game_s": 16397.0,
+        "hp": 100.0,
+        "position": [
+          528.218505859375,
+          326.839752197266,
+          -763.595886230469
+        ],
+        "real_s": 546.566666666827,
+        "segment": "returned_room",
+        "stove_game_hours": 3.44527777777778,
+        "walkie_percent": 82,
+        "water": 57.8333333333578,
+        "wood_pack": 2
+      }
+    ]
+  },
+  "route_receipt_sha256": "ecad4e040dcef6b0d6fe3fd3701dd56c043f02d539a81df16e399cd9915daca0",
+  "route_log_sha256": "ddef9dda7ed06150fadb55afcba84e35910a5558f92715266a1e6c3c9460b850",
+  "captures": {
+    "renderer": "Vulkan Forward+",
+    "gpu": "NVIDIA GeForce GTX 1080 Ti",
+    "resolution": [
+      1600,
+      900
+    ],
+    "review": "Clean array, volumetric snow layer, recovered desk power label, day and zero-charge night status modals inspected. First flat snow-sheet candidate rejected; final source retained.",
+    "files": [
+      {
+        "path": "brave-and-cold/shots/solar-recovery-2026-10-06/solar-array-clear.png",
+        "sha256": "29ede965b727b5be2913f6a12fe75a6baa95add22f1dafc03fad3f85edc97e35"
+      },
+      {
+        "path": "brave-and-cold/shots/solar-recovery-2026-10-06/solar-array-snow.png",
+        "sha256": "29a25264a527c182019c77fd3dcff0a29e5e337c3dedd195894c90d33959b044"
+      },
+      {
+        "path": "brave-and-cold/shots/solar-recovery-2026-10-06/desk-recovered.png",
+        "sha256": "b7888331a776f008cfc0a3c3e54f3d571fe3b7b59d87e579a289f887c324ce98"
+      },
+      {
+        "path": "brave-and-cold/shots/solar-recovery-2026-10-06/power-status-modal.png",
+        "sha256": "5c0c22b59c2ed08dd47fa270e37fa1a72ac8c3be427d8f1c6d7237d038f5516b"
+      },
+      {
+        "path": "brave-and-cold/shots/solar-recovery-2026-10-06/night-zero-status.png",
+        "sha256": "2b1410ebd7df8e6cd4f5c391f3a975220ed44d1d72abae88edab520b5fd715cd"
+      }
+    ]
+  },
+  "editor_import": {
+    "exit_code": 0,
+    "clean": false,
+    "log_sha256": "ee36c2183f1655d78d2bb8a0d00b9f8b68900a9b0f1986f589f989148dba1aa9",
+    "limitation": "Windows Godot editor settings/cache paths unavailable in restricted environment; unchanged Terrain3D DoubleSlider._ready receives nil editor setting. New scripts/assets registered; runtime diagnostics checked separately."
+  },
+  "source_hash_convention": "UTF-8 LF, no BOM for source text; exact bytes for binaries/captures/logs.",
+  "source_hashes": {
+    "brave-and-cold/systems/lookout_assignment.gd": "71d64bcf1683c913e925721722d8cae3f50aeecc48fbd06a7df663ae8b9813eb",
+    "brave-and-cold/systems/solar_supply.gd": "88987f1b942e39c47cc436d25f077dea1e2f663e26040bbe484034c4804c58cc",
+    "brave-and-cold/systems/solar_supply.gd.uid": "65aedfbf8fe1a4dbef8b7aa2a8099a39decce818aed8b36e2846929fa2fca36f",
+    "brave-and-cold/world/lookout_solar.gd": "ea1dd308ec8cc0f80613d098fb4b7e8d101a0ccb04f0ec704303f061565b5cd7",
+    "brave-and-cold/world/lookout_solar.gd.uid": "f3c4e9aaa831cd91ade5ddc82ae66fc2a43e8b0cf37b463cfc64147a586beda4",
+    "brave-and-cold/world/lookout_opening.gd": "f1c31e5740c13b606de74cb81e6fd28126ffd76b35b16681ad3cd26dc31f35b3",
+    "brave-and-cold/tests/test_solar_recovery.gd": "2dc23eda64c9ed09dc7c64b3d5788f8c715b06a7246b50e533412352dcb4a13b",
+    "brave-and-cold/tests/test_solar_recovery.gd.uid": "b6edf7f53fad237136f3ded5c7404208eceda2da2f297354bcaccf35e76a106b",
+    "brave-and-cold/tests/visual/capture_solar_recovery.gd": "a398a603528c48bf28cef2f99235e3cb7d489c687724be5e76aa2fcb8ffd27c4",
+    "brave-and-cold/tests/visual/capture_solar_recovery.gd.uid": "05641122790bfe9be66f0384cf29bd5076e40cbb2dfcc5dddf0c7618c8fe7d84",
+    "brave-and-cold/tests/test_lookout_assignment.gd": "1917f5e9abed054f3e2b5a10353185f3290e56db37a2a096169d6a60061d4c86",
+    "brave-and-cold/tests/test_lookout_opening.gd": "5d89875c2143ccc221c766672b0aa445799bbf2202fb1d57ab5c11f63e58462a",
+    "brave-and-cold/tests/test_radio_bulletins.gd": "7ab03c4bc948fb3f27d30a029d3025431ed250f0ee6616bdb1477714fef97411",
+    "tools/blender/gen_lookout_solar.py": "e8ab10c8d71997c97c86f42618575ea480c62148e56da61e8292e2ba7e453753",
+    "tools/blender/gen_solar_graphics.py": "f267f9fb5a2c69a780f34d68e0c21b0b42b0797828203d4a775285d02da00cc0",
+    "tools/validate_solar_assets.py": "17e862a29d0897a12f4c5e8df8577514c34e7cb156c3ca23a6fb7c2daa8b7fea"
+  },
+  "limitations": [
+    "Game energy model tied to existing sun; no geographic PV forecast or ray-traced terrain/tree occlusion.",
+    "Matched full route uses real controller/world survival/weather/population ticks, direct action callbacks, frozen individual entity processing and no menu/exploration time. Not human playtesting or FPS benchmarking.",
+    "GPU stills are inspected views, not target-hardware or whole-game graphical acceptance.",
+    "Existing resource exit warnings and environment log/certificate/editor errors remain recorded.",
+    "No user save files touched; no push.",
+    "Parts pickups/installations, controller failure generation and farming remain specified future work."
+  ],
+  "asset_manifest_hash_convention": "Normalized UTF-8 LF text, no BOM; same as source hashes."
+}

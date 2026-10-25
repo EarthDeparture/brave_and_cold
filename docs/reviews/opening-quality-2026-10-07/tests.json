@@ -1,0 +1,126 @@
+{
+  "engine": "Godot 4.7.2",
+  "seed": 20261004,
+  "evidence": "Local engine tests; not sealed game-dev run bundles",
+  "passed_total": 704,
+  "failed_total": 0,
+  "tests": [
+    {
+      "test": "test_atmosphere.log",
+      "passed": 6,
+      "failed": 0,
+      "summary": [
+        "ATMOSPHERE_TESTS failures=0 max_gameplay_difference=0.00000008703091 max_solar_step_radians=0.0027052925434"
+      ],
+      "log_sha256": "cb13b903134784e3e26590037487f0f04d6980a6bbc3aa5cf092bc37bee605e3"
+    },
+    {
+      "test": "test_audio.log",
+      "passed": 65,
+      "failed": 0,
+      "summary": [
+        "AUDIO_TESTS failures=0"
+      ],
+      "log_sha256": "5a392f409972ea5affee2292ade345c9afb9e084af6efa2eef3de769c79ffc48"
+    },
+    {
+      "test": "test_first_week_collapse.log",
+      "passed": 185,
+      "failed": 0,
+      "summary": [
+        "FIRST_WEEK_COLLAPSE_TEST checks=185 failures=0"
+      ],
+      "log_sha256": "bc2e00e38a814143b241c627c346d30171aaf647cb5178e162f6e4040f358b78"
+    },
+    {
+      "test": "test_food_preservation.log",
+      "passed": 69,
+      "failed": 0,
+      "summary": [
+        "FOOD_PRESERVATION_TEST checks=69 failures=0"
+      ],
+      "log_sha256": "a6e003d30331cae292ac9f20360825ae1f94c787c217094e2edd09f974e43e18"
+    },
+    {
+      "test": "test_hunt_cooking.log",
+      "passed": 50,
+      "failed": 0,
+      "summary": [
+        "HUNT_COOKING_TEST checks=50 failures=0"
+      ],
+      "log_sha256": "3fc39b582c0fd08a43c4f1ff43f8fe068dffbf7797b1ea826c9d37e607354bb0"
+    },
+    {
+      "test": "test_infected_skin.log",
+      "passed": 16,
+      "failed": 0,
+      "summary": [
+        "INFECTED_SKIN_TEST checks=16 failures=0"
+      ],
+      "log_sha256": "9463f409a7dd6e4582cdf96f4dc87230a76cc6ba56b03a744fa01e0b13affb0d"
+    },
+    {
+      "test": "test_lookout_door_log.log",
+      "passed": 35,
+      "failed": 0,
+      "summary": [
+        "LOOKOUT_DOOR_LOG_TEST failures=0"
+      ],
+      "log_sha256": "3878fd22538d68cc80edfa223d760a65ceb9fd7b40a70bfa74203e9d307ac974"
+    },
+    {
+      "test": "test_opening_pacing.log",
+      "passed": 50,
+      "failed": 0,
+      "summary": [
+        "OPENING_PACING_TEST checks=50 failures=0"
+      ],
+      "log_sha256": "992b6acc019ea0ff2d45b2393b9a1edb98e4ec2090bb91225a40edf3c35326ed"
+    },
+    {
+      "test": "test_route_polish.log",
+      "passed": 31,
+      "failed": 0,
+      "summary": [
+        "ROUTE_POLISH_TEST failures=0"
+      ],
+      "log_sha256": "4e7c694290077872d17b26c281511b884abd2a66f069fda99b5de7ef664582df"
+    },
+    {
+      "test": "test_solar_recovery.log",
+      "passed": 29,
+      "failed": 0,
+      "summary": [
+        "SOLAR_RECOVERY_TEST checks=29 failures=0"
+      ],
+      "log_sha256": "fedecb9ffe98824a00109f8d811dc7a45d510b7aa88df142972ba5939590a622"
+    },
+    {
+      "test": "test_viewmodel.log",
+      "passed": 70,
+      "failed": 0,
+      "summary": [
+        "HAND_RIG_TEST failures=0"
+      ],
+      "log_sha256": "a82a7e4c80bb3039f6a6e9357c466ceb2aa1925cec46e92de171306cd623c3a0"
+    },
+    {
+      "test": "opening-test.log",
+      "passed": 30,
+      "failed": 0,
+      "summary": [
+        "OPENING_QUALITY_TEST checks=30 failures=0"
+      ],
+      "log_sha256": "a00d315dde9d87a7cc0a768bf5cdb87fa9c92780ffc5605746587c9a43f7080d"
+    },
+    {
+      "test": "tree-test.log",
+      "passed": 68,
+      "failed": 0,
+      "summary": [
+        "TREE_DIVERSITY_TEST failures=0"
+      ],
+      "log_sha256": "a7e1ed10a91d60aaecd13919a2e847d8f5c35f60f13a09371d21f96b3d3503ad"
+    }
+  ]
+}

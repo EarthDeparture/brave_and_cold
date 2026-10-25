@@ -1,0 +1,141 @@
+{
+  "schema": 1,
+  "renderer_commit": "12b3ccd",
+  "baseline_commit": "8a623693988c371a976d6a304151c78cdf4a37ae",
+  "matched_views": 20,
+  "image_hashes_verified": true,
+  "camera_weather_wind_inputs_verified": true,
+  "gpu": "NVIDIA GeForce GTX 1080 Ti",
+  "resolution": [
+    1600,
+    900
+  ],
+  "engine": "4.7.2-stable (official)",
+  "metrics": [
+    {
+      "scenario": "deck-day",
+      "live": false,
+      "before": {
+        "median_ms": 10.741,
+        "p99_ms": 11.94,
+        "engine_process_median_ms": 12.022
+      },
+      "after": {
+        "median_ms": 14.995,
+        "p99_ms": 16.592,
+        "engine_process_median_ms": 16.715
+      },
+      "delta_ms": 4.254,
+      "median_increase_percent": 39.6
+    },
+    {
+      "scenario": "forest-overcast",
+      "live": false,
+      "before": {
+        "median_ms": 8.043,
+        "p99_ms": 9.516,
+        "engine_process_median_ms": 9.881
+      },
+      "after": {
+        "median_ms": 10.768,
+        "p99_ms": 12.719,
+        "engine_process_median_ms": 12.504
+      },
+      "delta_ms": 2.725,
+      "median_increase_percent": 33.9
+    },
+    {
+      "scenario": "shore-dusk",
+      "live": false,
+      "before": {
+        "median_ms": 8.332,
+        "p99_ms": 9.494,
+        "engine_process_median_ms": 9.479
+      },
+      "after": {
+        "median_ms": 11.1,
+        "p99_ms": 13.228,
+        "engine_process_median_ms": 12.716
+      },
+      "delta_ms": 2.768,
+      "median_increase_percent": 33.2
+    },
+    {
+      "scenario": "shelter-storm",
+      "live": false,
+      "before": {
+        "median_ms": 8.514,
+        "p99_ms": 9.798,
+        "engine_process_median_ms": 9.835
+      },
+      "after": {
+        "median_ms": 11.449,
+        "p99_ms": 13.387,
+        "engine_process_median_ms": 12.575
+      },
+      "delta_ms": 2.935,
+      "median_increase_percent": 34.5
+    },
+    {
+      "scenario": "forest-night",
+      "live": false,
+      "before": {
+        "median_ms": 7.969,
+        "p99_ms": 9.503,
+        "engine_process_median_ms": 9.827
+      },
+      "after": {
+        "median_ms": 11.642,
+        "p99_ms": 14.298,
+        "engine_process_median_ms": 13.421
+      },
+      "delta_ms": 3.673,
+      "median_increase_percent": 46.1
+    },
+    {
+      "scenario": "sky-cycle",
+      "live": false,
+      "before": {
+        "median_ms": 7.103,
+        "p99_ms": 8.452,
+        "engine_process_median_ms": 9.076
+      },
+      "after": {
+        "median_ms": 9.68,
+        "p99_ms": 11.86,
+        "engine_process_median_ms": 12.224
+      },
+      "delta_ms": 2.577,
+      "median_increase_percent": 36.3
+    },
+    {
+      "scenario": "forest-overcast",
+      "live": true,
+      "before": {
+        "median_ms": 7.898,
+        "p99_ms": 8.956,
+        "engine_process_median_ms": 9.113
+      },
+      "after": {
+        "median_ms": 10.87,
+        "p99_ms": 12.795,
+        "engine_process_median_ms": 12.373
+      },
+      "delta_ms": 2.972,
+      "median_increase_percent": 37.6
+    }
+  ],
+  "caveat": "Median across three repeat medians and three repeat p99 values. These are bounded wall-clock frame observations, not full campaign or horde stress performance. Film captures include readback overhead and are excluded from performance claims.",
+  "render_source_hashes": {
+    "res://assets/textures/atmosphere/cloud_fields.png": "ed492188352f194d407b42c6dd534061d0057f636ac5382fe40428a125ca3d73",
+    "res://data/terrain/terrain_winter_assets.tres": "e943273e93d14b903ec78bd8a98feae7c17b04fca87fea4010a29b3083df38d5",
+    "res://systems/weather.gd": "3cf04d3abf273a310ad5d9c6ca1018744f8276c1708bd7527efa1a3abf699508",
+    "res://world/atmosphere_rig.gd": "4ead758339e38287ef930481ed08b2e06c815a8970d932ac89b6b4fc2f3e8ce8",
+    "res://world/game_world.gd": "99da69c003926da82b244e2a2aa47bc1e0dcad68c763ae04c9feefc1f0c8ca83",
+    "res://world/shaders/frozen_water.gdshader": "e03700bec67bffd914ca4097034baa5214560ca37872d2a9b8b1491a02731bd9",
+    "res://world/shaders/winter_sky.gdshader": "8b00b9894b6f049b969b55bd5e70d109ec132d00778f3b69dfc055c01010daa0",
+    "res://world/shaders/winter_snow.gdshader": "379348f5b53593b1f40b89adf67430a652efe49dfc20d97bcf37d276266e1286",
+    "res://world/sky_rig.gd": "3f08cdf22b4300372265fad4cec216e258da45778e9ff94b7d59e6ac87fe20b8",
+    "res://world/snow_fall.gd": "68e57b3ed6585b69cf0759c6952d9019bdb498cdccd84f5ef82c5383d58ca4bf"
+  }
+}

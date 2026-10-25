@@ -1,0 +1,49 @@
+{
+  "status": "Development audio: local synthesized speech, not recorded actors",
+  "text_source": "data/lookout_broadcasts.json (original project writing)",
+  "synthesis": "Windows System.Speech / Microsoft David Desktop, rate -1",
+  "processing": "280-3500 Hz bandpass; mono PCM16 22050 Hz; seeded low hiss; no downloads or paid service",
+  "seed": 20261004,
+  "clips": {
+    "delivery_cancelled.wav": {
+      "sha256": "cdd78ecd6a54a470f1d940e82a5057bf612870010fb28e47aeda56305d5e7164",
+      "seconds": 12.867573696145124,
+      "sample_rate": 22050
+    },
+    "dispatch_check.wav": {
+      "sha256": "7db2d272ffd7e569087c17bb0be537435740cf6ca647ab369dfbcc2f67cf1099",
+      "seconds": 12.337551020408164,
+      "sample_rate": 22050
+    },
+    "grid_loss.wav": {
+      "sha256": "d28d986e45a7c408fb39e0f6d5a149ab687d0aa937b4e0001bca9b8c3b256b70",
+      "seconds": 11.442539682539682,
+      "sample_rate": 22050
+    },
+    "isolation.wav": {
+      "sha256": "61c96fccac3187fc55a323b5481e5874590246922d8528c04744e4f277f08a24",
+      "seconds": 14.542131519274376,
+      "sample_rate": 22050
+    },
+    "last_call.wav": {
+      "sha256": "685947bec62f90b89679cd24fac5b50ff92a5fb13b0a0fbffe1b23f8f0a76644",
+      "seconds": 12.192426303854875,
+      "sample_rate": 22050
+    },
+    "local_reports.wav": {
+      "sha256": "700147e9a488ab6e2e704ecb4514cbeef7a8c3df41574066e956e3863fd0e569",
+      "seconds": 11.392244897959184,
+      "sample_rate": 22050
+    },
+    "road_advisory.wav": {
+      "sha256": "58af5593563f8f0baa39cfc4670cf98ac40f15a0052cac9c74f240894d693b34",
+      "seconds": 11.907528344671201,
+      "sample_rate": 22050
+    },
+    "shelter_notice.wav": {
+      "sha256": "b9248f592f1b3457729c25d6187dc7ad158e0bd9cfaf27d82d76f0d20718c13a",
+      "seconds": 14.774739229024943,
+      "sample_rate": 22050
+    }
+  }
+}

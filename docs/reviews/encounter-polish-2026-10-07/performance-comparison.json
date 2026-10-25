@@ -1,0 +1,255 @@
+{
+  "baseline_runtime": "579f58c",
+  "candidate_runtime": "0f13238",
+  "seed": 20261004,
+  "renderer": "Forward+ D3D12",
+  "resolution": [
+    1920,
+    1080
+  ],
+  "gpu": "NVIDIA GeForce GTX 1080 Ti",
+  "rows": [
+    {
+      "case": "logging-forest",
+      "baseline": {
+        "median_of_run_medians_ms": 22.31,
+        "p95_range_ms": [
+          24.297,
+          25.174
+        ],
+        "warm_hitches_over_33ms": 1,
+        "entry_max_ms": [
+          42.245,
+          50.812,
+          27.563
+        ],
+        "entry_population_max_us": [
+          23756,
+          140,
+          236
+        ],
+        "active_peaks": [
+          2,
+          2,
+          2
+        ],
+        "pool_min": [
+          0,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "median_of_run_medians_ms": 22.13,
+        "p95_range_ms": [
+          23.953,
+          24.099
+        ],
+        "warm_hitches_over_33ms": 0,
+        "entry_max_ms": [
+          29.528,
+          27.158,
+          28.068
+        ],
+        "entry_population_max_us": [
+          6085,
+          108,
+          214
+        ],
+        "active_peaks": [
+          2,
+          2,
+          2
+        ],
+        "pool_min": [
+          2,
+          58,
+          58
+        ]
+      },
+      "active_peaks_equal": true
+    },
+    {
+      "case": "town-road",
+      "baseline": {
+        "median_of_run_medians_ms": 22.215,
+        "p95_range_ms": [
+          23.613,
+          24.673
+        ],
+        "warm_hitches_over_33ms": 1,
+        "entry_max_ms": [
+          48.085,
+          37.63,
+          24.557
+        ],
+        "entry_population_max_us": [
+          7103,
+          147,
+          152
+        ],
+        "active_peaks": [
+          18,
+          18,
+          18
+        ],
+        "pool_min": [
+          0,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "median_of_run_medians_ms": 21.964,
+        "p95_range_ms": [
+          23.295,
+          23.52
+        ],
+        "warm_hitches_over_33ms": 3,
+        "entry_max_ms": [
+          46.659,
+          29.486,
+          26.311
+        ],
+        "entry_population_max_us": [
+          311,
+          138,
+          194
+        ],
+        "active_peaks": [
+          18,
+          18,
+          18
+        ],
+        "pool_min": [
+          42,
+          42,
+          42
+        ]
+      },
+      "active_peaks_equal": true
+    },
+    {
+      "case": "storm-route",
+      "baseline": {
+        "median_of_run_medians_ms": 19.765,
+        "p95_range_ms": [
+          21.969,
+          22.307
+        ],
+        "warm_hitches_over_33ms": 0,
+        "entry_max_ms": [
+          55.054,
+          25.663,
+          25.354
+        ],
+        "entry_population_max_us": [
+          4817,
+          171,
+          388
+        ],
+        "active_peaks": [
+          20,
+          2,
+          2
+        ],
+        "pool_min": [
+          0,
+          18,
+          18
+        ]
+      },
+      "candidate": {
+        "median_of_run_medians_ms": 19.601,
+        "p95_range_ms": [
+          21.875,
+          22.319
+        ],
+        "warm_hitches_over_33ms": 1,
+        "entry_max_ms": [
+          54.274,
+          26.452,
+          30.458
+        ],
+        "entry_population_max_us": [
+          446,
+          108,
+          101
+        ],
+        "active_peaks": [
+          20,
+          2,
+          2
+        ],
+        "pool_min": [
+          40,
+          58,
+          58
+        ]
+      },
+      "active_peaks_equal": true
+    },
+    {
+      "case": "clinic-encounter",
+      "baseline": {
+        "median_of_run_medians_ms": 18.189,
+        "p95_range_ms": [
+          20.88,
+          22.277
+        ],
+        "warm_hitches_over_33ms": 1,
+        "entry_max_ms": [
+          28.484,
+          37.162,
+          35.396
+        ],
+        "entry_population_max_us": [
+          5453,
+          4430,
+          233
+        ],
+        "active_peaks": [
+          55,
+          59,
+          59
+        ],
+        "pool_min": [
+          0,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "median_of_run_medians_ms": 17.149,
+        "p95_range_ms": [
+          20.593,
+          21.934
+        ],
+        "warm_hitches_over_33ms": 2,
+        "entry_max_ms": [
+          27.82,
+          32.549,
+          30.677
+        ],
+        "entry_population_max_us": [
+          342,
+          322,
+          367
+        ],
+        "active_peaks": [
+          56,
+          59,
+          59
+        ],
+        "pool_min": [
+          4,
+          1,
+          1
+        ]
+      },
+      "active_peaks_equal": false
+    }
+  ],
+  "limitations": "Four 12-second moving cases, three repeats. First three seconds retained as entry data; subsequent nine seconds form warm metrics. Actual Player physics, survival/weather and normal AI processing remain active. God mode, muted audio and disabled inventory consumption avoid interruptions. Assignment seed verified before cohort issuance. Population activation can vary with elapsed simulation and movement; compare recorded active counts. Local frame intervals and population tick timers, not GPU attribution or a statistical causal result. Does not cover combat, full town density, autosave IO, minimum hardware or human play.",
+  "notes": "Baseline runtime precedes the implementation; both use the corrected seed check and entry timers. The baseline manifest inherited wording from a former visual-profile comparison. This comparison records the actual runtime revisions. Host power/load are uncontrolled; timings do not prove statistical causality. Actual active peaks are retained: the final first clinic pass has 56 instead of 55; both later passes reach 59. These are comparable local scenarios, not identical fixed-step AI workloads. Final harness changes only receipt labels. The final diagnostic does not exercise deaths; real-ground death update cost is recorded in the collapse test log."
+}

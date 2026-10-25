@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "native_reopen": "passed",
+  "blender_version": "5.2.2 LTS",
+  "editable_export_meshes": [
+    "snow_pine_open",
+    "snow_pine_open_far",
+    "snow_fir_full",
+    "snow_fir_full_far",
+    "snow_spruce_wind",
+    "snow_spruce_wind_far",
+    "snow_snag",
+    "snow_snag_far",
+    "winter_birch",
+    "winter_birch_far"
+  ],
+  "actual_scale_linked_previews": 5,
+  "packed_original_images": [
+    "winter_bark.png",
+    "winter_bark_normal.png",
+    "winter_boughs_far.png",
+    "winter_twigs.png"
+  ],
+  "native_sha256": "2efbd9f862eded1d6a8e4c3fe497cc40aaca14fcb82a18c59e38bf1a0c3b86d6"
+}

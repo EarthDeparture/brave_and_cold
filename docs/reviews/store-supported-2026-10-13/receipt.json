@@ -1,0 +1,58 @@
+{
+  "scope": "Local Blender/Godot placement checks, not human play acceptance or a sealed package",
+  "suites": [
+    {
+      "suite": "store-support-test",
+      "checks": 35,
+      "failures": 0,
+      "log_sha256": "a8515cc59c6c5dcb613fa0d300b1e9c5a34a84c6b6e52d98deefa9c0a601bdac"
+    },
+    {
+      "suite": "store-electrical-regression",
+      "checks": 49,
+      "failures": 0,
+      "log_sha256": "d81ccd7d2ddb8db0c6420ee000476af3698d67b054f7279a26ac621dacef46b4"
+    },
+    {
+      "suite": "store-opening-regression",
+      "checks": 53,
+      "failures": 0,
+      "log_sha256": "9be8bcb189f5a3dba47dcbbde7de9a0c5c67f02fa92919ccdb8e8257313df102"
+    }
+  ],
+  "asset_checks": 29,
+  "captures": {
+    "counter.png": {
+      "original_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "7c6fc5a773a6d9127f8197f6e96e084d2115fccd34c0f78b5acea492af0c8a9b",
+      "review_sha256": "489e63f0da3c392810809998ea92b6fc67a845d541d33e03e4713e382238ead8"
+    },
+    "crates.png": {
+      "original_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "1b8ae7bbd8dbe67c2fc4366cbd94a8a705fd1caf336f2e16bc6ab7a5cb831d61",
+      "review_sha256": "5e31c69692add4114ae67ad6d3174da86d4beae1460ee6cec5c714a269309fdd"
+    },
+    "shelves.png": {
+      "original_size": [
+        1600,
+        900
+      ],
+      "source_sha256": "33f03e0e95e0a1dd1c73852b36ae0d10b4d778a624b3f4cce5ffad136833459c",
+      "review_sha256": "7fc69f1da16c9ff3065161a5fc28686b70432045bf5a00e24212bc315751a0bd"
+    }
+  },
+  "source_hashes": {
+    "tools\\blender\\fix_store_support.py": "7cf38847355bdaf986529d3254cd30f3269449eca4af423534fe528e7e188048",
+    "brave-and-cold\\world\\store.gd": "4c2302d24db600ec9f99651a6ae189dd30f86c9e51eddafe28e4f071b2fee9cb",
+    "brave-and-cold\\world\\game_world.gd": "b10b22430d27aeaf2b249de3edc04da7d5b077cd68829950ecfa2f659d044ed1",
+    "brave-and-cold\\world\\electrical_fieldwork.gd": "a10ae416b182d525d0315276eed8a7c9c71b61e8494b7a0701969ba09a050a7b",
+    "brave-and-cold\\world\\lookout_opening.gd": "20bede7944c99656281b0260545406ec674aa122fab4adfb9ca4a560b4f2eb34",
+    "brave-and-cold\\world\\town_life.gd": "5c10798239e4cca5231ee1420c85ca1623b29d869e4145a38d728289af2f5b00"
+  }
+}
