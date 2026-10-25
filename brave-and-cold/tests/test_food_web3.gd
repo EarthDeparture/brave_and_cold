@@ -39,7 +39,8 @@ func _tint(n: Node) -> float:
 	var s := 0.0; var c := 0
 	for mi in n.find_children("*", "MeshInstance3D", true, false):
 		if mi.has_meta("stage_own"):
-			var col: Color = (mi.get_meta("stage_own") as StandardMaterial3D).albedo_color
+			var own = mi.get_meta("stage_own")
+			var col: Color = (own as StandardMaterial3D).albedo_color if own is StandardMaterial3D else (own as ShaderMaterial).get_shader_parameter("tint")
 			var b: Color = mi.get_meta("stage_base")
 			s += col.g / maxf(b.g, 0.001); c += 1
 	return s / maxf(1.0, float(c))

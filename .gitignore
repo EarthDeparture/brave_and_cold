@@ -6,6 +6,11 @@ brave-and-cold/demo/
 tools/terrain/out/
 shots/
 tools/blender/__pycache__/
+
+# Python regenerates these locally; retain generators and source assets instead.
+__pycache__/
+*.pyc
+*.pyo
 tools/blender/generated/hand_rig/*.blend[0-9]
 
 brave-and-cold/build/

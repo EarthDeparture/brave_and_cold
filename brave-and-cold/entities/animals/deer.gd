@@ -32,6 +32,7 @@ var _state_t := 0.0
 var _threat := Vector3.ZERO
 var _phase := 0.0
 var _legs: Dictionary = {}
+var _lows: Dictionary = {}   # X2: lower legs (knee / hock down)
 var _tail: Node3D
 var _model: Node3D
 var _rng := RandomNumberGenerator.new()
@@ -46,14 +47,12 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, bus: NoiseBu
 	bus.noise.connect(_on_noise)
 	_model = (load(MODEL) as PackedScene).instantiate()
 	add_child(_model)
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.roughness = 1.0
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var mat := Wolf.fur_material(1.0)   # X3: soft fur look
 	for mi in _model.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).material_override = mat
 	for n in ["fl", "fr", "bl", "br"]:
 		_legs[n] = _model.find_child("deer_leg_" + n, true, false)
+		_lows[n] = _model.find_child("deer_leg_" + n + "_lo", true, false)
 	_tail = _model.find_child("deer_tail", true, false)
 	add_to_group("prey")
 	_pick_graze()
@@ -219,13 +218,19 @@ func _move(want: float, delta: float) -> void:
 
 func _animate(delta: float) -> void:
 	_phase += delta * speed_now * 2.6
-	var amp := clampf(speed_now / FLEE_SPEED, 0.0, 1.0) * 0.8 + (0.2 if speed_now > 0.1 else 0.0)
+	var amp := clampf(speed_now / FLEE_SPEED, 0.0, 1.0) * 0.55 + (0.18 if speed_now > 0.1 else 0.0)   # X2: knees fold too
 	var s := sin(_phase) * amp
 	if _legs.get("fl") != null:
 		(_legs["fl"] as Node3D).rotation.x = s
 		(_legs["br"] as Node3D).rotation.x = s
 		(_legs["fr"] as Node3D).rotation.x = -s
 		(_legs["bl"] as Node3D).rotation.x = -s
+	for n: String in ["fl", "fr", "bl", "br"]:   # X2: knees fold on the forward swing (the high-stepping deer gait)
+		var lo := _lows.get(n) as Node3D
+		if lo == null: continue
+		var p := _phase if (n == "fl" or n == "br") else _phase + PI
+		var swing := maxf(0.0, cos(p)) * amp
+		lo.rotation.x = -1.3 * swing if n[0] == "f" else 0.6 * swing
 	if _tail != null:
 		_tail.rotation.x = -0.3 + (0.6 if state == State.FLEE else 0.0)
 

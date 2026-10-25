@@ -21,9 +21,9 @@ argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT = argv[0] if argv else "."
 
 SADDLE = (0.11, 0.10, 0.095)
-FLANK = (0.34, 0.30, 0.25)
-GREY = (0.44, 0.42, 0.39)
-CREAM = (0.64, 0.59, 0.51)
+FLANK = (0.32, 0.30, 0.27)   # grey timber wolf (was beige under the fur rim)
+GREY = (0.42, 0.41, 0.39)
+CREAM = (0.60, 0.58, 0.54)
 MUZ = (0.30, 0.28, 0.26)
 NOSE = (0.03, 0.03, 0.03)
 EYE = (0.55, 0.38, 0.08)
@@ -134,6 +134,26 @@ def catmull(pts, per=3):
     return out
 
 
+def leg_parts(name, hip, path, knee_i, colfn, sides=10, shag=0.04):
+    """X2: a leg as two objects so it can bend: <name> (hip -> knee, origin at the hip) and <name>_lo
+    (knee -> hoof / paw, origin at the knee, parented to the upper). path: [((dx, dy, dz) from the hip, w, h, shag)].
+    colfn(u, k, s) gets u along the whole leg (0 hip .. 1 ground) for both halves."""
+    hip = Vector(hip)
+    st = [(hip + Vector(p), w, h, sk) for p, w, h, sk in path]
+    n = len(st) - 1
+    u0 = knee_i / n
+    up = M(origin=tuple(hip))
+    up.loft(catmull(st[:knee_i + 1], 2), sides, lambda u, k, s: colfn(u * u0, k, s), shag=shag, cap0=False)
+    upper = up.finish(name)
+    knee = st[knee_i][0]
+    lo = M(origin=tuple(knee))
+    lo.loft(catmull(st[knee_i:], 2), sides, lambda u, k, s: colfn(u0 + u * (1.0 - u0), k, s), shag=shag)
+    lower = lo.finish(name + "_lo")
+    lower.parent = upper
+    lower.location = knee - hip
+    return [upper, lower]
+
+
 # body stations: (centre (x, y, z), half width, half height, shag)
 BODY = [
     ((0, -0.47, 0.75), 0.05, 0.05, 0.0),
@@ -165,7 +185,7 @@ def body_col(u, k, s):
     top = mix(FLANK, SADDLE, (sn - 0.25) / 0.4)
     if 0.25 < y < 0.47:   # neck: darker cape over the shoulders, pale throat
         top = mix(FLANK, SADDLE, (sn - 0.1) / 0.6)
-    return mix(CREAM, top, (sn + 0.55) / 0.75)
+    return mix(CREAM, top, (sn + 0.8) / 0.45)   # cream only along the underside
 
 
 def build():
@@ -195,22 +215,19 @@ def build():
 
     def leg_col_f(u, k, s):   # flank colour where it meets the body, tan-cream lower down, a darker front stripe
         c = mix(mix(FLANK, CREAM, 0.45), mix(CREAM, FLANK, 0.3), (u - 0.25) * 1.8)   # matches the lit flank where it leaves the body
-        return mix(c, SADDLE, max(0.0, s[1]) * 0.3 * max(0.0, 1.0 - abs(u - 0.55) * 3.0))   # stripe down the foreleg only
+        return mix(c, SADDLE, max(0.0, s[1]) * 0.3 * max(0.0, 1.0 - abs(u - 0.75) * 6.0))   # dark line down the front of the lower leg
     # legs: origin at the joint (x, y, 0.56). Front: shoulder -> elbow -> wrist -> paw. Hind: hip -> stifle -> hock -> paw.
     for name, x, y in (("fl", -0.105, 0.22), ("fr", 0.105, 0.22), ("bl", -0.10, -0.30), ("br", 0.10, -0.30)):
         hip = Vector((x, y, 0.56))
-        l = M(origin=tuple(hip))
         if name[0] == "f":
-            path = [((0, 0.0, 0.19), 0.06, 0.09, 0.0), ((0, 0.0, 0.1), 0.08, 0.115, 0.4), ((0, -0.02, 0.0), 0.066, 0.085, 0.3), ((0, -0.035, -0.12), 0.044, 0.055, 0.2),
+            path = [((0, 0.0, 0.19), 0.045, 0.09, 0.0), ((0, 0.0, 0.1), 0.055, 0.115, 0.3), ((0, -0.02, 0.0), 0.066, 0.085, 0.3), ((0, -0.035, -0.12), 0.044, 0.055, 0.2),
                     ((0, -0.005, -0.40), 0.026, 0.03, 0.0), ((0, 0.01, -0.49), 0.024, 0.028, 0.0), ((0, 0.03, -0.535), 0.03, 0.022, 0.0),
                     ((0, 0.075, -0.548), 0.026, 0.014, 0.0)]
         else:
-            path = [((0, 0.0, 0.19), 0.075, 0.1, 0.0), ((0, 0.0, 0.1), 0.095, 0.13, 0.4), ((0, 0.03, -0.02), 0.085, 0.1, 0.4), ((0, 0.075, -0.13), 0.052, 0.065, 0.2),
+            path = [((0, 0.0, 0.19), 0.05, 0.1, 0.0), ((0, 0.0, 0.1), 0.06, 0.13, 0.3), ((0, 0.03, -0.02), 0.085, 0.1, 0.4), ((0, 0.075, -0.13), 0.052, 0.065, 0.2),
                     ((0, -0.03, -0.33), 0.03, 0.034, 0.0), ((0, -0.055, -0.38), 0.027, 0.03, 0.0), ((0, -0.03, -0.52), 0.024, 0.026, 0.0),
                     ((0, 0.0, -0.538), 0.03, 0.02, 0.0), ((0, 0.045, -0.548), 0.026, 0.013, 0.0)]
-        st = [(hip + Vector(p), w, h, sk) for p, w, h, sk in path]
-        l.loft(catmull(st, 2), 10, leg_col_f, shag=0.04, cap0=False)
-        objs.append(l.finish("wolf_leg_" + name))
+        objs.extend(leg_parts("wolf_leg_" + name, hip, path, 3 if name[0] == "f" else 4, leg_col_f))
     return objs
 
 

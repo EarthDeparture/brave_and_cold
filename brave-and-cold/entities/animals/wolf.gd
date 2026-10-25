@@ -75,6 +75,7 @@ var _bite_cd := 0.0
 var _phase := 0.0
 var _stuck_t := 0.0
 var _legs: Dictionary = {}
+var _lows: Dictionary = {}   # X2: lower leg (knee / hock down), child of each leg, bends in the gait
 var _tail: Node3D
 var _body: Node3D
 var _rng := RandomNumberGenerator.new()
@@ -91,19 +92,29 @@ func setup(t: Terrain3D, s: SnowField, p: Player, f: ForestScatter, cbs: Array, 
 	var model := (load(model_path) as PackedScene).instantiate()
 	add_child(model)
 	_model_root = model
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.roughness = 1.0
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var mat := fur_material(1.6 if part_prefix == "bear" else 1.0)
 	for mi in model.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).material_override = mat
 	for n in ["fl", "fr", "bl", "br"]:
 		_legs[n] = model.find_child(part_prefix + "_leg_" + n, true, false)
+		_lows[n] = model.find_child(part_prefix + "_leg_" + n + "_lo", true, false)
 	_tail = model.find_child(part_prefix + "_tail", true, false)
 	_body = model.find_child(part_prefix + "_body", true, false)
 	add_to_group("hostile")
 	add_to_group("wolves")   # A6: packmates at a kill take turns
 	_pick_wander()
+
+
+static var _fur_shader: Shader
+## X3: the shared fur material (strands, soft wrap, fuzz rim) for the lofted animal models; Deer uses it too.
+static func fur_material(sc: float) -> ShaderMaterial:
+	if _fur_shader == null: _fur_shader = load("res://world/shaders/animal_fur.gdshader")
+	var m := ShaderMaterial.new()
+	m.shader = _fur_shader
+	m.set_shader_parameter("noise_tex", Cabin._grain_tex())
+	m.set_shader_parameter("scale", sc)
+	m.set_shader_parameter("tint", Color.WHITE)
+	return m
 
 
 func hit(dmg: float, from: Vector3) -> void:
@@ -521,7 +532,7 @@ func _move(want: float, delta: float) -> void:
 var defend_k := 0.0   # W6: 0..1 how far into the guarding stance (head low, braced, tail out stiff)
 func _animate(delta: float) -> void:
 	_phase += delta * speed_now * 3.2
-	var amp := clampf(speed_now / RUN_SPEED, 0.0, 1.0) * 0.75 + (0.25 if speed_now > 0.1 else 0.0)
+	var amp := clampf(speed_now / RUN_SPEED, 0.0, 1.0) * 0.5 + (0.2 if speed_now > 0.1 else 0.0)   # X2: the knees carry the stride now
 	var guard := defending or (state == State.ALERT and speed_now < 0.5)
 	defend_k = move_toward(defend_k, 1.0 if guard else 0.0, delta * (3.0 if guard else 1.5))
 	var dk := defend_k * defend_k * (3.0 - 2.0 * defend_k)
@@ -532,6 +543,7 @@ func _animate(delta: float) -> void:
 		(_legs["br"] as Node3D).rotation.x = s - 0.2 * dk
 		(_legs["fr"] as Node3D).rotation.x = -s + 0.24 * dk
 		(_legs["bl"] as Node3D).rotation.x = -s - 0.2 * dk
+		_bend_lows(_phase, amp, dk)
 	if _tail != null:   # hanging and swaying -> held straight out behind, rigid
 		var t_relaxed := -0.15 + sin(_phase * 0.5) * 0.06 - (0.35 if state == State.CHASE else 0.0)
 		_tail.rotation.x = lerpf(t_relaxed, -0.85 + sin(_t_snarl() * 31.0) * 0.015, dk)
@@ -542,6 +554,18 @@ func _animate(delta: float) -> void:
 		var want := (-0.20 + sin(_state_t * 5.0) * 0.05) if feed else -0.13 * dk
 		_model_root.rotation.x = lerpf(_model_root.rotation.x, want, minf(1.0, delta * 4.0))
 		_model_root.position.y = lerpf(_model_root.position.y, -0.07 * dk, minf(1.0, delta * 4.0))
+
+
+## X2: the knee folds the foot back while the leg swings forward (front), the hock flexes less (hind);
+## planted legs stay straight. In the guarding crouch the hind hocks sit a little flexed.
+func _bend_lows(ph: float, amp: float, dk: float) -> void:
+	for n: String in ["fl", "fr", "bl", "br"]:
+		var lo := _lows.get(n) as Node3D
+		if lo == null: continue
+		var p := ph if (n == "fl" or n == "br") else ph + PI
+		var swing := maxf(0.0, cos(p)) * amp
+		if n[0] == "f": lo.rotation.x = -1.1 * swing
+		else: lo.rotation.x = 0.55 * swing + 0.12 * dk
 
 
 func _t_snarl() -> float:

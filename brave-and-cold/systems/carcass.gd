@@ -151,10 +151,21 @@ static func update_stage(n: Node3D) -> void:
 			m3.material_override = own
 			m3.set_meta("stage_own", own)
 			m3.set_meta("stage_base", (own as StandardMaterial3D).albedo_color)
+		elif own == null and m3.material_override is ShaderMaterial:   # X3 animal fur: tint + wet uniforms
+			own = (m3.material_override as ShaderMaterial).duplicate()
+			m3.material_override = own
+			m3.set_meta("stage_own", own)
+			var t0 = (own as ShaderMaterial).get_shader_parameter("tint")
+			m3.set_meta("stage_base", t0 if t0 is Color else Color.WHITE)
 		if own != null:
 			var base: Color = m3.get_meta("stage_base", Color.WHITE)
-			(own as StandardMaterial3D).albedo_color = base.lerp(Color(0.40, 0.07, 0.06), (1.0 - frac) * 0.8)
-			(own as StandardMaterial3D).roughness = lerpf(1.0, 0.45, 1.0 - frac)   # wet
+			var tc := base.lerp(Color(0.40, 0.07, 0.06), (1.0 - frac) * 0.8)
+			if own is StandardMaterial3D:
+				(own as StandardMaterial3D).albedo_color = tc
+				(own as StandardMaterial3D).roughness = lerpf(1.0, 0.45, 1.0 - frac)   # wet
+			else:
+				(own as ShaderMaterial).set_shader_parameter("tint", tc)
+				(own as ShaderMaterial).set_shader_parameter("wet", 1.0 - frac)
 		else:
 			m3.material_overlay = ov
 	# blood ring under the body (top level: dead wolves lie rolled on their side)
