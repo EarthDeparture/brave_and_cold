@@ -37,3 +37,13 @@ cd brave_and_cold
 git lfs pull
 git lfs fsck --objects --pointers
 ```
+
+## Completed verification, 2026-10-25
+
+The project checkpoint `ed90ff3d8d135e51dd55ebd074d8e90aee45000e` is published on `origin/codex/opening-quality`, including the 124 previously unpublished commits from both development workflows. All 28 reachable `checkpoint/*` recovery tags were published and their remote targets matched their local targets. `main` was not merged or rewritten.
+
+Authentication needed an account with repository write access. After authorizing the repository owner account and configuring GitHub CLI as Git's credential helper, the LFS upload and atomic branch/tag push succeeded. No asset migration, force-push or LFS-hook bypass was needed.
+
+An empty, separate LFS store at `shots/github-remote-verification-2026-10-25/lfs` fetched the branch's complete asset history from GitHub with no local reference directories. Its 798 stored asset objects total **1,182,937,529 bytes**. Hash/pointer checks passed against the history range from the root commit to the project checkpoint, and against the checkpoint itself. This proves remote asset recovery independently of the original `.git/lfs/objects` cache; it is not a fresh Godot build/playtest.
+
+The [verification receipt](github-sync-2026-10-25.json) records the checked project commit, tag targets, isolated-cache inventory digest and validation commands. This documentation/receipt is committed after that verified project checkpoint and does not change game assets or logic.

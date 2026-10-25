@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-25",
+  "repository": "https://github.com/EarthDeparture/brave_and_cold",
+  "branch": "codex/opening-quality",
+  "verified_project_commit": "ed90ff3d8d135e51dd55ebd074d8e90aee45000e",
+  "previously_unpublished_commits": 124,
+  "remote_head_matched_project_commit": true,
+  "remote_recovery_tags_verified": {
+    "checkpoint/github-sync-2026-10-25": "ed90ff3d8d135e51dd55ebd074d8e90aee45000e",
+    "checkpoint/pre-atmosphere-2026-10-03": "25f87f178f0968c243d8f7aff2545316daa4a47a",
+    "checkpoint/pre-atomic-story-crops-2026-10-25": "8886280404b6428ef931d20401bd12bbb7fe1b09",
+    "checkpoint/pre-bandaging-blood-firewood-2026-10-05": "721981ffa35a9dfba4f5bbb17778a3954f10a04a",
+    "checkpoint/pre-carried-dispatch-2026-10-05": "7ee88c5311d116ca76ed2386393d0252e7840c54",
+    "checkpoint/pre-character-detail-2026-10-07": "d853ea8bdca499338de64d622901d70ca85c5bb8",
+    "checkpoint/pre-electrical-fieldwork-2026-10-07": "4292c607728435d1c3de2ba0337b3f8a04b05111",
+    "checkpoint/pre-encounter-polish-2026-10-07": "579f58c5b9f084cd7cd763aea9a355c8db35e343",
+    "checkpoint/pre-environment-detail-2026-10-03": "3855b83ddbbec5cdb8bda5944c1af508e2de68ac",
+    "checkpoint/pre-first-week-production-2026-10-05": "ccf1c79eb8640cab7e17b445a65761e6f73d0fba",
+    "checkpoint/pre-food-preservation-2026-10-07": "9f3dff642e6c0689e38f78d980c467cf8b071c8c",
+    "checkpoint/pre-grip-transition-route-2026-10-04": "c1dcd171bd968e279bbfd21f41b5a051519343f5",
+    "checkpoint/pre-human-foundation-2026-10-13": "7822ca45c98119fdecf1bc808ca9c0ff6cbc1b91",
+    "checkpoint/pre-hunt-cooking-2026-10-07": "d3a9f873f5ebe684bb7235311c4c4376b5360970",
+    "checkpoint/pre-locomotion-route-2026-10-04": "9b33977877d5b335ce7efb8b515ef53cd6256f42",
+    "checkpoint/pre-lookout-door-stove-log-2026-10-04": "a6becb0c86c3d1fab50475a94be255fb96803aac",
+    "checkpoint/pre-lookout-mvp-opening-2026-10-04": "afe938072b8a7dc3789317ad0696ec625df877e2",
+    "checkpoint/pre-lookout-stairs-radio-logs-2026-10-04": "631dc801c2092ac7e82ac2a8ceacf3a72ede1f31",
+    "checkpoint/pre-opening-pacing-2026-10-06": "edb43c4466b08cc4a47eb6c92be6a1fac132d00a",
+    "checkpoint/pre-opening-quality-2026-10-07": "0703c7b31d2628ac6310e10acfb0c7831341643c",
+    "checkpoint/pre-resident-presence-2026-10-14": "15f0b467c352f320609ceb54972b2525e5c8492e",
+    "checkpoint/pre-roads-jump-2026-10-03": "9886e7df4c427e2f93b72e31e0f0c8ba83ab610f",
+    "checkpoint/pre-route-polish-2026-10-07": "8462bf36e10f132f778b1a60c050512f679ebe35",
+    "checkpoint/pre-solar-recovery-2026-10-06": "f951ed3867d78ccf797a2ff619e845ccb31de458",
+    "checkpoint/pre-survival-props-feedback-2026-10-04": "394540ba1225dae21917e0e9c6656a26681d7b01",
+    "checkpoint/pre-town-life-2026-10-13": "33715e07d8bc2b0be541b749bcc22cee22a0e1d9",
+    "checkpoint/pre-walk-surface-2026-10-04": "39d91cbb87f5c26e67beb1c7795e0be2c3fe77f0",
+    "checkpoint/pre-watch-dual-monitor-2026-10-05": "6e7bab656b7aba967a0ae3ae51153eb07d85fe43"
+  },
+  "isolated_lfs_download": {
+    "storage": "shots/github-remote-verification-2026-10-25/lfs",
+    "empty_before_download": true,
+    "local_reference_directories": [],
+    "objects": 798,
+    "bytes": 1182937529,
+    "oid_size_inventory_sha256": "f4b2b1bdd7e4e38acb788d09cd2ee4645f988a61914bfbf4b1da128d1dfe0ab5",
+    "fsck_history_range": "9a2f9d09162867d442e20b3d904b13cc1a28a08d..ed90ff3d8d135e51dd55ebd074d8e90aee45000e",
+    "fsck_objects_and_pointers_history": "passed",
+    "fsck_objects_and_pointers_checkpoint": "passed"
+  },
+  "static_runtime_literal_reference_scan": {
+    "existing": 195,
+    "missing": 0,
+    "untracked_after_staging": 0
+  },
+  "animal_validation": [
+    {
+      "suite": "ANIMALS_X_TEST",
+      "checks": 13,
+      "failures": 0,
+      "log_sha256": "d147dca6a284821cbf9fa0048b1d1a173804427fb6cfc7e4f8e770fd2d757789"
+    },
+    {
+      "suite": "FOOD_WEB3_TEST",
+      "checks": 17,
+      "failures": 0,
+      "log_sha256": "17a44c5730cb576fcc9b64d8cdc9b69cd3e31f005de1c14da0b7d4effc4ce46e"
+    }
+  ],
+  "scope": "Remote Git/LFS recovery verification; no fresh Godot build or new performance acceptance"
+}
